@@ -54,7 +54,7 @@ class limit_order_object : public abstract_object<limit_order_object>
       price            sell_price;
       share_type       deferred_fee;
 
-      pair<asset_id_type,asset_id_type> get_market()const
+      pair<asset_aid_type,asset_aid_type> get_market()const
       {
          auto tmp = std::make_pair( sell_price.base.asset_id, sell_price.quote.asset_id );
          if( tmp.first > tmp.second ) std::swap( tmp.first, tmp.second );
@@ -113,7 +113,7 @@ class call_order_object : public abstract_object<call_order_object>
       asset get_collateral()const { return asset( collateral, call_price.base.asset_id ); }
       asset get_debt()const { return asset( debt, debt_type() ); }
       asset amount_to_receive()const { return get_debt(); }
-      asset_id_type debt_type()const { return call_price.quote.asset_id; }
+      asset_id_type debt_type()const { return asset_id_type(call_price.quote.asset_id); }
       price collateralization()const { return get_collateral() / get_debt(); }
 
       account_id_type  borrower;
@@ -121,7 +121,7 @@ class call_order_object : public abstract_object<call_order_object>
       share_type       debt;        ///< call_price.quote.asset_id, access via get_collateral
       price            call_price;  ///< Debt / Collateral
 
-      pair<asset_id_type,asset_id_type> get_market()const
+      pair<asset_aid_type,asset_aid_type> get_market()const
       {
          auto tmp = std::make_pair( call_price.base.asset_id, call_price.quote.asset_id );
          if( tmp.first > tmp.second ) std::swap( tmp.first, tmp.second );
@@ -146,7 +146,7 @@ class force_settlement_object : public abstract_object<force_settlement_object>
       time_point_sec    settlement_date;
 
       asset_id_type settlement_asset_id()const
-      { return balance.asset_id; }
+      { return asset_id_type(balance.asset_id); }
 };
 
 struct by_collateral;

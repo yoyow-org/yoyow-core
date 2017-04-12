@@ -35,7 +35,7 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
 
    const account_object& from_account    = op.from(d);
    const account_object& to_account      = op.to(d);
-   const asset_object&   asset_type      = op.amount.asset_id(d);
+   const asset_object&   asset_type      = asset_id_type(op.amount.asset_id)(d);
 
    try {
 
@@ -87,7 +87,7 @@ void_result override_transfer_evaluator::do_evaluate( const override_transfer_op
 { try {
    const database& d = db();
 
-   const asset_object&   asset_type      = op.amount.asset_id(d);
+   const asset_object&   asset_type      = asset_id_type(op.amount.asset_id)(d);
    GRAPHENE_ASSERT(
       asset_type.can_override(),
       override_transfer_not_permitted,

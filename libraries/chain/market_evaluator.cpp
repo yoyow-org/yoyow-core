@@ -45,8 +45,8 @@ void_result limit_order_create_evaluator::do_evaluate(const limit_order_create_o
    FC_ASSERT( op.expiration >= d.head_block_time() );
 
    _seller        = this->fee_paying_account;
-   _sell_asset    = &op.amount_to_sell.asset_id(d);
-   _receive_asset = &op.min_to_receive.asset_id(d);
+   _sell_asset    = &asset_id_type(op.amount_to_sell.asset_id)(d);
+   _receive_asset = &asset_id_type(op.min_to_receive.asset_id)(d);
 
    if( _sell_asset->options.whitelist_markets.size() )
       FC_ASSERT( _sell_asset->options.whitelist_markets.find(_receive_asset->id) != _sell_asset->options.whitelist_markets.end() );
@@ -74,7 +74,7 @@ object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_o
 { try {
    const auto& seller_stats = _seller->statistics(db());
    db().modify(seller_stats, [&](account_statistics_object& bal) {
-         if( op.amount_to_sell.asset_id == asset_id_type() )
+         if( op.amount_to_sell.asset_id == GRAPHENE_CORE_ASSET_AID )
          {
             bal.total_core_in_orders += op.amount_to_sell.amount;
          }
@@ -119,8 +119,8 @@ asset limit_order_cancel_evaluator::do_apply(const limit_order_cancel_operation&
 
    // Possible optimization: order can be called by canceling a limit order iff the canceled order was at the top of the book.
    // Do I need to check calls in both assets?
-   d.check_call_orders(base_asset(d));
-   d.check_call_orders(quote_asset(d));
+   d.check_call_orders(asset_id_type(base_asset)(d));
+   d.check_call_orders(asset_id_type(quote_asset)(d));
 
    return refunded;
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -130,7 +130,7 @@ void_result call_order_update_evaluator::do_evaluate(const call_order_update_ope
    database& d = db();
 
    _paying_account = &o.funding_account(d);
-   _debt_asset     = &o.delta_debt.asset_id(d);
+   _debt_asset     = &asset_id_type(o.delta_debt.asset_id)(d);
    FC_ASSERT( _debt_asset->is_market_issued(), "Unable to cover ${sym} as it is not a collateralized asset.",
               ("sym", _debt_asset->symbol) );
 
@@ -140,7 +140,7 @@ void_result call_order_update_evaluator::do_evaluate(const call_order_update_ope
    /// all existing margin positions should have been closed va database::globally_settle_asset
    FC_ASSERT( !_bitasset_data->has_settlement() );
 
-   FC_ASSERT( o.delta_collateral.asset_id == _bitasset_data->options.short_backing_asset );
+   FC_ASSERT( asset_id_type(o.delta_collateral.asset_id) == _bitasset_data->options.short_backing_asset );
 
    if( _bitasset_data->is_prediction_market )
       FC_ASSERT( o.delta_collateral.amount == o.delta_debt.amount );
@@ -158,7 +158,7 @@ void_result call_order_update_evaluator::do_evaluate(const call_order_update_ope
    {
       FC_ASSERT( d.get_balance(*_paying_account, _bitasset_data->options.short_backing_asset(d)) >= o.delta_collateral,
                  "Cannot increase collateral by ${c} when payer only has ${b}", ("c", o.delta_collateral.amount)
-                 ("b", d.get_balance(*_paying_account, o.delta_collateral.asset_id(d)).amount) );
+                 ("b", d.get_balance(*_paying_account, asset_id_type(o.delta_collateral.asset_id)(d)).amount) );
    }
 
    return void_result();
@@ -185,7 +185,7 @@ void_result call_order_update_evaluator::do_apply(const call_order_update_operat
       d.adjust_balance( o.funding_account, -o.delta_collateral  );
 
       // Adjust the total core in orders accodingly
-      if( o.delta_collateral.asset_id == asset_id_type() )
+      if( o.delta_collateral.asset_id == GRAPHENE_CORE_ASSET_AID )
       {
          d.modify(_paying_account->statistics(d), [&](account_statistics_object& stats) {
                stats.total_core_in_orders += o.delta_collateral.amount;
@@ -195,7 +195,7 @@ void_result call_order_update_evaluator::do_apply(const call_order_update_operat
 
 
    auto& call_idx = d.get_index_type<call_order_index>().indices().get<by_account>();
-   auto itr = call_idx.find( boost::make_tuple(o.funding_account, o.delta_debt.asset_id) );
+   auto itr = call_idx.find( boost::make_tuple(o.funding_account, asset_id_type(o.delta_debt.asset_id)) );
    const call_order_object* call_obj = nullptr;
 
    if( itr == call_idx.end() )

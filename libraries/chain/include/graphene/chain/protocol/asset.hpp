@@ -31,11 +31,14 @@ namespace graphene { namespace chain {
 
    struct asset
    {
-      asset( share_type a = 0, asset_id_type id = asset_id_type() )
+      asset( share_type a, asset_aid_type id )
       :amount(a),asset_id(id){}
 
+      asset( share_type a = 0, asset_id_type id = asset_id_type() )
+      :amount(a),asset_id(object_id_type(id).instance()){}
+
       share_type    amount;
-      asset_id_type asset_id;
+      asset_aid_type asset_id;
 
       asset& operator += ( const asset& o )
       {
@@ -110,14 +113,19 @@ namespace graphene { namespace chain {
     */
    struct price
    {
-      price(const asset& base = asset(), const asset quote = asset())
+      explicit price(const asset& base = asset(), const asset quote = asset())
          : base(base),quote(quote){}
 
       asset base;
       asset quote;
 
-      static price max(asset_id_type base, asset_id_type quote );
-      static price min(asset_id_type base, asset_id_type quote );
+      static price max(asset_aid_type base, asset_aid_type quote );
+      static price min(asset_aid_type base, asset_aid_type quote );
+
+      static price max(asset_id_type base, asset_id_type quote )
+      { return max( object_id_type(base).instance(), object_id_type(quote).instance() ); }
+      static price min(asset_id_type base, asset_id_type quote )
+      { return min( object_id_type(base).instance(), object_id_type(quote).instance() ); }
 
       static price call_price(const asset& debt, const asset& collateral, uint16_t collateral_ratio);
 

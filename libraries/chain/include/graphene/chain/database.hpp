@@ -267,6 +267,9 @@ namespace graphene { namespace chain {
 
 
          uint32_t last_non_undoable_block_num() const;
+
+         const account_object& get_account_by_uid( account_uid_type uid )const;
+         const optional<account_id_type> find_account_id_by_uid( account_uid_type uid )const;
          //////////////////// db_init.cpp ////////////////////
 
          void initialize_evaluators();

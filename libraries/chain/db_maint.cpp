@@ -742,16 +742,19 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
             // There may be a difference between the account whose stake is voting and the one specifying opinions.
             // Usually they're the same, but if the stake account has specified a voting_account, that account is the one
             // specifying the opinions.
+            /*
             const account_object& opinion_account =
                   (stake_account.options.voting_account ==
-                   GRAPHENE_PROXY_TO_SELF_ACCOUNT)? stake_account
-                                     : d.get(stake_account.options.voting_account);
+                   GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID)? stake_account
+                                     : d.get_account_by_uid(stake_account.options.voting_account);
+            */
 
             const auto& stats = stake_account.statistics(d);
             uint64_t voting_stake = stats.total_core_in_orders.value
                   + (stake_account.cashback_vb.valid() ? (*stake_account.cashback_vb)(d).balance.amount.value: 0)
                   + d.get_balance(stake_account.get_id(), asset_id_type()).amount.value;
 
+            /*
             for( vote_id_type id : opinion_account.options.votes )
             {
                uint32_t offset = id.instance();
@@ -782,6 +785,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
                // same rationale as for witnesses
                d._committee_count_histogram_buffer[offset] += voting_stake;
             }
+            */
 
             d._total_voting_stake += voting_stake;
          }

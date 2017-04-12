@@ -61,6 +61,8 @@ void verify_account_votes( const database& db, const account_options& options )
    // NB only the part of vote checking that requires chain state is here,
    // the rest occurs in account_options::validate()
 
+   // TODO review
+   /*
    const auto& gpo = db.get_global_properties();
    const auto& chain_params = gpo.parameters;
 
@@ -88,6 +90,7 @@ void verify_account_votes( const database& db, const account_options& options )
          }
       }
    }
+   */
 
 }
 
@@ -95,6 +98,7 @@ void verify_account_votes( const database& db, const account_options& options )
 void_result account_create_evaluator::do_evaluate( const account_create_operation& op )
 { try {
    database& d = db();
+   /*
    if( d.head_block_time() < HARDFORK_516_TIME )
    {
       FC_ASSERT( !op.extensions.value.owner_special_authority.valid() );
@@ -107,10 +111,12 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
       FC_ASSERT( !op.extensions.value.active_special_authority.valid() );
       FC_ASSERT( !op.extensions.value.buyback_options.valid() );
    }
+   */
 
-   FC_ASSERT( d.find_object(op.options.voting_account), "Invalid proxy account specified." );
+   //FC_ASSERT( d.find_object(op.options.voting_account), "Invalid proxy account specified." );
+   FC_ASSERT( d.find_account_id_by_uid(op.options.voting_account).valid(), "Invalid proxy account specified." );
    FC_ASSERT( fee_paying_account->is_lifetime_member(), "Only Lifetime members may register an account." );
-   FC_ASSERT( op.referrer(d).is_member(d.head_block_time()), "The referrer must be either a lifetime or annual subscriber." );
+   //FC_ASSERT( op.referrer(d).is_member(d.head_block_time()), "The referrer must be either a lifetime or annual subscriber." );
 
    try
    {
@@ -141,7 +147,10 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
 object_id_type account_create_evaluator::do_apply( const account_create_operation& o )
 { try {
 
+   //TODO review
+   /*
    database& d = db();
+
    uint16_t referrer_percent = o.referrer_percent;
    bool has_small_percent = (
          (db().head_block_time() <= HARDFORK_453_TIME)
@@ -234,6 +243,8 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
    }
 
    return new_acnt_object.id;
+   */
+   return account_id_type();
 } FC_CAPTURE_AND_RETHROW((o)) }
 
 

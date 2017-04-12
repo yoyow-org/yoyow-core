@@ -61,7 +61,7 @@ namespace graphene { namespace chain {
       bool fill_or_kill = false;
       extensions_type   extensions;
 
-      pair<asset_id_type,asset_id_type> get_market()const
+      pair<asset_aid_type,asset_aid_type> get_market()const
       {
          return amount_to_sell.asset_id < min_to_receive.asset_id ?
                 std::make_pair(amount_to_sell.asset_id, min_to_receive.asset_id) :
@@ -145,7 +145,7 @@ namespace graphene { namespace chain {
       asset               fee; // paid by receiving account
 
 
-      pair<asset_id_type,asset_id_type> get_market()const
+      pair<asset_aid_type,asset_aid_type> get_market()const
       {
          return pays.asset_id < receives.asset_id ?
                 std::make_pair( pays.asset_id, receives.asset_id ) :

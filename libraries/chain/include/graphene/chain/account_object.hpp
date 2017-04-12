@@ -149,6 +149,9 @@ namespace graphene { namespace chain {
          /// to referrer. The remainder of referral rewards goes to the registrar.
          uint16_t referrer_rewards_percentage = 0;
 
+         /// The account's uid. This uid must be unique among all account uids.
+         account_uid_type uid = 0;
+
          /// The account's name. This name must be unique among all account names on the graph. May not be empty.
          string name;
 
@@ -162,6 +165,8 @@ namespace graphene { namespace chain {
          /// The owner authority contains the hot keys of the account. This authority has control over nearly all
          /// operations the account may perform.
          authority active;
+         /// The secondary authority has control over a few operations.
+         authority secondary;
 
          typedef account_options  options_type;
          account_options options;
@@ -260,6 +265,7 @@ namespace graphene { namespace chain {
          }
 
          account_id_type get_id()const { return id; }
+         account_uid_type get_uid()const { return uid; }
    };
 
    /**
@@ -347,6 +353,7 @@ namespace graphene { namespace chain {
    typedef generic_index<account_balance_object, account_balance_object_multi_index_type> account_balance_index;
 
    struct by_name{};
+   struct by_uid{};
 
    /**
     * @ingroup object_index
@@ -355,7 +362,8 @@ namespace graphene { namespace chain {
       account_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_name>, member<account_object, string, &account_object::name> >
+         ordered_unique< tag<by_name>, member<account_object, string, &account_object::name> >,
+         ordered_unique< tag<by_uid>, member<account_object, account_uid_type, &account_object::uid> >
       >
    > account_multi_index_type;
 

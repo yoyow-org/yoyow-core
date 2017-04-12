@@ -50,6 +50,11 @@ database& generic_evaluator::db()const { return trx_state->db(); }
       return result;
    } FC_CAPTURE_AND_RETHROW() }
 
+   void generic_evaluator::prepare_fee(account_uid_type account_uid, asset fee)
+   {
+      prepare_fee( *(db().find_account_id_by_uid( account_uid )), fee );
+   }
+
    void generic_evaluator::prepare_fee(account_id_type account_id, asset fee)
    {
       const database& d = db();
@@ -58,7 +63,7 @@ database& generic_evaluator::db()const { return trx_state->db(); }
       fee_paying_account = &account_id(d);
       fee_paying_account_statistics = &fee_paying_account->statistics(d);
 
-      fee_asset = &fee.asset_id(d);
+      fee_asset = &asset_id_type(fee.asset_id)(d);
       fee_asset_dyn_data = &fee_asset->dynamic_asset_data_id(d);
 
       if( d.head_block_time() > HARDFORK_419_TIME )
@@ -67,12 +72,12 @@ database& generic_evaluator::db()const { return trx_state->db(); }
             ("acct", fee_paying_account->id)("name", fee_paying_account->name)("a", fee_asset->id)("sym", fee_asset->symbol) );
       }
 
-      if( fee_from_account.asset_id == asset_id_type() )
+      if( fee_from_account.asset_id == GRAPHENE_CORE_ASSET_AID )
          core_fee_paid = fee_from_account.amount;
       else
       {
          asset fee_from_pool = fee_from_account * fee_asset->options.core_exchange_rate;
-         FC_ASSERT( fee_from_pool.asset_id == asset_id_type() );
+         FC_ASSERT( fee_from_pool.asset_id == GRAPHENE_CORE_ASSET_AID );
          core_fee_paid = fee_from_pool.amount;
          FC_ASSERT( core_fee_paid <= fee_asset_dyn_data->fee_pool, "Fee pool balance of '${b}' is less than the ${r} required to convert ${c}",
                     ("r", db().to_pretty_string( fee_from_pool))("b",db().to_pretty_string(fee_asset_dyn_data->fee_pool))("c",db().to_pretty_string(fee)) );
@@ -126,6 +131,12 @@ database& generic_evaluator::db()const { return trx_state->db(); }
    void generic_evaluator::db_adjust_balance(const account_id_type& fee_payer, asset fee_from_account)
    {
      db().adjust_balance(fee_payer, fee_from_account);
+   }
+   void generic_evaluator::db_adjust_balance(const account_uid_type& fee_payer, asset fee_from_account)
+   {
+     const auto& o_account_id = db().find_account_id_by_uid( fee_payer );
+     FC_ASSERT( o_account_id.valid() );
+     db().adjust_balance(*o_account_id, fee_from_account);
    }
 
 } }

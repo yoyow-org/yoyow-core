@@ -98,8 +98,8 @@ namespace graphene { namespace chain {
          return price{base,quote};
       } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
 
-      price price::max( asset_id_type base, asset_id_type quote ) { return asset( share_type(GRAPHENE_MAX_SHARE_SUPPLY), base ) / asset( share_type(1), quote); }
-      price price::min( asset_id_type base, asset_id_type quote ) { return asset( 1, base ) / asset( GRAPHENE_MAX_SHARE_SUPPLY, quote); }
+      price price::max( asset_aid_type base, asset_aid_type quote ) { return asset( share_type(GRAPHENE_MAX_SHARE_SUPPLY), base ) / asset( share_type(1), quote); }
+      price price::min( asset_aid_type base, asset_aid_type quote ) { return asset( 1, base ) / asset( GRAPHENE_MAX_SHARE_SUPPLY, quote); }
 
       /**
        *  The black swan price is defined as debt/collateral, we want to perform a margin call
@@ -157,9 +157,9 @@ namespace graphene { namespace chain {
          try
          {
             if( !settlement_price.is_null() )
-               return (settlement_price.base.asset_id == asset_id);
+               return (asset_id_type(settlement_price.base.asset_id) == asset_id);
             if( !core_exchange_rate.is_null() )
-               return (core_exchange_rate.base.asset_id == asset_id);
+               return (asset_id_type(core_exchange_rate.base.asset_id) == asset_id);
             // (null, null) is valid for any feed
             return true;
          }

@@ -47,7 +47,7 @@ asset database::get_balance(const account_object& owner, const asset_object& ass
 
 string database::to_pretty_string( const asset& a )const
 {
-   return a.asset_id(*this).amount_to_pretty_string(a.amount);
+   return this->get(asset_id_type(a.asset_id)).amount_to_pretty_string(a.amount);
 }
 
 void database::adjust_balance(account_id_type account, asset delta )
@@ -56,7 +56,7 @@ void database::adjust_balance(account_id_type account, asset delta )
       return;
 
    auto& index = get_index_type<account_balance_index>().indices().get<by_account_asset>();
-   auto itr = index.find(boost::make_tuple(account, delta.asset_id));
+   auto itr = index.find(boost::make_tuple(account, asset_id_type(delta.asset_id)));
    if(itr == index.end())
    {
       FC_ASSERT( delta.amount > 0, "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}", 
@@ -65,7 +65,7 @@ void database::adjust_balance(account_id_type account, asset delta )
                  ("r",to_pretty_string(-delta)));
       create<account_balance_object>([account,&delta](account_balance_object& b) {
          b.owner = account;
-         b.asset_type = delta.asset_id;
+         b.asset_type = asset_id_type(delta.asset_id);
          b.balance = delta.amount.value;
       });
    } else {

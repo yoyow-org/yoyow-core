@@ -43,15 +43,15 @@ void database::debug_dump()
 
    const auto& balance_index = db.get_index_type<account_balance_index>().indices();
    const simple_index<account_statistics_object>& statistics_index = db.get_index_type<simple_index<account_statistics_object>>();
-   map<asset_id_type,share_type> total_balances;
-   map<asset_id_type,share_type> total_debts;
+   map<asset_aid_type,share_type> total_balances;
+   map<asset_aid_type,share_type> total_debts;
    share_type core_in_orders;
    share_type reported_core_in_orders;
 
    for( const account_balance_object& a : balance_index )
    {
     //  idump(("balance")(a));
-      total_balances[a.asset_type] += a.balance;
+      total_balances[object_id_type(a.asset_type).instance()] += a.balance;
    }
    for( const account_statistics_object& s : statistics_index )
    {
@@ -62,27 +62,27 @@ void database::debug_dump()
    {
  //     idump(("limit_order")(o));
       auto for_sale = o.amount_for_sale();
-      if( for_sale.asset_id == asset_id_type() ) core_in_orders += for_sale.amount;
+      if( for_sale.asset_id == GRAPHENE_CORE_ASSET_AID ) core_in_orders += for_sale.amount;
       total_balances[for_sale.asset_id] += for_sale.amount;
    }
    for( const call_order_object& o : db.get_index_type<call_order_index>().indices() )
    {
 //      idump(("call_order")(o));
       auto col = o.get_collateral();
-      if( col.asset_id == asset_id_type() ) core_in_orders += col.amount;
+      if( col.asset_id == GRAPHENE_CORE_ASSET_AID ) core_in_orders += col.amount;
       total_balances[col.asset_id] += col.amount;
       total_debts[o.get_debt().asset_id] += o.get_debt().amount;
    }
    for( const asset_object& asset_obj : db.get_index_type<asset_index>().indices() )
    {
-      total_balances[asset_obj.id] += asset_obj.dynamic_asset_data_id(db).accumulated_fees;
-      total_balances[asset_id_type()] += asset_obj.dynamic_asset_data_id(db).fee_pool;
+      total_balances[asset_obj.id.instance()] += asset_obj.dynamic_asset_data_id(db).accumulated_fees;
+      total_balances[GRAPHENE_CORE_ASSET_AID] += asset_obj.dynamic_asset_data_id(db).fee_pool;
 //      edump((total_balances[asset_obj.id])(asset_obj.dynamic_asset_data_id(db).current_supply ) );
    }
 
-   if( total_balances[asset_id_type()].value != core_asset_data.current_supply.value )
+   if( total_balances[GRAPHENE_CORE_ASSET_AID].value != core_asset_data.current_supply.value )
    {
-      edump( (total_balances[asset_id_type()].value)(core_asset_data.current_supply.value ));
+      edump( (total_balances[GRAPHENE_CORE_ASSET_AID].value)(core_asset_data.current_supply.value ));
    }
 
 

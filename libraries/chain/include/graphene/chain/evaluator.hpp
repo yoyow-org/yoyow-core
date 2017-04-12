@@ -80,6 +80,7 @@ namespace graphene { namespace chain {
        * In particular, core_fee_paid field is set by prepare_fee().
        */
       void prepare_fee(account_id_type account_id, asset fee);
+      void prepare_fee(account_uid_type account_uid, asset fee);
 
       /**
        * Convert the fee into BTS through the exchange pool.
@@ -107,6 +108,7 @@ namespace graphene { namespace chain {
       // cause a circular dependency
       share_type calculate_fee_for_operation(const operation& op) const;
       void db_adjust_balance(const account_id_type& fee_payer, asset fee_from_account);
+      void db_adjust_balance(const account_uid_type& fee_payer, asset fee_from_account);
 
       asset                            fee_from_account;
       share_type                       core_fee_paid;

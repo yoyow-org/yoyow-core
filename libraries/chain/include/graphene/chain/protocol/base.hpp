@@ -26,6 +26,7 @@
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/protocol/asset.hpp>
 #include <graphene/chain/protocol/authority.hpp>
+#include <graphene/chain/protocol/ext.hpp>
 
 namespace graphene { namespace chain {
 
@@ -91,6 +92,7 @@ namespace graphene { namespace chain {
          return params.fee;
       }
       void get_required_authorities( vector<authority>& )const{}
+      void get_required_secondary_authorities( flat_set<account_id_type>& )const{}
       void get_required_active_authorities( flat_set<account_id_type>& )const{}
       void get_required_owner_authorities( flat_set<account_id_type>& )const{}
       void validate()const{}
@@ -105,6 +107,7 @@ namespace graphene { namespace chain {
     *  compatibility.   
     */
    typedef static_variant<void_t>      future_extensions;
+   struct default_extension_type {};
 
    /**
     *  A flat_set is used to make sure that only one extension of
@@ -113,7 +116,8 @@ namespace graphene { namespace chain {
     *  @note static_variant compares only the type tag and not the 
     *  content.
     */
-   typedef flat_set<future_extensions> extensions_type;
+   //typedef flat_set<future_extensions> extensions_type;
+   typedef extension<default_extension_type> extensions_type;
 
    ///@}
 
@@ -122,3 +126,4 @@ namespace graphene { namespace chain {
 FC_REFLECT_TYPENAME( graphene::chain::operation_result )
 FC_REFLECT_TYPENAME( graphene::chain::future_extensions )
 FC_REFLECT( graphene::chain::void_result, )
+FC_REFLECT( graphene::chain::default_extension_type, )

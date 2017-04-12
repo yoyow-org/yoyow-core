@@ -360,7 +360,7 @@ void database::clear_expired_orders()
             cancel_order(order);
             continue;
          }
-         if( max_settlement_volume.asset_id != current_asset )
+         if( asset_id_type(max_settlement_volume.asset_id) != current_asset )
             max_settlement_volume = mia_object.amount(mia.max_force_settlement_volume(mia_object.dynamic_data(*this).current_supply));
          if( mia.force_settled_volume >= max_settlement_volume.amount )
          {
@@ -445,7 +445,7 @@ void database::update_expired_feeds()
          modify(b, [this](asset_bitasset_data_object& a) {
             a.update_median_feeds(head_block_time());
          });
-         check_call_orders(b.current_feed.settlement_price.base.asset_id(*this));
+         check_call_orders(asset_id_type(b.current_feed.settlement_price.base.asset_id)(*this));
       }
       if( !b.current_feed.core_exchange_rate.is_null() &&
           a.options.core_exchange_rate != b.current_feed.core_exchange_rate )

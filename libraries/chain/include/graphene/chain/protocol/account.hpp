@@ -44,17 +44,39 @@ namespace graphene { namespace chain {
       /// If this field is set to an account ID other than GRAPHENE_PROXY_TO_SELF_ACCOUNT,
       /// then this account's votes will be ignored; its stake
       /// will be counted as voting for the referenced account's selected votes instead.
-      account_id_type voting_account = GRAPHENE_PROXY_TO_SELF_ACCOUNT;
+      account_uid_type voting_account = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
 
       /// The number of active witnesses this account votes the blockchain should appoint
       /// Must not exceed the actual number of witnesses voted for in @ref votes
-      uint16_t num_witness = 0;
+      //uint16_t num_witness = 0;
       /// The number of active committee members this account votes the blockchain should appoint
       /// Must not exceed the actual number of committee members voted for in @ref votes
-      uint16_t num_committee = 0;
+      //uint16_t num_committee = 0;
       /// This is the list of vote IDs this account votes for. The weight of these votes is determined by this
       /// account's balance of core asset.
-      flat_set<vote_id_type> votes;
+      //flat_set<vote_id_type> votes;
+      extensions_type        extensions;
+
+      void validate()const;
+   };
+
+   /// Account registration related info.
+   struct account_reg_info
+   {
+      /// This account pays the fee.
+      account_uid_type registrar;
+
+      /// This account receives a portion of the reward split between registrar and referrer.
+      account_uid_type referrer;
+
+      /// Of the fee split between registrar and referrer, this percentage goes to the referrer. The rest goes to the
+      /// registrar.
+      uint16_t        registrar_percent = 0;
+      uint16_t        referrer_percent = 0;
+      asset           allowance_per_article;
+      asset           max_share_per_article;
+      asset           max_share_total;
+
       extensions_type        extensions;
 
       void validate()const;
@@ -78,35 +100,33 @@ namespace graphene { namespace chain {
          uint64_t basic_fee      = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
          uint64_t premium_fee    = 2000*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
          uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+         extensions_type        extensions;
       };
 
       asset           fee;
-      /// This account pays the fee. Must be a lifetime member.
-      account_id_type registrar;
 
-      /// This account receives a portion of the fee split between registrar and referrer. Must be a member.
-      account_id_type referrer;
-      /// Of the fee split between registrar and referrer, this percentage goes to the referrer. The rest goes to the
-      /// registrar.
-      uint16_t        referrer_percent = 0;
+      account_uid_type uid;
 
       string          name;
       authority       owner;
       authority       active;
+      authority       secondary;
 
       account_options options;
+      account_reg_info reg_info;
+
       extension< ext > extensions;
 
-      account_id_type fee_payer()const { return registrar; }
+      account_uid_type fee_payer()const { return reg_info.registrar; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& )const;
 
-      void get_required_active_authorities( flat_set<account_id_type>& a )const
+      void get_required_active_authorities( flat_set<account_uid_type>& a )const
       {
          // registrar should be required anyway as it is the fee_payer(), but we insert it here just to be sure
-         a.insert( registrar );
-         if( extensions.value.buyback_options.valid() )
-            a.insert( extensions.value.buyback_options->asset_to_buy_issuer );
+         a.insert( reg_info.registrar );
+         //if( extensions.value.buyback_options.valid() )
+         //   a.insert( extensions.value.buyback_options->asset_to_buy_issuer );
       }
    };
 
@@ -133,13 +153,20 @@ namespace graphene { namespace chain {
       };
 
       asset fee;
-      /// The account to update
+      /// The account to update //TODO to be removed
       account_id_type account;
+      /// The account to update
+      account_uid_type uid;
+
+      /// The new name //TODO name change need to be approved
+      optional<string> new_name;
 
       /// New owner authority. If set, this operation requires owner authority to execute.
       optional<authority> owner;
       /// New active authority. This can be updated by the current active authority.
       optional<authority> active;
+      /// New secondary authority. This can be updated by the current active authority.
+      optional<authority> secondary;
 
       /// New account options
       optional<account_options> new_options;
@@ -263,15 +290,21 @@ namespace graphene { namespace chain {
 
 } } // graphene::chain
 
-FC_REFLECT(graphene::chain::account_options, (memo_key)(voting_account)(num_witness)(num_committee)(votes)(extensions))
+FC_REFLECT(graphene::chain::account_options, (memo_key)(voting_account)(extensions))
+FC_REFLECT(graphene::chain::account_reg_info, (registrar)(referrer)(registrar_percent)(referrer_percent)
+                                              (allowance_per_article)(max_share_per_article)(max_share_total)
+                                              (extensions))
+
 FC_REFLECT_ENUM( graphene::chain::account_whitelist_operation::account_listing,
                 (no_listing)(white_listed)(black_listed)(white_and_black_listed))
 
 FC_REFLECT(graphene::chain::account_create_operation::ext, (null_ext)(owner_special_authority)(active_special_authority)(buyback_options) )
 FC_REFLECT( graphene::chain::account_create_operation,
-            (fee)(registrar)
-            (referrer)(referrer_percent)
-            (name)(owner)(active)(options)(extensions)
+            (fee)
+            (uid)
+            (name)(owner)(active)(secondary)
+            (options)(reg_info)
+            (extensions)
           )
 
 FC_REFLECT(graphene::chain::account_update_operation::ext, (null_ext)(owner_special_authority)(active_special_authority) )

@@ -345,9 +345,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          a.options.issuer_permissions = 0;
          a.issuer = GRAPHENE_NULL_ACCOUNT;
          a.options.core_exchange_rate.base.amount = 1;
-         a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
+         a.options.core_exchange_rate.base.asset_id = GRAPHENE_CORE_ASSET_AID;
          a.options.core_exchange_rate.quote.amount = 1;
-         a.options.core_exchange_rate.quote.asset_id = asset_id_type(0);
+         a.options.core_exchange_rate.quote.asset_id = GRAPHENE_CORE_ASSET_AID;
          a.dynamic_asset_data_id = dyn_asset.id;
       });
    assert( asset_id_type(core_asset.id) == asset().asset_id );
@@ -370,9 +370,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          a.options.issuer_permissions = 0;
          a.issuer = GRAPHENE_NULL_ACCOUNT;
          a.options.core_exchange_rate.base.amount = 1;
-         a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
+         a.options.core_exchange_rate.base.asset_id = GRAPHENE_CORE_ASSET_AID;
          a.options.core_exchange_rate.quote.amount = 1;
-         a.options.core_exchange_rate.quote.asset_id = asset_id_type(0);
+         a.options.core_exchange_rate.quote.asset_id = GRAPHENE_CORE_ASSET_AID;
          a.dynamic_asset_data_id = dyn_asset.id;
       });
       FC_ASSERT( asset_obj.get_id() == asset_id_type(id) );
@@ -411,7 +411,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    {
       account_create_operation cop;
       cop.name = account.name;
-      cop.registrar = GRAPHENE_TEMP_ACCOUNT;
+      //cop.registrar = GRAPHENE_TEMP_ACCOUNT;
       cop.owner = authority(1, account.owner_key, 1);
       if( account.active_key == public_key_type() )
       {
@@ -472,8 +472,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       optional<asset_bitasset_data_id_type> bitasset_data_id;
       if( asset.is_bitasset )
       {
-         int collateral_holder_number = 0;
+         //int collateral_holder_number = 0;
          total_debts[ new_asset_id ] = 0;
+         /*
          for( const auto& collateral_rec : asset.collateral_records )
          {
             account_create_operation cop;
@@ -501,6 +502,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
             total_debts[ new_asset_id ] += collateral_rec.debt;
             ++collateral_holder_number;
          }
+         */
 
          bitasset_data_id = create<asset_bitasset_data_object>([&](asset_bitasset_data_object& b) {
             b.options.short_backing_asset = core_asset.id;

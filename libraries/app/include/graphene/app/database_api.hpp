@@ -372,14 +372,14 @@ class database_api
        * contain, in order, the operations which changed the market, and their results.
        */
       void subscribe_to_market(std::function<void(const variant&)> callback,
-                   asset_id_type a, asset_id_type b);
+                   asset_aid_type a, asset_aid_type b);
 
       /**
        * @brief Unsubscribe from updates to a given market
        * @param a First asset ID
        * @param b Second asset ID
        */
-      void unsubscribe_from_market( asset_id_type a, asset_id_type b );
+      void unsubscribe_from_market( asset_aid_type a, asset_aid_type b );
 
       /**
        * @brief Returns the ticker for the market assetA:assetB

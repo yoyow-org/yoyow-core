@@ -39,8 +39,9 @@ struct get_impacted_account_visitor
 
    void operator()( const account_create_operation& op )
    {
-      _impacted.insert( op.registrar );
-      _impacted.insert( op.referrer );
+      // TODO review
+      //_impacted.insert( op.registrar );
+      //_impacted.insert( op.referrer );
       add_authority_accounts( _impacted, op.owner );
       add_authority_accounts( _impacted, op.active );
    }

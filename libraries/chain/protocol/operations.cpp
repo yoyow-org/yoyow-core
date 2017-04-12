@@ -61,6 +61,17 @@ struct operation_get_required_auth
      flat_set<account_id_type>& own,
      vector<authority>&  oth ):active(a),owner(own),other(oth){}
 
+   void operator()( const account_create_operation& v )const 
+   { 
+      // TODO revieW
+      /*
+      active.insert( v.fee_payer() );
+      v.get_required_active_authorities( active ); 
+      v.get_required_owner_authorities( owner ); 
+      v.get_required_authorities( other );
+      */
+   }
+
    template<typename T>
    void operator()( const T& v )const 
    { 

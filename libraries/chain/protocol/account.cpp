@@ -21,10 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <fc/utf8.hpp>
 #include <graphene/chain/protocol/account.hpp>
 #include <graphene/chain/hardfork.hpp>
 
 namespace graphene { namespace chain {
+
+bool is_valid_uid( const account_uid_type uid)
+{
+   const auto checksum = ( uid & 0xFF );
+   const auto to_check = ( uid >> 8 );
+   const auto hash = fc::sha256::hash( to_check );
+   const auto head = ( hash._hash[0] >> 56 );
+   return ( checksum == head );
+}
+
+void validate_account_name( const string& name )
+{
+   const auto len = name.size();
+   FC_ASSERT( len >= GRAPHENE_MIN_ACCOUNT_NAME_LENGTH, "account name is too short" );
+   FC_ASSERT( len <= GRAPHENE_MAX_ACCOUNT_NAME_LENGTH, "account name is too long" );
+   FC_ASSERT( fc::is_utf8( name ), "account name should be in UTF8" );
+}
 
 /**
  * Names must comply with the following grammar (RFC 1035):
@@ -163,17 +181,33 @@ bool is_cheap_name( const string& n )
 
 void account_options::validate() const
 {
-   auto needed_witnesses = num_witness;
-   auto needed_committee = num_committee;
+   FC_ASSERT( is_valid_uid( voting_account ), "voting_account should be valid." );
+   //extensions.validate();
+}
 
-   for( vote_id_type id : votes )
-      if( id.type() == vote_id_type::witness && needed_witnesses )
-         --needed_witnesses;
-      else if ( id.type() == vote_id_type::committee && needed_committee )
-         --needed_committee;
+void account_reg_info::validate() const
+{
+   FC_ASSERT( is_valid_uid( registrar ), "registrar should be valid." );
+   FC_ASSERT( is_valid_uid( referrer ), "referrer should be valid." );
+   FC_ASSERT( registrar_percent <= GRAPHENE_100_PERCENT, "registrar_percent should not exceed 100%." );
+   FC_ASSERT( referrer_percent <= GRAPHENE_100_PERCENT, "referrer_percent should not exceed 100%." );
+   FC_ASSERT( registrar_percent + referrer_percent <= GRAPHENE_100_PERCENT,
+                  "registrar_percent plus referrer_percent should not exceed 100%." );
+   // assets should be core asset
+   FC_ASSERT( allowance_per_article.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of allowance_per_article should be 0." );
+   FC_ASSERT( max_share_per_article.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of max_share_per_article should be 0." );
+   FC_ASSERT( max_share_total.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of max_share_total should be 0." );
+   // ==== checks below are not needed
+   // allowance_per_article should be >= 0
+   // max_share_per_article should be >= 0
+   // max_share_total should be >= 0
+   //   uint16_t        registrar_percent = 0;
+   //   uint16_t        referrer_percent = 0;
+   //   asset           allowance_per_article;
+   //   asset           max_share_per_article;
+   //   asset           max_share_total;
 
-   FC_ASSERT( needed_witnesses == 0 && needed_committee == 0,
-              "May not specify fewer witnesses or committee members than the number voted for.");
+   //extensions.validate();
 }
 
 share_type account_create_operation::calculate_fee( const fee_parameters_type& k )const
@@ -194,15 +228,20 @@ share_type account_create_operation::calculate_fee( const fee_parameters_type& k
 void account_create_operation::validate()const
 {
    FC_ASSERT( fee.amount >= 0 );
-   FC_ASSERT( is_valid_name( name ) );
-   FC_ASSERT( referrer_percent <= GRAPHENE_100_PERCENT );
+   FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of fee should be 0." );
+   FC_ASSERT( is_valid_uid( uid ), "uid should be valid." );
+   validate_account_name ( name );
    FC_ASSERT( owner.num_auths() != 0 );
    FC_ASSERT( owner.address_auths.size() == 0 );
+   FC_ASSERT( !owner.is_impossible(), "cannot create an account with an imposible owner authority threshold" );
    FC_ASSERT( active.num_auths() != 0 );
    FC_ASSERT( active.address_auths.size() == 0 );
-   FC_ASSERT( !owner.is_impossible(), "cannot create an account with an imposible owner authority threshold" );
    FC_ASSERT( !active.is_impossible(), "cannot create an account with an imposible active authority threshold" );
+   FC_ASSERT( secondary.num_auths() != 0 );
+   FC_ASSERT( secondary.address_auths.size() == 0 );
+   FC_ASSERT( !secondary.is_impossible(), "cannot create an account with an imposible secondary authority threshold" );
    options.validate();
+   reg_info.validate();
    if( extensions.value.owner_special_authority.valid() )
       validate_special_authority( *extensions.value.owner_special_authority );
    if( extensions.value.active_special_authority.valid() )

@@ -82,7 +82,9 @@ namespace graphene { namespace chain {
    struct void_t{};
 
    typedef fc::ecc::private_key        private_key_type;
-   typedef fc::sha256 chain_id_type;
+   typedef fc::sha256                  chain_id_type;
+   typedef uint64_t                    account_uid_type;
+   typedef uint64_t                    asset_aid_type;
 
    enum asset_issuer_permission_flags
    {

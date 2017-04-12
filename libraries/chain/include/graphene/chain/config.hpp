@@ -23,8 +23,8 @@
  */
 #pragma once
 
-#define GRAPHENE_SYMBOL "BTS"
-#define GRAPHENE_ADDRESS_PREFIX "BTS"
+#define GRAPHENE_SYMBOL "YOYO"
+#define GRAPHENE_ADDRESS_PREFIX "YYW"
 
 #define GRAPHENE_MIN_ACCOUNT_NAME_LENGTH 1
 #define GRAPHENE_MAX_ACCOUNT_NAME_LENGTH 63
@@ -113,6 +113,8 @@
 
 #define GRAPHENE_MAX_URL_LENGTH                               127
 
+#define GRAPHENE_CORE_ASSET_AID                               (uint64_t(0))
+
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex
 #define GRAPHENE_NEAR_SCHEDULE_CTR_IV                    ( (uint64_t( 0x6a09 ) << 0x30)    \
@@ -152,18 +154,20 @@
  *  Reserved Account IDs with special meaning
  */
 ///@{
-/// Represents the current committee members, two-week review period
-#define GRAPHENE_COMMITTEE_ACCOUNT (graphene::chain::account_id_type(0))
-/// Represents the current witnesses
-#define GRAPHENE_WITNESS_ACCOUNT (graphene::chain::account_id_type(1))
-/// Represents the current committee members
-#define GRAPHENE_RELAXED_COMMITTEE_ACCOUNT (graphene::chain::account_id_type(2))
-/// Represents the canonical account with NO authority (nobody can access funds in null account)
-#define GRAPHENE_NULL_ACCOUNT (graphene::chain::account_id_type(3))
-/// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
-#define GRAPHENE_TEMP_ACCOUNT (graphene::chain::account_id_type(4))
 /// Represents the canonical account for specifying you will vote directly (as opposed to a proxy)
-#define GRAPHENE_PROXY_TO_SELF_ACCOUNT (graphene::chain::account_id_type(5))
+#define GRAPHENE_PROXY_TO_SELF_ACCOUNT (graphene::chain::account_id_type(0))
+/// Represents the canonical account for specifying you will vote directly (as opposed to a proxy)
+#define GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID (fc::sha256::hash(uint64_t(0))._hash[0]>>56)
+/// Represents the current committee members, two-week review period
+#define GRAPHENE_COMMITTEE_ACCOUNT (graphene::chain::account_id_type(1))
+/// Represents the current witnesses
+#define GRAPHENE_WITNESS_ACCOUNT (graphene::chain::account_id_type(2))
+/// Represents the current committee members
+#define GRAPHENE_RELAXED_COMMITTEE_ACCOUNT (graphene::chain::account_id_type(3))
+/// Represents the canonical account with NO authority (nobody can access funds in null account)
+#define GRAPHENE_NULL_ACCOUNT (graphene::chain::account_id_type(4))
+/// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
+#define GRAPHENE_TEMP_ACCOUNT (graphene::chain::account_id_type(5))
 /// Sentinel value used in the scheduler.
 #define GRAPHENE_NULL_WITNESS (graphene::chain::witness_id_type(0))
 ///@}

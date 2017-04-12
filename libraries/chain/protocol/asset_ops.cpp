@@ -108,7 +108,7 @@ void  asset_create_operation::validate()const
    if( bitasset_opts ) bitasset_opts->validate();
 
    asset dummy = asset(1) * common_options.core_exchange_rate;
-   FC_ASSERT(dummy.asset_id == asset_id_type(1));
+   FC_ASSERT(dummy.asset_id == 1);
    FC_ASSERT(precision <= 12);
 }
 
@@ -120,7 +120,7 @@ void asset_update_operation::validate()const
    new_options.validate();
 
    asset dummy = asset(1, asset_to_update) * new_options.core_exchange_rate;
-   FC_ASSERT(dummy.asset_id == asset_id_type());
+   FC_ASSERT(dummy.asset_id == GRAPHENE_CORE_ASSET_AID);
 }
 
 share_type asset_update_operation::calculate_fee(const asset_update_operation::fee_parameters_type& k)const
@@ -161,13 +161,13 @@ void asset_issue_operation::validate()const
    FC_ASSERT( fee.amount >= 0 );
    FC_ASSERT( asset_to_issue.amount.value <= GRAPHENE_MAX_SHARE_SUPPLY );
    FC_ASSERT( asset_to_issue.amount.value > 0 );
-   FC_ASSERT( asset_to_issue.asset_id != asset_id_type(0) );
+   FC_ASSERT( asset_to_issue.asset_id != GRAPHENE_CORE_ASSET_AID );
 }
 
 void asset_fund_fee_pool_operation::validate() const
 {
    FC_ASSERT( fee.amount >= 0 );
-   FC_ASSERT( fee.asset_id == asset_id_type() );
+   FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID );
    FC_ASSERT( amount > 0 );
 }
 
@@ -191,7 +191,7 @@ void asset_update_feed_producers_operation::validate() const
 void asset_global_settle_operation::validate()const
 {
    FC_ASSERT( fee.amount >= 0 );
-   FC_ASSERT( asset_to_settle == settle_price.base.asset_id );
+   FC_ASSERT( asset_to_settle == asset_id_type(settle_price.base.asset_id) );
 }
 
 void bitasset_options::validate() const
@@ -214,8 +214,8 @@ void asset_options::validate()const
    // the witness_fed and committee_fed flags cannot be set simultaneously
    FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
    core_exchange_rate.validate();
-   FC_ASSERT( core_exchange_rate.base.asset_id.instance.value == 0 ||
-              core_exchange_rate.quote.asset_id.instance.value == 0 );
+   FC_ASSERT( core_exchange_rate.base.asset_id == 0 ||
+              core_exchange_rate.quote.asset_id == 0 );
 
    if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
       FC_ASSERT( flags & white_list );

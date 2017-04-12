@@ -107,13 +107,13 @@ namespace graphene { namespace chain {
          string amount_to_string(share_type amount)const;
          /// Convert an asset to a textual representation, i.e. "123.45"
          string amount_to_string(const asset& amount)const
-         { FC_ASSERT(amount.asset_id == id); return amount_to_string(amount.amount); }
+         { FC_ASSERT(amount.asset_id == id.instance()); return amount_to_string(amount.amount); }
          /// Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
          string amount_to_pretty_string(share_type amount)const
          { return amount_to_string(amount) + " " + symbol; }
          /// Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
          string amount_to_pretty_string(const asset &amount)const
-         { FC_ASSERT(amount.asset_id == id); return amount_to_pretty_string(amount.amount); }
+         { FC_ASSERT(amount.asset_id == id.instance()); return amount_to_pretty_string(amount.amount); }
 
          /// Ticker symbol for this asset, i.e. "USD"
          string symbol;

@@ -41,7 +41,7 @@
 
 #define GET_REQUIRED_FEES_MAX_RECURSION 4
 
-typedef std::map< std::pair<graphene::chain::asset_id_type, graphene::chain::asset_id_type>, std::vector<fc::variant> > market_queue_type;
+typedef std::map< std::pair<graphene::chain::asset_aid_type, graphene::chain::asset_aid_type>, std::vector<fc::variant> > market_queue_type;
 
 namespace graphene { namespace app {
 
@@ -105,8 +105,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<call_order_object>          get_call_orders(asset_id_type a, uint32_t limit)const;
       vector<force_settlement_object>    get_settle_orders(asset_id_type a, uint32_t limit)const;
       vector<call_order_object>          get_margin_positions( const account_id_type& id )const;
-      void subscribe_to_market(std::function<void(const variant&)> callback, asset_id_type a, asset_id_type b);
-      void unsubscribe_from_market(asset_id_type a, asset_id_type b);
+      void subscribe_to_market(std::function<void(const variant&)> callback, asset_aid_type a, asset_aid_type b);
+      void unsubscribe_from_market(asset_aid_type a, asset_aid_type b);
       market_ticker                      get_ticker( const string& base, const string& quote )const;
       market_volume                      get_24_volume( const string& base, const string& quote )const;
       order_book                         get_order_book( const string& base, const string& quote, unsigned limit = 50 )const;
@@ -183,6 +183,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
          FC_ASSERT( order != nullptr);
 
          auto market = order->get_market();
+         //std::pair<asset_id_type, asset_id_type> market;
+         //market.first = asset_id_type(m.first);
+         //market.second = asset_id_type(m.second);
 
          auto sub = _market_subscriptions.find( market );
          if( sub != _market_subscriptions.end() ) {
@@ -212,7 +215,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       boost::signals2::scoped_connection                                                                                           _removed_connection;
       boost::signals2::scoped_connection                                                                                           _applied_block_connection;
       boost::signals2::scoped_connection                                                                                           _pending_trx_connection;
-      map< pair<asset_id_type,asset_id_type>, std::function<void(const variant&)> >      _market_subscriptions;
+      map< pair<asset_aid_type,asset_aid_type>, std::function<void(const variant&)> >      _market_subscriptions;
       graphene::chain::database&                                                                                                            _db;
 };
 
@@ -615,7 +618,8 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       acnt.registrar_name = account->registrar(_db).name;
       acnt.referrer_name = account->referrer(_db).name;
       acnt.lifetime_referrer_name = account->lifetime_referrer(_db).name;
-      acnt.votes = lookup_vote_ids( vector<vote_id_type>(account->options.votes.begin(),account->options.votes.end()) );
+      //TODO review
+      //acnt.votes = lookup_vote_ids( vector<vote_id_type>(account->options.votes.begin(),account->options.votes.end()) );
 
       // Add the account itself, its statistics object, cashback balance, and referral account names
       /*
@@ -1052,24 +1056,24 @@ vector<call_order_object> database_api_impl::get_margin_positions( const account
    } FC_CAPTURE_AND_RETHROW( (id) )
 }
 
-void database_api::subscribe_to_market(std::function<void(const variant&)> callback, asset_id_type a, asset_id_type b)
+void database_api::subscribe_to_market(std::function<void(const variant&)> callback, asset_aid_type a, asset_aid_type b)
 {
    my->subscribe_to_market( callback, a, b );
 }
 
-void database_api_impl::subscribe_to_market(std::function<void(const variant&)> callback, asset_id_type a, asset_id_type b)
+void database_api_impl::subscribe_to_market(std::function<void(const variant&)> callback, asset_aid_type a, asset_aid_type b)
 {
    if(a > b) std::swap(a,b);
    FC_ASSERT(a != b);
    _market_subscriptions[ std::make_pair(a,b) ] = callback;
 }
 
-void database_api::unsubscribe_from_market(asset_id_type a, asset_id_type b)
+void database_api::unsubscribe_from_market(asset_aid_type a, asset_aid_type b)
 {
    my->unsubscribe_from_market( a, b );
 }
 
-void database_api_impl::unsubscribe_from_market(asset_id_type a, asset_id_type b)
+void database_api_impl::unsubscribe_from_market(asset_aid_type a, asset_aid_type b)
 {
    if(a > b) std::swap(a,b);
    FC_ASSERT(a != b);
@@ -1184,7 +1188,7 @@ order_book database_api_impl::get_order_book( const string& base, const string& 
    auto asset_to_real = [&]( const asset& a, int p ) { return double(a.amount.value)/pow( 10, p ); };
    auto price_to_real = [&]( const price& p )
    {
-      if( p.base.asset_id == base_id )
+      if( asset_id_type(p.base.asset_id) == base_id )
          return asset_to_real( p.base, assets[0]->precision ) / asset_to_real( p.quote, assets[1]->precision );
       else
          return asset_to_real( p.quote, assets[0]->precision ) / asset_to_real( p.base, assets[1]->precision );
@@ -1192,7 +1196,7 @@ order_book database_api_impl::get_order_book( const string& base, const string& 
 
    for( const auto& o : orders )
    {
-      if( o.sell_price.base.asset_id == base_id )
+      if( asset_id_type(o.sell_price.base.asset_id) == base_id )
       {
          order ord;
          ord.price = price_to_real( o.sell_price );
@@ -1259,7 +1263,7 @@ vector<market_trade> database_api_impl::get_trade_history( const string& base,
       {
          market_trade trade;
 
-         if( assets[0]->id == itr->op.receives.asset_id )
+         if( assets[0]->id == asset_id_type(itr->op.receives.asset_id) )
          {
             trade.amount = price_to_real( itr->op.pays.amount, assets[1]->precision );
             trade.value = price_to_real( itr->op.receives.amount, assets[0]->precision );
@@ -1923,14 +1927,14 @@ void database_api_impl::on_applied_block()
       return;
 
    const auto& ops = _db.get_applied_operations();
-   map< std::pair<asset_id_type,asset_id_type>, vector<pair<operation, operation_result>> > subscribed_markets_ops;
+   map< std::pair<asset_aid_type,asset_aid_type>, vector<pair<operation, operation_result>> > subscribed_markets_ops;
    for(const optional< operation_history_object >& o_op : ops)
    {
       if( !o_op.valid() )
          continue;
       const operation_history_object& op = *o_op;
 
-      std::pair<asset_id_type,asset_id_type> market;
+      std::pair<asset_aid_type,asset_aid_type> market;
       switch(op.op.which())
       {
          /*  This is sent via the object_changed callback

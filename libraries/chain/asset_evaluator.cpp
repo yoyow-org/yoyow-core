@@ -142,10 +142,10 @@ object_id_type asset_create_evaluator::do_apply( const asset_create_operation& o
          a.symbol = op.symbol;
          a.precision = op.precision;
          a.options = op.common_options;
-         if( a.options.core_exchange_rate.base.asset_id.instance.value == 0 )
-            a.options.core_exchange_rate.quote.asset_id = next_asset_id;
+         if( a.options.core_exchange_rate.base.asset_id == 0 )
+            a.options.core_exchange_rate.quote.asset_id = object_id_type(next_asset_id).instance();
          else
-            a.options.core_exchange_rate.base.asset_id = next_asset_id;
+            a.options.core_exchange_rate.base.asset_id = object_id_type(next_asset_id).instance();
          a.dynamic_asset_data_id = dyn_asset.id;
          if( op.bitasset_opts.valid() )
             a.bitasset_data_id = bit_asset_id;
@@ -159,7 +159,7 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
 { try {
    const database& d = db();
 
-   const asset_object& a = o.asset_to_issue.asset_id(d);
+   const asset_object& a = asset_id_type(o.asset_to_issue.asset_id)(d);
    FC_ASSERT( o.issuer == a.issuer );
    FC_ASSERT( !a.is_market_issued(), "Cannot manually issue a market-issued asset." );
 
@@ -187,7 +187,7 @@ void_result asset_reserve_evaluator::do_evaluate( const asset_reserve_operation&
 { try {
    const database& d = db();
 
-   const asset_object& a = o.amount_to_reserve.asset_id(d);
+   const asset_object& a = asset_id_type(o.amount_to_reserve.asset_id)(d);
    GRAPHENE_ASSERT(
       !a.is_market_issued(),
       asset_reserve_invalid_on_mia,
@@ -441,7 +441,7 @@ void_result asset_global_settle_evaluator::do_apply(const asset_global_settle_ev
 void_result asset_settle_evaluator::do_evaluate(const asset_settle_evaluator::operation_type& op)
 { try {
    const database& d = db();
-   asset_to_settle = &op.amount.asset_id(d);
+   asset_to_settle = &asset_id_type(op.amount.asset_id)(d);
    FC_ASSERT(asset_to_settle->is_market_issued());
    const auto& bitasset = asset_to_settle->bitasset_data(d);
    FC_ASSERT(asset_to_settle->can_force_settle() || bitasset.has_settlement() );
@@ -500,12 +500,12 @@ void_result asset_publish_feeds_evaluator::do_evaluate(const asset_publish_feed_
    const asset_bitasset_data_object& bitasset = base.bitasset_data(d);
    FC_ASSERT( !bitasset.has_settlement(), "No further feeds may be published after a settlement event" );
 
-   FC_ASSERT( o.feed.settlement_price.quote.asset_id == bitasset.options.short_backing_asset );
+   FC_ASSERT( asset_id_type(o.feed.settlement_price.quote.asset_id) == bitasset.options.short_backing_asset );
    if( d.head_block_time() > HARDFORK_480_TIME )
    {
       if( !o.feed.core_exchange_rate.is_null() )
       {
-         FC_ASSERT( o.feed.core_exchange_rate.quote.asset_id == asset_id_type() );
+         FC_ASSERT( o.feed.core_exchange_rate.quote.asset_id == GRAPHENE_CORE_ASSET_AID );
       }
    }
    else
@@ -559,7 +559,7 @@ void_result asset_publish_feeds_evaluator::do_apply(const asset_publish_feed_ope
 void_result asset_claim_fees_evaluator::do_evaluate( const asset_claim_fees_operation& o )
 { try {
    FC_ASSERT( db().head_block_time() > HARDFORK_413_TIME );
-   FC_ASSERT( o.amount_to_claim.asset_id(db()).issuer == o.issuer, "Asset fees may only be claimed by the issuer" );
+   FC_ASSERT( asset_id_type(o.amount_to_claim.asset_id)(db()).issuer == o.issuer, "Asset fees may only be claimed by the issuer" );
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -568,7 +568,7 @@ void_result asset_claim_fees_evaluator::do_apply( const asset_claim_fees_operati
 { try {
    database& d = db();
 
-   const asset_object& a = o.amount_to_claim.asset_id(d);
+   const asset_object& a = asset_id_type(o.amount_to_claim.asset_id)(d);
    const asset_dynamic_data_object& addo = a.dynamic_asset_data_id(d);
    FC_ASSERT( o.amount_to_claim.amount <= addo.accumulated_fees, "Attempt to claim more fees than have accumulated", ("addo",addo) );
 

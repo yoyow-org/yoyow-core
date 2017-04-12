@@ -45,7 +45,7 @@ namespace graphene { namespace chain {
          asset   balance;
          optional<linear_vesting_policy> vesting_policy;
          time_point_sec last_claim_date;
-         asset_id_type asset_type()const { return balance.asset_id; }
+         asset_id_type asset_type()const { return asset_id_type(balance.asset_id); }
    };
 
    struct by_owner;

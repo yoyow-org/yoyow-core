@@ -113,7 +113,7 @@ void database::cancel_order( const limit_order_object& order, bool create_virtua
    auto refunded = order.amount_for_sale();
 
    modify( order.seller(*this).statistics(*this),[&]( account_statistics_object& obj ){
-      if( refunded.asset_id == asset_id_type() )
+      if( refunded.asset_id == GRAPHENE_CORE_ASSET_AID )
       {
          obj.total_core_in_orders -= refunded.amount;
       }
@@ -156,8 +156,8 @@ bool maybe_cull_small_order( database& db, const limit_order_object& order )
 bool database::apply_order(const limit_order_object& new_order_object, bool allow_black_swan)
 {
    auto order_id = new_order_object.id;
-   const asset_object& sell_asset = get(new_order_object.amount_for_sale().asset_id);
-   const asset_object& receive_asset = get(new_order_object.amount_to_receive().asset_id);
+   const asset_object& sell_asset = get(asset_id_type(new_order_object.amount_for_sale().asset_id));
+   const asset_object& receive_asset = get(asset_id_type(new_order_object.amount_to_receive().asset_id));
 
    // Possible optimization: We only need to check calls if both are true:
    //  - The new order is at the front of the book
@@ -300,7 +300,7 @@ bool database::fill_order( const limit_order_object& order, const asset& pays, c
    FC_ASSERT( pays.asset_id != receives.asset_id );
 
    const account_object& seller = order.seller(*this);
-   const asset_object& recv_asset = receives.asset_id(*this);
+   const asset_object& recv_asset = asset_id_type(receives.asset_id)(*this);
 
    auto issuer_fees = pay_market_fees( recv_asset, receives );
    pay_order( seller, receives - issuer_fees, pays );
@@ -352,7 +352,7 @@ bool database::fill_order( const call_order_object& order, const asset& pays, co
               o.collateral = 0;
             }
        });
-   const asset_object& mia = receives.asset_id(*this);
+   const asset_object& mia = asset_id_type(receives.asset_id)(*this);
    assert( mia.is_market_issued() );
 
    const asset_dynamic_data_object& mia_ddo = mia.dynamic_asset_data_id(*this);
@@ -363,7 +363,7 @@ bool database::fill_order( const call_order_object& order, const asset& pays, co
       });
 
    const account_object& borrower = order.borrower(*this);
-   if( collateral_freed || pays.asset_id == asset_id_type() )
+   if( collateral_freed || pays.asset_id == GRAPHENE_CORE_ASSET_AID )
    {
       const account_statistics_object& borrower_statistics = borrower.statistics(*this);
       if( collateral_freed )
@@ -372,7 +372,7 @@ bool database::fill_order( const call_order_object& order, const asset& pays, co
       modify( borrower_statistics, [&]( account_statistics_object& b ){
               if( collateral_freed && collateral_freed->amount > 0 )
                 b.total_core_in_orders -= collateral_freed->amount;
-              if( pays.asset_id == asset_id_type() )
+              if( pays.asset_id == GRAPHENE_CORE_ASSET_AID )
                 b.total_core_in_orders -= pays.amount;
 
               assert( b.total_core_in_orders >= 0 );
@@ -392,7 +392,7 @@ bool database::fill_order(const force_settlement_object& settle, const asset& pa
 { try {
    bool filled = false;
 
-   auto issuer_fees = pay_market_fees(get(receives.asset_id), receives);
+   auto issuer_fees = pay_market_fees(get(asset_id_type(receives.asset_id)), receives);
 
    if( pays < settle.balance )
    {
@@ -550,7 +550,7 @@ void database::pay_order( const account_object& receiver, const asset& receives,
 {
    const auto& balances = receiver.statistics(*this);
    modify( balances, [&]( account_statistics_object& b ){
-         if( pays.asset_id == asset_id_type() )
+         if( pays.asset_id == GRAPHENE_CORE_ASSET_AID )
          {
             b.total_core_in_orders -= pays.amount;
          }
