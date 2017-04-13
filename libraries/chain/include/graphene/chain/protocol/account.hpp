@@ -77,7 +77,7 @@ namespace graphene { namespace chain {
       asset           max_share_per_article;
       asset           max_share_total;
 
-      extensions_type        extensions;
+      extensions_type extensions;
 
       void validate()const;
    };
@@ -117,11 +117,12 @@ namespace graphene { namespace chain {
 
       extension< ext > extensions;
 
-      account_uid_type fee_payer()const { return reg_info.registrar; }
+      account_id_type fee_payer()const { FC_ASSERT(false, "deprecated."); return account_id_type(); }
+      account_uid_type fee_payer_uid()const { return reg_info.registrar; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& )const;
 
-      void get_required_active_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
          // registrar should be required anyway as it is the fee_payer(), but we insert it here just to be sure
          a.insert( reg_info.registrar );

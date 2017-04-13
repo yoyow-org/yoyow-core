@@ -220,6 +220,24 @@ namespace graphene { namespace chain {
        return p1.key_data != p2.key_data;
     }
 
+    account_uid_type calc_account_uid( uint64_t id_without_checksum )
+    {
+       const auto max = ( uint64_t(-1) >> 8 );
+       const auto id = ( id_without_checksum & max );
+       const auto hash = fc::sha256::hash( id );
+       const auto head = ( hash._hash[0] >> 56 );
+       return ( ( id << 8 ) | head );
+    }
+
+    bool is_valid_account_uid( const account_uid_type uid )
+    {
+       const auto checksum = ( uid & 0xFF );
+       const auto to_check = ( uid >> 8 );
+       const auto hash = fc::sha256::hash( to_check );
+       const auto head = ( hash._hash[0] >> 56 );
+       return ( checksum == head );
+    }
+
 } } // graphene::chain
 
 namespace fc

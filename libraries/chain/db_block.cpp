@@ -575,9 +575,18 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
 
    if( !(skip & (skip_transaction_signatures | skip_authority_check) ) )
    {
-      auto get_active = [&]( account_id_type id ) { return &id(*this).active; };
-      auto get_owner  = [&]( account_id_type id ) { return &id(*this).owner;  };
-      trx.verify_authority( chain_id, get_active, get_owner, get_global_properties().parameters.max_authority_depth );
+      //auto get_active = [&]( account_id_type id ) { return &id(*this).active; };
+      //auto get_owner  = [&]( account_id_type id ) { return &id(*this).owner;  };
+      //trx.verify_authority( chain_id, get_active, get_owner, get_global_properties().parameters.max_authority_depth );
+
+      auto get_owner_by_uid      = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).owner);     };
+      auto get_active_by_uid     = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).active);    };
+      auto get_secondary_by_uid  = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).secondary); };
+      trx.verify_authority( chain_id,
+                            get_owner_by_uid,
+                            get_active_by_uid,
+                            get_secondary_by_uid,
+                            chain_parameters.max_authority_depth );
    }
 
    //Skip all manner of expiration and TaPoS checking if we're on block 1; It's impossible that the transaction is

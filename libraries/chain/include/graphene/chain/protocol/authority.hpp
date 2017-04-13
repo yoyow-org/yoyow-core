@@ -48,6 +48,26 @@ namespace graphene { namespace chain {
          active = 1,
          key    = 2
       };
+      enum account_auth_type
+      {
+         owner_auth = 0,
+         active_auth = 1,
+         secondary_auth = 2
+      };
+      struct account_uid_auth_type
+      {
+         account_uid_type uid;
+         account_auth_type auth_type;
+
+         account_uid_auth_type( account_uid_type _uid = GRAPHENE_NULL_ACCOUNT_UID, account_auth_type _type = active_auth )
+         : uid(_uid), auth_type(_type) {}
+
+         friend bool operator == ( const account_uid_auth_type& a, const account_uid_auth_type& b )
+         { return std::tie( a.uid, a.auth_type ) == std::tie( b.uid, b.auth_type ); }
+         friend bool operator <  ( const account_uid_auth_type& a, const account_uid_auth_type& b )
+         { return std::tie( a.uid, a.auth_type ) <  std::tie( b.uid, b.auth_type ); }
+      };
+
       void add_authority( const public_key_type& k, weight_type w )
       {
          key_auths[k] = w;
@@ -60,12 +80,17 @@ namespace graphene { namespace chain {
       {
          account_auths[k] = w;
       }
+      void add_authority( account_uid_auth_type k, weight_type w )
+      {
+         account_uid_auths[k] = w;
+      }
       bool is_impossible()const
       {
          uint64_t auth_weights = 0;
          for( const auto& item : account_auths ) auth_weights += item.second;
          for( const auto& item : key_auths ) auth_weights += item.second;
          for( const auto& item : address_auths ) auth_weights += item.second;
+         for( const auto& item : account_uid_auths ) auth_weights += item.second;
          return auth_weights < weight_threshold;
       }
 
@@ -103,11 +128,21 @@ namespace graphene { namespace chain {
       {
          return (a.weight_threshold == b.weight_threshold) &&
                 (a.account_auths == b.account_auths) &&
+                (a.account_uid_auths == b.account_uid_auths) &&
                 (a.key_auths == b.key_auths) &&
                 (a.address_auths == b.address_auths); 
       }
-      uint32_t num_auths()const { return account_auths.size() + key_auths.size() + address_auths.size(); }
-      void     clear() { account_auths.clear(); key_auths.clear(); }
+      uint32_t num_auths()const
+      { return account_auths.size() + account_uid_auths.size() + key_auths.size() + address_auths.size(); }
+
+      void     clear()
+      { account_auths.clear(); account_uid_auths.clear(); key_auths.clear(); address_auths.clear(); }
+
+      static authority null_uid_authority()
+      {
+         static account_uid_auth_type null_uid_auth( GRAPHENE_NULL_ACCOUNT_UID, active_auth );
+         return authority( 1, null_uid_auth, 1 );
+      }
 
       static authority null_authority()
       {
@@ -116,6 +151,7 @@ namespace graphene { namespace chain {
 
       uint32_t                              weight_threshold = 0;
       flat_map<account_id_type,weight_type> account_auths;
+      flat_map<account_uid_auth_type,weight_type> account_uid_auths;
       flat_map<public_key_type,weight_type> key_auths;
       /** needed for backward compatibility only */
       flat_map<address,weight_type>         address_auths;
@@ -129,7 +165,14 @@ void add_authority_accounts(
    const authority& a
    );
 
+void add_authority_account_uids(
+   flat_set<authority::account_uid_auth_type>& result,
+   const authority& a
+   );
+
 } } // namespace graphene::chain
 
-FC_REFLECT( graphene::chain::authority, (weight_threshold)(account_auths)(key_auths)(address_auths) )
+FC_REFLECT( graphene::chain::authority, (weight_threshold)(account_auths)(account_uid_auths)(key_auths)(address_auths) )
+FC_REFLECT( graphene::chain::authority::account_uid_auth_type, (uid)(auth_type) )
 FC_REFLECT_ENUM( graphene::chain::authority::classification, (owner)(active)(key) )
+FC_REFLECT_ENUM( graphene::chain::authority::account_auth_type, (owner_auth)(active_auth)(secondary_auth) )

@@ -86,6 +86,10 @@ namespace graphene { namespace chain {
    typedef uint64_t                    account_uid_type;
    typedef uint64_t                    asset_aid_type;
 
+   account_uid_type                    calc_account_uid( uint64_t id_without_checksum );
+   bool                                is_valid_account_uid( const account_uid_type uid );
+
+
    enum asset_issuer_permission_flags
    {
       charge_market_fee    = 0x01, /**< an issuer-specified percentage of all market trades in this asset is paid to the issuer */

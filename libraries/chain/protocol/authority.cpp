@@ -35,4 +35,13 @@ void add_authority_accounts(
       result.insert( item.first );
 }
 
+void add_authority_account_uids(
+   flat_set<authority::account_uid_auth_type>& result,
+   const authority& a
+   )
+{
+   for( auto& item : a.account_uid_auths )
+      result.insert( item.first );
+}
+
 } } // graphene::chain

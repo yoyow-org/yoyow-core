@@ -47,12 +47,12 @@ namespace graphene { namespace chain {
     * Defines the set of valid operations as a discriminated union type.
     */
    typedef fc::static_variant<
+            account_create_operation,
             transfer_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
             call_order_update_operation,
             fill_order_operation,           // VIRTUAL
-            account_create_operation,
             account_update_operation,
             account_whitelist_operation,
             account_upgrade_operation,
@@ -102,9 +102,16 @@ namespace graphene { namespace chain {
     *
     *  @return a set of required authorities for @ref op
     */
-   void operation_get_required_authorities( const operation& op, 
+   void operation_get_required_authorities( const operation& op,
                                             flat_set<account_id_type>& active,
                                             flat_set<account_id_type>& owner,
+                                            vector<authority>&  other );
+
+   // TODO possible performance improvement by using another data structure other than flat_set, when the size is big
+   void operation_get_required_uid_authorities( const operation& op,
+                                            flat_set<account_uid_type>& owner_uids,
+                                            flat_set<account_uid_type>& active_uids,
+                                            flat_set<account_uid_type>& secondary_uids,
                                             vector<authority>&  other );
 
    void operation_validate( const operation& op );

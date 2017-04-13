@@ -27,15 +27,6 @@
 
 namespace graphene { namespace chain {
 
-bool is_valid_uid( const account_uid_type uid)
-{
-   const auto checksum = ( uid & 0xFF );
-   const auto to_check = ( uid >> 8 );
-   const auto hash = fc::sha256::hash( to_check );
-   const auto head = ( hash._hash[0] >> 56 );
-   return ( checksum == head );
-}
-
 void validate_account_name( const string& name )
 {
    const auto len = name.size();
@@ -181,14 +172,14 @@ bool is_cheap_name( const string& n )
 
 void account_options::validate() const
 {
-   FC_ASSERT( is_valid_uid( voting_account ), "voting_account should be valid." );
+   FC_ASSERT( is_valid_account_uid( voting_account ), "voting_account should be valid." );
    //extensions.validate();
 }
 
 void account_reg_info::validate() const
 {
-   FC_ASSERT( is_valid_uid( registrar ), "registrar should be valid." );
-   FC_ASSERT( is_valid_uid( referrer ), "referrer should be valid." );
+   FC_ASSERT( is_valid_account_uid( registrar ), "registrar should be valid." );
+   FC_ASSERT( is_valid_account_uid( referrer ), "referrer should be valid." );
    FC_ASSERT( registrar_percent <= GRAPHENE_100_PERCENT, "registrar_percent should not exceed 100%." );
    FC_ASSERT( referrer_percent <= GRAPHENE_100_PERCENT, "referrer_percent should not exceed 100%." );
    FC_ASSERT( registrar_percent + referrer_percent <= GRAPHENE_100_PERCENT,
@@ -201,11 +192,6 @@ void account_reg_info::validate() const
    // allowance_per_article should be >= 0
    // max_share_per_article should be >= 0
    // max_share_total should be >= 0
-   //   uint16_t        registrar_percent = 0;
-   //   uint16_t        referrer_percent = 0;
-   //   asset           allowance_per_article;
-   //   asset           max_share_per_article;
-   //   asset           max_share_total;
 
    //extensions.validate();
 }
@@ -214,8 +200,8 @@ share_type account_create_operation::calculate_fee( const fee_parameters_type& k
 {
    auto core_fee_required = k.basic_fee;
 
-   if( !is_cheap_name(name) )
-      core_fee_required = k.premium_fee;
+   //if( !is_cheap_name(name) )
+   //   core_fee_required = k.premium_fee;
 
    // Authorities and vote lists can be arbitrarily large, so charge a data fee for big ones
    auto data_fee =  calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte ); 
@@ -229,16 +215,19 @@ void account_create_operation::validate()const
 {
    FC_ASSERT( fee.amount >= 0 );
    FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of fee should be 0." );
-   FC_ASSERT( is_valid_uid( uid ), "uid should be valid." );
+   FC_ASSERT( is_valid_account_uid( uid ), "uid should be valid." );
    validate_account_name ( name );
    FC_ASSERT( owner.num_auths() != 0 );
-   FC_ASSERT( owner.address_auths.size() == 0 );
+   FC_ASSERT( owner.address_auths.size() == 0, "cannot use address_auth in owner authority" );
+   FC_ASSERT( owner.account_auths.size() == 0, "account_auth deprecated, use account_uid_auth instead" );
    FC_ASSERT( !owner.is_impossible(), "cannot create an account with an imposible owner authority threshold" );
    FC_ASSERT( active.num_auths() != 0 );
-   FC_ASSERT( active.address_auths.size() == 0 );
+   FC_ASSERT( active.address_auths.size() == 0, "cannot use address_auth in active authority" );
+   FC_ASSERT( active.account_auths.size() == 0, "account_auth deprecated, use account_uid_auth instead" );
    FC_ASSERT( !active.is_impossible(), "cannot create an account with an imposible active authority threshold" );
    FC_ASSERT( secondary.num_auths() != 0 );
-   FC_ASSERT( secondary.address_auths.size() == 0 );
+   FC_ASSERT( secondary.address_auths.size() == 0, "cannot use address_auth in secondary authority" );
+   FC_ASSERT( secondary.account_auths.size() == 0, "account_auth deprecated, use account_uid_auth instead" );
    FC_ASSERT( !secondary.is_impossible(), "cannot create an account with an imposible secondary authority threshold" );
    options.validate();
    reg_info.validate();
@@ -260,8 +249,6 @@ void account_create_operation::validate()const
       }
    }
 }
-
-
 
 
 share_type account_update_operation::calculate_fee( const fee_parameters_type& k )const

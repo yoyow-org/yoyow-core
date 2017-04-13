@@ -61,24 +61,51 @@ struct operation_get_required_auth
      flat_set<account_id_type>& own,
      vector<authority>&  oth ):active(a),owner(own),other(oth){}
 
-   void operator()( const account_create_operation& v )const 
-   { 
-      // TODO revieW
-      /*
+   template<typename T>
+   void operator()( const T& v )const
+   {
       active.insert( v.fee_payer() );
-      v.get_required_active_authorities( active ); 
-      v.get_required_owner_authorities( owner ); 
+      v.get_required_active_authorities( active );
+      v.get_required_owner_authorities( owner );
       v.get_required_authorities( other );
-      */
+   }
+};
+
+struct operation_get_required_uid_auth
+{
+   typedef void result_type;
+
+   flat_set<account_uid_type>& owner_uids;
+   flat_set<account_uid_type>& active_uids;
+   flat_set<account_uid_type>& secondary_uids;
+   vector<authority>&          other;
+
+
+   operation_get_required_uid_auth( flat_set<account_uid_type>& own,
+     flat_set<account_uid_type>& a,
+     flat_set<account_uid_type>& s,
+     vector<authority>&  oth ):owner_uids(own),active_uids(a),secondary_uids(s),other(oth){}
+
+   void operator()( const account_create_operation& v )const
+   {
+      active_uids.insert( v.fee_payer_uid() );
+      v.get_required_owner_uid_authorities( owner_uids );
+      v.get_required_active_uid_authorities( active_uids );
+      v.get_required_secondary_uid_authorities( secondary_uids );
+      v.get_required_authorities( other );
    }
 
    template<typename T>
-   void operator()( const T& v )const 
-   { 
-      active.insert( v.fee_payer() );
-      v.get_required_active_authorities( active ); 
-      v.get_required_owner_authorities( owner ); 
+   void operator()( const T& v )const
+   {
+      FC_ASSERT( false, "not implemented." );
+      /*
+      active.insert( v.fee_payer_uid() );
+      v.get_required_owner_uid_authorities( owner );
+      v.get_required_active_uid_authorities( active );
+      v.get_required_secondary_uid_authorities( secondary );
       v.get_required_authorities( other );
+      */
    }
 };
 
@@ -87,12 +114,21 @@ void operation_validate( const operation& op )
    op.visit( operation_validator() );
 }
 
-void operation_get_required_authorities( const operation& op, 
+void operation_get_required_authorities( const operation& op,
                                          flat_set<account_id_type>& active,
                                          flat_set<account_id_type>& owner,
                                          vector<authority>&  other )
 {
    op.visit( operation_get_required_auth( active, owner, other ) );
+}
+
+void operation_get_required_uid_authorities( const operation& op,
+                                         flat_set<account_uid_type>& owner_uids,
+                                         flat_set<account_uid_type>& active_uids,
+                                         flat_set<account_uid_type>& secondary_uids,
+                                         vector<authority>&  other )
+{
+   op.visit( operation_get_required_uid_auth( owner_uids, active_uids, secondary_uids, other ) );
 }
 
 } } // namespace graphene::chain
