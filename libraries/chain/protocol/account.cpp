@@ -188,6 +188,7 @@ void account_reg_info::validate() const
    FC_ASSERT( allowance_per_article.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of allowance_per_article should be 0." );
    FC_ASSERT( max_share_per_article.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of max_share_per_article should be 0." );
    FC_ASSERT( max_share_total.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of max_share_total should be 0." );
+   FC_ASSERT( buyout_percent <= GRAPHENE_100_PERCENT, "buyout_percent should not exceed 100%." );
    // ==== checks below are not needed
    // allowance_per_article should be >= 0
    // max_share_per_article should be >= 0

@@ -98,7 +98,7 @@ struct blind_receipt
 {
    std::pair<public_key_type,fc::time_point>        from_date()const { return std::make_pair(from_key,date); }
    std::pair<public_key_type,fc::time_point>        to_date()const   { return std::make_pair(to_key,date);   }
-   std::tuple<public_key_type,asset_id_type,bool>   to_asset_used()const   { return std::make_tuple(to_key,amount.asset_id,used);   }
+   std::tuple<public_key_type,asset_id_type,bool>   to_asset_used()const   { return std::make_tuple(to_key,asset_id_type(amount.asset_id),used);   }
    const commitment_type& commitment()const        { return data.commitment; }
 
    fc::time_point                  date;

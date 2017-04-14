@@ -69,13 +69,13 @@ namespace graphene { namespace chain {
       /// This account receives a portion of the reward split between registrar and referrer.
       account_uid_type referrer;
 
-      /// Of the fee split between registrar and referrer, this percentage goes to the referrer. The rest goes to the
-      /// registrar.
+      /// The percentages go to the registrar and the referrer.
       uint16_t        registrar_percent = 0;
       uint16_t        referrer_percent = 0;
       asset           allowance_per_article;
       asset           max_share_per_article;
       asset           max_share_total;
+      uint16_t        buyout_percent = GRAPHENE_100_PERCENT;
 
       extensions_type extensions;
 
@@ -293,7 +293,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT(graphene::chain::account_options, (memo_key)(voting_account)(extensions))
 FC_REFLECT(graphene::chain::account_reg_info, (registrar)(referrer)(registrar_percent)(referrer_percent)
-                                              (allowance_per_article)(max_share_per_article)(max_share_total)
+                                              (allowance_per_article)(max_share_per_article)(max_share_total)(buyout_percent)
                                               (extensions))
 
 FC_REFLECT_ENUM( graphene::chain::account_whitelist_operation::account_listing,

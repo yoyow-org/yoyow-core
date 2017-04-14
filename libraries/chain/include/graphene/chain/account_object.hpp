@@ -171,6 +171,15 @@ namespace graphene { namespace chain {
          typedef account_options  options_type;
          account_options options;
 
+         account_reg_info reg_info;
+
+         bool is_full_member = false;
+         bool is_registrar = false;
+         bool is_verified = false;
+
+         string active_data = "{}";
+         string secondary_data = "{}";
+
          /// The reference implementation records the account's statistics in a separate object. This field contains the
          /// ID of that object.
          account_statistics_id_type statistics;
@@ -378,13 +387,17 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
                     (membership_expiration_date)(registrar)(referrer)(lifetime_referrer)
                     (network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
-                    (name)(owner)(active)(options)(statistics)(whitelisting_accounts)(blacklisting_accounts)
+                    (uid)(name)(owner)(active)(secondary)(options)(reg_info)
+                    (is_full_member)(is_registrar)(is_verified)
+                    (active_data)(secondary_data)
+                    (statistics)
+                    (whitelisting_accounts)(blacklisting_accounts)
                     (whitelisted_accounts)(blacklisted_accounts)
                     (cashback_vb)
                     (owner_special_authority)(active_special_authority)
                     (top_n_control_flags)
                     (allowed_assets)
-                    )
+                  )
 
 FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (graphene::db::object),

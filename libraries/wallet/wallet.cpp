@@ -598,6 +598,10 @@ public:
          return *rec;
       }
    }
+   account_uid_type get_account_uid(string account_name_or_id) const
+   {
+      return get_account(account_name_or_id).get_uid();
+   }
    account_id_type get_account_id(string account_name_or_id) const
    {
       return get_account(account_name_or_id).get_id();
@@ -934,6 +938,8 @@ public:
             this->get_account( registrar_account );
       FC_ASSERT( registrar_account_object.is_lifetime_member() );
 
+      // TODO review
+      /*
       account_id_type registrar_account_id = registrar_account_object.id;
 
       account_object referrer_account_object =
@@ -942,6 +948,7 @@ public:
       account_create_op.referrer_percent = uint16_t( referrer_percent * GRAPHENE_1_PERCENT );
 
       account_create_op.registrar = registrar_account_id;
+      */
       account_create_op.name = name;
       account_create_op.owner = authority(1, owner, 1);
       account_create_op.active = authority(1, active, 1);
@@ -1057,6 +1064,8 @@ public:
 
          account_object registrar_account_object = get_account( registrar_account );
 
+         // TODO: review
+         /*
          account_id_type registrar_account_id = registrar_account_object.id;
 
          account_object referrer_account_object = get_account( referrer_account );
@@ -1064,6 +1073,7 @@ public:
          account_create_op.referrer_percent = referrer_account_object.referrer_rewards_percentage;
 
          account_create_op.registrar = registrar_account_id;
+         */
          account_create_op.name = account_name;
          account_create_op.owner = authority(1, owner_pubkey, 1);
          account_create_op.active = authority(1, active_pubkey, 1);
@@ -1578,7 +1588,8 @@ public:
       for( const worker_id_type& wid : merged )
          query_ids.push_back( wid );
 
-      flat_set<vote_id_type> new_votes( acct.options.votes );
+      // TODO: review
+      flat_set<vote_id_type> new_votes;//( acct.options.votes );
 
       fc::variants objects = _remote_db->get_objects( query_ids );
       for( const variant& obj : objects )
@@ -1598,7 +1609,8 @@ public:
       account_update_operation update_op;
       update_op.account = acct.id;
       update_op.new_options = acct.options;
-      update_op.new_options->votes = new_votes;
+      // TODO: review
+      //update_op.new_options->votes = new_votes;
 
       signed_transaction tx;
       tx.operations.push_back( update_op );
@@ -1677,6 +1689,8 @@ public:
       fc::optional<committee_member_object> committee_member_obj = _remote_db->get_committee_member_by_account(committee_member_owner_account_id);
       if (!committee_member_obj)
          FC_THROW("Account ${committee_member} is not registered as a committee_member", ("committee_member", committee_member));
+      // TODO: review
+      /*
       if (approve)
       {
          auto insert_result = voting_account_object.options.votes.insert(committee_member_obj->vote_id);
@@ -1689,6 +1703,7 @@ public:
          if (!votes_removed)
             FC_THROW("Account ${account} is already not voting for committee_member ${committee_member}", ("account", voting_account)("committee_member", committee_member));
       }
+      */
       account_update_operation account_update_op;
       account_update_op.account = voting_account_object.id;
       account_update_op.new_options = voting_account_object.options;
@@ -1711,6 +1726,8 @@ public:
       fc::optional<witness_object> witness_obj = _remote_db->get_witness_by_account(witness_owner_account_id);
       if (!witness_obj)
          FC_THROW("Account ${witness} is not registered as a witness", ("witness", witness));
+      // TODO: review
+      /*
       if (approve)
       {
          auto insert_result = voting_account_object.options.votes.insert(witness_obj->vote_id);
@@ -1723,6 +1740,7 @@ public:
          if (!votes_removed)
             FC_THROW("Account ${account} is already not voting for witness ${witness}", ("account", voting_account)("witness", witness));
       }
+      */
       account_update_operation account_update_op;
       account_update_op.account = voting_account_object.id;
       account_update_op.new_options = voting_account_object.options;
@@ -1742,16 +1760,16 @@ public:
       account_object account_object_to_modify = get_account(account_to_modify);
       if (voting_account)
       {
-         account_id_type new_voting_account_id = get_account_id(*voting_account);
-         if (account_object_to_modify.options.voting_account == new_voting_account_id)
+         account_uid_type new_voting_account_uid = get_account_uid(*voting_account);
+         if (account_object_to_modify.options.voting_account == new_voting_account_uid)
             FC_THROW("Voting proxy for ${account} is already set to ${voter}", ("account", account_to_modify)("voter", *voting_account));
-         account_object_to_modify.options.voting_account = new_voting_account_id;
+         account_object_to_modify.options.voting_account = new_voting_account_uid;
       }
       else
       {
-         if (account_object_to_modify.options.voting_account == GRAPHENE_PROXY_TO_SELF_ACCOUNT)
+         if (account_object_to_modify.options.voting_account == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID)
             FC_THROW("Account ${account} is already voting for itself", ("account", account_to_modify));
-         account_object_to_modify.options.voting_account = GRAPHENE_PROXY_TO_SELF_ACCOUNT;
+         account_object_to_modify.options.voting_account = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
       }
 
       account_update_operation account_update_op;
@@ -1773,12 +1791,15 @@ public:
    { try {
       account_object account_object_to_modify = get_account(account_to_modify);
 
+      // TODO: review
+      /*
       if (account_object_to_modify.options.num_witness == desired_number_of_witnesses &&
           account_object_to_modify.options.num_committee == desired_number_of_committee_members)
          FC_THROW("Account ${account} is already voting for ${witnesses} witnesses and ${committee_members} committee_members",
                   ("account", account_to_modify)("witnesses", desired_number_of_witnesses)("committee_members",desired_number_of_witnesses));
       account_object_to_modify.options.num_witness = desired_number_of_witnesses;
       account_object_to_modify.options.num_committee = desired_number_of_committee_members;
+      */
 
       account_update_operation account_update_op;
       account_update_op.account = account_object_to_modify.id;
@@ -2094,7 +2115,7 @@ public:
          auto r = result.as<vector<asset>>();
          vector<asset_object> asset_recs;
          std::transform(r.begin(), r.end(), std::back_inserter(asset_recs), [this](const asset& a) {
-            return get_asset(a.asset_id);
+            return get_asset(asset_id_type(a.asset_id));
          });
 
          std::stringstream ss;
@@ -2109,7 +2130,7 @@ public:
          auto r = result.as<vector<asset>>();
          vector<asset_object> asset_recs;
          std::transform(r.begin(), r.end(), std::back_inserter(asset_recs), [this](const asset& a) {
-            return get_asset(a.asset_id);
+            return get_asset(asset_id_type(a.asset_id));
          });
 
          std::stringstream ss;
@@ -2126,7 +2147,7 @@ public:
          ss << "\n";
          for( const auto& out : r.outputs )
          {
-            asset_object a = get_asset( out.decrypted_memo.amount.asset_id );
+            asset_object a = get_asset( asset_id_type(out.decrypted_memo.amount.asset_id) );
             ss << a.amount_to_pretty_string( out.decrypted_memo.amount ) << " to  " << out.label << "\n\t  receipt: " << out.confirmation_receipt <<"\n\n";
          }
          return ss.str();
@@ -2139,7 +2160,7 @@ public:
          ss << "\n";
          for( const auto& out : r.outputs )
          {
-            asset_object a = get_asset( out.decrypted_memo.amount.asset_id );
+            asset_object a = get_asset( asset_id_type(out.decrypted_memo.amount.asset_id) );
             ss << a.amount_to_pretty_string( out.decrypted_memo.amount ) << " to  " << out.label << "\n\t  receipt: " << out.confirmation_receipt <<"\n\n";
          }
          return ss.str();
@@ -2148,7 +2169,7 @@ public:
       {
          auto r = result.as<blind_receipt>();
          std::stringstream ss;
-         asset_object as = get_asset( r.amount.asset_id );
+         asset_object as = get_asset( asset_id_type(r.amount.asset_id) );
          ss << as.amount_to_pretty_string( r.amount ) << "  " << r.from_label << "  =>  " << r.to_label  << "  " << r.memo <<"\n";
          return ss.str();
       };
@@ -2161,7 +2182,7 @@ public:
          ss << "====================================================================================\n";
          for( auto& r : records )
          {
-            asset_object as = get_asset( r.amount.asset_id );
+            asset_object as = get_asset( asset_id_type(r.amount.asset_id) );
             ss << fc::get_approximate_relative_time_string( r.date )
                << "  " << as.amount_to_pretty_string( r.amount ) << "  " << r.from_label << "  =>  " << r.to_label  << "  " << r.memo <<"\n";
          }
@@ -2207,7 +2228,7 @@ public:
             << "\n====================================================================================="
             << "|=====================================================================================\n";
 
-         for (int i = 0; i < bids.size() || i < asks.size() ; i++)
+         for (size_t i = 0; i < bids.size() || i < asks.size() ; i++)
          {
             if ( i < bids.size() )
             {
@@ -2597,7 +2618,7 @@ public:
 };
 
 std::string operation_printer::fee(const asset& a)const {
-   out << "   (Fee: " << wallet.get_asset(a.asset_id).amount_to_pretty_string(a) << ")";
+   out << "   (Fee: " << wallet.get_asset(asset_id_type(a.asset_id)).amount_to_pretty_string(a) << ")";
    return "";
 }
 
@@ -2606,7 +2627,7 @@ std::string operation_printer::operator()(const T& op)const
 {
    //balance_accumulator acc;
    //op.get_balance_delta( acc, result );
-   auto a = wallet.get_asset( op.fee.asset_id );
+   auto a = wallet.get_asset( asset_id_type(op.fee.asset_id) );
    auto payer = wallet.get_account( op.fee_payer() );
 
    string op_name = fc::get_typename<T>::name();
@@ -2625,7 +2646,7 @@ std::string operation_printer::operator()(const T& op)const
 }
 std::string operation_printer::operator()(const transfer_from_blind_operation& op)const
 {
-   auto a = wallet.get_asset( op.fee.asset_id );
+   auto a = wallet.get_asset( asset_id_type(op.fee.asset_id) );
    auto receiver = wallet.get_account( op.to );
 
    out <<  receiver.name
@@ -2634,8 +2655,8 @@ std::string operation_printer::operator()(const transfer_from_blind_operation& o
 }
 std::string operation_printer::operator()(const transfer_to_blind_operation& op)const
 {
-   auto fa = wallet.get_asset( op.fee.asset_id );
-   auto a = wallet.get_asset( op.amount.asset_id );
+   auto fa = wallet.get_asset( asset_id_type(op.fee.asset_id) );
+   auto a = wallet.get_asset( asset_id_type(op.amount.asset_id) );
    auto sender = wallet.get_account( op.from );
 
    out <<  sender.name
@@ -2645,7 +2666,7 @@ std::string operation_printer::operator()(const transfer_to_blind_operation& op)
 }
 string operation_printer::operator()(const transfer_operation& op) const
 {
-   out << "Transfer " << wallet.get_asset(op.amount.asset_id).amount_to_pretty_string(op.amount)
+   out << "Transfer " << wallet.get_asset(asset_id_type(op.amount.asset_id)).amount_to_pretty_string(op.amount)
        << " from " << wallet.get_account(op.from).name << " to " << wallet.get_account(op.to).name;
    std::string memo;
    if( op.memo )
@@ -2712,7 +2733,7 @@ std::string operation_result_printer::operator()(const object_id_type& oid)
 
 std::string operation_result_printer::operator()(const asset& a)
 {
-   return _wallet.get_asset(a.asset_id).amount_to_pretty_string(a);
+   return _wallet.get_asset(asset_id_type(a.asset_id)).amount_to_pretty_string(a);
 }
 
 }}}
@@ -3660,7 +3681,7 @@ vector< signed_transaction > wallet_api_impl::import_balance( string name_or_id,
    addrs.clear();
 
    set<asset_id_type> bal_types;
-   for( auto b : balances ) bal_types.insert( b.balance.asset_id );
+   for( auto b : balances ) bal_types.insert( asset_id_type(b.balance.asset_id) );
 
    struct claim_tx
    {
@@ -3675,7 +3696,7 @@ vector< signed_transaction > wallet_api_impl::import_balance( string name_or_id,
       op.deposit_to_account = claimer.id;
       for( const balance_object& b : balances )
       {
-         if( b.balance.asset_id == a )
+         if( asset_id_type(b.balance.asset_id) == a )
          {
             op.total_claimed = b.available( dpo.time );
             if( op.total_claimed.amount == 0 )
@@ -3868,7 +3889,7 @@ vector<asset>   wallet_api::get_blind_balances( string key_or_label )
       {
          auto answer = my->_remote_db->get_blinded_balances( {start->commitment()} );
          if( answer.size() )
-            balances[start->amount.asset_id] += start->amount.amount;
+            balances[asset_id_type(start->amount.asset_id)] += start->amount.amount;
          else
             used.push_back( start->commitment() );
       }
@@ -3986,8 +4007,8 @@ blind_confirmation wallet_api::blind_transfer_help( string from_key_or_label,
    vector<commitment_type> used;
 
    auto& to_asset_used_idx = my->_wallet.blind_receipts.get<by_to_asset_used>();
-   auto start = to_asset_used_idx.lower_bound( std::make_tuple(from_key,amount.asset_id,false)  );
-   auto end = to_asset_used_idx.lower_bound( std::make_tuple(from_key,amount.asset_id,true)  );
+   auto start = to_asset_used_idx.lower_bound( std::make_tuple(from_key,asset_id_type(amount.asset_id),false)  );
+   auto end = to_asset_used_idx.lower_bound( std::make_tuple(from_key,asset_id_type(amount.asset_id),true)  );
    while( start != end )
    {
       auto result = my->_remote_db->get_blinded_balances( {start->commitment() } );

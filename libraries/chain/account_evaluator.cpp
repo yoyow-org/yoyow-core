@@ -53,6 +53,13 @@ void verify_authority_accounts( const database& db, const authority& a )
          "Account ${a} specified in authority does not exist",
          ("a", acnt.first) );
    }
+   for( const auto& uid_auth : a.account_uid_auths )
+   {
+      GRAPHENE_ASSERT( db.find_account_id_by_uid( uid_auth.first.uid ).valid(),
+         internal_verify_auth_account_not_found,
+         "Account uid ${a} specified in authority does not exist",
+         ("a", uid_auth.first.uid) );
+   }
 }
 
 void verify_account_votes( const database& db, const account_options& options )
@@ -113,15 +120,18 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
    }
    */
 
-   //FC_ASSERT( d.find_object(op.options.voting_account), "Invalid proxy account specified." );
    FC_ASSERT( d.find_account_id_by_uid(op.options.voting_account).valid(), "Invalid proxy account specified." );
-   FC_ASSERT( fee_paying_account->is_lifetime_member(), "Only Lifetime members may register an account." );
-   //FC_ASSERT( op.referrer(d).is_member(d.head_block_time()), "The referrer must be either a lifetime or annual subscriber." );
+   FC_ASSERT( fee_paying_account->is_registrar, "Only registrars may register an account." );
+   const auto& referrer = d.get_account_by_uid( op.reg_info.referrer );
+   FC_ASSERT( referrer.is_full_member, "The referrer must be a full member." );
+
+   //TODO: check the parameters in reg_info against global parameters
 
    try
    {
       verify_authority_accounts( d, op.owner );
       verify_authority_accounts( d, op.active );
+      verify_authority_accounts( d, op.secondary );
    }
    GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_create_max_auth_exceeded )
    GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_create_auth_account_not_found )
@@ -132,13 +142,17 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
       evaluate_special_authority( d, *op.extensions.value.active_special_authority );
    if( op.extensions.value.buyback_options.valid() )
       evaluate_buyback_account_options( d, *op.extensions.value.buyback_options );
-   verify_account_votes( d, op.options );
+   //verify_account_votes( d, op.options );
 
    auto& acnt_indx = d.get_index_type<account_index>();
+   {
+      auto current_account_itr = acnt_indx.indices().get<by_uid>().find( op.uid );
+      FC_ASSERT( current_account_itr == acnt_indx.indices().get<by_uid>().end(), "account uid already exists." );
+   }
    if( op.name.size() )
    {
       auto current_account_itr = acnt_indx.indices().get<by_name>().find( op.name );
-      FC_ASSERT( current_account_itr == acnt_indx.indices().get<by_name>().end() );
+      FC_ASSERT( current_account_itr == acnt_indx.indices().get<by_name>().end(), "account name already exists." );
    }
 
    return void_result();
@@ -148,42 +162,28 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
 { try {
 
    //TODO review
-   /*
    database& d = db();
 
-   uint16_t referrer_percent = o.referrer_percent;
-   bool has_small_percent = (
-         (db().head_block_time() <= HARDFORK_453_TIME)
-      && (o.referrer != o.registrar  )
-      && (o.referrer_percent != 0    )
-      && (o.referrer_percent <= 0x100)
-      );
-
-   if( has_small_percent )
-   {
-      if( referrer_percent >= 100 )
-      {
-         wlog( "between 100% and 0x100%:  ${o}", ("o", o) );
-      }
-      referrer_percent = referrer_percent*100;
-      if( referrer_percent > GRAPHENE_100_PERCENT )
-         referrer_percent = GRAPHENE_100_PERCENT;
-   }
-
    const auto& new_acnt_object = db().create<account_object>( [&]( account_object& obj ){
-         obj.registrar = o.registrar;
-         obj.referrer = o.referrer;
-         obj.lifetime_referrer = o.referrer(db()).lifetime_referrer;
 
-         auto& params = db().get_global_properties().parameters;
-         obj.network_fee_percentage = params.network_percent_of_fee;
-         obj.lifetime_referrer_fee_percentage = params.lifetime_referrer_percent_of_fee;
-         obj.referrer_rewards_percentage = referrer_percent;
 
+         //obj.registrar = o.registrar;
+         //obj.referrer = o.referrer;
+         //obj.lifetime_referrer = o.referrer(db()).lifetime_referrer;
+
+         //auto& params = db().get_global_properties().parameters;
+         //obj.network_fee_percentage = params.network_percent_of_fee;
+         //obj.lifetime_referrer_fee_percentage = params.lifetime_referrer_percent_of_fee;
+         //obj.referrer_rewards_percentage = referrer_percent;
+
+         obj.uid              = o.uid;
          obj.name             = o.name;
          obj.owner            = o.owner;
          obj.active           = o.active;
+         obj.secondary        = o.secondary;
          obj.options          = o.options;
+         obj.reg_info         = o.reg_info;
+
          obj.statistics = db().create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.id;}).id;
 
          if( o.extensions.value.owner_special_authority.valid() )
@@ -197,15 +197,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          }
    });
 
-   if( has_small_percent )
-   {
-      wlog( "Account affected by #453 registered in block ${n}:  ${na} reg=${reg} ref=${ref}:${refp} ltr=${ltr}:${ltrp}",
-         ("n", db().head_block_num()) ("na", new_acnt_object.id)
-         ("reg", o.registrar) ("ref", o.referrer) ("ltr", new_acnt_object.lifetime_referrer)
-         ("refp", new_acnt_object.referrer_rewards_percentage) ("ltrp", new_acnt_object.lifetime_referrer_fee_percentage) );
-      wlog( "Affected account object is ${o}", ("o", new_acnt_object) );
-   }
-
+   /*
    const auto& dynamic_properties = db().get_dynamic_global_properties();
    db().modify(dynamic_properties, [](dynamic_global_property_object& p) {
       ++p.accounts_registered_this_interval;
@@ -217,6 +209,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
       db().modify(global_properties, [&dynamic_properties](global_property_object& p) {
          p.parameters.current_fees->get<account_create_operation>().basic_fee <<= p.parameters.account_fee_scale_bitshifts;
       });
+   */
 
    if(    o.extensions.value.owner_special_authority.valid()
        || o.extensions.value.active_special_authority.valid() )
@@ -243,8 +236,6 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
    }
 
    return new_acnt_object.id;
-   */
-   return account_id_type();
 } FC_CAPTURE_AND_RETHROW((o)) }
 
 
