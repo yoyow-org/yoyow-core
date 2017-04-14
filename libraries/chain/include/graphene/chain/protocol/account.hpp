@@ -64,10 +64,10 @@ namespace graphene { namespace chain {
    struct account_reg_info
    {
       /// This account pays the fee.
-      account_uid_type registrar;
+      account_uid_type registrar = GRAPHENE_NULL_ACCOUNT_UID;
 
       /// This account receives a portion of the reward split between registrar and referrer.
-      account_uid_type referrer;
+      account_uid_type referrer = GRAPHENE_NULL_ACCOUNT_UID;
 
       /// The percentages go to the registrar and the referrer.
       uint16_t        registrar_percent = 0;

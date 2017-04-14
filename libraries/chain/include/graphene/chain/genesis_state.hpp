@@ -38,18 +38,27 @@ using std::vector;
 
 struct genesis_state_type {
    struct initial_account_type {
-      initial_account_type(const string& name = string(),
+      initial_account_type(const account_uid_type uid = 0,
+                           const string& name = string(),
                            const public_key_type& owner_key = public_key_type(),
                            const public_key_type& active_key = public_key_type(),
+                           const public_key_type& secondary_key = public_key_type(),
+                           const public_key_type& memo_key = public_key_type(),
                            bool is_lifetime_member = false)
-         : name(name),
+         : uid(uid),
+           name(name),
            owner_key(owner_key),
            active_key(active_key == public_key_type()? owner_key : active_key),
+           secondary_key(secondary_key == public_key_type()? owner_key : secondary_key),
+           memo_key(memo_key == public_key_type()? owner_key : memo_key),
            is_lifetime_member(is_lifetime_member)
       {}
+      account_uid_type uid;
       string name;
       public_key_type owner_key;
       public_key_type active_key;
+      public_key_type secondary_key;
+      public_key_type memo_key;
       bool is_lifetime_member = false;
    };
    struct initial_asset_type {
@@ -127,7 +136,8 @@ struct genesis_state_type {
 
 } } // namespace graphene::chain
 
-FC_REFLECT(graphene::chain::genesis_state_type::initial_account_type, (name)(owner_key)(active_key)(is_lifetime_member))
+FC_REFLECT(graphene::chain::genesis_state_type::initial_account_type,
+           (uid)(name)(owner_key)(active_key)(secondary_key)(memo_key)(is_lifetime_member))
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_asset_type,
            (symbol)(issuer_name)(description)(precision)(max_supply)(accumulated_fees)(is_bitasset)(collateral_records))

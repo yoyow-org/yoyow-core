@@ -164,8 +164,12 @@
 #define GRAPHENE_COMMITTEE_ACCOUNT_UID (graphene::chain::calc_account_uid(1))
 /// Represents the current witnesses
 #define GRAPHENE_WITNESS_ACCOUNT (graphene::chain::account_id_type(2))
+/// Represents the current witnesses
+#define GRAPHENE_WITNESS_ACCOUNT_UID (graphene::chain::calc_account_uid(2))
 /// Represents the current committee members
 #define GRAPHENE_RELAXED_COMMITTEE_ACCOUNT (graphene::chain::account_id_type(3))
+/// Represents the current committee members
+#define GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID (graphene::chain::calc_account_uid(3))
 /// Represents the canonical account with NO authority (nobody can access funds in null account)
 #define GRAPHENE_NULL_ACCOUNT (graphene::chain::account_id_type(4))
 /// Represents the canonical account with NO authority (nobody can access funds in null account)

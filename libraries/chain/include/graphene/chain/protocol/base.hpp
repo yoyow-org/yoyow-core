@@ -91,6 +91,7 @@ namespace graphene { namespace chain {
       {
          return params.fee;
       }
+      account_uid_type fee_payer_uid()const { return GRAPHENE_TEMP_ACCOUNT_UID; }
       void get_required_authorities( vector<authority>& )const{}
       void get_required_active_authorities( flat_set<account_id_type>& )const{}
       void get_required_owner_authorities( flat_set<account_id_type>& )const{}

@@ -249,67 +249,81 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    create<account_balance_object>([](account_balance_object& b) {
       b.balance = GRAPHENE_MAX_SHARE_SUPPLY;
    });
+   FC_ASSERT(create<account_object>([this](account_object& a) {
+       a.uid = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
+       a.name = "proxy-to-self";
+       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.id;}).id;
+       a.owner.weight_threshold = 1;
+       a.active.weight_threshold = 1;
+       a.secondary.weight_threshold = 1;
+       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT;
+       a.membership_expiration_date = time_point_sec::maximum();
+       a.network_fee_percentage = 0;
+       a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
+   }).get_id() == GRAPHENE_PROXY_TO_SELF_ACCOUNT);
    const account_object& committee_account =
       create<account_object>( [&](account_object& n) {
+         n.uid = GRAPHENE_COMMITTEE_ACCOUNT_UID;
          n.membership_expiration_date = time_point_sec::maximum();
          n.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
          n.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
          n.owner.weight_threshold = 1;
          n.active.weight_threshold = 1;
+         n.secondary.weight_threshold = 1;
          n.name = "committee-account";
          n.statistics = create<account_statistics_object>( [&](account_statistics_object& s){ s.owner = n.id; }).id;
       });
    FC_ASSERT(committee_account.get_id() == GRAPHENE_COMMITTEE_ACCOUNT);
    FC_ASSERT(create<account_object>([this](account_object& a) {
+       a.uid = GRAPHENE_WITNESS_ACCOUNT_UID;
        a.name = "witness-account";
        a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.id;}).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
+       a.secondary.weight_threshold = 1;
        a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_WITNESS_ACCOUNT;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
    }).get_id() == GRAPHENE_WITNESS_ACCOUNT);
    FC_ASSERT(create<account_object>([this](account_object& a) {
+       a.uid = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID;
        a.name = "relaxed-committee-account";
        a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.id;}).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
+       a.secondary.weight_threshold = 1;
        a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
    }).get_id() == GRAPHENE_RELAXED_COMMITTEE_ACCOUNT);
    FC_ASSERT(create<account_object>([this](account_object& a) {
+       a.uid = GRAPHENE_NULL_ACCOUNT_UID;
        a.name = "null-account";
        a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.id;}).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
+       a.secondary.weight_threshold = 1;
+       a.is_registrar = true;
+       a.is_full_member = true;
        a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = 0;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
    }).get_id() == GRAPHENE_NULL_ACCOUNT);
    FC_ASSERT(create<account_object>([this](account_object& a) {
+       a.uid = GRAPHENE_TEMP_ACCOUNT_UID;
        a.name = "temp-account";
        a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.id;}).id;
        a.owner.weight_threshold = 0;
        a.active.weight_threshold = 0;
+       a.secondary.weight_threshold = 0;
        a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_TEMP_ACCOUNT;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
    }).get_id() == GRAPHENE_TEMP_ACCOUNT);
-   FC_ASSERT(create<account_object>([this](account_object& a) {
-       a.name = "proxy-to-self";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.id;}).id;
-       a.owner.weight_threshold = 1;
-       a.active.weight_threshold = 1;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT;
-       a.membership_expiration_date = time_point_sec::maximum();
-       a.network_fee_percentage = 0;
-       a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
-   }).get_id() == GRAPHENE_PROXY_TO_SELF_ACCOUNT);
 
    // Create more special accounts
    while( true )
@@ -410,19 +424,26 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    for( const auto& account : genesis_state.initial_accounts )
    {
       account_create_operation cop;
+      cop.uid = account.uid;
       cop.name = account.name;
       //cop.registrar = GRAPHENE_TEMP_ACCOUNT;
       cop.owner = authority(1, account.owner_key, 1);
+      auto tmp_active_key = account.owner_key;
       if( account.active_key == public_key_type() )
-      {
          cop.active = cop.owner;
-         cop.options.memo_key = account.owner_key;
-      }
       else
       {
          cop.active = authority(1, account.active_key, 1);
-         cop.options.memo_key = account.active_key;
+         tmp_active_key = account.active_key;
       }
+      if( account.secondary_key == public_key_type() )
+         cop.secondary = cop.active;
+      else
+         cop.secondary = authority(1, account.secondary_key, 1);
+      if( account.memo_key == public_key_type() )
+         cop.options.memo_key = tmp_active_key;
+      else
+         cop.options.memo_key = account.memo_key;
       account_id_type account_id(apply_operation(genesis_eval_state, cop).get<object_id_type>());
 
       if( account.is_lifetime_member )
@@ -474,6 +495,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       {
          //int collateral_holder_number = 0;
          total_debts[ new_asset_id ] = 0;
+         // TODO: review
          /*
          for( const auto& collateral_rec : asset.collateral_records )
          {

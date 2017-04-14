@@ -87,8 +87,12 @@ namespace detail {
             initial_state.initial_parameters.block_interval);
       for( uint64_t i = 0; i < initial_state.initial_active_witnesses; ++i )
       {
+         auto uid = calc_account_uid(100+i);
          auto name = "init"+fc::to_string(i);
-         initial_state.initial_accounts.emplace_back(name,
+         initial_state.initial_accounts.emplace_back(uid,
+                                                     name,
+                                                     nathan_key.get_public_key(),
+                                                     nathan_key.get_public_key(),
                                                      nathan_key.get_public_key(),
                                                      nathan_key.get_public_key(),
                                                      true);
@@ -96,7 +100,7 @@ namespace detail {
          initial_state.initial_witness_candidates.push_back({name, nathan_key.get_public_key()});
       }
 
-      initial_state.initial_accounts.emplace_back("nathan", nathan_key.get_public_key());
+      initial_state.initial_accounts.emplace_back(calc_account_uid(90),"nathan", nathan_key.get_public_key());
       initial_state.initial_balances.push_back({nathan_key.get_public_key(),
                                                 GRAPHENE_SYMBOL,
                                                 GRAPHENE_MAX_SHARE_SUPPLY});

@@ -148,7 +148,7 @@ namespace graphene { namespace chain {
          auto* eval = static_cast<DerivedEvaluator*>(this);
          const auto& op = o.get<typename DerivedEvaluator::operation_type>();
 
-         prepare_fee(op.fee_payer(), op.fee);
+         prepare_fee(op.fee_payer_uid(), op.fee);
          if( !trx_state->skip_fee_schedule_check )
          {
             share_type required_fee = calculate_fee_for_operation(op);
@@ -171,7 +171,7 @@ namespace graphene { namespace chain {
 
          auto result = eval->do_apply(op);
 
-         db_adjust_balance(op.fee_payer(), -fee_from_account);
+         db_adjust_balance(op.fee_payer_uid(), -fee_from_account);
 
          return result;
       }
