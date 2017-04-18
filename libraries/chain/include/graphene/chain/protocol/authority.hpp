@@ -80,7 +80,7 @@ namespace graphene { namespace chain {
       {
          account_auths[k] = w;
       }
-      void add_authority( account_uid_auth_type k, weight_type w )
+      void add_authority( account_uid_auth_type& k, weight_type w )
       {
          account_uid_auths[k] = w;
       }

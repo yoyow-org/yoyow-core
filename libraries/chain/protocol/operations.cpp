@@ -88,11 +88,19 @@ struct operation_get_required_uid_auth
 
    void operator()( const account_create_operation& v )const
    {
-      active_uids.insert( v.fee_payer_uid() );
       v.get_required_owner_uid_authorities( owner_uids );
       v.get_required_active_uid_authorities( active_uids );
       v.get_required_secondary_uid_authorities( secondary_uids );
       v.get_required_authorities( other );
+      // fee can be paid with either authority of the payer.
+      // TODO: 1. review the order to minimize number of signatures. can also check before add
+      //       2. review the depth,
+      //       3. less important authority can only pay less fee
+      const auto fee_payer_uid = v.fee_payer_uid();
+      authority fee_payer_auth( 1, authority::account_uid_auth_type( fee_payer_uid, authority::owner_auth ), 1,
+                                   authority::account_uid_auth_type( fee_payer_uid, authority::active_auth ), 1,
+                                   authority::account_uid_auth_type( fee_payer_uid, authority::secondary_auth ), 1 );
+      other.push_back( fee_payer_auth );
    }
 
    template<typename T>
@@ -129,6 +137,20 @@ void operation_get_required_uid_authorities( const operation& op,
                                          vector<authority>&  other )
 {
    op.visit( operation_get_required_uid_auth( owner_uids, active_uids, secondary_uids, other ) );
+}
+
+void validate_asset_id( asset a, const string& object_name )
+{
+   FC_ASSERT( a.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of ${o} should be 0.", ("o", object_name) );
+}
+void validate_op_fee( asset fee, const string& op_name )
+{
+   FC_ASSERT( fee.amount >= 0, "${o}fee should not be negative.", ("o", op_name) );
+   validate_asset_id( fee, op_name + "fee" );
+}
+void validate_percentage( uint16_t p, const string& object_name )
+{
+   FC_ASSERT( p <= GRAPHENE_100_PERCENT, "${o} should not exceed 100%." );
 }
 
 } } // namespace graphene::chain

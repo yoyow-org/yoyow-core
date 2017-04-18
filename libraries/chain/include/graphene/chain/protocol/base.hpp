@@ -122,6 +122,10 @@ namespace graphene { namespace chain {
    //typedef flat_set<future_extensions> extensions_type;
    typedef extension<default_extension_type> extensions_type;
 
+   void validate_asset_id( asset a, const string& object_name = "asset" );
+   void validate_op_fee( asset fee, const string& op_name = "" );
+   void validate_percentage( uint16_t p, const string& object_name = "percentage" );
+
    ///@}
 
 } } // graphene::chain

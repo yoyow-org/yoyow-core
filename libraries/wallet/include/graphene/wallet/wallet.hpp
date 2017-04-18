@@ -1423,6 +1423,16 @@ class wallet_api
        */
       signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false);
 
+      /** Signs a transaction in the old way (may or may not work).
+       *
+       * Given a fully-formed transaction that is only lacking signatures, this signs
+       * the transaction with the necessary keys and optionally broadcasts the transaction
+       * @param tx the unsigned transaction
+       * @param broadcast true if you wish to broadcast the transaction
+       * @return the signed version of the transaction
+       */
+      signed_transaction sign_transaction_old(signed_transaction tx, bool broadcast = false);
+
       /** Returns an uninitialized object representing a given blockchain operation.
        *
        * This returns a default-initialized object of the given type; it can be used 
@@ -1665,6 +1675,7 @@ FC_API( graphene::wallet::wallet_api,
         (save_wallet_file)
         (serialize_transaction)
         (sign_transaction)
+        (sign_transaction_old)
         (get_prototype_operation)
         (propose_parameter_change)
         (propose_fee_change)

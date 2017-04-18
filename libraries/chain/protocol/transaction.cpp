@@ -488,6 +488,7 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
    for( auto& uid : secondary_uid_approvals )
       s.approved_by_uid_auth.emplace( uid, authority::secondary_auth );
 
+   // TODO: review order to minimize number of signatures
    for( const auto& auth : other )
    {
       GRAPHENE_ASSERT( std::get<0>( s.check_authority(&auth) ), tx_missing_other_auth, "Missing Authority", ("auth",auth)("sigs",sigs) );

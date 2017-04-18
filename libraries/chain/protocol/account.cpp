@@ -27,12 +27,28 @@
 
 namespace graphene { namespace chain {
 
-void validate_account_name( const string& name )
+void validate_account_uid( const account_uid_type uid, const string& object_name = "" )
+{
+   FC_ASSERT( is_valid_account_uid( uid ), "${o}account uid ${u} is not valid.", ("o", object_name)("u", uid) );
+}
+
+void validate_account_name( const string& name, const string& object_name = "" )
 {
    const auto len = name.size();
-   FC_ASSERT( len >= GRAPHENE_MIN_ACCOUNT_NAME_LENGTH, "account name is too short" );
-   FC_ASSERT( len <= GRAPHENE_MAX_ACCOUNT_NAME_LENGTH, "account name is too long" );
-   FC_ASSERT( fc::is_utf8( name ), "account name should be in UTF8" );
+   FC_ASSERT( len >= GRAPHENE_MIN_ACCOUNT_NAME_LENGTH, "${o}account name is too short", ("o", object_name) );
+   FC_ASSERT( len <= GRAPHENE_MAX_ACCOUNT_NAME_LENGTH, "${o}account name is too long", ("o", object_name) );
+   FC_ASSERT( fc::is_utf8( name ), "${o}account name should be in UTF8", ("o", object_name) );
+}
+
+void validate_new_authority( const authority& au, const string& object_name = "" )
+{
+   FC_ASSERT( au.num_auths() != 0, "${o}authority should contain something", ("o", object_name) );
+   FC_ASSERT( au.address_auths.size() == 0, "cannot use address_auth in ${o}authority", ("o", object_name) );
+   FC_ASSERT( au.account_auths.size() == 0, "account_auth deprecated, use account_uid_auth instead in ${o}authority", ("o", object_name) );
+   string uid_check_obj_name = object_name + "authority ";
+   for( const auto& a : au.account_uid_auths )
+      validate_account_uid( a.first.uid, uid_check_obj_name );
+   FC_ASSERT( !au.is_impossible(), "cannot use an imposible ${o}authority threshold", ("o", object_name) );
 }
 
 /**
@@ -172,23 +188,22 @@ bool is_cheap_name( const string& n )
 
 void account_options::validate() const
 {
-   FC_ASSERT( is_valid_account_uid( voting_account ), "voting_account should be valid." );
+   validate_account_uid( voting_account, "voting_account " );
    //extensions.validate();
 }
 
 void account_reg_info::validate() const
 {
-   FC_ASSERT( is_valid_account_uid( registrar ), "registrar should be valid." );
-   FC_ASSERT( is_valid_account_uid( referrer ), "referrer should be valid." );
-   FC_ASSERT( registrar_percent <= GRAPHENE_100_PERCENT, "registrar_percent should not exceed 100%." );
-   FC_ASSERT( referrer_percent <= GRAPHENE_100_PERCENT, "referrer_percent should not exceed 100%." );
-   FC_ASSERT( registrar_percent + referrer_percent <= GRAPHENE_100_PERCENT,
-                  "registrar_percent plus referrer_percent should not exceed 100%." );
+   validate_account_uid( registrar, "registrar " );
+   validate_account_uid( referrer, "referrer " );
+   validate_percentage( registrar_percent, "registrar_percent" );
+   validate_percentage( referrer_percent,  "referrer_percent"  );
+   validate_percentage( registrar_percent + referrer_percent, "registrar_percent plus referrer_percent" );
+   validate_percentage( buyout_percent, "buyout_percent" );
    // assets should be core asset
-   FC_ASSERT( allowance_per_article.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of allowance_per_article should be 0." );
-   FC_ASSERT( max_share_per_article.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of max_share_per_article should be 0." );
-   FC_ASSERT( max_share_total.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of max_share_total should be 0." );
-   FC_ASSERT( buyout_percent <= GRAPHENE_100_PERCENT, "buyout_percent should not exceed 100%." );
+   validate_asset_id( allowance_per_article, "allowance_per_article" );
+   validate_asset_id( max_share_per_article, "max_share_per_article" );
+   validate_asset_id( max_share_total,       "max_share_total"       );
    // ==== checks below are not needed
    // allowance_per_article should be >= 0
    // max_share_per_article should be >= 0
@@ -214,22 +229,12 @@ share_type account_create_operation::calculate_fee( const fee_parameters_type& k
 
 void account_create_operation::validate()const
 {
-   FC_ASSERT( fee.amount >= 0 );
-   FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of fee should be 0." );
-   FC_ASSERT( is_valid_account_uid( uid ), "uid should be valid." );
-   validate_account_name ( name );
-   FC_ASSERT( owner.num_auths() != 0 );
-   FC_ASSERT( owner.address_auths.size() == 0, "cannot use address_auth in owner authority" );
-   FC_ASSERT( owner.account_auths.size() == 0, "account_auth deprecated, use account_uid_auth instead" );
-   FC_ASSERT( !owner.is_impossible(), "cannot create an account with an imposible owner authority threshold" );
-   FC_ASSERT( active.num_auths() != 0 );
-   FC_ASSERT( active.address_auths.size() == 0, "cannot use address_auth in active authority" );
-   FC_ASSERT( active.account_auths.size() == 0, "account_auth deprecated, use account_uid_auth instead" );
-   FC_ASSERT( !active.is_impossible(), "cannot create an account with an imposible active authority threshold" );
-   FC_ASSERT( secondary.num_auths() != 0 );
-   FC_ASSERT( secondary.address_auths.size() == 0, "cannot use address_auth in secondary authority" );
-   FC_ASSERT( secondary.account_auths.size() == 0, "account_auth deprecated, use account_uid_auth instead" );
-   FC_ASSERT( !secondary.is_impossible(), "cannot create an account with an imposible secondary authority threshold" );
+   validate_op_fee( fee, "account creation " );
+   validate_account_uid( uid, "new " );
+   validate_account_name( name, "new " );
+   validate_new_authority( owner, "new owner " );
+   validate_new_authority( active, "new active " );
+   validate_new_authority( secondary, "new secondary " );
    options.validate();
    reg_info.validate();
    if( extensions.value.owner_special_authority.valid() )

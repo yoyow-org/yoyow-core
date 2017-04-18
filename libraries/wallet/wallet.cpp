@@ -1813,7 +1813,123 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (account_to_modify)(desired_number_of_witnesses)(desired_number_of_committee_members)(broadcast) ) }
 
-   signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false)
+   signed_transaction sign_transaction( signed_transaction tx, bool broadcast = false )
+   {
+      // get required keys to sign the trx
+      const auto& result = _remote_db->get_required_signatures( tx, flat_set<public_key_type>() );
+      const auto& required_keys = result.first.second;
+
+      // check whether it's possible to fullfil the authority requirement
+      if( required_keys.find( public_key_type() ) == required_keys.end() )
+      {
+         // get a subset of available keys
+         flat_set<public_key_type> available_keys;
+         flat_map<public_key_type,fc::ecc::private_key> available_keys_map;
+         for( const auto& pub_key : required_keys )
+         {
+            auto it = _keys.find( pub_key );
+            if( it != _keys.end() )
+            {
+               fc::optional<fc::ecc::private_key> privkey = wif_to_key( it->second );
+               FC_ASSERT( privkey.valid(), "Malformed private key in _keys" );
+               available_keys.insert( pub_key );
+               available_keys_map[ pub_key ] = *privkey;
+            }
+         }
+
+         // if we have the required key(s), preceed to sign
+         if( !available_keys.empty() )
+         {
+            // get a subset of required keys
+            const auto& new_result = _remote_db->get_required_signatures( tx, available_keys );
+            const auto& required_keys_subset = new_result.first.first;
+            //const auto& missed_keys = new_result.first.second;
+            const auto& unused_signatures = new_result.second;
+
+            // unused signatures can be removed safely
+            for( const auto& sig : unused_signatures )
+               tx.signatures.erase( std::remove( tx.signatures.begin(), tx.signatures.end(), sig), tx.signatures.end() );
+
+            bool no_sig = tx.signatures.empty();
+            auto dyn_props = get_dynamic_global_properties();
+
+            // if no signature is included in the trx, reset the tapos data; otherwise keep the tapos data
+            if( no_sig )
+               tx.set_reference_block( dyn_props.head_block_id );
+
+            // if no signature is included in the trx, reset expiration time; otherwise keep it
+            if( no_sig )
+            {
+               // first, some bookkeeping, expire old items from _recently_generated_transactions
+               // since transactions include the head block id, we just need the index for keeping transactions unique
+               // when there are multiple transactions in the same block.  choose a time period that should be at
+               // least one block long, even in the worst case.  2 minutes ought to be plenty.
+               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(2));
+               auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
+               auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
+               _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
+
+            }
+
+            uint32_t expiration_time_offset = 0;
+            for (;;)
+            {
+               if( no_sig )
+               {
+                  tx.set_expiration( dyn_props.time + fc::seconds(30 + expiration_time_offset) );
+                  tx.signatures.clear();
+               }
+
+               idump((required_keys_subset)(available_keys_map));
+               for( const auto& key : required_keys_subset )
+               {
+                  tx.sign( available_keys_map[key], _chain_id );
+                  /// TODO: if transaction has enough signatures to be "valid" don't add any more,
+                  /// there are cases where the wallet may have more keys than strictly necessary and
+                  /// the transaction will be rejected if the transaction validates without requiring
+                  /// all signatures provided
+               }
+
+               graphene::chain::transaction_id_type this_transaction_id = tx.id();
+               auto iter = _recently_generated_transactions.find(this_transaction_id);
+               if (iter == _recently_generated_transactions.end())
+               {
+                  // we haven't generated this transaction before, the usual case
+                  recently_generated_transaction_record this_transaction_record;
+                  this_transaction_record.generation_time = dyn_props.time;
+                  this_transaction_record.transaction_id = this_transaction_id;
+                  _recently_generated_transactions.insert(this_transaction_record);
+                  break;
+               }
+
+               if( !no_sig ) break;
+
+               // if we've generated a dupe, increment expiration time and re-sign it
+               ++expiration_time_offset;
+            }
+
+         }
+      }
+
+      idump((tx));
+
+      if( broadcast )
+      {
+         try
+         {
+            _remote_net_broadcast->broadcast_transaction( tx );
+         }
+         catch (const fc::exception& e)
+         {
+            elog("Caught exception while broadcasting tx ${id}:  ${e}", ("id", tx.id().str())("e", e.to_detail_string()) );
+            throw;
+         }
+      }
+
+      return tx;
+   }
+
+   signed_transaction sign_transaction_old(signed_transaction tx, bool broadcast = false)
    {
       flat_set<account_id_type> req_active_approvals;
       flat_set<account_id_type> req_owner_approvals;
@@ -3384,6 +3500,11 @@ void wallet_api::set_wallet_filename(string wallet_filename)
 signed_transaction wallet_api::sign_transaction(signed_transaction tx, bool broadcast /* = false */)
 { try {
    return my->sign_transaction( tx, broadcast);
+} FC_CAPTURE_AND_RETHROW( (tx) ) }
+
+signed_transaction wallet_api::sign_transaction_old(signed_transaction tx, bool broadcast /* = false */)
+{ try {
+   return my->sign_transaction_old( tx, broadcast);
 } FC_CAPTURE_AND_RETHROW( (tx) ) }
 
 operation wallet_api::get_prototype_operation(string operation_name)
