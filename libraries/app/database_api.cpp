@@ -128,7 +128,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Authority / validation
       std::string get_transaction_hex(const signed_transaction& trx)const;
-      set<public_key_type> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      set<public_key_type> get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
       set<public_key_type> get_potential_signatures( const signed_transaction& trx )const;
       set<address> get_potential_address_signatures( const signed_transaction& trx )const;
       bool verify_authority( const signed_transaction& trx )const;
@@ -1528,12 +1529,30 @@ std::string database_api_impl::get_transaction_hex(const signed_transaction& trx
    return fc::to_hex(fc::raw::pack(trx));
 }
 
-set<public_key_type> database_api::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
+std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> database_api::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
 {
    return my->get_required_signatures( trx, available_keys );
 }
 
-set<public_key_type> database_api_impl::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
+std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> database_api_impl::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
+{
+   wdump((trx)(available_keys));
+   auto result = trx.get_required_signatures( _db.get_chain_id(),
+                                       available_keys,
+                                       [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).owner); },
+                                       [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).active); },
+                                       [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).secondary); },
+                                       _db.get_global_properties().parameters.max_authority_depth );
+   wdump((std::get<0>(result))(std::get<1>(result))(std::get<2>(result)));
+   return std::make_pair( std::make_pair( std::get<0>(result), std::get<1>(result) ), std::get<2>(result) );
+}
+
+set<public_key_type> database_api::get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
+{
+   return my->get_required_signatures_old( trx, available_keys );
+}
+
+set<public_key_type> database_api_impl::get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
 {
    wdump((trx)(available_keys));
    auto result = trx.get_required_signatures( _db.get_chain_id(),
