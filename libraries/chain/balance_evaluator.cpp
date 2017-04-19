@@ -41,8 +41,6 @@ void_result balance_claim_evaluator::do_evaluate(const balance_claim_operation& 
              ("op", op.balance_owner_key)
              ("bal", balance->owner)
              );
-   if( !(d.get_node_properties().skip_flags & (database::skip_authority_check |
-                                               database::skip_transaction_signatures)) )
 
    FC_ASSERT(asset_id_type(op.total_claimed.asset_id) == balance->asset_type());
 
@@ -86,7 +84,7 @@ void_result balance_claim_evaluator::do_apply(const balance_claim_operation& op)
    else
       d.remove(*balance);
 
-   d.adjust_balance(op.deposit_to_account, op.total_claimed);
+   db_adjust_balance(op.deposit_to_account, op.total_claimed);
    return {};
 }
 } } // namespace graphene::chain

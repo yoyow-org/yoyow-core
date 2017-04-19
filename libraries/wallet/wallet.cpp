@@ -1911,7 +1911,7 @@ public:
          }
       }
 
-      idump((tx));
+      wdump((tx));
 
       if( broadcast )
       {
@@ -3814,7 +3814,7 @@ vector< signed_transaction > wallet_api_impl::import_balance( string name_or_id,
    for( const asset_id_type& a : bal_types )
    {
       balance_claim_operation op;
-      op.deposit_to_account = claimer.id;
+      op.deposit_to_account = claimer.uid;
       for( const balance_object& b : balances )
       {
          if( asset_id_type(b.balance.asset_id) == a )

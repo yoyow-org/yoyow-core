@@ -101,8 +101,8 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = implementation_ids;
          static const uint8_t type_id  = impl_account_balance_object_type;
 
-         account_id_type   owner;
-         asset_id_type     asset_type;
+         account_id_type   owner; // TODO review: change type
+         asset_id_type     asset_type; // TODO review: change type
          share_type        balance;
 
          asset get_balance()const { return asset(balance, asset_type); }

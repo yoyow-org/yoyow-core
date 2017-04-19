@@ -489,19 +489,19 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
       s.approved_by_uid_auth.emplace( uid, authority::secondary_auth );
 
    // TODO: review order to minimize number of signatures
+   //       when changing the order, make sure to change get_required_signatures(...) as well
    for( const auto& auth : other )
    {
       GRAPHENE_ASSERT( std::get<0>( s.check_authority(&auth) ), tx_missing_other_auth, "Missing Authority", ("auth",auth)("sigs",sigs) );
    }
 
    // fetch all of the top level authorities
-   // Can't use owner or active key to sign a transaction that requires secondary key
-   for( auto uid : required_secondary_uids )
+   for( auto uid : required_owner_uids )
    {
-      GRAPHENE_ASSERT( std::get<0>( s.check_authority( authority::account_uid_auth_type( uid, authority::secondary_auth ) ) ),
-                       tx_missing_secondary_auth,
-                       "Missing Secondary Authority ${uid}",
-                       ( "uid", uid ) ( "secondary", *get_secondary_by_uid( uid ) )
+      GRAPHENE_ASSERT( std::get<0>( s.check_authority( authority::account_uid_auth_type( uid, authority::owner_auth ) ) ),
+                       tx_missing_owner_auth,
+                       "Missing Owner Authority ${uid}",
+                       ( "uid", uid ) ( "owner", *get_owner_by_uid( uid ) )
                      );
    }
 
@@ -515,12 +515,13 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
                      );
    }
 
-   for( auto uid : required_owner_uids )
+   // Can't use owner or active key to sign a transaction that requires secondary key
+   for( auto uid : required_secondary_uids )
    {
-      GRAPHENE_ASSERT( std::get<0>( s.check_authority( authority::account_uid_auth_type( uid, authority::owner_auth ) ) ),
-                       tx_missing_owner_auth,
-                       "Missing Owner Authority ${uid}",
-                       ( "uid", uid ) ( "owner", *get_owner_by_uid( uid ) )
+      GRAPHENE_ASSERT( std::get<0>( s.check_authority( authority::account_uid_auth_type( uid, authority::secondary_auth ) ) ),
+                       tx_missing_secondary_auth,
+                       "Missing Secondary Authority ${uid}",
+                       ( "uid", uid ) ( "secondary", *get_secondary_by_uid( uid ) )
                      );
    }
 
@@ -564,57 +565,37 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
 
    get_required_uid_authorities( required_owner_uids, required_active_uids, required_secondary_uids, other );
 
+   other.reserve( required_owner_uids.size() + required_active_uids.size() + required_secondary_uids.size() + other.size() );
+   // the order should be same as in verify_authority(...)
+   for( auto& uid : required_owner_uids )
+      other.push_back( *get_owner_by_uid( uid ) );
+   for( auto& uid : required_active_uids )
+      other.push_back( *get_active_by_uid( uid ) );
+   for( auto& uid : required_secondary_uids )
+      other.push_back( *get_secondary_by_uid( uid ) );
 
    auto key_sigs = get_signature_keys( chain_id );
    sign_state s( key_sigs, get_owner_by_uid, get_active_by_uid, get_secondary_by_uid, available_keys );
    s.max_recursion = max_recursion_depth;
 
    bool check_ok = true;
-   bool possible = true;
    flat_set<public_key_type> missed_keys;
+
    for( const auto& auth : other )
    {
       const auto& result = s.check_authority( &auth );
-      check_ok = std::get<0>( result );
-      possible = std::get<1>( result );
-      missed_keys = std::get<2>( result );
+      check_ok = check_ok && std::get<0>( result );
+      if( std::get<1>( result ) ) //possible
+      {
+         for( const auto& k : std::get<2>( result ) )
+            missed_keys.insert( k );
+      }
+      else
+      {
+         missed_keys = std::get<2>( result );
+         break;
+      }
    }
-   if( possible )
-      for( auto& uid : required_owner_uids )
-      {
-         const auto& result = s.check_authority( authority::account_uid_auth_type( uid, authority::owner_auth ) );
-         check_ok = check_ok && std::get<0>( result );
-         possible = std::get<1>( result );
-         if( possible )
-            for( const auto& k : std::get<2>( result ) )
-               missed_keys.insert( k );
-         else
-            missed_keys = std::get<2>( result );
-      }
-   if( possible )
-      for( auto& uid : required_active_uids )
-      {
-         const auto& result = s.check_authority( authority::account_uid_auth_type( uid, authority::active_auth ) );
-         check_ok = check_ok && std::get<0>( result );
-         possible = std::get<1>( result );
-         if( possible )
-            for( const auto& k : std::get<2>( result ) )
-               missed_keys.insert( k );
-         else
-            missed_keys = std::get<2>( result );
-      }
-   if( possible )
-      for( auto& uid : required_secondary_uids )
-      {
-         const auto& result = s.check_authority( authority::account_uid_auth_type( uid, authority::secondary_auth ) );
-         check_ok = check_ok && std::get<0>( result );
-         possible = std::get<1>( result );
-         if( possible )
-            for( const auto& k : std::get<2>( result ) )
-               missed_keys.insert( k );
-         else
-            missed_keys = std::get<2>( result );
-      }
 
    const auto& used_keys = s.get_used_keys();
    const auto& unused_sig_keys = s.get_unused_signature_keys();

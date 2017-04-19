@@ -49,6 +49,7 @@ namespace graphene { namespace chain {
    typedef fc::static_variant<
             account_create_operation,
             transfer_operation,
+            balance_claim_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
             call_order_update_operation,
@@ -84,7 +85,6 @@ namespace graphene { namespace chain {
             worker_create_operation,
             custom_operation,
             assert_operation,
-            balance_claim_operation,
             override_transfer_operation,
             transfer_to_blind_operation,
             blind_transfer_operation,

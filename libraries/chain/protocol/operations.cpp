@@ -86,7 +86,8 @@ struct operation_get_required_uid_auth
      flat_set<account_uid_type>& s,
      vector<authority>&  oth ):owner_uids(own),active_uids(a),secondary_uids(s),other(oth){}
 
-   void operator()( const account_create_operation& v )const
+   template<typename T>
+   void do_get(const T& v)const
    {
       v.get_required_owner_uid_authorities( owner_uids );
       v.get_required_active_uid_authorities( active_uids );
@@ -101,6 +102,16 @@ struct operation_get_required_uid_auth
                                    authority::account_uid_auth_type( fee_payer_uid, authority::active_auth ), 1,
                                    authority::account_uid_auth_type( fee_payer_uid, authority::secondary_auth ), 1 );
       other.push_back( fee_payer_auth );
+   }
+
+   void operator()( const account_create_operation& v )const
+   {
+      do_get(v);
+   }
+
+   void operator()( const balance_claim_operation& v )const
+   {
+      do_get(v);
    }
 
    template<typename T>
