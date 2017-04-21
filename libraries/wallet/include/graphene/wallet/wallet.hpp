@@ -595,6 +595,13 @@ class wallet_api
       brain_key_info suggest_brain_key()const;
 
      /**
+      * Calculate account uid from a given number.
+      * @param n a number
+      * @return an account uid
+      */
+     uint64_t calculate_account_uid(uint64_t n)const;
+
+     /**
       * Derive any number of *possible* owner keys from a given brain key.
       *
       * NOTE: These keys may or may not match with the owner keys of any account.
@@ -1616,6 +1623,7 @@ FC_API( graphene::wallet::wallet_api,
         (import_account_keys)
         (import_balance)
         (suggest_brain_key)
+        (calculate_account_uid)
         (derive_owner_keys_from_brain_key)
         (register_account)
         (upgrade_account)

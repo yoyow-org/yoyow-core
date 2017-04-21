@@ -545,6 +545,7 @@ void database::_apply_block( const signed_block& next_block )
 
    dlog("before notify applied block");
    // notify observers that the block has been applied
+   // TODO catch exceptions thrown by plugins but not the core
    applied_block( next_block ); //emit
    _applied_ops.clear();
 

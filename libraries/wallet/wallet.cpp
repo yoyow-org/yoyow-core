@@ -2974,6 +2974,11 @@ vector<force_settlement_object> wallet_api::get_settle_orders(string a, uint32_t
    return my->_remote_db->get_settle_orders(get_asset(a).id, limit);
 }
 
+uint64_t wallet_api::calculate_account_uid(uint64_t n)const
+{
+   return calc_account_uid( n );
+}
+
 brain_key_info wallet_api::suggest_brain_key()const
 {
    brain_key_info result;
