@@ -63,7 +63,7 @@ class account_history_plugin_impl
       }
 
       account_history_plugin& _self;
-      flat_set<account_id_type> _tracked_accounts;
+      flat_set<account_uid_type> _tracked_accounts;
 };
 
 account_history_plugin_impl::~account_history_plugin_impl()
@@ -94,32 +94,30 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
       const operation_history_object& op = *o_op;
 
       // get the set of accounts this operation applies to
-      flat_set<account_id_type> impacted;
+      flat_set<account_uid_type> impacted_uids;
       vector<authority> other;
-      operation_get_required_authorities( op.op, impacted, impacted, other );
+      operation_get_required_uid_authorities( op.op, impacted_uids, impacted_uids, impacted_uids, other );
 
-      if( op.op.which() == operation::tag< account_create_operation >::value )
-         impacted.insert( oho.result.get<object_id_type>() );
-      else
-         graphene::app::operation_get_impacted_accounts( op.op, impacted );
+      graphene::app::operation_get_impacted_account_uids( op.op, impacted_uids );
 
       for( auto& a : other )
-         for( auto& item : a.account_auths )
-            impacted.insert( item.first );
+         for( auto& item : a.account_uid_auths )
+            impacted_uids.insert( item.first.uid );
 
       // for each operation this account applies to that is in the config link it into the history
       if( _tracked_accounts.size() == 0 )
       {
-         for( auto& account_id : impacted )
+         for( auto& account_uid : impacted_uids )
          {
             // we don't do index_account_keys here anymore, because
             // that indexing now happens in observers' post_evaluate()
 
             // add history
-            const auto& stats_obj = account_id(db).statistics(db);
+            const auto& account_obj = db.get_account_by_uid(account_uid);
+            const auto& stats_obj = account_obj.statistics(db);
             const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
                 obj.operation_id = oho.id;
-                obj.account = account_id;
+                obj.account = account_obj.id;
                 obj.sequence = stats_obj.total_ops+1;
                 obj.next = stats_obj.most_recent_op;
             });
@@ -131,15 +129,16 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
       }
       else
       {
-         for( auto account_id : _tracked_accounts )
+         for( auto account_uid : _tracked_accounts )
          {
-            if( impacted.find( account_id ) != impacted.end() )
+            if( impacted_uids.find( account_uid ) != impacted_uids.end() )
             {
                // add history
-               const auto& stats_obj = account_id(db).statistics(db);
+               const auto& account_obj = db.get_account_by_uid(account_uid);
+               const auto& stats_obj = account_obj.statistics(db);
                const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
                    obj.operation_id = oho.id;
-                   obj.account = account_id;
+                   obj.account = account_obj.id;
                    obj.sequence = stats_obj.total_ops+1;
                    obj.next = stats_obj.most_recent_op;
                });
@@ -190,14 +189,14 @@ void account_history_plugin::plugin_initialize(const boost::program_options::var
    database().add_index< primary_index< simple_index< operation_history_object > > >();
    database().add_index< primary_index< account_transaction_history_index > >();
 
-   LOAD_VALUE_SET(options, "track-account", my->_tracked_accounts, graphene::chain::account_id_type);
+   LOAD_VALUE_SET(options, "track-account", my->_tracked_accounts, graphene::chain::account_uid_type);
 }
 
 void account_history_plugin::plugin_startup()
 {
 }
 
-flat_set<account_id_type> account_history_plugin::tracked_accounts() const
+flat_set<account_uid_type> account_history_plugin::tracked_accounts() const
 {
    return my->_tracked_accounts;
 }

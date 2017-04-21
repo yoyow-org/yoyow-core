@@ -117,14 +117,14 @@ namespace graphene { namespace chain {
 
       extension< ext > extensions;
 
-      account_id_type fee_payer()const { FC_ASSERT(false, "deprecated."); return account_id_type(); }
       account_uid_type fee_payer_uid()const { return reg_info.registrar; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& )const;
 
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         // registrar should be required anyway as it is the fee_payer(), but we insert it here just to be sure
+         // registrar should be required anyway as it is the fee_payer_uid(),
+         // but we insert it here because fee can be paid with secondary authority
          a.insert( reg_info.registrar );
          //if( extensions.value.buyback_options.valid() )
          //   a.insert( extensions.value.buyback_options->asset_to_buy_issuer );

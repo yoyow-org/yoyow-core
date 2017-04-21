@@ -44,8 +44,8 @@ namespace graphene { namespace chain {
       asset             total_claimed;
 
       //account_uid_type fee_payer_uid()const { return deposit_to_account; } // no fee, so use default (temp-account)
-      account_id_type fee_payer()const { FC_ASSERT(false, "deprecated."); return account_id_type(); }
-      // TODO claiming of vesting balance should have a fee, to prevent spamming
+      // to prevent spamming, claiming of vesting balance can have a fee.
+      // however, there is a rate limiting mechanism implemented, so 0 fee could be ok.
       share_type      calculate_fee(const fee_parameters_type& )const { return 0; }
       void            validate()const;
       void            get_required_authorities( vector<authority>& a )const

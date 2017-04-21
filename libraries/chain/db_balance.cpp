@@ -45,9 +45,19 @@ asset database::get_balance(const account_object& owner, const asset_object& ass
    return get_balance(owner.get_id(), asset_obj.get_id());
 }
 
+asset database::get_balance(const account_object& owner, asset_id_type asset_id) const
+{
+   return get_balance(owner.get_id(), asset_id);
+}
+
 string database::to_pretty_string( const asset& a )const
 {
    return this->get(asset_id_type(a.asset_id)).amount_to_pretty_string(a.amount);
+}
+
+void database::adjust_balance(const account_object& account, asset delta )
+{
+   adjust_balance( account.id, delta );
 }
 
 void database::adjust_balance(account_id_type account, asset delta )

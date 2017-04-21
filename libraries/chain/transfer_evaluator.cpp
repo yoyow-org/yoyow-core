@@ -33,51 +33,53 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
    
    const database& d = db();
 
-   const account_object& from_account    = op.from(d);
-   const account_object& to_account      = op.to(d);
-   const asset_object&   asset_type      = asset_id_type(op.amount.asset_id)(d);
+   from_account    = &d.get_account_by_uid( op.from );
+   to_account      = &d.get_account_by_uid( op.to );
+
+   const asset_object&   transfer_asset_object      = asset_id_type(op.amount.asset_id)(d);
 
    try {
 
       GRAPHENE_ASSERT(
-         is_authorized_asset( d, from_account, asset_type ),
+         is_authorized_asset( d, *from_account, transfer_asset_object ),
          transfer_from_account_not_whitelisted,
          "'from' account ${from} is not whitelisted for asset ${asset}",
          ("from",op.from)
          ("asset",op.amount.asset_id)
          );
       GRAPHENE_ASSERT(
-         is_authorized_asset( d, to_account, asset_type ),
+         is_authorized_asset( d, *to_account, transfer_asset_object ),
          transfer_to_account_not_whitelisted,
          "'to' account ${to} is not whitelisted for asset ${asset}",
          ("to",op.to)
          ("asset",op.amount.asset_id)
          );
 
-      if( asset_type.is_transfer_restricted() )
+      if( transfer_asset_object.is_transfer_restricted() )
       {
          GRAPHENE_ASSERT(
-            from_account.id == asset_type.issuer || to_account.id == asset_type.issuer,
+            from_account->id == transfer_asset_object.issuer || to_account->id == transfer_asset_object.issuer,
             transfer_restricted_transfer_asset,
             "Asset {asset} has transfer_restricted flag enabled",
             ("asset", op.amount.asset_id)
           );
       }
 
-      bool insufficient_balance = d.get_balance( from_account, asset_type ).amount >= op.amount.amount;
-      FC_ASSERT( insufficient_balance,
-                 "Insufficient Balance: ${balance}, unable to transfer '${total_transfer}' from account '${a}' to '${t}'", 
-                 ("a",from_account.name)("t",to_account.name)("total_transfer",d.to_pretty_string(op.amount))("balance",d.to_pretty_string(d.get_balance(from_account, asset_type))) );
+      const auto& from_balance = d.get_balance( *from_account, transfer_asset_object );
+      bool sufficient_balance = from_balance.amount >= op.amount.amount;
+      FC_ASSERT( sufficient_balance,
+                 "Insufficient Balance: ${balance}, unable to transfer '${a}' from account '${f}' to '${t}'",
+                 ("f",from_account->uid)("t",to_account->uid)("a",d.to_pretty_string(op.amount))("balance",d.to_pretty_string(from_balance)) );
 
       return void_result();
-   } FC_RETHROW_EXCEPTIONS( error, "Unable to transfer ${a} from ${f} to ${t}", ("a",d.to_pretty_string(op.amount))("f",op.from(d).name)("t",op.to(d).name) );
+   } FC_RETHROW_EXCEPTIONS( error, "Unable to transfer ${a} from ${f} to ${t}", ("a",d.to_pretty_string(op.amount))("f",from_account->uid)("t",to_account->uid) );
 
 }  FC_CAPTURE_AND_RETHROW( (op) ) }
 
 void_result transfer_evaluator::do_apply( const transfer_operation& o )
 { try {
-   db().adjust_balance( o.from, -o.amount );
-   db().adjust_balance( o.to, o.amount );
+   db().adjust_balance( *from_account, -o.amount );
+   db().adjust_balance( *to_account, o.amount );
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 

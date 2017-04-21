@@ -75,7 +75,7 @@ class account_history_plugin : public graphene::app::plugin
       virtual void plugin_initialize(const boost::program_options::variables_map& options) override;
       virtual void plugin_startup() override;
 
-      flat_set<account_id_type> tracked_accounts()const;
+      flat_set<account_uid_type> tracked_accounts()const;
 
       friend class detail::account_history_plugin_impl;
       std::unique_ptr<detail::account_history_plugin_impl> my;

@@ -166,7 +166,7 @@ void add_authority_accounts(
    );
 
 void add_authority_account_uids(
-   flat_set<authority::account_uid_auth_type>& result,
+   flat_set<account_uid_type>& result,
    const authority& a
    );
 

@@ -91,6 +91,7 @@ namespace graphene { namespace chain {
       {
          return params.fee;
       }
+      account_id_type fee_payer()const { FC_ASSERT(false, "deprecated."); return account_id_type(); }
       account_uid_type fee_payer_uid()const { return GRAPHENE_TEMP_ACCOUNT_UID; }
       void get_required_authorities( vector<authority>& )const{}
       void get_required_active_authorities( flat_set<account_id_type>& )const{}
@@ -122,6 +123,7 @@ namespace graphene { namespace chain {
    //typedef flat_set<future_extensions> extensions_type;
    typedef extension<default_extension_type> extensions_type;
 
+   void validate_account_uid( const account_uid_type uid, const string& object_name = "" );
    void validate_asset_id( asset a, const string& object_name = "asset" );
    void validate_op_fee( asset fee, const string& op_name = "" );
    void validate_percentage( uint16_t p, const string& object_name = "percentage" );

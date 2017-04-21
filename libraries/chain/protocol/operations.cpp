@@ -109,6 +109,11 @@ struct operation_get_required_uid_auth
       do_get(v);
    }
 
+   void operator()( const transfer_operation& v )const
+   {
+      do_get(v);
+   }
+
    void operator()( const balance_claim_operation& v )const
    {
       do_get(v);
@@ -150,6 +155,10 @@ void operation_get_required_uid_authorities( const operation& op,
    op.visit( operation_get_required_uid_auth( owner_uids, active_uids, secondary_uids, other ) );
 }
 
+void validate_account_uid( const account_uid_type uid, const string& object_name )
+{
+   FC_ASSERT( is_valid_account_uid( uid ), "${o}account uid ${u} is not valid.", ("o", object_name)("u", uid) );
+}
 void validate_asset_id( asset a, const string& object_name )
 {
    FC_ASSERT( a.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of ${o} should be 0.", ("o", object_name) );

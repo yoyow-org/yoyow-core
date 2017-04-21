@@ -50,9 +50,9 @@ namespace graphene { namespace chain {
 
       asset            fee;
       /// Account to transfer asset from
-      account_id_type  from;
+      account_uid_type  from;
       /// Account to transfer asset to
-      account_id_type  to;
+      account_uid_type  to;
       /// The amount of asset to transfer from @ref from to @ref to
       asset            amount;
 
@@ -60,9 +60,15 @@ namespace graphene { namespace chain {
       optional<memo_data> memo;
       extensions_type   extensions;
 
-      account_id_type fee_payer()const { return from; }
+      account_uid_type fee_payer_uid()const { return from; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // from should be required anyway as it is the fee_payer_uid(),
+         // but we insert it here because fee can be paid with secondary authority
+         a.insert( from );
+      }
    };
 
    /**

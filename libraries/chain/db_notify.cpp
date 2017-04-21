@@ -22,7 +22,8 @@ struct get_impacted_account_visitor
 
    void operator()( const transfer_operation& op )
    {
-      _impacted.insert( op.to );
+      // TODO review
+      //_impacted.insert( op.to );
    }
 
    void operator()( const asset_claim_fees_operation& op ){}

@@ -501,6 +501,7 @@ void database::_apply_block( const signed_block& next_block )
    _current_block_num    = next_block_num;
    _current_trx_in_block = 0;
 
+   dlog("before apply_transaction");
    for( const auto& trx : next_block.transactions )
    {
       /* We do not need to push the undo state for each transaction
@@ -513,14 +514,17 @@ void database::_apply_block( const signed_block& next_block )
       ++_current_trx_in_block;
    }
 
+   dlog("after apply_transaction");
    update_global_dynamic_data(next_block);
    update_signing_witness(signing_witness, next_block);
    update_last_irreversible_block();
 
+   dlog("before perform_chain_maintenance");
    // Are we at the maintenance interval?
    if( maint_needed )
       perform_chain_maintenance(next_block, global_props);
 
+   dlog("after perform_chain_maintenance");
    create_block_summary(next_block);
    clear_expired_transactions();
    clear_expired_proposals();
@@ -528,6 +532,7 @@ void database::_apply_block( const signed_block& next_block )
    update_expired_feeds();
    update_withdraw_permissions();
 
+   dlog("before update_maintenance_flag");
    // n.b., update_maintenance_flag() happens this late
    // because get_slot_time() / get_slot_at_time() is needed above
    // TODO:  figure out if we could collapse this function into
@@ -538,10 +543,12 @@ void database::_apply_block( const signed_block& next_block )
    if( !_node_property_object.debug_updates.empty() )
       apply_debug_updates();
 
+   dlog("before notify applied block");
    // notify observers that the block has been applied
    applied_block( next_block ); //emit
    _applied_ops.clear();
 
+   dlog("before notify changed objects");
    notify_changed_objects();
 } FC_CAPTURE_AND_RETHROW( (next_block.block_num()) )  }
 

@@ -27,11 +27,6 @@
 
 namespace graphene { namespace chain {
 
-void validate_account_uid( const account_uid_type uid, const string& object_name = "" )
-{
-   FC_ASSERT( is_valid_account_uid( uid ), "${o}account uid ${u} is not valid.", ("o", object_name)("u", uid) );
-}
-
 void validate_account_name( const string& name, const string& object_name = "" )
 {
    const auto len = name.size();

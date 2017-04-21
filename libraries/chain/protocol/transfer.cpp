@@ -36,7 +36,9 @@ share_type transfer_operation::calculate_fee( const fee_parameters_type& schedul
 
 void transfer_operation::validate()const
 {
-   FC_ASSERT( fee.amount >= 0 );
+   validate_op_fee( fee, "transfer " );
+   validate_account_uid( from, "from " );
+   validate_account_uid( to, "to " );
    FC_ASSERT( from != to );
    FC_ASSERT( amount.amount > 0 );
 }

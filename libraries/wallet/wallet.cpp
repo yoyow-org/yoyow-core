@@ -2139,13 +2139,11 @@ public:
 
       account_object from_account = get_account(from);
       account_object to_account = get_account(to);
-      account_id_type from_id = from_account.id;
-      account_id_type to_id = get_account_id(to);
 
       transfer_operation xfer_op;
 
-      xfer_op.from = from_id;
-      xfer_op.to = to_id;
+      xfer_op.from = from_account.uid;
+      xfer_op.to = to_account.uid;
       xfer_op.amount = asset_obj->amount_from_string(amount);
 
       if( memo.size() )
@@ -2783,7 +2781,7 @@ std::string operation_printer::operator()(const transfer_to_blind_operation& op)
 string operation_printer::operator()(const transfer_operation& op) const
 {
    out << "Transfer " << wallet.get_asset(asset_id_type(op.amount.asset_id)).amount_to_pretty_string(op.amount)
-       << " from " << wallet.get_account(op.from).name << " to " << wallet.get_account(op.to).name;
+       << " from " << op.from << " to " << op.to;
    std::string memo;
    if( op.memo )
    {

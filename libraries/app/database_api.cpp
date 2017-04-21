@@ -1664,7 +1664,7 @@ bool database_api_impl::verify_account_authority( const string& name_or_id, cons
    /// reuse trx.verify_authority by creating a dummy transfer
    signed_transaction trx;
    transfer_operation op;
-   op.from = account->id;
+   op.from = account->uid;
    trx.operations.emplace_back(op);
 
    return verify_authority( trx );
