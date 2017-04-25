@@ -132,6 +132,39 @@ namespace graphene { namespace chain {
    };
 
    /**
+    *  @ingroup operations
+    */
+   struct account_posting_right_update_operation : public base_operation
+   {
+
+      struct fee_parameters_type
+      {
+         uint64_t            fee = 1*GRAPHENE_BLOCKCHAIN_PRECISION;
+         extensions_type     extensions;
+      };
+
+      asset           fee;
+
+      account_uid_type executor;
+      account_uid_type account;
+      bool             enable;
+
+      extensions_type extensions;
+
+      account_uid_type fee_payer_uid()const { return executor; }
+      void            validate()const;
+      //use default
+      //share_type      calculate_fee(const fee_parameters_type& )const;
+
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // executor should be required anyway as it is the fee_payer_uid(),
+         // but we insert it here because fee can be paid with secondary authority
+         a.insert( executor );
+      }
+   };
+
+   /**
     * @ingroup operations
     * @brief Update an existing account
     *
@@ -307,6 +340,13 @@ FC_REFLECT( graphene::chain::account_create_operation,
             (options)(reg_info)
             (extensions)
           )
+FC_REFLECT( graphene::chain::account_posting_right_update_operation,
+            (fee)
+            (executor)
+            (account)
+            (enable)
+            (extensions)
+          )
 
 FC_REFLECT(graphene::chain::account_update_operation::ext, (null_ext)(owner_special_authority)(active_special_authority) )
 FC_REFLECT( graphene::chain::account_update_operation,
@@ -318,7 +358,8 @@ FC_REFLECT( graphene::chain::account_upgrade_operation,
 
 FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 
-FC_REFLECT( graphene::chain::account_create_operation::fee_parameters_type, (basic_fee)(premium_fee)(price_per_kbyte) )
+FC_REFLECT( graphene::chain::account_create_operation::fee_parameters_type, (basic_fee)(premium_fee)(price_per_kbyte)(extensions) )
+FC_REFLECT( graphene::chain::account_posting_right_update_operation::fee_parameters_type, (fee)(extensions) )
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::account_update_operation::fee_parameters_type, (fee)(price_per_kbyte) )
 FC_REFLECT( graphene::chain::account_upgrade_operation::fee_parameters_type, (membership_annual_fee)(membership_lifetime_fee) )

@@ -131,6 +131,7 @@ void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
    register_evaluator<account_create_evaluator>();
+   register_evaluator<account_posting_right_update_evaluator>();
    register_evaluator<account_update_evaluator>();
    register_evaluator<account_upgrade_evaluator>();
    register_evaluator<account_whitelist_evaluator>();

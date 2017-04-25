@@ -249,6 +249,29 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
 } FC_CAPTURE_AND_RETHROW((o)) }
 
 
+void_result account_posting_right_update_evaluator::do_evaluate( const account_posting_right_update_operation& o )
+{ try {
+   database& d = db();
+
+   acnt = &d.get_account_by_uid( o.account );
+
+   FC_ASSERT( acnt->reg_info.registrar == o.executor, "posting right should be updated by registrar" );
+   FC_ASSERT( acnt->can_post != o.enable, "should update something" );
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_posting_right_update_evaluator::do_apply( const account_posting_right_update_operation& o )
+{ try {
+   database& d = db();
+
+   d.modify( *acnt, [&](account_object& a){
+      a.can_post = o.enable;
+   });
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
 void_result account_update_evaluator::do_evaluate( const account_update_operation& o )
 { try {
    database& d = db();

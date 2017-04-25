@@ -489,11 +489,7 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
       s.approved_by_uid_auth.emplace( uid, authority::secondary_auth );
 
    // TODO: review order to minimize number of signatures
-   //       when changing the order, make sure to change get_required_signatures(...) as well
-   for( const auto& auth : other )
-   {
-      GRAPHENE_ASSERT( std::get<0>( s.check_authority(&auth) ), tx_missing_other_auth, "Missing Authority", ("auth",auth)("sigs",sigs) );
-   }
+   //       when changing the order, make sure to change get_required_signatures(...) as well, and set a hard fork
 
    // fetch all of the top level authorities
    for( auto uid : required_owner_uids )
@@ -523,6 +519,11 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
                        "Missing Secondary Authority ${uid}",
                        ( "uid", uid ) ( "secondary", *get_secondary_by_uid( uid ) )
                      );
+   }
+
+   for( const auto& auth : other )
+   {
+      GRAPHENE_ASSERT( std::get<0>( s.check_authority(&auth) ), tx_missing_other_auth, "Missing Authority", ("auth",auth)("sigs",sigs) );
    }
 
    GRAPHENE_ASSERT(
@@ -562,17 +563,21 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
    flat_set<account_uid_type> required_active_uids;
    flat_set<account_uid_type> required_secondary_uids;
    vector<authority> other;
+   vector<authority> required;
 
    get_required_uid_authorities( required_owner_uids, required_active_uids, required_secondary_uids, other );
 
-   other.reserve( required_owner_uids.size() + required_active_uids.size() + required_secondary_uids.size() + other.size() );
-   // the order should be same as in verify_authority(...)
+   required.reserve( required_owner_uids.size() + required_active_uids.size() + required_secondary_uids.size() + other.size() );
+   // the order should be same as in verify_authority(...), changing the order requires a hard fork
    for( auto& uid : required_owner_uids )
-      other.push_back( *get_owner_by_uid( uid ) );
+      required.push_back( *get_owner_by_uid( uid ) );
    for( auto& uid : required_active_uids )
-      other.push_back( *get_active_by_uid( uid ) );
+      required.push_back( *get_active_by_uid( uid ) );
    for( auto& uid : required_secondary_uids )
-      other.push_back( *get_secondary_by_uid( uid ) );
+      required.push_back( *get_secondary_by_uid( uid ) );
+   for( auto& auth : other )
+      required.push_back( auth );
+
 
    auto key_sigs = get_signature_keys( chain_id );
    sign_state s( key_sigs, get_owner_by_uid, get_active_by_uid, get_secondary_by_uid, available_keys );
@@ -581,7 +586,7 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
    bool check_ok = true;
    flat_set<public_key_type> missed_keys;
 
-   for( const auto& auth : other )
+   for( const auto& auth : required )
    {
       const auto& result = s.check_authority( &auth );
       check_ok = check_ok && std::get<0>( result );

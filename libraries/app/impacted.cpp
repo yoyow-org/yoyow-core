@@ -57,6 +57,13 @@ struct get_impacted_account_uid_visitor
    }
 
    void operator()( const balance_claim_operation& op ) {}
+
+   void operator()( const account_posting_right_update_operation& op )
+   {
+      _impacted.insert( op.executor );
+      _impacted.insert( op.account );
+   }
+
    /*
    void operator()( const asset_claim_fees_operation& op ){}
    void operator()( const limit_order_create_operation& op ) {}
@@ -245,6 +252,10 @@ struct get_impacted_account_visitor
       //_impacted.insert( op.referrer );
       add_authority_accounts( _impacted, op.owner );
       add_authority_accounts( _impacted, op.active );
+   }
+
+   void operator()( const account_posting_right_update_operation& op )
+   {
    }
 
    void operator()( const account_update_operation& op )

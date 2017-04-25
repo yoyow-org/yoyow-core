@@ -46,6 +46,7 @@ namespace graphene { namespace chain {
       struct fee_parameters_type {
          uint64_t fee       = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
+         extensions_type   extensions;
       };
 
       asset            fee;
@@ -106,7 +107,7 @@ namespace graphene { namespace chain {
 
 }} // graphene::chain
 
-FC_REFLECT( graphene::chain::transfer_operation::fee_parameters_type, (fee)(price_per_kbyte) )
+FC_REFLECT( graphene::chain::transfer_operation::fee_parameters_type, (fee)(price_per_kbyte)(extensions) )
 FC_REFLECT( graphene::chain::override_transfer_operation::fee_parameters_type, (fee)(price_per_kbyte) )
 
 FC_REFLECT( graphene::chain::override_transfer_operation, (fee)(issuer)(from)(to)(amount)(memo)(extensions) )

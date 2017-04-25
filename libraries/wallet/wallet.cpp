@@ -2742,14 +2742,17 @@ std::string operation_printer::operator()(const T& op)const
    //balance_accumulator acc;
    //op.get_balance_delta( acc, result );
    auto a = wallet.get_asset( asset_id_type(op.fee.asset_id) );
-   auto payer = wallet.get_account( op.fee_payer() );
+   // TODO: review
+   //auto payer = wallet.get_account( op.fee_payer() );
+   auto payer_uid = op.fee_payer_uid();
 
    string op_name = fc::get_typename<T>::name();
    if( op_name.find_last_of(':') != string::npos )
       op_name.erase(0, op_name.find_last_of(':')+1);
    out << op_name <<" ";
   // out << "balance delta: " << fc::json::to_string(acc.balance) <<"   ";
-   out << payer.name << " fee: " << a.amount_to_pretty_string( op.fee );
+   //out << payer.name << " fee: " << a.amount_to_pretty_string( op.fee );
+   out << payer_uid << " fee: " << a.amount_to_pretty_string( op.fee );
    operation_result_printer rprinter(wallet);
    std::string str_result = result.visit(rprinter);
    if( str_result != "" )

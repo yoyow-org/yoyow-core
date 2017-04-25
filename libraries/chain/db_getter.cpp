@@ -101,7 +101,7 @@ const account_object& database::get_account_by_uid( account_uid_type uid )const
 {
    const auto& accounts_by_uid = get_index_type<account_index>().indices().get<by_uid>();
    auto itr = accounts_by_uid.find(uid);
-   FC_ASSERT( itr != accounts_by_uid.end() );
+   FC_ASSERT( itr != accounts_by_uid.end(), "account ${uid} not found.", ("uid",uid) );
    return *itr;
 }
 
