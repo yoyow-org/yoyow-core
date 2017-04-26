@@ -164,7 +164,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
    //TODO review
    database& d = db();
 
-   const auto& new_acnt_object = db().create<account_object>( [&]( account_object& obj ){
+   const auto& new_acnt_object = d.create<account_object>( [&]( account_object& obj ){
 
 
          //obj.registrar = o.registrar;
@@ -194,7 +194,10 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
             obj.is_full_member = true;
          // end
 
-         obj.statistics = db().create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.id;}).id;
+         obj.create_time      = d.head_block_time();
+         obj.last_update_time = d.head_block_time();
+
+         obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.id;}).id;
 
          if( o.extensions.value.owner_special_authority.valid() )
             obj.owner_special_authority = *(o.extensions.value.owner_special_authority);
@@ -224,7 +227,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
    if(    o.extensions.value.owner_special_authority.valid()
        || o.extensions.value.active_special_authority.valid() )
    {
-      db().create< special_authority_object >( [&]( special_authority_object& sa )
+      d.create< special_authority_object >( [&]( special_authority_object& sa )
       {
          sa.account = new_acnt_object.id;
       } );
@@ -267,6 +270,7 @@ void_result account_posting_right_update_evaluator::do_apply( const account_post
 
    d.modify( *acnt, [&](account_object& a){
       a.can_post = o.enable;
+      a.last_update_time = d.head_block_time();
    });
 
    return void_result();

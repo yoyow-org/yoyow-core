@@ -178,6 +178,9 @@ namespace graphene { namespace chain {
          bool is_registrar = false;
          bool is_admin = false;
 
+         time_point_sec create_time;
+         time_point_sec last_update_time;
+
          string active_data = "{}";
          string secondary_data = "{}";
 
@@ -390,6 +393,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
                     (uid)(name)(owner)(active)(secondary)(options)(reg_info)
                     (can_post)(is_full_member)(is_registrar)(is_admin)
+                    (create_time)(last_update_time)
                     (active_data)(secondary_data)
                     (statistics)
                     (whitelisting_accounts)(blacklisting_accounts)
