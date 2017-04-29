@@ -685,6 +685,18 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        apply_operation(genesis_eval_state, std::move(op));
    });
 
+   // Create initial platforms
+   std::for_each(genesis_state.initial_platforms.begin(), genesis_state.initial_platforms.end(),
+                 [&](const genesis_state_type::initial_platform_type& platform) {
+      const auto owner = get_account_by_uid(platform.owner);
+      create<platform_object>([&platform](platform_object& p) {
+         p.pid = platform.pid;
+         p.owner = platform.owner;
+         p.name = platform.name;
+         p.url = platform.url;
+      });
+   });
+
    // Set active witnesses
    modify(get_global_properties(), [&](global_property_object& p) {
       for( uint32_t i = 1; i <= genesis_state.initial_active_witnesses; ++i )

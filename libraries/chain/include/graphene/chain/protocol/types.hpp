@@ -131,11 +131,11 @@ namespace graphene { namespace chain {
       base_object_type,
       account_object_type,
       asset_object_type,
+      committee_member_object_type,
+      witness_object_type,
       platform_object_type,
       content_object_type,
       force_settlement_object_type,
-      committee_member_object_type,
-      witness_object_type,
       limit_order_object_type,
       call_order_object_type,
       custom_object_type,
@@ -191,11 +191,11 @@ namespace graphene { namespace chain {
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
+   typedef object_id< protocol_ids, committee_member_object_type,           committee_member_object>              committee_member_id_type;
+   typedef object_id< protocol_ids, witness_object_type,            witness_object>               witness_id_type;
    typedef object_id< protocol_ids, platform_object_type,           platform_object>              platform_id_type;
    typedef object_id< protocol_ids, content_object_type,            content_object>               content_id_type;
    typedef object_id< protocol_ids, force_settlement_object_type,   force_settlement_object>      force_settlement_id_type;
-   typedef object_id< protocol_ids, committee_member_object_type,           committee_member_object>              committee_member_id_type;
-   typedef object_id< protocol_ids, witness_object_type,            witness_object>               witness_id_type;
    typedef object_id< protocol_ids, limit_order_object_type,        limit_order_object>           limit_order_id_type;
    typedef object_id< protocol_ids, call_order_object_type,         call_order_object>            call_order_id_type;
    typedef object_id< protocol_ids, custom_object_type,             custom_object>                custom_id_type;
@@ -341,12 +341,12 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (null_object_type)
                  (base_object_type)
                  (account_object_type)
-                 (platform_object_type)
-                 (content_object_type)
-                 (force_settlement_object_type)
                  (asset_object_type)
                  (committee_member_object_type)
                  (witness_object_type)
+                 (platform_object_type)
+                 (content_object_type)
+                 (force_settlement_object_type)
                  (limit_order_object_type)
                  (call_order_object_type)
                  (custom_object_type)

@@ -107,6 +107,13 @@ struct genesis_state_type {
       string owner_name;
       share_type daily_pay;
    };
+   struct initial_platform_type {
+      platform_pid_type pid;
+      /// Must correspond to one of the initial accounts
+      account_uid_type owner;
+      string name;
+      string url;
+   };
 
    time_point_sec                           initial_timestamp;
    share_type                               max_core_supply = GRAPHENE_MAX_SHARE_SUPPLY;
@@ -120,6 +127,7 @@ struct genesis_state_type {
    vector<initial_witness_type>             initial_witness_candidates;
    vector<initial_committee_member_type>    initial_committee_candidates;
    vector<initial_worker_type>              initial_worker_candidates;
+   vector<initial_platform_type>            initial_platforms;
 
    /**
     * Temporary, will be moved elsewhere.
@@ -157,9 +165,12 @@ FC_REFLECT(graphene::chain::genesis_state_type::initial_committee_member_type, (
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_worker_type, (owner_name)(daily_pay))
 
+FC_REFLECT(graphene::chain::genesis_state_type::initial_platform_type, (pid)(owner)(name)(url))
+
 FC_REFLECT(graphene::chain::genesis_state_type,
            (initial_timestamp)(max_core_supply)(initial_parameters)(initial_accounts)(initial_assets)(initial_balances)
            (initial_vesting_balances)(initial_active_witnesses)(initial_witness_candidates)
            (initial_committee_candidates)(initial_worker_candidates)
+           (initial_platforms)
            (initial_chain_id)
            (immutable_parameters))

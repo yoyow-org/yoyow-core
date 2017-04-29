@@ -30,7 +30,7 @@ namespace graphene { namespace chain {
 
 void_result post_evaluator::do_evaluate( const post_operation& op )
 { try {
-   
+
    const database& d = db();
 /*
 
