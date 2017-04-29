@@ -83,8 +83,11 @@ namespace graphene { namespace chain {
 
    typedef fc::ecc::private_key        private_key_type;
    typedef fc::sha256                  chain_id_type;
+
    typedef uint64_t                    account_uid_type;
    typedef uint64_t                    asset_aid_type;
+   typedef uint32_t                    platform_pid_type;
+   typedef uint64_t                    content_cid_type;
 
    account_uid_type                    calc_account_uid( uint64_t id_without_checksum );
    bool                                is_valid_account_uid( const account_uid_type uid );
@@ -128,6 +131,8 @@ namespace graphene { namespace chain {
       base_object_type,
       account_object_type,
       asset_object_type,
+      platform_object_type,
+      content_object_type,
       force_settlement_object_type,
       committee_member_object_type,
       witness_object_type,
@@ -167,6 +172,8 @@ namespace graphene { namespace chain {
    //typedef fc::unsigned_int            object_id_type;
    //typedef uint64_t                    object_id_type;
    class account_object;
+   class platform_object;
+   class content_object;
    class committee_member_object;
    class witness_object;
    class asset_object;
@@ -184,6 +191,8 @@ namespace graphene { namespace chain {
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
+   typedef object_id< protocol_ids, platform_object_type,           platform_object>              platform_id_type;
+   typedef object_id< protocol_ids, content_object_type,            content_object>               content_id_type;
    typedef object_id< protocol_ids, force_settlement_object_type,   force_settlement_object>      force_settlement_id_type;
    typedef object_id< protocol_ids, committee_member_object_type,           committee_member_object>              committee_member_id_type;
    typedef object_id< protocol_ids, witness_object_type,            witness_object>               witness_id_type;
@@ -332,6 +341,8 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (null_object_type)
                  (base_object_type)
                  (account_object_type)
+                 (platform_object_type)
+                 (content_object_type)
                  (force_settlement_object_type)
                  (asset_object_type)
                  (committee_member_object_type)
@@ -371,6 +382,8 @@ FC_REFLECT_TYPENAME( graphene::chain::share_type )
 
 FC_REFLECT_TYPENAME( graphene::chain::account_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::asset_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::platform_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::content_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::force_settlement_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::witness_id_type )

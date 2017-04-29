@@ -27,9 +27,10 @@
 #include <graphene/chain/protocol/assert.hpp>
 #include <graphene/chain/protocol/asset_ops.hpp>
 #include <graphene/chain/protocol/balance.hpp>
-#include <graphene/chain/protocol/custom.hpp>
 #include <graphene/chain/protocol/committee_member.hpp>
 #include <graphene/chain/protocol/confidential.hpp>
+#include <graphene/chain/protocol/content.hpp>
+#include <graphene/chain/protocol/custom.hpp>
 #include <graphene/chain/protocol/fba.hpp>
 #include <graphene/chain/protocol/market.hpp>
 #include <graphene/chain/protocol/proposal.hpp>
@@ -51,6 +52,7 @@ namespace graphene { namespace chain {
             transfer_operation,
             balance_claim_operation,
             account_posting_right_update_operation,
+            post_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
             call_order_update_operation,

@@ -56,6 +56,12 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.to );
    }
 
+   void operator()( const post_operation& op )
+   {
+      if( op.parent_poster.valid() )
+         _impacted.insert( *(op.parent_poster) );
+   }
+
    void operator()( const balance_claim_operation& op ) {}
 
    void operator()( const account_posting_right_update_operation& op )
@@ -231,6 +237,11 @@ struct get_impacted_account_visitor
    {
       // TODO review
       //_impacted.insert( op.to );
+   }
+
+   void operator()( const post_operation& op )
+   {
+      // TODO review
    }
 
    void operator()( const asset_claim_fees_operation& op ){}

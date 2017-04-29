@@ -34,6 +34,7 @@
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/confidential_object.hpp>
+#include <graphene/chain/content_object.hpp>
 #include <graphene/chain/fba_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/market_object.hpp>
@@ -53,6 +54,7 @@
 #include <graphene/chain/balance_evaluator.hpp>
 #include <graphene/chain/committee_member_evaluator.hpp>
 #include <graphene/chain/confidential_evaluator.hpp>
+#include <graphene/chain/content_evaluator.hpp>
 #include <graphene/chain/custom_evaluator.hpp>
 #include <graphene/chain/market_evaluator.hpp>
 #include <graphene/chain/proposal_evaluator.hpp>
@@ -96,6 +98,9 @@ const uint8_t call_order_object::type_id;
 const uint8_t committee_member_object::space_id;
 const uint8_t committee_member_object::type_id;
 
+const uint8_t content_object::space_id;
+const uint8_t content_object::type_id;
+
 const uint8_t force_settlement_object::space_id;
 const uint8_t force_settlement_object::type_id;
 
@@ -107,6 +112,9 @@ const uint8_t limit_order_object::type_id;
 
 const uint8_t operation_history_object::space_id;
 const uint8_t operation_history_object::type_id;
+
+const uint8_t platform_object::space_id;
+const uint8_t platform_object::type_id;
 
 const uint8_t proposal_object::space_id;
 const uint8_t proposal_object::type_id;
@@ -139,6 +147,7 @@ void database::initialize_evaluators()
    register_evaluator<committee_member_update_evaluator>();
    register_evaluator<committee_member_update_global_parameters_evaluator>();
    register_evaluator<custom_evaluator>();
+   register_evaluator<post_evaluator>();
    register_evaluator<asset_create_evaluator>();
    register_evaluator<asset_issue_evaluator>();
    register_evaluator<asset_reserve_evaluator>();
@@ -186,6 +195,9 @@ void database::initialize_indexes()
    auto acnt_index = add_index< primary_index<account_index> >();
    acnt_index->add_secondary_index<account_member_index>();
    acnt_index->add_secondary_index<account_referrer_index>();
+
+   add_index< primary_index<platform_index> >();
+   add_index< primary_index<content_index> >();
 
    add_index< primary_index<committee_member_index> >();
    add_index< primary_index<witness_index> >();

@@ -26,6 +26,11 @@ struct get_impacted_account_visitor
       //_impacted.insert( op.to );
    }
 
+   void operator()( const post_operation& op )
+   {
+      // TODO review
+   }
+
    void operator()( const asset_claim_fees_operation& op ){}
    void operator()( const limit_order_create_operation& op ) {}
    void operator()( const limit_order_cancel_operation& op )
@@ -223,6 +228,20 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            const auto& aobj = dynamic_cast<const asset_object*>(obj);
            assert( aobj != nullptr );
            accounts.insert( aobj->issuer );
+           break;
+        } case platform_object_type:{
+           // TODO review
+           //const auto& aobj = dynamic_cast<const platform_object*>(obj);
+           //assert( aobj != nullptr );
+           //accounts.insert( aobj->owner );
+           break;
+        } case content_object_type:{
+           // TODO review
+           //const auto& aobj = dynamic_cast<const content_object*>(obj);
+           //assert( aobj != nullptr );
+           //accounts.insert( aobj->poster );
+           //if( aobj->parent_poster.valid() )
+           //   accounts.insert( *(aobj->parent_poster) );
            break;
         } case force_settlement_object_type:{
            const auto& aobj = dynamic_cast<const force_settlement_object*>(obj);
