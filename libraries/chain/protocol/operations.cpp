@@ -124,6 +124,11 @@ struct operation_get_required_uid_auth
       do_get(v);
    }
 
+   void operator()( const post_operation& v )const
+   {
+      do_get(v);
+   }
+
    template<typename T>
    void operator()( const T& v )const
    {

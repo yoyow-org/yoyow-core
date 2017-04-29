@@ -32,59 +32,65 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 { try {
 
    const database& d = db();
-/*
 
-   from_account    = &d.get_account_by_uid( op.from );
-   to_account      = &d.get_account_by_uid( op.to );
+   d.get_platform_by_pid( op.platform ); // make sure pid exists
+   poster_account  = &d.get_account_by_uid( op.poster );
+   content         = d.find_content_by_cid( op.platform, op.poster, op.cid );
 
-   const asset_object&   transfer_asset_object      = asset_id_type(op.amount.asset_id)(d);
+   FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
 
-   try {
-
-      GRAPHENE_ASSERT(
-         is_authorized_asset( d, *from_account, transfer_asset_object ),
-         transfer_from_account_not_whitelisted,
-         "'from' account ${from} is not whitelisted for asset ${asset}",
-         ("from",op.from)
-         ("asset",op.amount.asset_id)
-         );
-      GRAPHENE_ASSERT(
-         is_authorized_asset( d, *to_account, transfer_asset_object ),
-         transfer_to_account_not_whitelisted,
-         "'to' account ${to} is not whitelisted for asset ${asset}",
-         ("to",op.to)
-         ("asset",op.amount.asset_id)
-         );
-
-      if( transfer_asset_object.is_transfer_restricted() )
-      {
-         GRAPHENE_ASSERT(
-            from_account->id == transfer_asset_object.issuer || to_account->id == transfer_asset_object.issuer,
-            transfer_restricted_transfer_asset,
-            "Asset {asset} has transfer_restricted flag enabled",
-            ("asset", op.amount.asset_id)
-          );
-      }
-
-      const auto& from_balance = d.get_balance( *from_account, transfer_asset_object );
-      bool sufficient_balance = from_balance.amount >= op.amount.amount;
-      FC_ASSERT( sufficient_balance,
-                 "Insufficient Balance: ${balance}, unable to transfer '${a}' from account '${f}' to '${t}'",
-                 ("f",from_account->uid)("t",to_account->uid)("a",d.to_pretty_string(op.amount))("balance",d.to_pretty_string(from_balance)) );
-
-      return void_result();
-   } FC_RETHROW_EXCEPTIONS( error, "Unable to transfer ${a} from ${f} to ${t}", ("a",d.to_pretty_string(op.amount))("f",from_account->uid)("t",to_account->uid) );
-*/
+   if( content == nullptr ) // new content
+   {
+      if( op.parent_cid.valid() ) // is reply
+         parent_content = &d.get_content_by_cid( op.platform, *op.parent_poster, *op.parent_cid );
+      else
+         parent_content = nullptr;
+   }
+   else
+   {
+      FC_ASSERT( !op.parent_cid.valid(), "should not specify parent when editing." );
+   }
 
    return void_result();
 
 }  FC_CAPTURE_AND_RETHROW( (op) ) }
 
-void_result post_evaluator::do_apply( const post_operation& o )
+object_id_type post_evaluator::do_apply( const post_operation& o )
 { try {
-   //db().adjust_balance( *from_account, -o.amount );
-   //db().adjust_balance( *to_account, o.amount );
-   return void_result();
+   database& d = db();
+
+   if( content == nullptr ) // new content
+   {
+      const auto& new_content_object = d.create<content_object>( [&]( content_object& obj )
+      {
+         obj.platform         = o.platform;
+         obj.poster           = o.poster;
+         obj.cid              = o.cid;
+         obj.parent_poster    = o.parent_poster;
+         obj.parent_cid       = o.parent_cid;
+         obj.options          = o.options;
+         obj.hash_value       = o.hash_value;
+         obj.extra_data       = o.extra_data;
+         obj.title            = o.title;
+         obj.body             = o.body;
+         obj.create_time      = d.head_block_time();
+         obj.last_update_time = d.head_block_time();
+      } );
+      return new_content_object.id;
+   }
+   else // edit
+   {
+      d.modify<content_object>( *content, [&]( content_object& obj )
+      {
+         //obj.options          = o.options;
+         obj.hash_value       = o.hash_value;
+         obj.extra_data       = o.extra_data;
+         obj.title            = o.title;
+         obj.body             = o.body;
+         obj.last_update_time = d.head_block_time();
+      } );
+      return content->id;
+   }
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 

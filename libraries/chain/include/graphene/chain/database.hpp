@@ -271,6 +271,15 @@ namespace graphene { namespace chain {
 
          const account_object& get_account_by_uid( account_uid_type uid )const;
          const optional<account_id_type> find_account_id_by_uid( account_uid_type uid )const;
+
+         const platform_object& get_platform_by_pid( platform_pid_type pid )const;
+
+         const content_object& get_content_by_cid( platform_pid_type platform,
+                                                   account_uid_type poster,
+                                                   content_cid_type cid )const;
+         const content_object* find_content_by_cid( platform_pid_type platform,
+                                                    account_uid_type poster,
+                                                    content_cid_type cid )const;
          //////////////////// db_init.cpp ////////////////////
 
          void initialize_evaluators();

@@ -126,7 +126,14 @@ namespace graphene { namespace chain {
       content_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_cid>, member<content_object, content_cid_type, &content_object::cid> >
+         ordered_unique< tag<by_cid>,
+            composite_key<
+               content_object,
+               member< content_object, platform_pid_type, &content_object::platform >,
+               member< content_object, account_uid_type,  &content_object::poster >,
+               member< content_object, content_cid_type,  &content_object::cid >
+            >
+         >
       >
    > content_multi_index_type;
 

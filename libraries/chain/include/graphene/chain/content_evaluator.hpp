@@ -34,9 +34,11 @@ namespace graphene { namespace chain {
          typedef post_operation operation_type;
 
          void_result do_evaluate( const operation_type& o );
-         void_result do_apply( const operation_type& o );
+         object_id_type do_apply( const operation_type& o );
 
-         const account_object* poster;
+         const account_object* poster_account;
+         const content_object* content;
+         const content_object* parent_content;
    };
 
 } } // graphene::chain

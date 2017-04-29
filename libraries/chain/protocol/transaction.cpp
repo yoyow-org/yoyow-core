@@ -111,6 +111,7 @@ void transaction::get_required_authorities( flat_set<account_id_type>& active, f
 
 const std::function<const authority*(account_id_type)> null_by_id = []( account_id_type id ){ return nullptr; };
 const std::function<const authority*(account_uid_type)> null_by_uid = []( account_uid_type uid ){ return nullptr; };
+const flat_set<public_key_type> empty_public_key_set = flat_set<public_key_type>();
 
 struct sign_state
 {
@@ -172,14 +173,14 @@ struct sign_state
       std::tuple<bool,bool,flat_set<public_key_type>> check_authority( account_id_type id )
       {
          if( approved_by.find(id) != approved_by.end() )
-            return std::make_tuple( true, true, flat_set<public_key_type>() );
+            return std::make_tuple( true, true, empty_public_key_set );
          return check_authority( get_active(id) );
       }
 
       std::tuple<bool,bool,flat_set<public_key_type>> check_authority( const authority::account_uid_auth_type& uid_auth )
       {
          if( approved_by_uid_auth.find( uid_auth ) != approved_by_uid_auth.end() )
-            return std::make_tuple( true, true, flat_set<public_key_type>() );
+            return std::make_tuple( true, true, empty_public_key_set );
          if( uid_auth.auth_type == authority::secondary_auth )
             return check_authority( get_secondary_by_uid( uid_auth.uid ) );
          else if( uid_auth.auth_type == authority::active_auth )
@@ -211,18 +212,19 @@ struct sign_state
          flat_set<public_key_type> missed_keys;
          for( const auto& k : auth.key_auths )
          {
-            if( k.first != public_key_type() )
+            const public_key_type& kf = k.first;
+            if( kf != public_key_type() )
                total_possible_weight += k.second;
-            if( signed_by( k.first ) )
+            if( signed_by( kf ) )
             {
                total_weight += k.second;
                if( total_weight >= auth.weight_threshold )
-                  return std::make_tuple( true, true, flat_set<public_key_type>() );
+                  return std::make_tuple( true, true, empty_public_key_set );
             }
             else
             {
-               if( k.first != public_key_type() )
-                  missed_keys.insert( k.first );
+               if( kf != public_key_type() )
+                  missed_keys.insert( kf );
             }
          }
 
@@ -233,7 +235,7 @@ struct sign_state
             {
                total_weight += k.second;
                if( total_weight >= auth.weight_threshold )
-                  return std::make_tuple( true, true, flat_set<public_key_type>() );
+                  return std::make_tuple( true, true, empty_public_key_set );
             }
          }
 
@@ -250,7 +252,7 @@ struct sign_state
                   approved_by.insert( a.first );
                   total_weight += a.second;
                   if( total_weight >= auth.weight_threshold )
-                     return std::make_tuple( true, true, flat_set<public_key_type>() );
+                     return std::make_tuple( true, true, empty_public_key_set );
                }
                else
                {
@@ -267,7 +269,7 @@ struct sign_state
                total_possible_weight += a.second;
                total_weight += a.second;
                if( total_weight >= auth.weight_threshold )
-                  return std::make_tuple( true, true, flat_set<public_key_type>() );
+                  return std::make_tuple( true, true, empty_public_key_set );
             }
          }
 
@@ -290,7 +292,7 @@ struct sign_state
                   approved_by_uid_auth.insert( a.first );
                   total_weight += a.second;
                   if( total_weight >= auth.weight_threshold )
-                     return std::make_tuple( true, true, flat_set<public_key_type>() );
+                     return std::make_tuple( true, true, empty_public_key_set );
                }
                else
                {
@@ -307,7 +309,7 @@ struct sign_state
                total_possible_weight += a.second;
                total_weight += a.second;
                if( total_weight >= auth.weight_threshold )
-                  return std::make_tuple( true, true, flat_set<public_key_type>() );
+                  return std::make_tuple( true, true, empty_public_key_set );
             }
          }
 
@@ -349,7 +351,7 @@ struct sign_state
 
       sign_state( const flat_map<public_key_type,signature_type>& sigs,
                   const std::function<const authority*(account_id_type)>& a,
-                  const flat_set<public_key_type>& keys = flat_set<public_key_type>() )
+                  const flat_set<public_key_type>& keys = empty_public_key_set )
       : get_active(a),
         get_owner_by_uid(null_by_uid),get_active_by_uid(null_by_uid),get_secondary_by_uid(null_by_uid),
         available_keys(keys)
@@ -363,7 +365,7 @@ struct sign_state
                   const std::function<const authority*(account_uid_type)>& o,
                   const std::function<const authority*(account_uid_type)>& a,
                   const std::function<const authority*(account_uid_type)>& s,
-                  const flat_set<public_key_type>& keys = flat_set<public_key_type>() )
+                  const flat_set<public_key_type>& keys = empty_public_key_set )
       : get_active(null_by_id),
         get_owner_by_uid(o),get_active_by_uid(a),get_secondary_by_uid(s),
         available_keys(keys)

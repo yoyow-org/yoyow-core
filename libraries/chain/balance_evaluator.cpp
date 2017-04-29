@@ -31,7 +31,7 @@ void_result balance_claim_evaluator::do_evaluate(const balance_claim_operation& 
    balance = &op.balance_to_claim(d);
 
    GRAPHENE_ASSERT(
-             op.balance_owner_key == balance->owner ||
+             address(op.balance_owner_key) == balance->owner ||
              pts_address(op.balance_owner_key, false, 56) == balance->owner ||
              pts_address(op.balance_owner_key, true, 56) == balance->owner ||
              pts_address(op.balance_owner_key, false, 0) == balance->owner ||

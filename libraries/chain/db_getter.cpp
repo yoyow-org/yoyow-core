@@ -115,5 +115,37 @@ const optional<account_id_type> database::find_account_id_by_uid( account_uid_ty
       return optional<account_id_type>();
 }
 
+const platform_object& database::get_platform_by_pid( platform_pid_type pid )const
+{
+   const auto& platforms_by_pid = get_index_type<platform_index>().indices().get<by_pid>();
+   auto itr = platforms_by_pid.find(pid);
+   FC_ASSERT( itr != platforms_by_pid.end(), "platform ${pid} not found.", ("pid",pid) );
+   return *itr;
+}
+
+const content_object& database::get_content_by_cid( platform_pid_type platform,
+                                                    account_uid_type poster,
+                                                    content_cid_type cid )const
+{
+   const auto& contents_by_cid = get_index_type<content_index>().indices().get<by_cid>();
+   auto itr = contents_by_cid.find(std::make_tuple(platform,poster,cid));
+   FC_ASSERT( itr != contents_by_cid.end(),
+              "content ${pid}_${uid}_${cid} not found.",
+              ("pid",platform)("uid",poster)("cid",cid) );
+   return *itr;
+}
+
+const content_object* database::find_content_by_cid( platform_pid_type platform,
+                                                    account_uid_type poster,
+                                                    content_cid_type cid )const
+{
+   const auto& contents_by_cid = get_index_type<content_index>().indices().get<by_cid>();
+   auto itr = contents_by_cid.find(std::make_tuple(platform,poster,cid));
+   if( itr != contents_by_cid.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
 
 } }
