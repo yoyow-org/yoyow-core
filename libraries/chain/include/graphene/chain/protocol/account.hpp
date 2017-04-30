@@ -112,10 +112,10 @@ namespace graphene { namespace chain {
       authority       active;
       authority       secondary;
 
-      account_options options;
+      account_options  options;
       account_reg_info reg_info;
 
-      extension< ext > extensions;
+      optional< extension< ext > > extensions;
 
       account_uid_type fee_payer_uid()const { return reg_info.registrar; }
       void            validate()const;

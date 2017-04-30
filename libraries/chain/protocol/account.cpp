@@ -232,21 +232,21 @@ void account_create_operation::validate()const
    validate_new_authority( secondary, "new secondary " );
    options.validate();
    reg_info.validate();
-   if( extensions.value.owner_special_authority.valid() )
-      validate_special_authority( *extensions.value.owner_special_authority );
-   if( extensions.value.active_special_authority.valid() )
-      validate_special_authority( *extensions.value.active_special_authority );
-   if( extensions.value.buyback_options.valid() )
+   if( extensions.valid() && extensions->value.owner_special_authority.valid() )
+      validate_special_authority( *extensions->value.owner_special_authority );
+   if( extensions.valid() && extensions->value.active_special_authority.valid() )
+      validate_special_authority( *extensions->value.active_special_authority );
+   if( extensions.valid() && extensions->value.buyback_options.valid() )
    {
-      FC_ASSERT( !(extensions.value.owner_special_authority.valid()) );
-      FC_ASSERT( !(extensions.value.active_special_authority.valid()) );
+      FC_ASSERT( !(extensions->value.owner_special_authority.valid()) );
+      FC_ASSERT( !(extensions->value.active_special_authority.valid()) );
       FC_ASSERT( owner == authority::null_authority() );
       FC_ASSERT( active == authority::null_authority() );
-      size_t n_markets = extensions.value.buyback_options->markets.size();
+      size_t n_markets = extensions->value.buyback_options->markets.size();
       FC_ASSERT( n_markets > 0 );
-      for( const asset_id_type m : extensions.value.buyback_options->markets )
+      for( const asset_id_type m : extensions->value.buyback_options->markets )
       {
-         FC_ASSERT( m != extensions.value.buyback_options->asset_to_buy );
+         FC_ASSERT( m != extensions->value.buyback_options->asset_to_buy );
       }
    }
 }

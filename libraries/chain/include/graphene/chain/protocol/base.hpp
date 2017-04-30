@@ -121,7 +121,7 @@ namespace graphene { namespace chain {
     *  content.
     */
    //typedef flat_set<future_extensions> extensions_type;
-   typedef extension<default_extension_type> extensions_type;
+   typedef optional< extension< default_extension_type > > extensions_type;
 
    void validate_account_uid( const account_uid_type uid, const string& object_name = "" );
    void validate_asset_id( asset a, const string& object_name = "asset" );
