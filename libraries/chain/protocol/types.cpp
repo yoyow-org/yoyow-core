@@ -229,8 +229,12 @@ namespace graphene { namespace chain {
     {
        const auto max = ( uint64_t(-1) >> 8 );
        const auto id = ( id_without_checksum & max );
+       // id will be converted to byte array (in fc::raw) to calculate sha256 checksum.
+       // Our target hardware is x86 compatible, which is little endian,
+       // so the result of conversion is lowest byte first.
        const auto hash = fc::sha256::hash( id );
-       const auto head = ( hash._hash[0] >> 56 );
+       // Use the first byte of sha256 checksum as uid checksum. Remember it's little endian.
+       const auto head = ( hash._hash[0] & 0xFF );
        return ( ( id << 8 ) | head );
     }
 
@@ -239,7 +243,7 @@ namespace graphene { namespace chain {
        const auto checksum = ( uid & 0xFF );
        const auto to_check = ( uid >> 8 );
        const auto hash = fc::sha256::hash( to_check );
-       const auto head = ( hash._hash[0] >> 56 );
+       const auto head = ( hash._hash[0] & 0xFF );
        return ( checksum == head );
     }
 
