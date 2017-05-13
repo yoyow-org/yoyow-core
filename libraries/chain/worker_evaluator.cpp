@@ -122,7 +122,8 @@ void vesting_balance_worker_type::pay_worker(share_type pay, database& db)
 void burn_worker_type::pay_worker(share_type pay, database& db)
 {
    total_burned += pay;
-   db.adjust_balance( GRAPHENE_NULL_ACCOUNT, pay );
+   // TODO review
+   //db.adjust_balance( GRAPHENE_NULL_ACCOUNT, pay );
 }
 
 } } // graphene::chain

@@ -91,8 +91,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       uint64_t get_account_count()const;
 
       // Balances
-      vector<asset> get_account_balances(account_id_type id, const flat_set<asset_id_type>& assets)const;
-      vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_id_type>& assets)const;
+      vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
+      vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const;
       vector<balance_object> get_balance_objects( const vector<address>& addrs )const;
       vector<asset> get_vested_balances( const vector<balance_id_type>& objs )const;
       vector<vesting_balance_object> get_vesting_balances( account_id_type account_id )const;
@@ -684,7 +684,7 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
 
 
       // Add the account's balances
-      auto balance_range = _db.get_index_type<account_balance_index>().indices().get<by_account_asset>().equal_range(boost::make_tuple(account->id));
+      auto balance_range = _db.get_index_type<account_balance_index>().indices().get<by_account_asset>().equal_range(boost::make_tuple(account->uid));
       //vector<account_balance_object> balances;
       std::for_each(balance_range.first, balance_range.second,
                     [&acnt](const account_balance_object& balance) {
@@ -827,12 +827,12 @@ uint64_t database_api_impl::get_account_count()const
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-vector<asset> database_api::get_account_balances(account_id_type id, const flat_set<asset_id_type>& assets)const
+vector<asset> database_api::get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const
 {
-   return my->get_account_balances( id, assets );
+   return my->get_account_balances( uid, assets );
 }
 
-vector<asset> database_api_impl::get_account_balances(account_id_type acnt, const flat_set<asset_id_type>& assets)const
+vector<asset> database_api_impl::get_account_balances(account_uid_type acnt, const flat_set<asset_aid_type>& assets)const
 {
    vector<asset> result;
    if (assets.empty())
@@ -848,23 +848,23 @@ vector<asset> database_api_impl::get_account_balances(account_id_type acnt, cons
       result.reserve(assets.size());
 
       std::transform(assets.begin(), assets.end(), std::back_inserter(result),
-                     [this, acnt](asset_id_type id) { return _db.get_balance(acnt, id); });
+                     [this, acnt](asset_aid_type id) { return _db.get_balance(acnt, id); });
    }
 
    return result;
 }
 
-vector<asset> database_api::get_named_account_balances(const std::string& name, const flat_set<asset_id_type>& assets)const
+vector<asset> database_api::get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const
 {
    return my->get_named_account_balances( name, assets );
 }
 
-vector<asset> database_api_impl::get_named_account_balances(const std::string& name, const flat_set<asset_id_type>& assets) const
+vector<asset> database_api_impl::get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets) const
 {
    const auto& accounts_by_name = _db.get_index_type<account_index>().indices().get<by_name>();
    auto itr = accounts_by_name.find(name);
    FC_ASSERT( itr != accounts_by_name.end() );
-   return get_account_balances(itr->get_id(), assets);
+   return get_account_balances(itr->get_uid(), assets);
 }
 
 vector<balance_object> database_api::get_balance_objects( const vector<address>& addrs )const

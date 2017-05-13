@@ -317,9 +317,10 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
              case impl_asset_bitasset_data_type:
               break;
              case impl_account_balance_object_type:{
-              const auto& aobj = dynamic_cast<const account_balance_object*>(obj);
-              assert( aobj != nullptr );
-              accounts.insert( aobj->owner );
+              // TODO review
+              //const auto& aobj = dynamic_cast<const account_balance_object*>(obj);
+              //assert( aobj != nullptr );
+              //accounts.insert( aobj->owner );
               break;
            } case impl_account_statistics_object_type:{
               const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);

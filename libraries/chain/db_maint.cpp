@@ -500,13 +500,14 @@ void update_top_n_authorities( database& db )
             return;
 
          // find accounts
-         const auto range = bal_idx.equal_range( boost::make_tuple( tha.asset ) );
+         const auto range = bal_idx.equal_range( boost::make_tuple( object_id_type(tha.asset).instance() ) );
          for( const account_balance_object& bal : boost::make_iterator_range( range.first, range.second ) )
          {
              assert( bal.asset_type == tha.asset );
-             if( bal.owner == acct.id )
+             if( bal.owner == acct.uid )
                 continue;
-             vc.add( bal.owner, bal.balance.value );
+             // TODO review
+             //vc.add( bal.owner, bal.balance.value );
              --num_needed;
              if( num_needed == 0 )
                 break;
@@ -583,7 +584,8 @@ void split_fba_balance(
    vop.amount = buyback_amount;
    if( vop.amount != 0 )
    {
-      db.adjust_balance( *designated_asset.buyback_account, asset(buyback_amount) );
+      // TODO review
+      //db.adjust_balance( *designated_asset.buyback_account, asset(buyback_amount) );
       db.push_applied_operation(vop);
    }
 
@@ -592,7 +594,8 @@ void split_fba_balance(
    vop.amount = issuer_amount;
    if( vop.amount != 0 )
    {
-      db.adjust_balance( designated_asset.issuer, asset(issuer_amount) );
+      // TODO review
+      //db.adjust_balance( designated_asset.issuer, asset(issuer_amount) );
       db.push_applied_operation(vop);
    }
 
@@ -630,12 +633,12 @@ void create_buyback_orders( database& db )
 
       while( true )
       {
-         auto it = bal_idx.lower_bound( boost::make_tuple( buyback_account.id, next_asset ) );
+         auto it = bal_idx.lower_bound( boost::make_tuple( buyback_account.uid, object_id_type(next_asset).instance() ) );
          if( it == bal_idx.end() )
             break;
-         if( it->owner != buyback_account.id )
+         if( it->owner != buyback_account.uid )
             break;
-         asset_id_type asset_to_sell = it->asset_type;
+         asset_id_type asset_to_sell = asset_id_type( it->asset_type );
          share_type amount_to_sell = it->balance;
          next_asset = asset_to_sell + 1;
          if( asset_to_sell == asset_to_buy.id )
@@ -752,7 +755,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
             const auto& stats = stake_account.statistics(d);
             uint64_t voting_stake = stats.total_core_in_orders.value
                   + (stake_account.cashback_vb.valid() ? (*stake_account.cashback_vb)(d).balance.amount.value: 0)
-                  + d.get_balance(stake_account.get_id(), asset_id_type()).amount.value;
+                  + d.get_balance(stake_account.get_uid(), GRAPHENE_CORE_ASSET_AID).amount.value;
 
             /*
             for( vote_id_type id : opinion_account.options.votes )

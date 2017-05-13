@@ -53,7 +53,8 @@ void_result transfer_to_blind_evaluator::do_evaluate( const transfer_to_blind_op
 
 void_result transfer_to_blind_evaluator::do_apply( const transfer_to_blind_operation& o ) 
 { try {
-   db().adjust_balance( o.from, -o.amount ); 
+   // TODO review
+   //db().adjust_balance( o.from, -o.amount );
 
    const auto& add = asset_id_type(o.amount.asset_id)(db()).dynamic_asset_data_id(db());  // verify fee is a legit asset 
    db().modify( add, [&]( asset_dynamic_data_object& obj ){
@@ -97,8 +98,9 @@ void_result transfer_from_blind_evaluator::do_evaluate( const transfer_from_blin
 
 void_result transfer_from_blind_evaluator::do_apply( const transfer_from_blind_operation& o ) 
 { try {
-   db().adjust_balance( o.fee_payer(), o.fee ); 
-   db().adjust_balance( o.to, o.amount ); 
+   // TODO review
+   //db().adjust_balance( o.fee_payer(), o.fee );
+   //db().adjust_balance( o.to, o.amount );
    const auto& bbi = db().get_index_type<blinded_balance_index>();
    const auto& cidx = bbi.indices().get<by_commitment>();
    for( const auto& in : o.inputs )
@@ -146,7 +148,8 @@ void_result blind_transfer_evaluator::do_evaluate( const blind_transfer_operatio
 
 void_result blind_transfer_evaluator::do_apply( const blind_transfer_operation& o ) 
 { try {
-   db().adjust_balance( o.fee_payer(), o.fee ); // deposit the fee to the temp account
+   // TODO review
+   //db().adjust_balance( o.fee_payer(), o.fee ); // deposit the fee to the temp account
    const auto& bbi = db().get_index_type<blinded_balance_index>();
    const auto& cidx = bbi.indices().get<by_commitment>();
    for( const auto& in : o.inputs )

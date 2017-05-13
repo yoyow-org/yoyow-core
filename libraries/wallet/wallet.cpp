@@ -2206,24 +2206,7 @@ public:
          return result.get_string();
       };
 
-      m["get_account_history"] = [this](variant result, const fc::variants& a)
-      {
-         auto r = result.as<vector<operation_detail>>();
-         std::stringstream ss;
-
-         for( operation_detail& d : r )
-         {
-            operation_history_object& i = d.op;
-            auto b = _remote_db->get_block_header(i.block_num);
-            FC_ASSERT(b);
-            ss << b->timestamp.to_iso_string() << " ";
-            i.op.visit(operation_printer(ss, *this, i.result));
-            ss << " \n";
-         }
-
-         return ss.str();
-      };
-      m["get_relative_account_history"] = [this](variant result, const fc::variants& a)
+      m["get_relative_account_history"] = m["get_account_history"] = [this](variant result, const fc::variants& a)
       {
          auto r = result.as<vector<operation_detail>>();
          std::stringstream ss;
@@ -2241,7 +2224,7 @@ public:
          return ss.str();
       };
 
-      m["list_account_balances"] = [this](variant result, const fc::variants& a)
+      m["list_account_balances_by_name"] = m["list_account_balances_by_uid"] = [this](variant result, const fc::variants& a)
       {
          auto r = result.as<vector<asset>>();
          vector<asset_object> asset_recs;
@@ -2932,11 +2915,14 @@ map<string,account_id_type> wallet_api::list_accounts(const string& lowerbound, 
    return my->_remote_db->lookup_accounts(lowerbound, limit);
 }
 
-vector<asset> wallet_api::list_account_balances(const string& id)
+vector<asset> wallet_api::list_account_balances_by_uid(const account_uid_type uid)
 {
-   if( auto real_id = detail::maybe_id<account_id_type>(id) )
-      return my->_remote_db->get_account_balances(*real_id, flat_set<asset_id_type>());
-   return my->_remote_db->get_account_balances(get_account(id).id, flat_set<asset_id_type>());
+   return my->_remote_db->get_account_balances(uid, flat_set<asset_aid_type>());
+}
+
+vector<asset> wallet_api::list_account_balances_by_name(const string& name)
+{
+   return my->_remote_db->get_named_account_balances(name, flat_set<asset_aid_type>());
 }
 
 vector<asset_object> wallet_api::list_assets(const string& lowerbound, uint32_t limit)const

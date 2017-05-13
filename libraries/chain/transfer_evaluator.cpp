@@ -118,8 +118,9 @@ void_result override_transfer_evaluator::do_evaluate( const override_transfer_op
 
 void_result override_transfer_evaluator::do_apply( const override_transfer_operation& o )
 { try {
-   db().adjust_balance( o.from, -o.amount );
-   db().adjust_balance( o.to, o.amount );
+   // TODO review
+   //db().adjust_balance( o.from, -o.amount );
+   //db().adjust_balance( o.to, o.amount );
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 

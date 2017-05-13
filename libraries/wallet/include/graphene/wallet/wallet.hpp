@@ -326,13 +326,21 @@ class wallet_api
        */
       map<string,account_id_type>       list_accounts(const string& lowerbound, uint32_t limit);
       /** List the balances of an account.
-       * Each account can have multiple balances, one for each type of asset owned by that 
+       * Each account can have multiple balances, one for each type of asset owned by that
        * account.  The returned list will only contain assets for which the account has a
        * nonzero balance
-       * @param id the name or id of the account whose balances you want
+       * @param uid the uid of the account whose balances you want
        * @returns a list of the given account's balances
        */
-      vector<asset>                     list_account_balances(const string& id);
+      vector<asset>                     list_account_balances_by_uid(const account_uid_type uid);
+      /** List the balances of an account.
+       * Each account can have multiple balances, one for each type of asset owned by that
+       * account.  The returned list will only contain assets for which the account has a
+       * nonzero balance
+       * @param name the name of the account whose balances you want
+       * @returns a list of the given account's balances
+       */
+      vector<asset>                     list_account_balances_by_name(const string& name);
       /** Lists all assets registered on the blockchain.
        * 
        * To list all assets, pass the empty string \c "" for the lowerbound to start
@@ -1625,7 +1633,8 @@ FC_API( graphene::wallet::wallet_api,
         (dump_private_keys)
         (list_my_accounts)
         (list_accounts)
-        (list_account_balances)
+        (list_account_balances_by_uid)
+        (list_account_balances_by_name)
         (list_assets)
         (import_key)
         (import_accounts)

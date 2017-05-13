@@ -51,7 +51,7 @@ void database::debug_dump()
    for( const account_balance_object& a : balance_index )
    {
     //  idump(("balance")(a));
-      total_balances[object_id_type(a.asset_type).instance()] += a.balance;
+      total_balances[a.asset_type] += a.balance;
    }
    for( const account_statistics_object& s : statistics_index )
    {

@@ -39,7 +39,7 @@ void_result vesting_balance_create_evaluator::do_evaluate( const vesting_balance
    // TODO: Check asset authorizations and withdrawals
 
    FC_ASSERT( op.amount.amount > 0 );
-   FC_ASSERT( d.get_balance( creator_account.id, asset_id_type(op.amount.asset_id) ) >= op.amount );
+   FC_ASSERT( d.get_balance( creator_account.uid, op.amount.asset_id ) >= op.amount );
    FC_ASSERT( !asset_id_type(op.amount.asset_id)(d).is_transfer_restricted() );
 
    return void_result();
@@ -83,8 +83,9 @@ object_id_type vesting_balance_create_evaluator::do_apply( const vesting_balance
    database& d = db();
    const time_point_sec now = d.head_block_time();
 
-   FC_ASSERT( d.get_balance( op.creator, asset_id_type(op.amount.asset_id) ) >= op.amount );
-   d.adjust_balance( op.creator, -op.amount );
+   // TODO review
+   //FC_ASSERT( d.get_balance( op.creator, asset_id_type(op.amount.asset_id) ) >= op.amount );
+   //d.adjust_balance( op.creator, -op.amount );
 
    const vesting_balance_object& vbo = d.create< vesting_balance_object >( [&]( vesting_balance_object& obj )
    {
@@ -130,7 +131,8 @@ void_result vesting_balance_withdraw_evaluator::do_apply( const vesting_balance_
       vbo.withdraw( now, op.amount );
    } );
 
-   d.adjust_balance( op.owner, op.amount );
+   // TODO review
+   //d.adjust_balance( op.owner, op.amount );
 
    // TODO: Check asset authorizations and withdrawals
    return void_result();

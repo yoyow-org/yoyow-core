@@ -38,7 +38,7 @@ namespace graphene { namespace chain {
       struct fee_parameters_type {};
 
       asset             fee;
-      account_uid_type   deposit_to_account;
+      account_uid_type  deposit_to_account;
       balance_id_type   balance_to_claim; // TODO redefine type
       public_key_type   balance_owner_key;
       asset             total_claimed;

@@ -101,8 +101,8 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = implementation_ids;
          static const uint8_t type_id  = impl_account_balance_object_type;
 
-         account_id_type   owner; // TODO review: change type
-         asset_id_type     asset_type; // TODO review: change type
+         account_uid_type  owner;
+         asset_aid_type    asset_type;
          share_type        balance;
 
          asset get_balance()const { return asset(balance, asset_type); }
@@ -340,21 +340,21 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_account_asset>,
             composite_key<
                account_balance_object,
-               member<account_balance_object, account_id_type, &account_balance_object::owner>,
-               member<account_balance_object, asset_id_type, &account_balance_object::asset_type>
+               member<account_balance_object, account_uid_type, &account_balance_object::owner>,
+               member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>
             >
          >,
          ordered_unique< tag<by_asset_balance>,
             composite_key<
                account_balance_object,
-               member<account_balance_object, asset_id_type, &account_balance_object::asset_type>,
+               member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>,
                member<account_balance_object, share_type, &account_balance_object::balance>,
-               member<account_balance_object, account_id_type, &account_balance_object::owner>
+               member<account_balance_object, account_uid_type, &account_balance_object::owner>
             >,
             composite_key_compare<
-               std::less< asset_id_type >,
+               std::less< asset_aid_type >,
                std::greater< share_type >,
-               std::less< account_id_type >
+               std::less< account_uid_type >
             >
          >
       >

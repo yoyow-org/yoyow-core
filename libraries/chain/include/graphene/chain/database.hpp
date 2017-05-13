@@ -303,17 +303,18 @@ namespace graphene { namespace chain {
           * @param asset_id ID of the asset to get balance in
           * @return owner's balance in asset
           */
-         asset get_balance(account_id_type owner, asset_id_type asset_id)const;
+         asset get_balance(account_uid_type owner, asset_aid_type asset_id)const;
          /// This is an overloaded method.
          asset get_balance(const account_object& owner, const asset_object& asset_obj)const;
-         asset get_balance(const account_object& owner, asset_id_type asset_id)const;
+         /// This is an overloaded method.
+         asset get_balance(const account_object& owner, asset_aid_type asset_id)const;
 
          /**
           * @brief Adjust a particular account's balance in a given asset by a delta
           * @param account ID of account whose balance should be adjusted
           * @param delta Asset ID and amount to adjust balance by
           */
-         void adjust_balance(account_id_type account, asset delta);
+         void adjust_balance(account_uid_type account, asset delta);
          void adjust_balance(const account_object& account, asset delta);
 
          /**

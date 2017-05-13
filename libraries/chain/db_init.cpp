@@ -601,7 +601,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
    if( total_supplies[ asset_id_type(0) ] > 0 )
    {
-       adjust_balance(GRAPHENE_COMMITTEE_ACCOUNT, -get_balance(GRAPHENE_COMMITTEE_ACCOUNT,{}));
+       adjust_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, -get_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID,{}));
    }
    else
    {

@@ -174,7 +174,8 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
 
 void_result asset_issue_evaluator::do_apply( const asset_issue_operation& o )
 { try {
-   db().adjust_balance( o.issue_to_account, o.asset_to_issue );
+   // TODO review
+   //db().adjust_balance( o.issue_to_account, o.asset_to_issue );
 
    db().modify( *asset_dyn_data, [&]( asset_dynamic_data_object& data ){
         data.current_supply += o.asset_to_issue.amount;
@@ -206,7 +207,8 @@ void_result asset_reserve_evaluator::do_evaluate( const asset_reserve_operation&
 
 void_result asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
 { try {
-   db().adjust_balance( o.payer, -o.amount_to_reserve );
+   // TODO review
+   //db().adjust_balance( o.payer, -o.amount_to_reserve );
 
    db().modify( *asset_dyn_data, [&]( asset_dynamic_data_object& data ){
         data.current_supply -= o.amount_to_reserve.amount;
@@ -228,7 +230,8 @@ void_result asset_fund_fee_pool_evaluator::do_evaluate(const asset_fund_fee_pool
 
 void_result asset_fund_fee_pool_evaluator::do_apply(const asset_fund_fee_pool_operation& o)
 { try {
-   db().adjust_balance(o.from_account, -o.amount);
+   // TODO review
+   //db().adjust_balance(o.from_account, -o.amount);
 
    db().modify( *asset_dyn_data, [&]( asset_dynamic_data_object& data ) {
       data.fee_pool += o.amount;
@@ -457,7 +460,8 @@ void_result asset_settle_evaluator::do_evaluate(const asset_settle_evaluator::op
 operation_result asset_settle_evaluator::do_apply(const asset_settle_evaluator::operation_type& op)
 { try {
    database& d = db();
-   d.adjust_balance(op.account, -op.amount);
+   // TODO review
+   //d.adjust_balance(op.account, -op.amount);
 
    const auto& bitasset = asset_to_settle->bitasset_data(d);
    if( bitasset.has_settlement() )
@@ -469,7 +473,8 @@ operation_result asset_settle_evaluator::do_apply(const asset_settle_evaluator::
                 obj.settlement_fund -= settled_amount.amount;
                 });
 
-      d.adjust_balance(op.account, settled_amount);
+      // TODO review
+      //d.adjust_balance(op.account, settled_amount);
 
       const auto& mia_dyn = asset_to_settle->dynamic_asset_data_id(d);
 
@@ -576,7 +581,8 @@ void_result asset_claim_fees_evaluator::do_apply( const asset_claim_fees_operati
      _addo.accumulated_fees -= o.amount_to_claim.amount;
    });
 
-   d.adjust_balance( o.issuer, o.amount_to_claim );
+   // TODO review
+   //d.adjust_balance( o.issuer, o.amount_to_claim );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

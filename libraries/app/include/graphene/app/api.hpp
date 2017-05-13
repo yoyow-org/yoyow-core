@@ -73,13 +73,12 @@ namespace graphene { namespace app {
 
    struct account_asset_balance
    {
-      string          name;
-      account_id_type account_id;
-      share_type      amount;
+      account_uid_type account_uid;
+      share_type       amount;
    };
    struct asset_holders
    {
-      asset_id_type   asset_id;
+      asset_aid_type  asset_id;
       int             count;
    };
    
@@ -305,8 +304,8 @@ namespace graphene { namespace app {
          asset_api(graphene::chain::database& db);
          ~asset_api();
 
-         vector<account_asset_balance> get_asset_holders( asset_id_type asset_id )const;
-         int get_asset_holders_count( asset_id_type asset_id )const;
+         vector<account_asset_balance> get_asset_holders( asset_aid_type asset_id )const;
+         int get_asset_holders_count( asset_aid_type asset_id )const;
          vector<asset_holders> get_all_asset_holders() const;
 
       private:
@@ -377,7 +376,7 @@ FC_REFLECT( graphene::app::verify_range_proof_rewind_result,
 //FC_REFLECT_TYPENAME( fc::ecc::compact_signature );
 //FC_REFLECT_TYPENAME( fc::ecc::commitment_type );
 
-FC_REFLECT( graphene::app::account_asset_balance, (name)(account_id)(amount) );
+FC_REFLECT( graphene::app::account_asset_balance, (account_uid)(amount) );
 FC_REFLECT( graphene::app::asset_holders, (asset_id)(count) );
 
 FC_API(graphene::app::history_api,

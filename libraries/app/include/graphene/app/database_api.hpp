@@ -296,10 +296,10 @@ class database_api
        * @param assets IDs of the assets to get balances of; if empty, get all assets account has a balance in
        * @return Balances of the account
        */
-      vector<asset> get_account_balances(account_id_type id, const flat_set<asset_id_type>& assets)const;
+      vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
 
       /// Semantically equivalent to @ref get_account_balances, but takes a name instead of an ID.
-      vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_id_type>& assets)const;
+      vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const;
 
       /** @return all unclaimed balance objects for a set of addresses */
       vector<balance_object> get_balance_objects( const vector<address>& addrs )const;

@@ -370,9 +370,10 @@ namespace graphene { namespace app {
                  case impl_asset_bitasset_data_type:
                   break;
                  case impl_account_balance_object_type:{
-                  const auto& aobj = dynamic_cast<const account_balance_object*>(obj);
-                  assert( aobj != nullptr );
-                  result.push_back( aobj->owner );
+                  // TODO review
+                  //const auto& aobj = dynamic_cast<const account_balance_object*>(obj);
+                  //assert( aobj != nullptr );
+                  //result.push_back( aobj->owner );
                   break;
                } case impl_account_statistics_object_type:{
                   const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
@@ -638,7 +639,7 @@ namespace graphene { namespace app {
     asset_api::asset_api(graphene::chain::database& db) : _db(db) { }
     asset_api::~asset_api() { }
 
-    vector<account_asset_balance> asset_api::get_asset_holders( asset_id_type asset_id ) const {
+    vector<account_asset_balance> asset_api::get_asset_holders( asset_aid_type asset_id ) const {
 
       const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
       auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
@@ -647,14 +648,11 @@ namespace graphene { namespace app {
 
       for( const account_balance_object& bal : boost::make_iterator_range( range.first, range.second ) )
       {
-        if( bal.balance.value == 0 ) continue;
-
-        auto account = _db.find(bal.owner);
+        if( bal.balance.value == 0 ) break; // ordered
 
         account_asset_balance aab;
-        aab.name       = account->name;
-        aab.account_id = account->id;
-        aab.amount     = bal.balance.value;
+        aab.account_uid = bal.owner;
+        aab.amount      = bal.balance.value;
 
         result.push_back(aab);
       }
@@ -662,11 +660,11 @@ namespace graphene { namespace app {
       return result;
     }
     // get number of asset holders.
-    int asset_api::get_asset_holders_count( asset_id_type asset_id ) const {
+    int asset_api::get_asset_holders_count( asset_aid_type asset_id ) const {
 
       const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
       auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
-            
+      // TODO FIXME filter out accounts with balance == 0
       int count = boost::distance(range) - 1;
 
       return count;
@@ -681,16 +679,16 @@ namespace graphene { namespace app {
       {
         const auto& dasset_obj = asset_obj.dynamic_asset_data_id(_db);
 
-        asset_id_type asset_id;
-        asset_id = dasset_obj.id;
+        asset_aid_type asset_id;
+        asset_id = object_id_type(dasset_obj.id).instance();
 
         const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
         auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
-
+        // TODO FIXME filter out accounts with balance == 0
         int count = boost::distance(range) - 1;
                 
         asset_holders ah;
-        ah.asset_id       = asset_id;
+        ah.asset_id  = asset_id;
         ah.count     = count;
 
         result.push_back(ah);

@@ -80,7 +80,8 @@ object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_o
          }
    });
 
-   db().adjust_balance(op.seller, -op.amount_to_sell);
+   // TODO review
+   //db().adjust_balance(op.seller, -op.amount_to_sell);
 
    const auto& new_order_object = db().create<limit_order_object>([&](limit_order_object& obj){
        obj.seller   = _seller->id;
@@ -171,7 +172,8 @@ void_result call_order_update_evaluator::do_apply(const call_order_update_operat
 
    if( o.delta_debt.amount != 0 )
    {
-      d.adjust_balance( o.funding_account,  o.delta_debt        );
+      // TODO review
+      //d.adjust_balance( o.funding_account,  o.delta_debt        );
 
       // Deduct the debt paid from the total supply of the debt asset.
       d.modify(_debt_asset->dynamic_asset_data_id(d), [&](asset_dynamic_data_object& dynamic_asset) {
@@ -182,7 +184,8 @@ void_result call_order_update_evaluator::do_apply(const call_order_update_operat
 
    if( o.delta_collateral.amount != 0 )
    {
-      d.adjust_balance( o.funding_account, -o.delta_collateral  );
+      // TODO review
+      //d.adjust_balance( o.funding_account, -o.delta_collateral  );
 
       // Adjust the total core in orders accodingly
       if( o.delta_collateral.asset_id == GRAPHENE_CORE_ASSET_AID )

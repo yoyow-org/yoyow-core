@@ -65,7 +65,8 @@ void_result withdraw_permission_claim_evaluator::do_evaluate(const withdraw_perm
    FC_ASSERT(permit.authorized_account == op.withdraw_to_account);
    FC_ASSERT(permit.withdraw_from_account == op.withdraw_from_account);
    FC_ASSERT(op.amount_to_withdraw <= permit.available_this_period( d.head_block_time() ) );
-   FC_ASSERT(d.get_balance(op.withdraw_from_account, asset_id_type(op.amount_to_withdraw.asset_id)) >= op.amount_to_withdraw);
+   // TODO review
+   //FC_ASSERT(d.get_balance(op.withdraw_from_account, asset_id_type(op.amount_to_withdraw.asset_id)) >= op.amount_to_withdraw);
 
    const asset_object& _asset = asset_id_type(op.amount_to_withdraw.asset_id)(d);
    if( _asset.is_transfer_restricted() ) FC_ASSERT( _asset.issuer == permit.authorized_account || _asset.issuer == permit.withdraw_from_account );
@@ -92,8 +93,9 @@ void_result withdraw_permission_claim_evaluator::do_apply(const withdraw_permiss
          p.claimed_this_period = op.amount_to_withdraw.amount;
    });
 
-   d.adjust_balance(op.withdraw_from_account, -op.amount_to_withdraw);
-   d.adjust_balance(op.withdraw_to_account, op.amount_to_withdraw);
+   // TODO review
+   //d.adjust_balance(op.withdraw_from_account, -op.amount_to_withdraw);
+   //d.adjust_balance(op.withdraw_to_account, op.amount_to_withdraw);
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }

@@ -130,13 +130,13 @@ database& generic_evaluator::db()const { return trx_state->db(); }
    }
    void generic_evaluator::db_adjust_balance(const account_id_type& fee_payer, asset fee_from_account)
    {
-     db().adjust_balance(fee_payer, fee_from_account);
+     // TODO review
+     FC_ASSERT( "deprecated." );
+     //db().adjust_balance(fee_payer, fee_from_account);
    }
    void generic_evaluator::db_adjust_balance(const account_uid_type& fee_payer, asset fee_from_account)
    {
-     const auto& o_account_id = db().find_account_id_by_uid( fee_payer );
-     FC_ASSERT( o_account_id.valid() );
-     db().adjust_balance(*o_account_id, fee_from_account);
+     db().adjust_balance(fee_payer, fee_from_account);
    }
 
 } }

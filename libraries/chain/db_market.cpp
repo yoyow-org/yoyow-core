@@ -95,7 +95,8 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
 
 void database::cancel_order(const force_settlement_object& order, bool create_virtual_op)
 {
-   adjust_balance(order.owner, order.balance);
+   // TODO review
+   //adjust_balance(order.owner, order.balance);
 
    if( create_virtual_op )
    {
@@ -118,8 +119,9 @@ void database::cancel_order( const limit_order_object& order, bool create_virtua
          obj.total_core_in_orders -= refunded.amount;
       }
    });
-   adjust_balance(order.seller, refunded);
-   adjust_balance(order.seller, order.deferred_fee);
+   // TODO review
+   //adjust_balance(order.seller, refunded);
+   //adjust_balance(order.seller, order.deferred_fee);
 
    if( create_virtual_op )
    {
@@ -366,8 +368,9 @@ bool database::fill_order( const call_order_object& order, const asset& pays, co
    if( collateral_freed || pays.asset_id == GRAPHENE_CORE_ASSET_AID )
    {
       const account_statistics_object& borrower_statistics = borrower.statistics(*this);
-      if( collateral_freed )
-         adjust_balance(borrower.get_id(), *collateral_freed);
+      // TODO review
+      //if( collateral_freed )
+      //   adjust_balance(borrower.get_id(), *collateral_freed);
 
       modify( borrower_statistics, [&]( account_statistics_object& b ){
               if( collateral_freed && collateral_freed->amount > 0 )
@@ -403,7 +406,8 @@ bool database::fill_order(const force_settlement_object& settle, const asset& pa
    } else {
       filled = true;
    }
-   adjust_balance(settle.owner, receives - issuer_fees);
+   // TODO review
+   //adjust_balance(settle.owner, receives - issuer_fees);
 
    assert( pays.asset_id != receives.asset_id );
    push_applied_operation( fill_order_operation{ settle.id, settle.owner, pays, receives, issuer_fees } );
@@ -555,7 +559,7 @@ void database::pay_order( const account_object& receiver, const asset& receives,
             b.total_core_in_orders -= pays.amount;
          }
    });
-   adjust_balance(receiver.get_id(), receives);
+   adjust_balance(receiver.get_uid(), receives);
 }
 
 asset database::calculate_market_fee( const asset_object& trade_asset, const asset& trade_amount )
