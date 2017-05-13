@@ -65,6 +65,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Blocks and transactions
       optional<block_header> get_block_header(uint32_t block_num)const;
+      map<uint32_t, optional<block_header>> get_block_header_batch(const vector<uint32_t> block_nums)const;
       optional<signed_block> get_block(uint32_t block_num)const;
       processed_transaction get_transaction( uint32_t block_num, uint32_t trx_in_block )const;
 
@@ -366,6 +367,20 @@ optional<block_header> database_api_impl::get_block_header(uint32_t block_num) c
    if(result)
       return *result;
    return {};
+}
+map<uint32_t, optional<block_header>> database_api::get_block_header_batch(const vector<uint32_t> block_nums)const
+{
+   return my->get_block_header_batch( block_nums );
+}
+
+map<uint32_t, optional<block_header>> database_api_impl::get_block_header_batch(const vector<uint32_t> block_nums) const
+{
+   map<uint32_t, optional<block_header>> results;
+   for (const uint32_t block_num : block_nums)
+   {
+      results[block_num] = get_block_header(block_num);
+   }
+   return results;
 }
 
 optional<signed_block> database_api::get_block(uint32_t block_num)const
@@ -692,6 +707,11 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       std::for_each(call_range.first, call_range.second,
                     [&acnt] (const call_order_object& call) {
                        acnt.call_orders.emplace_back(call);
+                    });
+      auto settle_range = _db.get_index_type<force_settlement_index>().indices().get<by_account>().equal_range(account->id);
+      std::for_each(settle_range.first, settle_range.second,
+                    [&acnt] (const force_settlement_object& settle) {
+                       acnt.settle_orders.emplace_back(settle);
                     });
 
       // get assets issued by user

@@ -171,8 +171,10 @@ namespace detail {
                "104.236.144.84:1777",               // puppies      (USA)
                "128.199.143.47:2015",               // Harvey       (Singapore)
                "212.47.249.84:50696",               // iHashFury    (France)
+               "23.92.53.182:1776",                 // sahkan       (USA)
                "51.15.61.160:1776",                 // lafona       (France)
                "bts-seed1.abit-more.com:62015",     // abit         (China)
+               "node.blckchnd.com:4243",            // blckchnd     (Germany)
                "seed.bitsharesnodes.com:1776",      // wackou       (Netherlands)
                "seed.blocktrades.us:1776",          // BlockTrades  (USA)
                "seed.cubeconnex.com:1777",          // cube         (USA)
@@ -850,6 +852,9 @@ namespace detail {
             if (high_block_num == 0)
               return synopsis; // we have no blocks
           }
+
+          if( low_block_num == 0)
+             low_block_num = 1;
 
           // at this point:
           // low_block_num is the block before the first block we can undo,
