@@ -2959,17 +2959,16 @@ vector<operation_detail> wallet_api::get_account_history(string name, int limit)
    return result;
 }
 
-vector<operation_detail> wallet_api::get_relative_account_history(string name, uint32_t stop, int limit, uint32_t start)const
+vector<operation_detail> wallet_api::get_relative_account_history(account_uid_type uid, uint32_t stop, int limit, uint32_t start)const
 {
    
    FC_ASSERT( start > 0 || limit <= 100 );
    
    vector<operation_detail> result;
-   auto account_id = get_account(name).get_id();
 
    while( limit > 0 )
    {
-      vector <operation_history_object> current = my->_remote_hist->get_relative_account_history(account_id, stop, std::min<uint32_t>(100, limit), start);
+      vector <operation_history_object> current = my->_remote_hist->get_relative_account_history(uid, stop, std::min<uint32_t>(100, limit), start);
       for (auto &o : current) {
          std::stringstream ss;
          auto memo = o.op.visit(detail::operation_printer(ss, *my, o.result));

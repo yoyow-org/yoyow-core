@@ -132,7 +132,7 @@ namespace graphene { namespace app {
           * 0 is default, which will start querying from the most recent operation.
           * @return A list of operations performed by account, ordered from most recent to oldest.
           */
-         vector<operation_history_object> get_relative_account_history( account_id_type account,
+         vector<operation_history_object> get_relative_account_history( account_uid_type account,
                                                                         uint32_t stop = 0,
                                                                         unsigned limit = 100,
                                                                         uint32_t start = 0) const;

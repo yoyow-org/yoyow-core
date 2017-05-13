@@ -499,19 +499,20 @@ namespace graphene { namespace app {
     }
 
 
-    vector<operation_history_object> history_api::get_relative_account_history( account_id_type account, 
-                                                                                uint32_t stop, 
-                                                                                unsigned limit, 
+    vector<operation_history_object> history_api::get_relative_account_history( account_uid_type account,
+                                                                                uint32_t stop,
+                                                                                unsigned limit,
                                                                                 uint32_t start) const
     {
        FC_ASSERT( _app.chain_database() );
        const auto& db = *_app.chain_database();
        FC_ASSERT(limit <= 100);
        vector<operation_history_object> result;
+       const auto& account_obj = db.get_account_by_uid(account);
        if( start == 0 )
-          start = account(db).statistics(db).total_ops;
+          start = account_obj.statistics(db).total_ops;
        else
-          start = min( account(db).statistics(db).total_ops, start );
+          start = min( account_obj.statistics(db).total_ops, start );
 
 
        if( start >= stop && start > 0 && limit > 0 )
@@ -519,8 +520,8 @@ namespace graphene { namespace app {
           const auto& hist_idx = db.get_index_type<account_transaction_history_index>();
           const auto& by_seq_idx = hist_idx.indices().get<by_seq>();
 
-          auto itr = by_seq_idx.upper_bound( boost::make_tuple( account, start ) );
-          auto itr_stop = by_seq_idx.lower_bound( boost::make_tuple( account, stop ) );
+          auto itr = by_seq_idx.upper_bound( boost::make_tuple( account_obj.uid, start ) );
+          auto itr_stop = by_seq_idx.lower_bound( boost::make_tuple( account_obj.uid, stop ) );
          
           do
           {
