@@ -235,6 +235,13 @@ class database_api
       vector<optional<account_object>> get_accounts(const vector<account_id_type>& account_ids)const;
 
       /**
+       * @brief Get a list of accounts by UID
+       * @param account_uids UIDs of the accounts to retrieve
+       * @return The accounts corresponding to the provided UIDs
+       */
+      vector<optional<account_object>> get_accounts_by_uid(const vector<account_uid_type>& account_uids)const;
+
+      /**
        * @brief Fetch all objects relevant to the specified accounts and subscribe to updates
        * @param callback Function to call with updates
        * @param names_or_ids Each item must be the name or ID of an account to retrieve
@@ -606,6 +613,7 @@ FC_API(graphene::app::database_api,
 
    // Accounts
    (get_accounts)
+   (get_accounts_by_uid)
    (get_full_accounts)
    (get_account_by_name)
    (get_account_references)

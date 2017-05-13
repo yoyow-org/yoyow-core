@@ -105,6 +105,16 @@ const account_object& database::get_account_by_uid( account_uid_type uid )const
    return *itr;
 }
 
+const account_object* database::find_account_by_uid( account_uid_type uid )const
+{
+   const auto& accounts_by_uid = get_index_type<account_index>().indices().get<by_uid>();
+   auto itr = accounts_by_uid.find(uid);
+   if( itr != accounts_by_uid.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
 const optional<account_id_type> database::find_account_id_by_uid( account_uid_type uid )const
 {
    const auto& accounts_by_uid = get_index_type<account_index>().indices().get<by_uid>();

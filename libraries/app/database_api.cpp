@@ -81,6 +81,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Accounts
       vector<optional<account_object>> get_accounts(const vector<account_id_type>& account_ids)const;
+      vector<optional<account_object>> get_accounts_by_uid(const vector<account_uid_type>& account_uids)const;
       std::map<string,full_account> get_full_accounts( const vector<string>& names_or_ids, bool subscribe );
       optional<account_object> get_account_by_name( string name )const;
       vector<account_id_type> get_account_references( account_id_type account_id )const;
@@ -565,6 +566,11 @@ vector<optional<account_object>> database_api::get_accounts(const vector<account
    return my->get_accounts( account_ids );
 }
 
+vector<optional<account_object>> database_api::get_accounts_by_uid(const vector<account_uid_type>& account_uids)const
+{
+   return my->get_accounts_by_uid( account_uids );
+}
+
 vector<optional<account_object>> database_api_impl::get_accounts(const vector<account_id_type>& account_ids)const
 {
    vector<optional<account_object>> result; result.reserve(account_ids.size());
@@ -573,6 +579,22 @@ vector<optional<account_object>> database_api_impl::get_accounts(const vector<ac
       if(auto o = _db.find(id))
       {
          subscribe_to_item( id );
+         return *o;
+      }
+      return {};
+   });
+   return result;
+}
+
+vector<optional<account_object>> database_api_impl::get_accounts_by_uid(const vector<account_uid_type>& account_uids)const
+{
+   FC_ASSERT( account_uids.size() <= 100 );
+   vector<optional<account_object>> result; result.reserve(account_uids.size());
+   std::transform(account_uids.begin(), account_uids.end(), std::back_inserter(result),
+                  [this](account_uid_type uid) -> optional<account_object> {
+      if(auto o = _db.find_account_by_uid(uid))
+      {
+         //subscribe_to_item( id );
          return *o;
       }
       return {};
