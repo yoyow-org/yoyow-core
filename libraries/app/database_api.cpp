@@ -375,6 +375,7 @@ map<uint32_t, optional<block_header>> database_api::get_block_header_batch(const
 
 map<uint32_t, optional<block_header>> database_api_impl::get_block_header_batch(const vector<uint32_t> block_nums) const
 {
+   FC_ASSERT( block_nums.size() <= 1000 );
    map<uint32_t, optional<block_header>> results;
    for (const uint32_t block_num : block_nums)
    {
