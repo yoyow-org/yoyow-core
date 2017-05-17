@@ -133,25 +133,25 @@ const platform_object& database::get_platform_by_pid( platform_pid_type pid )con
    return *itr;
 }
 
-const content_object& database::get_content_by_cid( platform_pid_type platform,
-                                                    account_uid_type poster,
-                                                    content_cid_type cid )const
+const post_object& database::get_post_by_pid( platform_pid_type platform,
+                                              account_uid_type poster,
+                                              post_pid_type post_pid )const
 {
-   const auto& contents_by_cid = get_index_type<content_index>().indices().get<by_cid>();
-   auto itr = contents_by_cid.find(std::make_tuple(platform,poster,cid));
-   FC_ASSERT( itr != contents_by_cid.end(),
-              "content ${pid}_${uid}_${cid} not found.",
-              ("pid",platform)("uid",poster)("cid",cid) );
+   const auto& posts_by_pid = get_index_type<post_index>().indices().get<by_post_pid>();
+   auto itr = posts_by_pid.find(std::make_tuple(platform,poster,post_pid));
+   FC_ASSERT( itr != posts_by_pid.end(),
+              "post ${pid}_${uid}_${post_pid} not found.",
+              ("pid",platform)("uid",poster)("post_pid",post_pid) );
    return *itr;
 }
 
-const content_object* database::find_content_by_cid( platform_pid_type platform,
-                                                    account_uid_type poster,
-                                                    content_cid_type cid )const
+const post_object* database::find_post_by_pid( platform_pid_type platform,
+                                               account_uid_type poster,
+                                               post_pid_type post_pid )const
 {
-   const auto& contents_by_cid = get_index_type<content_index>().indices().get<by_cid>();
-   auto itr = contents_by_cid.find(std::make_tuple(platform,poster,cid));
-   if( itr != contents_by_cid.end() )
+   const auto& posts_by_pid = get_index_type<post_index>().indices().get<by_post_pid>();
+   auto itr = posts_by_pid.find(std::make_tuple(platform,poster,post_pid));
+   if( itr != posts_by_pid.end() )
       return &(*itr);
    else
       return nullptr;

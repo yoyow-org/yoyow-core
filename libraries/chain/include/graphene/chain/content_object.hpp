@@ -80,28 +80,28 @@ namespace graphene { namespace chain {
    typedef generic_index<platform_object, platform_multi_index_type> platform_index;
 
    /**
-    * @brief This class represents a content on the object graph
+    * @brief This class represents a post on the object graph
     * @ingroup object
     * @ingroup protocol
     *
     * Contents are posts, replies.
     */
-   class content_object : public graphene::db::abstract_object<content_object>
+   class post_object : public graphene::db::abstract_object<post_object>
    {
       public:
          static const uint8_t space_id = protocol_ids;
-         static const uint8_t type_id  = content_object_type;
+         static const uint8_t type_id  = post_object_type;
 
          /// The platform's pid.
          platform_pid_type            platform;
          /// The poster's uid.
          account_uid_type             poster;
-         /// The content's cid.
-         content_cid_type             cid;
-         /// The content's parent poster uid if it's not root post.
+         /// The post's pid.
+         post_pid_type                post_pid;
+         /// The post's parent poster uid if it's not root post.
          optional<account_uid_type>   parent_poster;
-         /// The content's parent content cid if it's not root post.
-         optional<content_cid_type>   parent_cid;
+         /// The post's parent post pid if it's not root post.
+         optional<post_pid_type>      parent_post_pid;
 
          post_options                 options;
 
@@ -113,34 +113,34 @@ namespace graphene { namespace chain {
          time_point_sec create_time;
          time_point_sec last_update_time;
 
-         content_id_type get_id()const { return id; }
+         post_id_type get_id()const { return id; }
    };
 
 
-   struct by_cid{};
+   struct by_post_pid{};
 
    /**
     * @ingroup object_index
     */
    typedef multi_index_container<
-      content_object,
+      post_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_cid>,
+         ordered_unique< tag<by_post_pid>,
             composite_key<
-               content_object,
-               member< content_object, platform_pid_type, &content_object::platform >,
-               member< content_object, account_uid_type,  &content_object::poster >,
-               member< content_object, content_cid_type,  &content_object::cid >
+               post_object,
+               member< post_object, platform_pid_type, &post_object::platform >,
+               member< post_object, account_uid_type,  &post_object::poster >,
+               member< post_object, post_pid_type,     &post_object::post_pid >
             >
          >
       >
-   > content_multi_index_type;
+   > post_multi_index_type;
 
    /**
     * @ingroup object_index
     */
-   typedef generic_index<content_object, content_multi_index_type> content_index;
+   typedef generic_index<post_object, post_multi_index_type> post_index;
 
 }}
 
@@ -150,9 +150,9 @@ FC_REFLECT_DERIVED( graphene::chain::platform_object,
                     (create_time)(last_update_time)
                   )
 
-FC_REFLECT_DERIVED( graphene::chain::content_object,
+FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
-                    (platform)(poster)(cid)(parent_poster)(parent_cid)
+                    (platform)(poster)(post_pid)(parent_poster)(parent_post_pid)
                     (options)
                     (hash_value)(extra_data)(title)(body)
                     (create_time)(last_update_time)

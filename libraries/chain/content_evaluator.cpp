@@ -35,20 +35,20 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 
    d.get_platform_by_pid( op.platform ); // make sure pid exists
    poster_account  = &d.get_account_by_uid( op.poster );
-   content         = d.find_content_by_cid( op.platform, op.poster, op.cid );
+   post            = d.find_post_by_pid( op.platform, op.poster, op.post_pid );
 
    FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
 
-   if( content == nullptr ) // new content
+   if( post == nullptr ) // new post
    {
-      if( op.parent_cid.valid() ) // is reply
-         parent_content = &d.get_content_by_cid( op.platform, *op.parent_poster, *op.parent_cid );
+      if( op.parent_post_pid.valid() ) // is reply
+         parent_post = &d.get_post_by_pid( op.platform, *op.parent_poster, *op.parent_post_pid );
       else
-         parent_content = nullptr;
+         parent_post = nullptr;
    }
    else
    {
-      FC_ASSERT( !op.parent_cid.valid(), "should not specify parent when editing." );
+      FC_ASSERT( !op.parent_post_pid.valid(), "should not specify parent when editing." );
    }
 
    return void_result();
@@ -59,15 +59,15 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 { try {
    database& d = db();
 
-   if( content == nullptr ) // new content
+   if( post == nullptr ) // new post
    {
-      const auto& new_content_object = d.create<content_object>( [&]( content_object& obj )
+      const auto& new_post_object = d.create<post_object>( [&]( post_object& obj )
       {
          obj.platform         = o.platform;
          obj.poster           = o.poster;
-         obj.cid              = o.cid;
+         obj.post_pid         = o.post_pid;
          obj.parent_poster    = o.parent_poster;
-         obj.parent_cid       = o.parent_cid;
+         obj.parent_post_pid  = o.parent_post_pid;
          obj.options          = o.options;
          obj.hash_value       = o.hash_value;
          obj.extra_data       = o.extra_data;
@@ -76,11 +76,11 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
          obj.create_time      = d.head_block_time();
          obj.last_update_time = d.head_block_time();
       } );
-      return new_content_object.id;
+      return new_post_object.id;
    }
    else // edit
    {
-      d.modify<content_object>( *content, [&]( content_object& obj )
+      d.modify<post_object>( *post, [&]( post_object& obj )
       {
          //obj.options          = o.options;
          obj.hash_value       = o.hash_value;
@@ -89,7 +89,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
          obj.body             = o.body;
          obj.last_update_time = d.head_block_time();
       } );
-      return content->id;
+      return post->id;
    }
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 

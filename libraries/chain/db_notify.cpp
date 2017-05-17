@@ -235,9 +235,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            //assert( aobj != nullptr );
            //accounts.insert( aobj->owner );
            break;
-        } case content_object_type:{
+        } case post_object_type:{
            // TODO review
-           //const auto& aobj = dynamic_cast<const content_object*>(obj);
+           //const auto& aobj = dynamic_cast<const post_object*>(obj);
            //assert( aobj != nullptr );
            //accounts.insert( aobj->poster );
            //if( aobj->parent_poster.valid() )

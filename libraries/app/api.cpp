@@ -282,9 +282,9 @@ namespace graphene { namespace app {
                //assert( aobj != nullptr );
                //result.push_back( aobj->owner );
                break;
-             } case content_object_type:{
+             } case post_object_type:{
                // TODO review
-               //const auto& aobj = dynamic_cast<const content_object*>(obj);
+               //const auto& aobj = dynamic_cast<const post_object*>(obj);
                //assert( aobj != nullptr );
                //result.push_back( aobj->poster );
                //if( aobj->parent_poster.valid() )

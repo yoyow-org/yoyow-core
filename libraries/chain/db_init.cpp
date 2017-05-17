@@ -98,8 +98,8 @@ const uint8_t call_order_object::type_id;
 const uint8_t committee_member_object::space_id;
 const uint8_t committee_member_object::type_id;
 
-const uint8_t content_object::space_id;
-const uint8_t content_object::type_id;
+const uint8_t post_object::space_id;
+const uint8_t post_object::type_id;
 
 const uint8_t force_settlement_object::space_id;
 const uint8_t force_settlement_object::type_id;
@@ -197,7 +197,7 @@ void database::initialize_indexes()
    acnt_index->add_secondary_index<account_referrer_index>();
 
    add_index< primary_index<platform_index> >();
-   add_index< primary_index<content_index> >();
+   add_index< primary_index<post_index> >();
 
    add_index< primary_index<committee_member_index> >();
    add_index< primary_index<witness_index> >();

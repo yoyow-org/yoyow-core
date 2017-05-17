@@ -39,7 +39,7 @@ void post_operation::validate()const
 {
    validate_op_fee( fee, "post " );
    validate_account_uid( poster, "poster " );
-   FC_ASSERT( parent_poster.valid() == parent_cid.valid(), "parent poster and cid should be both presented or both not" );
+   FC_ASSERT( parent_poster.valid() == parent_post_pid.valid(), "parent poster and pid should be both presented or both not" );
    if( parent_poster.valid() )
       validate_account_uid( *parent_poster, "parent poster " );
 }

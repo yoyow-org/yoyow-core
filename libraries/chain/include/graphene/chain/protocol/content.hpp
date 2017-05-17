@@ -54,9 +54,9 @@ namespace graphene { namespace chain {
 
       platform_pid_type            platform = 0;
       account_uid_type             poster = 0;
-      content_cid_type             cid = 0;
+      post_pid_type                post_pid = 0;
       optional<account_uid_type>   parent_poster;
-      optional<content_cid_type>   parent_cid;
+      optional<post_pid_type>      parent_post_pid;
 
       post_options                 options;
 
@@ -84,7 +84,7 @@ FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_pe
 
 FC_REFLECT( graphene::chain::post_operation,
             (fee)
-            (platform)(poster)(cid)(parent_poster)(parent_cid)
+            (platform)(poster)(post_pid)(parent_poster)(parent_post_pid)
             (options)
             (hash_value)(extra_data)(title)(body)
             (extensions) )

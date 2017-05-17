@@ -37,8 +37,8 @@ namespace graphene { namespace chain {
          object_id_type do_apply( const operation_type& o );
 
          const account_object* poster_account;
-         const content_object* content;
-         const content_object* parent_content;
+         const post_object*    post;
+         const post_object*    parent_post;
    };
 
 } } // graphene::chain
