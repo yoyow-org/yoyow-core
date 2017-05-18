@@ -90,6 +90,11 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       map<string,account_id_type> lookup_accounts(const string& lower_bound_name, uint32_t limit)const;
       uint64_t get_account_count()const;
 
+      // Platforms and posts
+      optional<post_object> get_post( const platform_pid_type platform_pid,
+                                      const account_uid_type poster_uid,
+                                      const post_pid_type post_pid )const;
+
       // Balances
       vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
       vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const;
@@ -820,6 +825,31 @@ uint64_t database_api_impl::get_account_count()const
 {
    return _db.get_index_type<account_index>().indices().size();
 }
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// Platforms and posts                                              //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+optional<post_object> database_api::get_post( const platform_pid_type platform_pid,
+                                              const account_uid_type poster_uid,
+                                              const post_pid_type post_pid )const
+{
+   return my->get_post( platform_pid, poster_uid, post_pid );
+}
+
+optional<post_object> database_api_impl::get_post( const platform_pid_type platform_pid,
+                                                   const account_uid_type poster_uid,
+                                                   const post_pid_type post_pid )const
+{
+   if( auto o = _db.find_post_by_pid( platform_pid, poster_uid, post_pid ) )
+   {
+      return *o;
+   }
+   return {};
+}
+
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //

@@ -313,6 +313,22 @@ class database_api
        */
       uint64_t get_account_count()const;
 
+      /////////////////////////
+      // Platforms and posts //
+      /////////////////////////
+
+      /**
+       * @brief Get a post
+       * @param platform_pid pid of the platform
+       * @param poster_uid UID of the poster
+       * @param post_pid pid of the post
+       * @return The post corresponding to the provided parameters.
+       */
+      optional<post_object> get_post( const platform_pid_type platform_pid,
+                                      const account_uid_type poster_uid,
+                                      const post_pid_type post_pid )const;
+
+
       ////////////
       // Assets //
       ////////////
@@ -629,6 +645,9 @@ FC_API(graphene::app::database_api,
    (lookup_account_names)
    (lookup_accounts)
    (get_account_count)
+
+   // Platforms and posts
+   (get_post)
 
    // Balances
    (get_account_balances)
