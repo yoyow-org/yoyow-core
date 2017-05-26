@@ -94,6 +94,15 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       optional<post_object> get_post( const platform_pid_type platform_pid,
                                       const account_uid_type poster_uid,
                                       const post_pid_type post_pid )const;
+      vector<post_object> get_posts_by_platform_poster( const platform_pid_type platform_pid,
+                                      const optional<account_uid_type> poster,
+                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const uint32_t limit )const;
+      vector<post_object> get_posts_by_parent( const platform_pid_type platform_pid,
+                                      const optional<std::pair<account_uid_type, post_pid_type>> parent,
+                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const uint32_t limit )const;
+
 
       // Balances
       vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
@@ -849,6 +858,108 @@ optional<post_object> database_api_impl::get_post( const platform_pid_type platf
    }
    return {};
 }
+
+vector<post_object> database_api::get_posts_by_platform_poster( const platform_pid_type platform_pid,
+                                      const optional<account_uid_type> poster,
+                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const uint32_t limit )const
+{
+   return my->get_posts_by_platform_poster( platform_pid, poster, create_time_range, limit );
+}
+
+vector<post_object> database_api_impl::get_posts_by_platform_poster( const platform_pid_type platform_pid,
+                                      const optional<account_uid_type> poster,
+                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const uint32_t limit )const
+{
+   FC_ASSERT( limit <= 100 );
+
+   vector<post_object> result;
+
+   const time_point_sec max_time = std::max( create_time_range.first, create_time_range.second );
+   const time_point_sec min_time = std::min( create_time_range.first, create_time_range.second );
+
+   uint32_t count = 0;
+
+   if( poster.valid() )
+   {
+      const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_poster_create_time>();
+
+      // index is latest first, query range is ( earliest, latest ]
+      auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, *poster, max_time ) );
+      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, *poster, min_time ) );
+
+      while( itr != itr_end && count < limit )
+      {
+         result.push_back(*itr);
+         ++itr;
+         ++count;
+      }
+   }
+   else
+   {
+      const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_create_time>();
+
+      // index is latest first, query range is ( earliest, latest ]
+      auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, max_time ) );
+      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, min_time ) );
+
+      while( itr != itr_end && count < limit )
+      {
+         result.push_back(*itr);
+         ++itr;
+         ++count;
+      }
+   }
+
+   return result;
+}
+
+vector<post_object> database_api::get_posts_by_parent( const platform_pid_type platform_pid,
+                                      const optional<std::pair<account_uid_type, post_pid_type>> parent,
+                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const uint32_t limit )const
+{
+   return my->get_posts_by_parent( platform_pid, parent, create_time_range, limit );
+}
+
+vector<post_object> database_api_impl::get_posts_by_parent( const platform_pid_type platform_pid,
+                                      const optional<std::pair<account_uid_type, post_pid_type>> parent,
+                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const uint32_t limit )const
+{
+   FC_ASSERT( limit <= 100 );
+
+   vector<post_object> result;
+
+   const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_parent_create_time>();
+
+   optional<account_uid_type> parent_poster;
+   optional<post_pid_type> parent_post_pid;
+   if( parent.valid() )
+   {
+      parent_poster = parent->first;
+      parent_post_pid = parent->second;
+   }
+
+   const time_point_sec max_time = std::max( create_time_range.first, create_time_range.second );
+   const time_point_sec min_time = std::min( create_time_range.first, create_time_range.second );
+
+   uint32_t count = 0;
+   // index is latest first, query range is ( earliest, latest ]
+   auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, parent_poster, parent_post_pid, max_time ) );
+   auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, parent_poster, parent_post_pid, min_time ) );
+
+   while( itr != itr_end && count < limit )
+   {
+      result.push_back(*itr);
+      ++itr;
+      ++count;
+   }
+
+   return result;
+}
+
 
 
 //////////////////////////////////////////////////////////////////////

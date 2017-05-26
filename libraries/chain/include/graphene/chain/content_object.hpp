@@ -118,6 +118,9 @@ namespace graphene { namespace chain {
 
 
    struct by_post_pid{};
+   struct by_platform_create_time{};
+   struct by_platform_poster_create_time{};
+   struct by_parent_create_time{};
 
    /**
     * @ingroup object_index
@@ -133,6 +136,48 @@ namespace graphene { namespace chain {
                member< post_object, account_uid_type,  &post_object::poster >,
                member< post_object, post_pid_type,     &post_object::post_pid >
             >
+         >,
+         // TODO move non-consensus indexes to plugin
+         ordered_unique< tag<by_platform_create_time>,
+            composite_key<
+               post_object,
+               member< post_object, platform_pid_type, &post_object::platform >,
+               member< post_object, time_point_sec,    &post_object::create_time >,
+               member< object,      object_id_type,    &post_object::id>
+            >,
+            composite_key_compare< std::less<platform_pid_type>,
+                                   std::greater<time_point_sec>,
+                                   std::greater<object_id_type> >
+
+         >,
+         ordered_unique< tag<by_platform_poster_create_time>,
+            composite_key<
+               post_object,
+               member< post_object, platform_pid_type, &post_object::platform >,
+               member< post_object, account_uid_type,  &post_object::poster >,
+               member< post_object, time_point_sec,    &post_object::create_time >,
+               member< object,      object_id_type,    &post_object::id>
+            >,
+            composite_key_compare< std::less<platform_pid_type>,
+                                   std::less<account_uid_type>,
+                                   std::greater<time_point_sec>,
+                                   std::greater<object_id_type> >
+
+         >,
+         ordered_unique< tag<by_parent_create_time>,
+            composite_key<
+               post_object,
+               member< post_object, platform_pid_type,           &post_object::platform >,
+               member< post_object, optional<account_uid_type>,  &post_object::parent_poster >,
+               member< post_object, optional<post_pid_type>,     &post_object::parent_post_pid >,
+               member< post_object, time_point_sec,              &post_object::create_time >,
+               member< object,      object_id_type,              &post_object::id>
+            >,
+            composite_key_compare< std::less<platform_pid_type>,
+                                   std::less<optional<account_uid_type>>,
+                                   std::less<optional<post_pid_type>>,
+                                   std::greater<time_point_sec>,
+                                   std::greater<object_id_type> >
          >
       >
    > post_multi_index_type;

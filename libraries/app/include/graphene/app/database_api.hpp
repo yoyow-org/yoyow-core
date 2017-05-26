@@ -328,6 +328,35 @@ class database_api
                                       const account_uid_type poster_uid,
                                       const post_pid_type post_pid )const;
 
+      /**
+       * @brief Get posts by platform plus poster
+       * @param platform_pid pid of a platform
+       * @param poster UID of a poster, will query for all posters if omitted
+       * @param create_time_range a time range (earliest, latest] to query
+       * @param limit Maximum number of posts to fetch (must not exceed 100)
+       * @return posts corresponding to the provided parameters, ordered by create time, newest first.
+       */
+      // TODO may need a flag to fetch root posts only, or non-root posts only, or both
+      // FIXME if limit is 100, will be buggy when too many posts in same second
+      vector<post_object> get_posts_by_platform_poster( const platform_pid_type platform_pid,
+                                      const optional<account_uid_type> poster,
+                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const uint32_t limit )const;
+
+      /**
+       * @brief Get posts by parent
+       * @param platform_pid pid of a platform
+       * @param parent a pair of poster UID and post pid of the parent post, will fetch root posts if omitted
+       * @param create_time_range a time range (earliest, latest] to query
+       * @param limit Maximum number of posts to fetch (must not exceed 100)
+       * @return posts corresponding to the provided parameters, ordered by create time, newest first
+       */
+       // FIXME if limit is 100, will be buggy when too many posts in same second
+       vector<post_object> get_posts_by_parent( const platform_pid_type platform_pid,
+                                      const optional<std::pair<account_uid_type, post_pid_type>> parent,
+                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const uint32_t limit )const;
+
 
       ////////////
       // Assets //
@@ -648,6 +677,8 @@ FC_API(graphene::app::database_api,
 
    // Platforms and posts
    (get_post)
+   (get_posts_by_platform_poster)
+   (get_posts_by_parent)
 
    // Balances
    (get_account_balances)
