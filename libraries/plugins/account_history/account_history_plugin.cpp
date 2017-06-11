@@ -117,6 +117,7 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
             const auto& stats_obj = account_obj.statistics(db);
             const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
                 obj.operation_id = oho.id;
+                obj.operation_type = oho.op.which();
                 obj.account = account_obj.uid;
                 obj.sequence = stats_obj.total_ops+1;
                 obj.next = stats_obj.most_recent_op;
@@ -138,6 +139,7 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
                const auto& stats_obj = account_obj.statistics(db);
                const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
                    obj.operation_id = oho.id;
+                   obj.operation_type = oho.op.which();
                    obj.account = account_obj.uid;
                    obj.sequence = stats_obj.total_ops+1;
                    obj.next = stats_obj.most_recent_op;

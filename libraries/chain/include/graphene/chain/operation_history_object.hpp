@@ -92,6 +92,7 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = impl_account_transaction_history_object_type;
          account_uid_type                     account; /// the account this operation applies to
          operation_history_id_type            operation_id;
+         uint16_t                             operation_type;
          uint32_t                             sequence = 0; /// the operation position within the given account
          // TODO change type? or just remove it?
          account_transaction_history_id_type  next;
@@ -102,6 +103,7 @@ namespace graphene { namespace chain {
    
 struct by_id;
 struct by_seq;
+struct by_type_seq;
 struct by_op;
 typedef multi_index_container<
    account_transaction_history_object,
@@ -110,6 +112,13 @@ typedef multi_index_container<
       ordered_unique< tag<by_seq>,
          composite_key< account_transaction_history_object,
             member< account_transaction_history_object, account_uid_type, &account_transaction_history_object::account>,
+            member< account_transaction_history_object, uint32_t, &account_transaction_history_object::sequence>
+         >
+      >,
+      ordered_unique< tag<by_type_seq>,
+         composite_key< account_transaction_history_object,
+            member< account_transaction_history_object, account_uid_type, &account_transaction_history_object::account>,
+            member< account_transaction_history_object, uint16_t, &account_transaction_history_object::operation_type>,
             member< account_transaction_history_object, uint32_t, &account_transaction_history_object::sequence>
          >
       >,
@@ -131,4 +140,4 @@ FC_REFLECT_DERIVED( graphene::chain::operation_history_object, (graphene::chain:
                     (op)(result)(block_num)(trx_in_block)(op_in_trx)(virtual_op) )
 
 FC_REFLECT_DERIVED( graphene::chain::account_transaction_history_object, (graphene::chain::object),
-                    (account)(sequence)(next) ) // don't reflect operation_id
+                    (account)(operation_type)(sequence)(next) ) // don't reflect operation_id

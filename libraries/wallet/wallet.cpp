@@ -2214,6 +2214,7 @@ public:
          for( operation_detail& d : r )
          {
             operation_history_object& i = d.op;
+            ss << d.sequence << " ";
             auto b = _remote_db->get_block_header(i.block_num);
             FC_ASSERT(b);
             ss << b->timestamp.to_iso_string() << " ";
@@ -2949,7 +2950,7 @@ vector<operation_detail> wallet_api::get_account_history(string name, int limit)
       for( auto& o : current ) {
          std::stringstream ss;
          auto memo = o.op.visit(detail::operation_printer(ss, *my, o.result));
-         result.push_back( operation_detail{ memo, ss.str(), o } );
+         result.push_back( operation_detail{ memo, ss.str(), 0, o } );
       }
       if( current.size() < std::min(100,limit) )
          break;
@@ -2959,26 +2960,24 @@ vector<operation_detail> wallet_api::get_account_history(string name, int limit)
    return result;
 }
 
-vector<operation_detail> wallet_api::get_relative_account_history(account_uid_type uid, uint32_t stop, int limit, uint32_t start)const
+vector<operation_detail> wallet_api::get_relative_account_history(account_uid_type uid, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const
 {
-   
-   FC_ASSERT( start > 0 || limit <= 100 );
-   
    vector<operation_detail> result;
 
    while( limit > 0 )
    {
-      vector <operation_history_object> current = my->_remote_hist->get_relative_account_history(uid, stop, std::min<uint32_t>(100, limit), start);
-      for (auto &o : current) {
+      vector <pair<uint32_t,operation_history_object>> current = my->_remote_hist->get_relative_account_history(uid, op_type, stop, std::min<uint32_t>(100, limit), start);
+      for (auto &p : current) {
+         auto &o = p.second;
          std::stringstream ss;
          auto memo = o.op.visit(detail::operation_printer(ss, *my, o.result));
-         result.push_back(operation_detail{memo, ss.str(), o});
+         result.push_back(operation_detail{memo, ss.str(), p.first, o});
       }
       if (current.size() < std::min<uint32_t>(100, limit))
          break;
       limit -= current.size();
-      start -= 100;
-      if( start == 0 ) break;
+      start = result.back().sequence - 1;
+      if( start == 0 || start < stop ) break;
    }
    return result;
 }

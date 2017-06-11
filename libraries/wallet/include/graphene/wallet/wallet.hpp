@@ -279,6 +279,7 @@ class utility {
 struct operation_detail {
    string                   memo;
    string                   description;
+   uint32_t                 sequence;
    operation_history_object op;
 };
 
@@ -370,7 +371,7 @@ class wallet_api
        * @param start the sequence number where to start looping back throw the history, set 0 for most recent
        * @returns a list of \c operation_history_objects
        */
-     vector<operation_detail>  get_relative_account_history(account_uid_type uid, uint32_t stop, int limit, uint32_t start)const;
+     vector<operation_detail>  get_relative_account_history(account_uid_type uid, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const;
 
       vector<bucket_object>             get_market_history(string symbol, string symbol2, uint32_t bucket, fc::time_point_sec start, fc::time_point_sec end)const;
       vector<limit_order_object>        get_limit_orders(string a, string b, uint32_t limit)const;
@@ -1611,7 +1612,7 @@ FC_REFLECT_DERIVED( graphene::wallet::vesting_balance_object_with_info, (graphen
    (allowed_withdraw)(allowed_withdraw_time) )
 
 FC_REFLECT( graphene::wallet::operation_detail, 
-            (memo)(description)(op) )
+            (memo)(description)(sequence)(op) )
 
 FC_API( graphene::wallet::wallet_api,
         (help)

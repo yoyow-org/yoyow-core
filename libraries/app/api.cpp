@@ -499,15 +499,16 @@ namespace graphene { namespace app {
     }
 
 
-    vector<operation_history_object> history_api::get_relative_account_history( account_uid_type account,
-                                                                                uint32_t stop,
-                                                                                unsigned limit,
-                                                                                uint32_t start) const
+    vector<std::pair<uint32_t,operation_history_object>> history_api::get_relative_account_history( account_uid_type account,
+                                                                                                    optional<uint16_t> op_type,
+                                                                                                    uint32_t stop,
+                                                                                                    unsigned limit,
+                                                                                                    uint32_t start) const
     {
        FC_ASSERT( _app.chain_database() );
        const auto& db = *_app.chain_database();
        FC_ASSERT(limit <= 100);
-       vector<operation_history_object> result;
+       vector<std::pair<uint32_t,operation_history_object>> result;
        const auto& account_obj = db.get_account_by_uid(account);
        if( start == 0 )
           start = account_obj.statistics(db).total_ops;
@@ -518,17 +519,38 @@ namespace graphene { namespace app {
        if( start >= stop && start > 0 && limit > 0 )
        {
           const auto& hist_idx = db.get_index_type<account_transaction_history_index>();
-          const auto& by_seq_idx = hist_idx.indices().get<by_seq>();
 
-          auto itr = by_seq_idx.upper_bound( boost::make_tuple( account_obj.uid, start ) );
-          auto itr_stop = by_seq_idx.lower_bound( boost::make_tuple( account_obj.uid, stop ) );
-         
-          do
+          if( !op_type.valid() )
           {
-             --itr;
-             result.push_back( itr->operation_id(db) );
+             const auto& by_seq_idx = hist_idx.indices().get<by_seq>();
+
+             auto itr = by_seq_idx.upper_bound( boost::make_tuple( account_obj.uid, start ) );
+             auto itr_stop = by_seq_idx.lower_bound( boost::make_tuple( account_obj.uid, stop ) );
+         
+             do
+             {
+                --itr;
+                result.push_back( std::make_pair( itr->sequence, itr->operation_id(db) ) );
+             }
+             while ( itr != itr_stop && result.size() < limit );
           }
-          while ( itr != itr_stop && result.size() < limit );
+          else
+          {
+             const auto& by_type_seq_idx = hist_idx.indices().get<by_type_seq>();
+
+             auto itr = by_type_seq_idx.upper_bound( boost::make_tuple( account_obj.uid, *op_type, start ) );
+             auto itr_stop = by_type_seq_idx.lower_bound( boost::make_tuple( account_obj.uid, *op_type, stop ) );
+
+             if( itr != itr_stop )
+             {
+                do
+                {
+                   --itr;
+                   result.push_back( std::make_pair( itr->sequence, itr->operation_id(db) ) );
+                }
+                while ( itr != itr_stop && result.size() < limit );
+             }
+          }
        }
        return result;
     }
