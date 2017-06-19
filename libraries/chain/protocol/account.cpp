@@ -24,6 +24,7 @@
 #include <fc/utf8.hpp>
 #include <graphene/chain/protocol/account.hpp>
 #include <graphene/chain/hardfork.hpp>
+#include <graphene/utilities/string_escape.hpp>
 
 namespace graphene { namespace chain {
 
@@ -33,6 +34,7 @@ void validate_account_name( const string& name, const string& object_name = "" )
    FC_ASSERT( len >= GRAPHENE_MIN_ACCOUNT_NAME_LENGTH, "${o}account name is too short", ("o", object_name) );
    FC_ASSERT( len <= GRAPHENE_MAX_ACCOUNT_NAME_LENGTH, "${o}account name is too long", ("o", object_name) );
    FC_ASSERT( fc::is_utf8( name ), "${o}account name should be in UTF8", ("o", object_name) );
+   FC_ASSERT( !utilities::is_number( name ), "${o}account name should not be a number", ("o", object_name) );
 }
 
 void validate_new_authority( const authority& au, const string& object_name = "" )

@@ -29,4 +29,6 @@ namespace graphene { namespace utilities {
 
   std::string escape_string_for_c_source_code(const std::string& input);
 
+  bool is_number(const std::string& s);
+
 } } // end namespace graphene::utilities
