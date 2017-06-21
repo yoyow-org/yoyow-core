@@ -81,6 +81,9 @@ namespace graphene { namespace chain {
        */
       void prepare_fee(account_id_type account_id, asset fee);
       void prepare_fee(account_uid_type account_uid, asset fee);
+      void prepare_fee(asset fee); // be called after fee_paying_account initialized
+      void prepare_fee(account_uid_type account_uid, const fee_type& fee);
+      void prepare_fee(const fee_type& fee); // be called after fee_paying_account initialized
 
       /**
        * Convert the fee into BTS through the exchange pool.
@@ -103,15 +106,36 @@ namespace graphene { namespace chain {
        */
       void pay_fba_fee( uint64_t fba_id );
 
+      /**
+       * Process fee_options.
+       */
+      void process_fee_options();
+
+      /**
+       * Calculate fee for an operation.
+       */
+      share_type calculate_fee_for_operation(const operation& op) const;
+
+      /**
+       * Calculate fee pair for an operation.
+       * @return A pair, the first is total fee required, the second is minimum non-csaf fee required
+       */
+      std::pair<share_type,share_type> calculate_fee_pair_for_operation(const operation& op) const;
+
       // the next two functions are helpers that allow template functions declared in this 
       // header to call db() without including database.hpp, which would
       // cause a circular dependency
-      share_type calculate_fee_for_operation(const operation& op) const;
       void db_adjust_balance(const account_id_type& fee_payer, asset fee_from_account);
       void db_adjust_balance(const account_uid_type& fee_payer, asset fee_from_account);
 
       asset                            fee_from_account;
       share_type                       core_fee_paid;
+      share_type                       total_fee_paid;
+      share_type                       from_balance;
+      share_type                       from_prepaid;
+      share_type                       from_csaf;
+      share_type                       from_rcsaf_one_time;
+      share_type                       from_rcsaf_long_term;
       const account_object*            fee_paying_account = nullptr;
       const account_statistics_object* fee_paying_account_statistics = nullptr;
       const asset_object*              fee_asset          = nullptr;
@@ -151,11 +175,16 @@ namespace graphene { namespace chain {
          prepare_fee(op.fee_payer_uid(), op.fee);
          if( !trx_state->skip_fee_schedule_check )
          {
-            share_type required_fee = calculate_fee_for_operation(op);
-            GRAPHENE_ASSERT( core_fee_paid >= required_fee,
+            std::pair<share_type,share_type> required_fee_pair = calculate_fee_pair_for_operation(op);
+            GRAPHENE_ASSERT( total_fee_paid >= required_fee_pair.first,
                        insufficient_fee,
-                       "Insufficient Fee Paid",
-                       ("core_fee_paid",core_fee_paid)("required", required_fee) );
+                       "Insufficient Total Fee Paid",
+                       ("total_fee_paid",total_fee_paid)("required", required_fee_pair.first) );
+            GRAPHENE_ASSERT( from_balance + from_prepaid >= required_fee_pair.second,
+                       insufficient_fee,
+                       "Insufficient Real Fee Paid",
+                       ("from_balance",from_balance)("from_prepaid",from_prepaid)
+                       ("required", required_fee_pair.second) );
          }
 
          return eval->do_evaluate(op);
@@ -171,7 +200,10 @@ namespace graphene { namespace chain {
 
          auto result = eval->do_apply(op);
 
-         db_adjust_balance(op.fee_payer_uid(), -fee_from_account);
+         if( fee_from_account.amount > 0 )
+            db_adjust_balance(op.fee_payer_uid(), -fee_from_account);
+
+         process_fee_options();
 
          return result;
       }

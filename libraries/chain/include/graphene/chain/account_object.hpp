@@ -79,6 +79,23 @@ namespace graphene { namespace chain {
           */
          share_type pending_vested_fees;
 
+         /**
+          * Prepaid fee.
+          */
+         share_type prepaid;
+         /**
+          * Coin-seconds-as-fee.
+          */
+         share_type csaf;
+         /**
+          * Received coin-seconds-as-fee (one-time).
+          */
+         share_type rcsaf_one_time;
+         /**
+          * Received coin-seconds-as-fee (long-term).
+          */
+         share_type rcsaf_long_term;
+
          /// @brief Split up and pay out @ref pending_fees and @ref pending_vested_fees
          void process_fees(const account_object& a, database& d) const;
 
@@ -344,6 +361,7 @@ namespace graphene { namespace chain {
                member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>
             >
          >,
+         // TODO remove it? seems used by FBA only
          ordered_unique< tag<by_asset_balance>,
             composite_key<
                account_balance_object,

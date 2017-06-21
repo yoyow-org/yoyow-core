@@ -27,6 +27,7 @@
 #include <graphene/chain/protocol/asset.hpp>
 #include <graphene/chain/protocol/authority.hpp>
 #include <graphene/chain/protocol/ext.hpp>
+#include <boost/tti/has_member_data.hpp>
 
 namespace graphene { namespace chain {
 
@@ -84,12 +85,53 @@ namespace graphene { namespace chain {
    struct void_result{};
    typedef fc::static_variant<void_result,object_id_type,asset> operation_result;
 
+   struct fee_extension_type
+   {
+      optional<asset> from_balance;
+      optional<asset> from_prepaid;
+      optional<asset> from_csaf;
+      optional<asset> from_rcsaf_one_time;
+      optional<asset> from_rcsaf_long_term;
+   };
+   typedef optional< extension< fee_extension_type > > fee_options_type;
+
+   struct fee_type
+   {
+      fee_type( asset fee = asset() ) : total(fee) {}
+
+      asset            total;
+      fee_options_type options;
+   };
+
+   BOOST_TTI_HAS_MEMBER_DATA(min_real_fee)
+
    struct base_operation
    {
       template<typename T>
       share_type calculate_fee(const T& params)const
       {
          return params.fee;
+      }
+      template<typename T>
+      std::pair<share_type, share_type> calculate_fee_pair(share_type fee, const T& params)const
+      {
+         FC_ASSERT( fee <= GRAPHENE_MAX_SHARE_SUPPLY );
+         const bool b = has_member_data_min_real_fee<T,uint64_t>::value;
+         return calculate_fee_pair( fee, params, std::integral_constant<bool, b>() );
+      }
+      template<typename T>
+      std::pair<share_type, share_type> calculate_fee_pair(share_type fee, const T& params, std::true_type)const
+      {
+         fc::uint128 min_percent_fee = ( fc::uint128( fee.value ) * params.min_rf_percent ) / GRAPHENE_100_PERCENT;
+         share_type min_real_fee = std::max( params.min_real_fee, min_percent_fee.to_uint64() );
+         FC_ASSERT( min_real_fee <= GRAPHENE_MAX_SHARE_SUPPLY );
+
+         return std::make_pair( fee, min_real_fee );
+      }
+      template<typename T>
+      std::pair<share_type, share_type> calculate_fee_pair(share_type fee, const T& params, std::false_type)const
+      {
+         return std::make_pair( fee, fee );
       }
       account_id_type fee_payer()const { FC_ASSERT(false, "deprecated."); return account_id_type(); }
       account_uid_type fee_payer_uid()const { return GRAPHENE_TEMP_ACCOUNT_UID; }
@@ -126,6 +168,7 @@ namespace graphene { namespace chain {
    void validate_account_uid( const account_uid_type uid, const string& object_name = "" );
    void validate_asset_id( asset a, const string& object_name = "asset" );
    void validate_op_fee( asset fee, const string& op_name = "" );
+   void validate_op_fee( const fee_type& fee, const string& op_name = "" );
    void validate_percentage( uint16_t p, const string& object_name = "percentage" );
 
    ///@}
@@ -136,3 +179,8 @@ FC_REFLECT_TYPENAME( graphene::chain::operation_result )
 FC_REFLECT_TYPENAME( graphene::chain::future_extensions )
 FC_REFLECT( graphene::chain::void_result, )
 FC_REFLECT( graphene::chain::default_extension_type, )
+
+FC_REFLECT_TYPENAME( graphene::chain::fee_options_type )
+FC_REFLECT( graphene::chain::fee_extension_type,
+            (from_balance)(from_prepaid)(from_csaf)(from_rcsaf_one_time)(from_rcsaf_long_term) )
+FC_REFLECT( graphene::chain::fee_type, (total)(options) )

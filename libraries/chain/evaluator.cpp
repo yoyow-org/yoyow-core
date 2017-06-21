@@ -52,15 +52,22 @@ database& generic_evaluator::db()const { return trx_state->db(); }
 
    void generic_evaluator::prepare_fee(account_uid_type account_uid, asset fee)
    {
-      prepare_fee( *(db().find_account_id_by_uid( account_uid )), fee );
+      fee_paying_account = &db().get_account_by_uid( account_uid );
+      prepare_fee( fee );
    }
 
    void generic_evaluator::prepare_fee(account_id_type account_id, asset fee)
    {
+      fee_paying_account = &account_id( db() );
+      prepare_fee( fee );
+   }
+
+   void generic_evaluator::prepare_fee(asset fee)
+   {
       const database& d = db();
       fee_from_account = fee;
       FC_ASSERT( fee.amount >= 0 );
-      fee_paying_account = &account_id(d);
+
       fee_paying_account_statistics = &fee_paying_account->statistics(d);
 
       fee_asset = &asset_id_type(fee.asset_id)(d);
@@ -81,6 +88,91 @@ database& generic_evaluator::db()const { return trx_state->db(); }
          core_fee_paid = fee_from_pool.amount;
          FC_ASSERT( core_fee_paid <= fee_asset_dyn_data->fee_pool, "Fee pool balance of '${b}' is less than the ${r} required to convert ${c}",
                     ("r", db().to_pretty_string( fee_from_pool))("b",db().to_pretty_string(fee_asset_dyn_data->fee_pool))("c",db().to_pretty_string(fee)) );
+      }
+   }
+
+   void generic_evaluator::prepare_fee(account_uid_type account_uid, const fee_type& fee)
+   {
+      fee_paying_account = &db().get_account_by_uid( account_uid );
+      prepare_fee( fee );
+   }
+
+   void generic_evaluator::prepare_fee(const fee_type& fee)
+   {
+      const database& d = db();
+      fee_paying_account_statistics = &fee_paying_account->statistics(d);
+
+      if( !fee.options.valid() )
+         fee_from_account = fee.total;
+      else if( fee.options->value.from_balance.valid() )
+         fee_from_account = *fee.options->value.from_balance;
+      //else
+      //   fee_from_account = asset(); // it's default, so no need here
+
+      from_balance = fee_from_account.amount;
+      total_fee_paid = fee.total.amount;
+
+      if( fee.options.valid() )
+      {
+         const auto& fov = fee.options->value;
+         //if( fov.from_balance.valid() )
+         //   from_balance = fov.from_balance->amount;
+         if( fov.from_prepaid.valid() )
+         {
+            from_prepaid = fov.from_prepaid->amount;
+            FC_ASSERT( from_prepaid <= fee_paying_account_statistics->prepaid,
+                       "Insufficient prepaid fee: account ${a}'s prepaid fee of ${b} is less than required ${r}",
+                       ("a",fee_paying_account->uid)
+                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->prepaid))
+                       ("r",d.to_pretty_core_string(from_prepaid)) );
+         }
+         if( fov.from_csaf.valid() )
+         {
+            from_csaf = fov.from_csaf->amount;
+            FC_ASSERT( from_csaf <= fee_paying_account_statistics->csaf,
+                       "Insufficient csaf: account ${a}'s csaf of ${b} is less than required ${r}",
+                       ("a",fee_paying_account->uid)
+                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->csaf))
+                       ("r",d.to_pretty_core_string(from_csaf)) );
+         }
+         if( fov.from_rcsaf_one_time.valid() )
+         {
+            from_rcsaf_one_time = fov.from_rcsaf_one_time->amount;
+            FC_ASSERT( from_rcsaf_one_time <= fee_paying_account_statistics->rcsaf_one_time,
+                       "Insufficient rcsaf_one_time: account ${a}'s rcsaf_one_time of ${b} is less than required ${r}",
+                       ("a",fee_paying_account->uid)
+                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->rcsaf_one_time))
+                       ("r",d.to_pretty_core_string(from_rcsaf_one_time)) );
+         }
+         if( fov.from_rcsaf_long_term.valid() )
+         {
+            from_rcsaf_long_term = fov.from_rcsaf_long_term->amount;
+            FC_ASSERT( from_rcsaf_long_term <= fee_paying_account_statistics->rcsaf_long_term,
+                       "Insufficient rcsaf_long_term: account ${a}'s rcsaf_long_term of ${b} is less than required ${r}",
+                       ("a",fee_paying_account->uid)
+                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->rcsaf_long_term))
+                       ("r",d.to_pretty_core_string(from_rcsaf_long_term)) );
+         }
+      }
+
+      fee_asset = &asset_id_type(fee_from_account.asset_id)(d);
+      fee_asset_dyn_data = &fee_asset->dynamic_asset_data_id(d);
+
+      if( d.head_block_time() > HARDFORK_419_TIME )
+      {
+         FC_ASSERT( is_authorized_asset( d, *fee_paying_account, *fee_asset ), "Account ${acct} '${name}' attempted to pay fee by using asset ${a} '${sym}', which is unauthorized due to whitelist / blacklist",
+            ("acct", fee_paying_account->id)("name", fee_paying_account->name)("a", fee_asset->id)("sym", fee_asset->symbol) );
+      }
+
+      if( fee_from_account.asset_id == GRAPHENE_CORE_ASSET_AID )
+         core_fee_paid = fee_from_account.amount;
+      else
+      {
+         asset fee_from_pool = fee_from_account * fee_asset->options.core_exchange_rate;
+         FC_ASSERT( fee_from_pool.asset_id == GRAPHENE_CORE_ASSET_AID );
+         core_fee_paid = fee_from_pool.amount;
+         FC_ASSERT( core_fee_paid <= fee_asset_dyn_data->fee_pool, "Fee pool balance of '${b}' is less than the ${r} required to convert ${c}",
+                    ("r", db().to_pretty_string( fee_from_pool))("b",db().to_pretty_string(fee_asset_dyn_data->fee_pool))("c",db().to_pretty_string(fee_from_account)) );
       }
    }
 
@@ -124,19 +216,37 @@ database& generic_evaluator::db()const { return trx_state->db(); }
       } );
    }
 
+   void generic_evaluator::process_fee_options()
+   { try {
+      if( !trx_state->skip_fee ) {
+         database& d = db();
+         d.modify(*fee_paying_account_statistics, [&](account_statistics_object& s)
+         {
+            if( from_prepaid         > 0 ) s.prepaid         -= from_prepaid;
+            if( from_csaf            > 0 ) s.csaf            -= from_csaf;
+            if( from_rcsaf_one_time  > 0 ) s.rcsaf_one_time  -= from_rcsaf_one_time;
+            if( from_rcsaf_long_term > 0 ) s.rcsaf_long_term -= from_rcsaf_long_term;
+         });
+      }
+   } FC_CAPTURE_AND_RETHROW() }
+
    share_type generic_evaluator::calculate_fee_for_operation(const operation& op) const
    {
-     return db().current_fee_schedule().calculate_fee( op ).amount;
+      return db().current_fee_schedule().calculate_fee( op ).amount;
+   }
+   std::pair<share_type,share_type> generic_evaluator::calculate_fee_pair_for_operation(const operation& op) const
+   {
+      return db().current_fee_schedule().calculate_fee_pair( op );
    }
    void generic_evaluator::db_adjust_balance(const account_id_type& fee_payer, asset fee_from_account)
    {
-     // TODO review
-     FC_ASSERT( "deprecated." );
-     //db().adjust_balance(fee_payer, fee_from_account);
+      // TODO review
+      FC_ASSERT( "deprecated." );
+      //db().adjust_balance(fee_payer, fee_from_account);
    }
    void generic_evaluator::db_adjust_balance(const account_uid_type& fee_payer, asset fee_from_account)
    {
-     db().adjust_balance(fee_payer, fee_from_account);
+      db().adjust_balance(fee_payer, fee_from_account);
    }
 
 } }

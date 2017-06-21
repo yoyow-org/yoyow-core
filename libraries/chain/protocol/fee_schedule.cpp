@@ -25,6 +25,7 @@
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <fc/smart_ref_impl.hpp>
 
+
 namespace fc
 {
    // explicitly instantiate the smart_ref, gcc fails to instantiate it in some release builds
@@ -89,12 +90,33 @@ namespace graphene { namespace chain {
       }
    };
 
+   struct calc_fee_pair_visitor
+   {
+      typedef std::pair<share_type,share_type> result_type;
+
+      const fee_parameters& param;
+      calc_fee_pair_visitor( const fee_parameters& p ):param(p){}
+
+      template<typename OpType>
+      result_type operator()( const OpType& op )const
+      {
+         const auto& fee_param = param.get<typename OpType::fee_parameters_type>();
+         share_type fee = op.calculate_fee( fee_param );
+         return op.calculate_fee_pair( fee, fee_param );
+      }
+   };
+
    struct set_fee_visitor
    {
       typedef void result_type;
       asset _fee;
 
       set_fee_visitor( asset f ):_fee(f){}
+
+      void operator()( account_create_operation& op )const
+      {
+         op.fee = fee_type(_fee);
+      }
 
       template<typename OpType>
       void operator()( OpType& op )const
@@ -141,6 +163,14 @@ namespace graphene { namespace chain {
 
       FC_ASSERT( result.amount <= GRAPHENE_MAX_SHARE_SUPPLY );
       return result;
+   }
+
+   std::pair<share_type,share_type> fee_schedule::calculate_fee_pair( const operation& op )const
+   {
+      fee_parameters params; params.set_which(op.which());
+      auto itr = parameters.find(params);
+      if( itr != parameters.end() ) params = *itr;
+      return op.visit( calc_fee_pair_visitor( params ) );
    }
 
    asset fee_schedule::set_fee( operation& op, const price& core_exchange_rate )const

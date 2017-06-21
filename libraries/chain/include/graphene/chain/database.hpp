@@ -173,6 +173,7 @@ namespace graphene { namespace chain {
          const vector<optional< operation_history_object > >& get_applied_operations()const;
 
          string to_pretty_string( const asset& a )const;
+         string to_pretty_core_string( const share_type amount )const;
 
          /**
           *  This signal is emitted after all operations and virtual operation for a

@@ -87,13 +87,50 @@ struct operation_get_required_uid_auth
      vector<authority>&  oth ):owner_uids(own),active_uids(a),secondary_uids(s),other(oth){}
 
    template<typename T>
+   void do_get_with_extended_fee(const T& v)const
+   {
+      v.get_required_owner_uid_authorities( owner_uids );
+      v.get_required_active_uid_authorities( active_uids );
+      v.get_required_secondary_uid_authorities( secondary_uids );
+      v.get_required_authorities( other );
+      // fee can be paid with any authority of the payer.
+      // TODO: 1. review the order to minimize number of signatures. can also check before add
+      //       2. review the depth,
+      //       3. less important authority can only pay less fee
+      const auto fee_payer_uid = v.fee_payer_uid();
+      const auto& fo = v.fee.options;
+      // fee from balance should be paid with active auth or owner auth
+      if( v.fee.total.amount == 0 )
+      {
+         // don't need additional authority for zero fee operations.
+      }
+      else if( !fo.valid() || ( fo->value.from_balance.valid() && fo->value.from_balance->amount != 0 ) )
+      {
+         // no fee option, or
+         // special fee option with a non-zero from_balance value,
+         other.push_back( authority( 1,
+                             authority::account_uid_auth_type( fee_payer_uid, authority::owner_auth ), 1,
+                             authority::account_uid_auth_type( fee_payer_uid, authority::active_auth ), 1
+                        ) );
+      }
+      else
+      {
+         other.push_back( authority( 1,
+                             authority::account_uid_auth_type( fee_payer_uid, authority::owner_auth ), 1,
+                             authority::account_uid_auth_type( fee_payer_uid, authority::active_auth ), 1,
+                             authority::account_uid_auth_type( fee_payer_uid, authority::secondary_auth ), 1
+                        ) );
+      }
+   }
+
+   template<typename T>
    void do_get(const T& v)const
    {
       v.get_required_owner_uid_authorities( owner_uids );
       v.get_required_active_uid_authorities( active_uids );
       v.get_required_secondary_uid_authorities( secondary_uids );
       v.get_required_authorities( other );
-      // fee can be paid with either authority of the payer.
+      // fee can be paid with any authority of the payer.
       // TODO: 1. review the order to minimize number of signatures. can also check before add
       //       2. review the depth,
       //       3. less important authority can only pay less fee
@@ -106,7 +143,7 @@ struct operation_get_required_uid_auth
 
    void operator()( const account_create_operation& v )const
    {
-      do_get(v);
+      do_get_with_extended_fee(v);
    }
 
    void operator()( const transfer_operation& v )const
@@ -177,6 +214,41 @@ void validate_op_fee( asset fee, const string& op_name )
 {
    FC_ASSERT( fee.amount >= 0, "${o}fee should not be negative.", ("o", op_name) );
    validate_asset_id( fee, op_name + "fee" );
+}
+void validate_op_fee( const fee_type& fee, const string& op_name )
+{
+   validate_op_fee( fee.total, op_name + "total ");
+   if( fee.options.valid() )
+   {
+      const auto& fov = fee.options->value;
+      asset total = fee.total;
+      if( fov.from_balance.valid() )
+      {
+         validate_op_fee( *fov.from_balance, op_name + "from_balance " );
+         total -= *fov.from_balance;
+      }
+      if( fov.from_prepaid.valid() )
+      {
+         validate_op_fee( *fov.from_prepaid, op_name + "from_prepaid " );
+         total -= *fov.from_prepaid;
+      }
+      if( fov.from_csaf.valid() )
+      {
+         validate_op_fee( *fov.from_csaf, op_name + "from_csaf " );
+         total -= *fov.from_csaf;
+      }
+      if( fov.from_rcsaf_one_time.valid() )
+      {
+         validate_op_fee( *fov.from_rcsaf_one_time, op_name + "from_rcsaf_one_time " );
+         total -= *fov.from_rcsaf_one_time;
+      }
+      if( fov.from_rcsaf_long_term.valid() )
+      {
+         validate_op_fee( *fov.from_rcsaf_long_term, op_name + "from_rcsaf_long_term " );
+         total -= *fov.from_rcsaf_long_term;
+      }
+      FC_ASSERT( total.amount == 0, "${o}total fee should be equal to sum of fees in options.", ("o", op_name) );
+   }
 }
 void validate_percentage( uint16_t p, const string& object_name )
 {

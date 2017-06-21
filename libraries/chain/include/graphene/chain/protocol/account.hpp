@@ -97,13 +97,15 @@ namespace graphene { namespace chain {
 
       struct fee_parameters_type
       {
-         uint64_t basic_fee      = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
-         uint64_t premium_fee    = 2000*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
-         uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t basic_fee        = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+         uint64_t premium_fee      = 2000*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
          extensions_type        extensions;
       };
 
-      asset           fee;
+      fee_type        fee;
 
       account_uid_type uid;
 
@@ -118,8 +120,8 @@ namespace graphene { namespace chain {
       optional< extension< ext > > extensions;
 
       account_uid_type fee_payer_uid()const { return reg_info.registrar; }
-      void            validate()const;
-      share_type      calculate_fee(const fee_parameters_type& )const;
+      void             validate()const;
+      share_type       calculate_fee(const fee_parameters_type& )const;
 
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
@@ -152,7 +154,7 @@ namespace graphene { namespace chain {
       extensions_type extensions;
 
       account_uid_type fee_payer_uid()const { return executor; }
-      void            validate()const;
+      void             validate()const;
       //use default
       //share_type      calculate_fee(const fee_parameters_type& )const;
 
@@ -207,8 +209,8 @@ namespace graphene { namespace chain {
       extension< ext > extensions;
 
       account_id_type fee_payer()const { return account; }
-      void       validate()const;
-      share_type calculate_fee( const fee_parameters_type& k )const;
+      void            validate()const;
+      share_type      calculate_fee( const fee_parameters_type& k )const;
 
       bool is_owner_update()const
       { return owner || extensions.value.owner_special_authority.valid(); }

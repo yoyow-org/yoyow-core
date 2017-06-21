@@ -55,6 +55,11 @@ string database::to_pretty_string( const asset& a )const
    return this->get(asset_id_type(a.asset_id)).amount_to_pretty_string(a.amount);
 }
 
+string database::to_pretty_core_string( const share_type amount )const
+{
+   return this->get(asset_id_type()).amount_to_pretty_string(amount);
+}
+
 void database::adjust_balance(const account_object& account, asset delta )
 {
    adjust_balance( account.uid, delta );
