@@ -174,6 +174,9 @@ namespace graphene { namespace chain {
          account_reg_info reg_info;
 
          bool can_post = false;
+         bool can_reply = false;
+         bool can_rate = false;
+
          bool is_full_member = false;
          bool is_registrar = false;
          bool is_admin = false;
@@ -392,7 +395,8 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (membership_expiration_date)(registrar)(referrer)(lifetime_referrer)
                     (network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
                     (uid)(name)(owner)(active)(secondary)(options)(reg_info)
-                    (can_post)(is_full_member)(is_registrar)(is_admin)
+                    (can_post)(can_reply)(can_rate)
+                    (is_full_member)(is_registrar)(is_admin)
                     (create_time)(last_update_time)
                     (active_data)(secondary_data)
                     (statistics)

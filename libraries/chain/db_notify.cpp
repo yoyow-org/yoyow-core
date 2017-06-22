@@ -52,7 +52,7 @@ struct get_impacted_account_visitor
       add_authority_accounts( _impacted, op.active );
    }
 
-   void operator()( const account_posting_right_update_operation& op )
+   void operator()( const account_manage_operation& op )
    {
    }
 
