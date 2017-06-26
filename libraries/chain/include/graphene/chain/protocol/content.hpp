@@ -45,12 +45,14 @@ namespace graphene { namespace chain {
    struct post_operation : public base_operation
    {
       struct fee_parameters_type {
-         uint64_t fee       = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
          extensions_type   extensions;
       };
 
-      asset                        fee;
+      fee_type                     fee;
 
       platform_pid_type            platform = 0;
       account_uid_type             poster = 0;
@@ -80,7 +82,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT(graphene::chain::post_options, (extensions) )
 
-FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_per_kbyte)(extensions) )
+FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 
 FC_REFLECT( graphene::chain::post_operation,
             (fee)

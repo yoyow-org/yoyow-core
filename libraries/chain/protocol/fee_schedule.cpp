@@ -118,6 +118,21 @@ namespace graphene { namespace chain {
          op.fee = fee_type(_fee);
       }
 
+      void operator()( account_manage_operation& op )const
+      {
+         op.fee = fee_type(_fee);
+      }
+
+      void operator()( transfer_operation& op )const
+      {
+         op.fee = fee_type(_fee);
+      }
+
+      void operator()( post_operation& op )const
+      {
+         op.fee = fee_type(_fee);
+      }
+
       template<typename OpType>
       void operator()( OpType& op )const
       {
