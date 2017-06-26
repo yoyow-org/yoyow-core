@@ -23,6 +23,7 @@
  */
 #include <graphene/utilities/string_escape.hpp>
 #include <sstream>
+#include <cctype>
 
 namespace graphene { namespace utilities {
 

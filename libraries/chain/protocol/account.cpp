@@ -253,11 +253,14 @@ void account_create_operation::validate()const
    }
 }
 
-void account_posting_right_update_operation::validate()const
+void account_manage_operation::validate()const
 {
-   validate_op_fee( fee, "account posting right update " );
+   validate_op_fee( fee, "account manage " );
    validate_account_uid( executor, "executor " );
    validate_account_uid( account, "target " );
+   const auto& o = options.value;
+   bool has_option = o.can_post.valid() || o.can_reply.valid() || o.can_rate.valid();
+   FC_ASSERT( has_option, "Should update something" );
 }
 
 

@@ -34,10 +34,14 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
    const database& d = db();
 
    d.get_platform_by_pid( op.platform ); // make sure pid exists
-   poster_account  = &d.get_account_by_uid( op.poster );
-   post            = d.find_post_by_pid( op.platform, op.poster, op.post_pid );
+   poster_account = &d.get_account_by_uid( op.poster );
 
-   FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
+   if( op.parent_post_pid.valid() )
+      FC_ASSERT( poster_account->can_reply, "poster ${uid} is not allowed to reply.", ("uid",op.poster) );
+   else
+      FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
+
+   post = d.find_post_by_pid( op.platform, op.poster, op.post_pid );
 
    if( post == nullptr ) // new post
    {

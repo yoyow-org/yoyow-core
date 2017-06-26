@@ -156,7 +156,7 @@ struct operation_get_required_uid_auth
       do_get(v);
    }
 
-   void operator()( const account_posting_right_update_operation& v )const
+   void operator()( const account_manage_operation& v )const
    {
       do_get(v);
    }

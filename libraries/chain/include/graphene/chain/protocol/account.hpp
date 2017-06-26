@@ -84,6 +84,7 @@ namespace graphene { namespace chain {
 
    /**
     *  @ingroup operations
+    *  @brief Create an account
     */
    struct account_create_operation : public base_operation
    {
@@ -135,9 +136,17 @@ namespace graphene { namespace chain {
 
    /**
     *  @ingroup operations
+    *  @brief Manage an existing account
     */
-   struct account_posting_right_update_operation : public base_operation
+   struct account_manage_operation : public base_operation
    {
+
+      struct opt
+      {
+         optional< bool > can_post;
+         optional< bool > can_reply;
+         optional< bool > can_rate;
+      };
 
       struct fee_parameters_type
       {
@@ -149,7 +158,7 @@ namespace graphene { namespace chain {
 
       account_uid_type executor;
       account_uid_type account;
-      bool             enable;
+      extension< opt > options;
 
       extensions_type extensions;
 
@@ -342,11 +351,13 @@ FC_REFLECT( graphene::chain::account_create_operation,
             (options)(reg_info)
             (extensions)
           )
-FC_REFLECT( graphene::chain::account_posting_right_update_operation,
+
+FC_REFLECT(graphene::chain::account_manage_operation::opt, (can_post)(can_reply)(can_rate) )
+FC_REFLECT( graphene::chain::account_manage_operation,
             (fee)
             (executor)
             (account)
-            (enable)
+            (options)
             (extensions)
           )
 
@@ -361,7 +372,7 @@ FC_REFLECT( graphene::chain::account_upgrade_operation,
 FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 
 FC_REFLECT( graphene::chain::account_create_operation::fee_parameters_type, (basic_fee)(premium_fee)(price_per_kbyte)(extensions) )
-FC_REFLECT( graphene::chain::account_posting_right_update_operation::fee_parameters_type, (fee)(extensions) )
+FC_REFLECT( graphene::chain::account_manage_operation::fee_parameters_type, (fee)(extensions) )
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::account_update_operation::fee_parameters_type, (fee)(price_per_kbyte) )
 FC_REFLECT( graphene::chain::account_upgrade_operation::fee_parameters_type, (membership_annual_fee)(membership_lifetime_fee) )

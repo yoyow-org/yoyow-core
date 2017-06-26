@@ -252,24 +252,37 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
 } FC_CAPTURE_AND_RETHROW((o)) }
 
 
-void_result account_posting_right_update_evaluator::do_evaluate( const account_posting_right_update_operation& o )
+void_result account_manage_evaluator::do_evaluate( const account_manage_operation& o )
 { try {
    database& d = db();
 
    acnt = &d.get_account_by_uid( o.account );
 
-   FC_ASSERT( acnt->reg_info.registrar == o.executor, "posting right should be updated by registrar" );
-   FC_ASSERT( acnt->can_post != o.enable, "should update something" );
+   FC_ASSERT( acnt->reg_info.registrar == o.executor, "account should be managed by registrar" );
+
+   const auto& ao = o.options.value;
+   if( ao.can_post.valid() )
+      FC_ASSERT( acnt->can_post != *ao.can_post, "can_post specified but didn't change" );
+   if( ao.can_reply.valid() )
+      FC_ASSERT( acnt->can_reply != *ao.can_reply, "can_reply specified but didn't change" );
+   if( ao.can_rate.valid() )
+      FC_ASSERT( acnt->can_rate != *ao.can_rate, "can_rate specified but didn't change" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
-void_result account_posting_right_update_evaluator::do_apply( const account_posting_right_update_operation& o )
+void_result account_manage_evaluator::do_apply( const account_manage_operation& o )
 { try {
    database& d = db();
 
+   const auto& ao = o.options.value;
    d.modify( *acnt, [&](account_object& a){
-      a.can_post = o.enable;
+      if( ao.can_post.valid() )
+         a.can_post = *ao.can_post;
+      if( ao.can_reply.valid() )
+         a.can_reply = *ao.can_reply;
+      if( ao.can_rate.valid() )
+         a.can_rate = *ao.can_rate;
       a.last_update_time = d.head_block_time();
    });
 

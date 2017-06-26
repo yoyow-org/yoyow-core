@@ -51,7 +51,7 @@ namespace graphene { namespace chain {
             account_create_operation,
             transfer_operation,
             balance_claim_operation,
-            account_posting_right_update_operation,
+            account_manage_operation,
             post_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
