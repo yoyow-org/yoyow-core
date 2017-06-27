@@ -2737,12 +2737,32 @@ std::string operation_printer::fee(const asset& a)const {
    return "";
 }
 
+BOOST_TTI_HAS_MEMBER_DATA(fee)
+
+template<typename T>
+const asset get_operation_total_fee(const T& op, std::true_type)
+{
+   return op.fee;
+}
+template<typename T>
+const asset get_operation_total_fee(const T& op, std::false_type)
+{
+   return op.fee.total;
+}
+template<typename T>
+const asset get_operation_total_fee(const T& op)
+{
+   const bool b = has_member_data_fee<T,asset>::value;
+   return get_operation_total_fee( op, std::integral_constant<bool, b>() );
+}
+
 template<typename T>
 std::string operation_printer::operator()(const T& op)const
 {
    //balance_accumulator acc;
    //op.get_balance_delta( acc, result );
-   auto a = wallet.get_asset( asset_id_type(op.fee.asset_id) );
+   asset op_fee = get_operation_total_fee(op);
+   auto a = wallet.get_asset( asset_id_type(op_fee.asset_id) );
    // TODO: review
    //auto payer = wallet.get_account( op.fee_payer() );
    auto payer_uid = op.fee_payer_uid();
@@ -2753,7 +2773,7 @@ std::string operation_printer::operator()(const T& op)const
    out << op_name <<" ";
   // out << "balance delta: " << fc::json::to_string(acc.balance) <<"   ";
    //out << payer.name << " fee: " << a.amount_to_pretty_string( op.fee );
-   out << payer_uid << " fee: " << a.amount_to_pretty_string( op.fee );
+   out << payer_uid << " fee: " << a.amount_to_pretty_string( op_fee );
    operation_result_printer rprinter(wallet);
    std::string str_result = result.visit(rprinter);
    if( str_result != "" )
@@ -2812,14 +2832,14 @@ string operation_printer::operator()(const transfer_operation& op) const
          }
       }
    }
-   fee(op.fee);
+   fee(op.fee.total);
    return memo;
 }
 
 std::string operation_printer::operator()(const account_create_operation& op) const
 {
    out << "Create Account '" << op.name << "'";
-   return fee(op.fee);
+   return fee(op.fee.total);
 }
 
 std::string operation_printer::operator()(const account_update_operation& op) const
