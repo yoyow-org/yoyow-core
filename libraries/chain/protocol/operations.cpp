@@ -221,33 +221,33 @@ void validate_op_fee( const fee_type& fee, const string& op_name )
    if( fee.options.valid() )
    {
       const auto& fov = fee.options->value;
-      asset total = fee.total;
+      asset total;
       if( fov.from_balance.valid() )
       {
          validate_op_fee( *fov.from_balance, op_name + "from_balance " );
-         total -= *fov.from_balance;
+         total += *fov.from_balance;
       }
       if( fov.from_prepaid.valid() )
       {
          validate_op_fee( *fov.from_prepaid, op_name + "from_prepaid " );
-         total -= *fov.from_prepaid;
+         total += *fov.from_prepaid;
       }
       if( fov.from_csaf.valid() )
       {
          validate_op_fee( *fov.from_csaf, op_name + "from_csaf " );
-         total -= *fov.from_csaf;
+         total += *fov.from_csaf;
       }
       if( fov.from_rcsaf_one_time.valid() )
       {
          validate_op_fee( *fov.from_rcsaf_one_time, op_name + "from_rcsaf_one_time " );
-         total -= *fov.from_rcsaf_one_time;
+         total += *fov.from_rcsaf_one_time;
       }
       if( fov.from_rcsaf_long_term.valid() )
       {
          validate_op_fee( *fov.from_rcsaf_long_term, op_name + "from_rcsaf_long_term " );
-         total -= *fov.from_rcsaf_long_term;
+         total += *fov.from_rcsaf_long_term;
       }
-      FC_ASSERT( total.amount == 0, "${o}total fee should be equal to sum of fees in options.", ("o", op_name) );
+      FC_ASSERT( total.amount == fee.total.amount, "${o}total fee should be equal to sum of fees in options.", ("o", op_name) );
    }
 }
 void validate_percentage( uint16_t p, const string& object_name )
