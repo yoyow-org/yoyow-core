@@ -438,5 +438,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (total_core_in_orders)
                     (lifetime_fees_paid)
                     (pending_fees)(pending_vested_fees)
+                    (prepaid)(csaf)(rcsaf_one_time)(rcsaf_long_term)
                   )
 
