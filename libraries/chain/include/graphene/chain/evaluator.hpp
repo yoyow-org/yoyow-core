@@ -178,13 +178,12 @@ namespace graphene { namespace chain {
             std::pair<share_type,share_type> required_fee_pair = calculate_fee_pair_for_operation(op);
             GRAPHENE_ASSERT( total_fee_paid >= required_fee_pair.first,
                        insufficient_fee,
-                       "Insufficient Total Fee Paid",
-                       ("total_fee_paid",total_fee_paid)("required", required_fee_pair.first) );
+                       "Insufficient Total Fee Paid: need ${r}, provided ${p}",
+                       ("p",total_fee_paid)("r",required_fee_pair.first) );
             GRAPHENE_ASSERT( from_balance + from_prepaid >= required_fee_pair.second,
                        insufficient_fee,
-                       "Insufficient Real Fee Paid",
-                       ("from_balance",from_balance)("from_prepaid",from_prepaid)
-                       ("required", required_fee_pair.second) );
+                       "Insufficient Real Fee Paid: need ${r}, provided ${fb} from balance and ${fp} from prepaid",
+                       ("fb",from_balance)("fp",from_prepaid)("r",required_fee_pair.second) );
          }
 
          return eval->do_evaluate(op);
