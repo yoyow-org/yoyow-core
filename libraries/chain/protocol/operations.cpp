@@ -212,8 +212,7 @@ void validate_asset_id( asset a, const string& object_name )
 }
 void validate_op_fee( asset fee, const string& op_name )
 {
-   FC_ASSERT( fee.amount >= 0, "${o}fee should not be negative.", ("o", op_name) );
-   validate_asset_id( fee, op_name + "fee" );
+   validate_non_negative_asset( fee, op_name + "fee" );
 }
 void validate_op_fee( const fee_type& fee, const string& op_name )
 {
@@ -252,7 +251,25 @@ void validate_op_fee( const fee_type& fee, const string& op_name )
 }
 void validate_percentage( uint16_t p, const string& object_name )
 {
-   FC_ASSERT( p <= GRAPHENE_100_PERCENT, "${o} should not exceed 100%." );
+   FC_ASSERT( p <= GRAPHENE_100_PERCENT, "${o} should not exceed 100%.", ("o", object_name) );
+}
+void validate_positive_amount( share_type a, const string& object_name )
+{
+   FC_ASSERT( a > 0, "${o} should be positive.", ("o", object_name) );
+}
+void validate_non_negative_amount( share_type a, const string& object_name )
+{
+   FC_ASSERT( a >= 0, "${o} should not be negative.", ("o", object_name) );
+}
+void validate_positive_asset( asset a, const string& object_name )
+{
+   validate_asset_id( a, object_name );
+   validate_positive_amount( a.amount, object_name + " amount" );
+}
+void validate_non_negative_asset( asset a, const string& object_name )
+{
+   validate_asset_id( a, object_name );
+   validate_non_negative_amount( a.amount, object_name + " amount" );
 }
 
 } } // namespace graphene::chain

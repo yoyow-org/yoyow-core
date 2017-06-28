@@ -43,15 +43,24 @@ namespace graphene { namespace chain {
     */
    struct transfer_operation : public base_operation
    {
+      struct ext
+      {
+         optional< asset > from_balance;
+         optional< asset > from_prepaid;
+         optional< asset > to_balance;
+         optional< asset > to_prepaid;
+      };
+
       struct fee_parameters_type {
          uint64_t fee              = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = 10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
          uint64_t min_real_fee     = 0;
          uint16_t min_rf_percent   = 0;
-         uint32_t price_per_kbyte  = 10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
          extensions_type   extensions;
       };
 
-      fee_type          fee; /// Account to transfer asset from
+      fee_type          fee;
+      /// Account to transfer asset from
       account_uid_type  from;
       /// Account to transfer asset to
       account_uid_type  to;
@@ -59,17 +68,31 @@ namespace graphene { namespace chain {
       asset            amount;
 
       /// User provided data encrypted to the memo key of the "to" account
-      optional<memo_data> memo;
-      extensions_type   extensions;
+      optional< memo_data > memo;
+
+      optional< extension< ext > > extensions;
 
       account_uid_type fee_payer_uid()const { return from; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
+      bool some_from_balance() const
+      {
+         return ( !extensions.valid() ||
+                  ( extensions->value.from_balance.valid() &&
+                    extensions->value.from_balance->amount > 0 ) );
+      }
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         // from should be required anyway as it is the fee_payer_uid(),
-         // but we insert it here because fee can be paid with secondary authority
-         a.insert( from );
+         // need active authority if transfer from balance
+         if( some_from_balance() )
+            a.insert( from );
+      }
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need secondary authority if not transfer from balance
+         // note: this means that owner authority is not enough nor needed
+         if( !some_from_balance() )
+            a.insert( from );
       }
    };
 
@@ -112,5 +135,6 @@ FC_REFLECT( graphene::chain::transfer_operation::fee_parameters_type,
             (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::override_transfer_operation::fee_parameters_type, (fee)(price_per_kbyte) )
 
-FC_REFLECT( graphene::chain::override_transfer_operation, (fee)(issuer)(from)(to)(amount)(memo)(extensions) )
+FC_REFLECT( graphene::chain::transfer_operation::ext, (from_balance)(from_prepaid)(to_balance)(to_prepaid) )
 FC_REFLECT( graphene::chain::transfer_operation, (fee)(from)(to)(amount)(memo)(extensions) )
+FC_REFLECT( graphene::chain::override_transfer_operation, (fee)(issuer)(from)(to)(amount)(memo)(extensions) )

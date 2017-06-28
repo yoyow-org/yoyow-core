@@ -43,14 +43,14 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
       GRAPHENE_ASSERT(
          is_authorized_asset( d, *from_account, transfer_asset_object ),
          transfer_from_account_not_whitelisted,
-         "'from' account ${from} is not whitelisted for asset ${asset}",
+         "'from' account ${from} is not whitelisted for asset ${asset}.",
          ("from",op.from)
          ("asset",op.amount.asset_id)
          );
       GRAPHENE_ASSERT(
          is_authorized_asset( d, *to_account, transfer_asset_object ),
          transfer_to_account_not_whitelisted,
-         "'to' account ${to} is not whitelisted for asset ${asset}",
+         "'to' account ${to} is not whitelisted for asset ${asset}.",
          ("to",op.to)
          ("asset",op.amount.asset_id)
          );
@@ -60,16 +60,52 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
          GRAPHENE_ASSERT(
             from_account->id == transfer_asset_object.issuer || to_account->id == transfer_asset_object.issuer,
             transfer_restricted_transfer_asset,
-            "Asset {asset} has transfer_restricted flag enabled",
+            "Asset {asset} has transfer_restricted flag enabled.",
             ("asset", op.amount.asset_id)
           );
       }
 
-      const auto& from_balance = d.get_balance( *from_account, transfer_asset_object );
-      bool sufficient_balance = from_balance.amount >= op.amount.amount;
-      FC_ASSERT( sufficient_balance,
-                 "Insufficient Balance: ${balance}, unable to transfer '${a}' from account '${f}' to '${t}'",
-                 ("f",from_account->uid)("t",to_account->uid)("a",d.to_pretty_string(op.amount))("balance",d.to_pretty_string(from_balance)) );
+      // by default, from balance to balance
+      asset_from_balance = asset_to_balance = op.amount;
+
+      if ( op.extensions.valid() )
+      {
+         const auto& ev = op.extensions->value;
+         if( ev.from_prepaid.valid() && ev.from_prepaid->amount > 0 )
+         {
+            asset_from_prepaid = *ev.from_prepaid;
+            from_account_stats = &from_account->statistics(d);
+            bool sufficient_prepaid = ( from_account_stats->prepaid >= asset_from_prepaid.amount );
+            FC_ASSERT( sufficient_prepaid,
+                       "Insufficient Prepaid: ${prepaid}, unable to transfer '${a}' from account '${f}' to '${t}'.",
+                       ("f",from_account->uid)("t",to_account->uid)("a",d.to_pretty_string(asset_from_prepaid))
+                       ("prepaid",d.to_pretty_core_string(from_account_stats->prepaid)) );
+         }
+         if( ev.from_balance.valid() )
+            asset_from_balance = *ev.from_balance;
+         else if( asset_from_prepaid.amount > 0 ) // if from_balance didn't present but from_prepaid presented
+            asset_from_balance.amount = 0;
+
+         if( ev.to_prepaid.valid() && ev.to_prepaid->amount > 0 )
+         {
+            asset_to_prepaid = *ev.to_prepaid;
+            to_account_stats = &to_account->statistics(d);
+         }
+         if( ev.to_balance.valid() )
+            asset_to_balance = *ev.to_balance;
+         else if( asset_to_prepaid.amount > 0 ) // if to_balance didn't present but to_prepaid presented
+            asset_to_balance.amount = 0;
+      }
+
+      if( asset_from_balance.amount > 0 )
+      {
+         const auto& from_balance = d.get_balance( *from_account, transfer_asset_object );
+         bool sufficient_balance = ( from_balance.amount >= asset_from_balance.amount );
+         FC_ASSERT( sufficient_balance,
+                    "Insufficient Balance: ${balance}, unable to transfer '${a}' from account '${f}' to '${t}'.",
+                    ("f",from_account->uid)("t",to_account->uid)("a",d.to_pretty_string(asset_from_balance))
+                    ("balance",d.to_pretty_string(from_balance)) );
+      }
 
       return void_result();
    } FC_RETHROW_EXCEPTIONS( error, "Unable to transfer ${a} from ${f} to ${t}", ("a",d.to_pretty_string(op.amount))("f",from_account->uid)("t",to_account->uid) );
@@ -78,8 +114,21 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
 
 void_result transfer_evaluator::do_apply( const transfer_operation& o )
 { try {
-   db().adjust_balance( *from_account, -o.amount );
-   db().adjust_balance( *to_account, o.amount );
+   database& d = db();
+   if( asset_from_balance.amount > 0 )
+      d.adjust_balance( *from_account, -asset_from_balance );
+   if( asset_from_prepaid.amount > 0 )
+      d.modify( *from_account_stats, [&](account_statistics_object& s)
+      {
+         s.prepaid -= asset_from_prepaid.amount;
+      });
+   if( asset_to_balance.amount > 0 )
+      d.adjust_balance( *to_account, asset_to_balance );
+   if( asset_to_prepaid.amount > 0 )
+      d.modify( *to_account_stats, [&](account_statistics_object& s)
+      {
+         s.prepaid += asset_to_prepaid.amount;
+      });
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
