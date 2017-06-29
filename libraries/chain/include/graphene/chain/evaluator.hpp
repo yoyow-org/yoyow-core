@@ -127,6 +127,8 @@ namespace graphene { namespace chain {
       // cause a circular dependency
       void db_adjust_balance(const account_id_type& fee_payer, asset fee_from_account);
       void db_adjust_balance(const account_uid_type& fee_payer, asset fee_from_account);
+      string db_to_pretty_string( const asset& a )const;
+      string db_to_pretty_core_string( const share_type amount )const;
 
       asset                            fee_from_account;
       share_type                       core_fee_paid;
@@ -179,11 +181,14 @@ namespace graphene { namespace chain {
             GRAPHENE_ASSERT( total_fee_paid >= required_fee_pair.first,
                        insufficient_fee,
                        "Insufficient Total Fee Paid: need ${r}, provided ${p}",
-                       ("p",total_fee_paid)("r",required_fee_pair.first) );
+                       ("p",db_to_pretty_core_string(total_fee_paid))
+                       ("r",db_to_pretty_core_string(required_fee_pair.first)) );
             GRAPHENE_ASSERT( from_balance + from_prepaid >= required_fee_pair.second,
                        insufficient_fee,
                        "Insufficient Real Fee Paid: need ${r}, provided ${fb} from balance and ${fp} from prepaid",
-                       ("fb",from_balance)("fp",from_prepaid)("r",required_fee_pair.second) );
+                       ("fb",db_to_pretty_core_string(from_balance))
+                       ("fp",db_to_pretty_core_string(from_prepaid))
+                       ("r" ,db_to_pretty_core_string(required_fee_pair.second)) );
          }
 
          return eval->do_evaluate(op);

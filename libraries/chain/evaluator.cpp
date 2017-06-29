@@ -220,6 +220,30 @@ database& generic_evaluator::db()const { return trx_state->db(); }
    { try {
       if( !trx_state->skip_fee ) {
          database& d = db();
+         if( from_prepaid > 0 )
+            FC_ASSERT( fee_paying_account_statistics->prepaid >= from_prepaid,
+                       "Insufficient Prepaid: account ${a}'s prepaid of ${b} is less than required ${r}",
+                       ("a",fee_paying_account->uid)
+                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->prepaid))
+                       ("r",d.to_pretty_core_string(from_prepaid)) );
+         if( from_csaf > 0 )
+            FC_ASSERT( fee_paying_account_statistics->csaf >= from_csaf,
+                       "Insufficient CSAF: account ${a}'s csaf of ${b} is less than required ${r}",
+                       ("a",fee_paying_account->uid)
+                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->csaf))
+                       ("r",d.to_pretty_core_string(from_csaf)) );
+         if( from_rcsaf_one_time > 0 )
+            FC_ASSERT( fee_paying_account_statistics->rcsaf_one_time >= from_rcsaf_one_time,
+                       "Insufficient Received CSAF: account ${a}'s rcsaf_one_time of ${b} is less than required ${r}",
+                       ("a",fee_paying_account->uid)
+                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->rcsaf_one_time))
+                       ("r",d.to_pretty_core_string(from_rcsaf_one_time)) );
+         if( from_rcsaf_long_term > 0 )
+            FC_ASSERT( fee_paying_account_statistics->rcsaf_long_term >= from_rcsaf_long_term,
+                       "Insufficient Received CSAF: account ${a}'s rcsaf_long_term of ${b} is less than required ${r}",
+                       ("a",fee_paying_account->uid)
+                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->rcsaf_long_term))
+                       ("r",d.to_pretty_core_string(from_rcsaf_long_term)) );
          d.modify(*fee_paying_account_statistics, [&](account_statistics_object& s)
          {
             if( from_prepaid         > 0 ) s.prepaid         -= from_prepaid;
@@ -247,6 +271,14 @@ database& generic_evaluator::db()const { return trx_state->db(); }
    void generic_evaluator::db_adjust_balance(const account_uid_type& fee_payer, asset fee_from_account)
    {
       db().adjust_balance(fee_payer, fee_from_account);
+   }
+   string generic_evaluator::db_to_pretty_string( const asset& a )const
+   {
+      return db().to_pretty_string( a );
+   }
+   string generic_evaluator::db_to_pretty_core_string( const share_type amount )const
+   {
+      return db().to_pretty_core_string( amount );
    }
 
 } }
