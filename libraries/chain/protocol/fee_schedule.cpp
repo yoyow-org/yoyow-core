@@ -106,6 +106,8 @@ namespace graphene { namespace chain {
       }
    };
 
+   BOOST_TTI_HAS_MEMBER_DATA(fee)
+
    struct set_fee_visitor
    {
       typedef void result_type;
@@ -113,30 +115,29 @@ namespace graphene { namespace chain {
 
       set_fee_visitor( asset f ):_fee(f){}
 
-      void operator()( account_create_operation& op )const
+      template<typename OpType>
+      void set_fee( OpType& op, std::true_type )const
       {
-         op.fee = fee_type(_fee);
+         op.fee = _fee;
       }
 
-      void operator()( account_manage_operation& op )const
-      {
-         op.fee = fee_type(_fee);
-      }
-
-      void operator()( transfer_operation& op )const
-      {
-         op.fee = fee_type(_fee);
-      }
-
-      void operator()( post_operation& op )const
+      template<typename OpType>
+      void set_fee( OpType& op, std::false_type )const
       {
          op.fee = fee_type(_fee);
       }
 
       template<typename OpType>
+      void set_fee( OpType& op )const
+      {
+         const bool b = has_member_data_fee<OpType,asset>::value;
+         set_fee( op, std::integral_constant<bool, b>() );
+      }
+
+      template<typename OpType>
       void operator()( OpType& op )const
       {
-         op.fee = _fee;
+         set_fee( op );
       }
    };
 
