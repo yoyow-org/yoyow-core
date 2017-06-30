@@ -217,7 +217,8 @@ share_type account_create_operation::calculate_fee( const fee_parameters_type& k
    //   core_fee_required = k.premium_fee;
 
    // Authorities and vote lists can be arbitrarily large, so charge a data fee for big ones
-   auto data_fee =  calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte ); 
+   auto data_size = fc::raw::pack_size(owner) + fc::raw::pack_size(active) + fc::raw::pack_size(secondary);
+   auto data_fee =  calculate_data_fee( data_size, k.price_per_kbyte );
    core_fee_required += data_fee;
 
    return core_fee_required;
