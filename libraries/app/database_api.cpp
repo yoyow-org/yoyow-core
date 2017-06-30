@@ -152,6 +152,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       bool verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
       processed_transaction validate_transaction( const signed_transaction& trx )const;
       vector< fc::variant > get_required_fees( const vector<operation>& ops, asset_id_type id )const;
+      vector< std::pair< int64_t, int64_t > > get_required_fee_pairs( const vector<operation>& ops )const;
 
       // Proposed transactions
       vector<proposal_object> get_proposed_transactions( account_id_type id )const;
@@ -1869,6 +1870,11 @@ vector< fc::variant > database_api::get_required_fees( const vector<operation>& 
    return my->get_required_fees( ops, id );
 }
 
+vector< std::pair< int64_t, int64_t > > database_api::get_required_fee_pairs( const vector<operation>& ops )const
+{
+   return my->get_required_fee_pairs( ops );
+}
+
 /**
  * Container method for mutually recursive functions used to
  * implement get_required_fees() with potentially nested proposals.
@@ -1943,6 +1949,20 @@ vector< fc::variant > database_api_impl::get_required_fees( const vector<operati
    for( operation& op : _ops )
    {
       result.push_back( helper.set_op_fees( op ) );
+   }
+   return result;
+}
+
+vector< std::pair< int64_t, int64_t > > database_api_impl::get_required_fee_pairs( const vector<operation>& ops )const
+{
+   vector< std::pair< int64_t, int64_t > > result;
+   result.reserve(ops.size());
+
+   const auto& fs = _db.current_fee_schedule();
+   for( const operation& op : ops )
+   {
+      const auto& fee_pair = fs.calculate_fee_pair( op );
+      result.push_back( std::make_pair( fee_pair.first.value, fee_pair.second.value ) );
    }
    return result;
 }

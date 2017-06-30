@@ -575,8 +575,8 @@ class database_api
        *  This API will take a partially signed transaction and a set of public keys that the owner has the ability to sign for
        *  and return the minimal subset of public keys that should add signatures to the transaction.
        */
-      set<public_key_type> get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
       std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      set<public_key_type> get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
 
       /**
        *  This method will return the set of all public keys that could possibly sign for a given transaction.  This call can
@@ -606,6 +606,11 @@ class database_api
        *  not have a valid core_exchange_rate
        */
       vector< fc::variant > get_required_fees( const vector<operation>& ops, asset_id_type id )const;
+
+      /**
+       *  For each operation calculate the required fee pair: minimum total fee required, minimum real fee required.
+       */
+      vector< std::pair< int64_t, int64_t > > get_required_fee_pairs( const vector<operation>& ops )const;
 
       ///////////////////////////
       // Proposed transactions //
@@ -722,14 +727,15 @@ FC_API(graphene::app::database_api,
 
    // Authority / validation
    (get_transaction_hex)
-   (get_required_signatures_old)
    (get_required_signatures)
+   (get_required_signatures_old)
    (get_potential_signatures)
    (get_potential_address_signatures)
    (verify_authority)
    (verify_account_authority)
    (validate_transaction)
    (get_required_fees)
+   (get_required_fee_pairs)
 
    // Proposed transactions
    (get_proposed_transactions)
