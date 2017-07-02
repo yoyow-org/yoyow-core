@@ -135,24 +135,6 @@ database& generic_evaluator::db()const { return trx_state->db(); }
                        ("b",d.to_pretty_core_string(fee_paying_account_statistics->csaf))
                        ("r",d.to_pretty_core_string(from_csaf)) );
          }
-         if( fov.from_rcsaf_one_time.valid() )
-         {
-            from_rcsaf_one_time = fov.from_rcsaf_one_time->amount;
-            FC_ASSERT( from_rcsaf_one_time <= fee_paying_account_statistics->rcsaf_one_time,
-                       "Insufficient rcsaf_one_time: account ${a}'s rcsaf_one_time of ${b} is less than required ${r}",
-                       ("a",fee_paying_account->uid)
-                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->rcsaf_one_time))
-                       ("r",d.to_pretty_core_string(from_rcsaf_one_time)) );
-         }
-         if( fov.from_rcsaf_long_term.valid() )
-         {
-            from_rcsaf_long_term = fov.from_rcsaf_long_term->amount;
-            FC_ASSERT( from_rcsaf_long_term <= fee_paying_account_statistics->rcsaf_long_term,
-                       "Insufficient rcsaf_long_term: account ${a}'s rcsaf_long_term of ${b} is less than required ${r}",
-                       ("a",fee_paying_account->uid)
-                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->rcsaf_long_term))
-                       ("r",d.to_pretty_core_string(from_rcsaf_long_term)) );
-         }
       }
 
       fee_asset = &asset_id_type(fee_from_account.asset_id)(d);
@@ -232,24 +214,10 @@ database& generic_evaluator::db()const { return trx_state->db(); }
                        ("a",fee_paying_account->uid)
                        ("b",d.to_pretty_core_string(fee_paying_account_statistics->csaf))
                        ("r",d.to_pretty_core_string(from_csaf)) );
-         if( from_rcsaf_one_time > 0 )
-            FC_ASSERT( fee_paying_account_statistics->rcsaf_one_time >= from_rcsaf_one_time,
-                       "Insufficient Received CSAF: account ${a}'s rcsaf_one_time of ${b} is less than required ${r}",
-                       ("a",fee_paying_account->uid)
-                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->rcsaf_one_time))
-                       ("r",d.to_pretty_core_string(from_rcsaf_one_time)) );
-         if( from_rcsaf_long_term > 0 )
-            FC_ASSERT( fee_paying_account_statistics->rcsaf_long_term >= from_rcsaf_long_term,
-                       "Insufficient Received CSAF: account ${a}'s rcsaf_long_term of ${b} is less than required ${r}",
-                       ("a",fee_paying_account->uid)
-                       ("b",d.to_pretty_core_string(fee_paying_account_statistics->rcsaf_long_term))
-                       ("r",d.to_pretty_core_string(from_rcsaf_long_term)) );
          d.modify(*fee_paying_account_statistics, [&](account_statistics_object& s)
          {
             if( from_prepaid         > 0 ) s.prepaid         -= from_prepaid;
             if( from_csaf            > 0 ) s.csaf            -= from_csaf;
-            if( from_rcsaf_one_time  > 0 ) s.rcsaf_one_time  -= from_rcsaf_one_time;
-            if( from_rcsaf_long_term > 0 ) s.rcsaf_long_term -= from_rcsaf_long_term;
          });
       }
    } FC_CAPTURE_AND_RETHROW() }

@@ -90,8 +90,6 @@ namespace graphene { namespace chain {
       optional<asset> from_balance;
       optional<asset> from_prepaid;
       optional<asset> from_csaf;
-      optional<asset> from_rcsaf_one_time;
-      optional<asset> from_rcsaf_long_term;
    };
    typedef optional< extension< fee_extension_type > > fee_options_type;
 
@@ -186,5 +184,5 @@ FC_REFLECT( graphene::chain::default_extension_type, )
 
 FC_REFLECT_TYPENAME( graphene::chain::fee_options_type )
 FC_REFLECT( graphene::chain::fee_extension_type,
-            (from_balance)(from_prepaid)(from_csaf)(from_rcsaf_one_time)(from_rcsaf_long_term) )
+            (from_balance)(from_prepaid)(from_csaf) )
 FC_REFLECT( graphene::chain::fee_type, (total)(options) )

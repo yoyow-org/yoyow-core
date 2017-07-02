@@ -236,16 +236,6 @@ void validate_op_fee( const fee_type& fee, const string& op_name )
          validate_op_fee( *fov.from_csaf, op_name + "from_csaf " );
          total += *fov.from_csaf;
       }
-      if( fov.from_rcsaf_one_time.valid() )
-      {
-         validate_op_fee( *fov.from_rcsaf_one_time, op_name + "from_rcsaf_one_time " );
-         total += *fov.from_rcsaf_one_time;
-      }
-      if( fov.from_rcsaf_long_term.valid() )
-      {
-         validate_op_fee( *fov.from_rcsaf_long_term, op_name + "from_rcsaf_long_term " );
-         total += *fov.from_rcsaf_long_term;
-      }
       FC_ASSERT( total.amount == fee.total.amount, "${o}total fee should be equal to sum of fees in options.", ("o", op_name) );
    }
 }

@@ -136,8 +136,6 @@ namespace graphene { namespace chain {
       share_type                       from_balance;
       share_type                       from_prepaid;
       share_type                       from_csaf;
-      share_type                       from_rcsaf_one_time;
-      share_type                       from_rcsaf_long_term;
       const account_object*            fee_paying_account = nullptr;
       const account_statistics_object* fee_paying_account_statistics = nullptr;
       const asset_object*              fee_asset          = nullptr;
