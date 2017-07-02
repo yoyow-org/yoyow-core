@@ -273,6 +273,7 @@ namespace graphene { namespace chain {
          const account_object& get_account_by_uid( account_uid_type uid )const;
          const account_object* find_account_by_uid( account_uid_type uid )const;
          const optional<account_id_type> find_account_id_by_uid( account_uid_type uid )const;
+         const account_statistics_object& get_account_statistics_by_uid( account_uid_type uid )const;
 
          const platform_object& get_platform_by_pid( platform_pid_type pid )const;
 

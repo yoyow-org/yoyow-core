@@ -197,7 +197,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.create_time      = d.head_block_time();
          obj.last_update_time = d.head_block_time();
 
-         obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.id;}).id;
+         obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.uid;}).id;
 
          if( o.extensions.valid() && o.extensions->value.owner_special_authority.valid() )
             obj.owner_special_authority = *(o.extensions->value.owner_special_authority);

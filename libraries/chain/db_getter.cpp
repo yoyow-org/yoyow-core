@@ -125,6 +125,14 @@ const optional<account_id_type> database::find_account_id_by_uid( account_uid_ty
       return optional<account_id_type>();
 }
 
+const account_statistics_object& database::get_account_statistics_by_uid( account_uid_type uid )const
+{
+   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_uid>();
+   auto itr = idx.find(uid);
+   FC_ASSERT( itr != idx.end(), "account ${uid} not found.", ("uid",uid) );
+   return *itr;
+}
+
 const platform_object& database::get_platform_by_pid( platform_pid_type pid )const
 {
    const auto& platforms_by_pid = get_index_type<platform_index>().indices().get<by_pid>();

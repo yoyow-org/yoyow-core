@@ -44,7 +44,7 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = implementation_ids;
          static const uint8_t type_id  = impl_account_statistics_object_type;
 
-         account_id_type  owner;
+         account_uid_type  owner;
 
          /**
           * Keep the most recent operation as a root pointer to a linked list of the transaction history.
@@ -96,6 +96,19 @@ namespace graphene { namespace chain {
           */
          share_type rcsaf_long_term;
 
+         /**
+          * Tracks the coin-seconds earned by this account. Lazy updating.
+          * actual_coin_seconds_earned = coin_seconds_earned + current_balance * (now - coin_seconds_earned_last_update)
+          */
+         // TODO maybe better to use a struct to store coin_seconds_earned and coin_seconds_earned_last_update
+         //      and related functions e.g. compute_coin_seconds_earned and update_coin_seconds_earned
+         fc::uint128_t                  coin_seconds_earned;
+
+         /**
+          * Tracks the most recent time when @ref coin_seconds_earned was updated.
+          */
+         fc::time_point_sec             coin_seconds_earned_last_update;
+
          /// @brief Split up and pay out @ref pending_fees and @ref pending_vested_fees
          void process_fees(const account_object& a, database& d) const;
 
@@ -103,6 +116,27 @@ namespace graphene { namespace chain {
           * Core fees are paid into the account_statistics_object by this method
           */
          void pay_fee( share_type core_fee, share_type cashback_vesting_threshold );
+
+         /**
+          * Compute coin_seconds_earned.  Used to
+          * non-destructively figure out how many coin seconds
+          * are available.
+          */
+         // TODO use a public funtion to do this job as well as same job in vesting_balance_object
+         fc::uint128_t compute_coin_seconds_earned(const asset& balance, fc::time_point_sec now)const;
+
+         /**
+          * Update coin_seconds_earned and
+          * coin_seconds_earned_last_update fields due to passing of time
+          */
+         // TODO use a public funtion to do this job and same job in vesting_balance_object
+         void update_coin_seconds_earned(const asset& balance, fc::time_point_sec now);
+
+         /**
+          * Update coin_seconds_earned and
+          * coin_seconds_earned_last_update fields with new data
+          */
+         void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, fc::time_point_sec now);
    };
 
    /**
@@ -406,6 +440,22 @@ namespace graphene { namespace chain {
     */
    typedef generic_index<account_object, account_multi_index_type> account_index;
 
+   /**
+    * @ingroup object_index
+    */
+   typedef multi_index_container<
+      account_statistics_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+         ordered_unique< tag<by_uid>, member<account_statistics_object, account_uid_type, &account_statistics_object::owner> >
+      >
+   > account_statistics_object_multi_index_type;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef generic_index<account_statistics_object, account_statistics_object_multi_index_type> account_statistics_index;
+
 }}
 
 FC_REFLECT_DERIVED( graphene::chain::account_object,
@@ -439,5 +489,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (lifetime_fees_paid)
                     (pending_fees)(pending_vested_fees)
                     (prepaid)(csaf)(rcsaf_one_time)(rcsaf_long_term)
+                    (coin_seconds_earned)(coin_seconds_earned_last_update)
                   )
 

@@ -376,9 +376,10 @@ namespace graphene { namespace app {
                   //result.push_back( aobj->owner );
                   break;
                } case impl_account_statistics_object_type:{
-                  const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
-                  assert( aobj != nullptr );
-                  result.push_back( aobj->owner );
+                  // TODO review
+                  //const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
+                  //assert( aobj != nullptr );
+                  //result.push_back( aobj->owner );
                   break;
                } case impl_transaction_object_type:{
                   const auto& aobj = dynamic_cast<const transaction_object*>(obj);
@@ -509,11 +510,11 @@ namespace graphene { namespace app {
        const auto& db = *_app.chain_database();
        FC_ASSERT(limit <= 100);
        vector<std::pair<uint32_t,operation_history_object>> result;
-       const auto& account_obj = db.get_account_by_uid(account);
+       const auto& stats = db.get_account_statistics_by_uid( account );
        if( start == 0 )
-          start = account_obj.statistics(db).total_ops;
+          start = stats.total_ops;
        else
-          start = min( account_obj.statistics(db).total_ops, start );
+          start = min( stats.total_ops, start );
 
 
        if( start >= stop && start > 0 && limit > 0 )
@@ -524,8 +525,8 @@ namespace graphene { namespace app {
           {
              const auto& by_seq_idx = hist_idx.indices().get<by_seq>();
 
-             auto itr = by_seq_idx.upper_bound( boost::make_tuple( account_obj.uid, start ) );
-             auto itr_stop = by_seq_idx.lower_bound( boost::make_tuple( account_obj.uid, stop ) );
+             auto itr = by_seq_idx.upper_bound( boost::make_tuple( account, start ) );
+             auto itr_stop = by_seq_idx.lower_bound( boost::make_tuple( account, stop ) );
          
              do
              {
@@ -538,8 +539,8 @@ namespace graphene { namespace app {
           {
              const auto& by_type_seq_idx = hist_idx.indices().get<by_type_seq>();
 
-             auto itr = by_type_seq_idx.upper_bound( boost::make_tuple( account_obj.uid, *op_type, start ) );
-             auto itr_stop = by_type_seq_idx.lower_bound( boost::make_tuple( account_obj.uid, *op_type, stop ) );
+             auto itr = by_type_seq_idx.upper_bound( boost::make_tuple( account, *op_type, start ) );
+             auto itr_stop = by_type_seq_idx.lower_bound( boost::make_tuple( account, *op_type, stop ) );
 
              if( itr != itr_stop )
              {
