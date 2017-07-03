@@ -167,9 +167,9 @@ namespace graphene { namespace chain {
    void validate_asset_id( asset a, const string& object_name = "asset" );
    void validate_op_fee( asset fee, const string& op_name = "" );
    void validate_op_fee( const fee_type& fee, const string& op_name = "" );
-   void validate_percentage( uint16_t p, const string& object_name = "percentage" );
-   void validate_positive_amount( share_type a, const string& object_name = "amount" );
-   void validate_non_negative_amount( share_type a, const string& object_name = "amount" );
+   void validate_percentage( uint16_t percent, const string& object_name = "percentage" );
+   void validate_positive_amount( share_type amount, const string& object_name = "amount" );
+   void validate_non_negative_amount( share_type amount, const string& object_name = "amount" );
    void validate_positive_asset( asset a, const string& object_name = "amount" );
    void validate_non_negative_asset( asset a, const string& object_name = "amount" );
 

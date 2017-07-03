@@ -249,17 +249,17 @@ void validate_op_fee( const fee_type& fee, const string& op_name )
       FC_ASSERT( total.amount == fee.total.amount, "${o}total fee should be equal to sum of fees in options.", ("o", op_name) );
    }
 }
-void validate_percentage( uint16_t p, const string& object_name )
+void validate_percentage( uint16_t percent, const string& object_name )
 {
-   FC_ASSERT( p <= GRAPHENE_100_PERCENT, "${o} should not exceed 100%.", ("o", object_name) );
+   FC_ASSERT( percent <= GRAPHENE_100_PERCENT, "${o} should not exceed 100%.", ("o", object_name) );
 }
-void validate_positive_amount( share_type a, const string& object_name )
+void validate_positive_amount( share_type amount, const string& object_name )
 {
-   FC_ASSERT( a > 0, "${o} should be positive.", ("o", object_name) );
+   FC_ASSERT( amount > 0, "${o} should be positive.", ("o", object_name) );
 }
-void validate_non_negative_amount( share_type a, const string& object_name )
+void validate_non_negative_amount( share_type amount, const string& object_name )
 {
-   FC_ASSERT( a >= 0, "${o} should not be negative.", ("o", object_name) );
+   FC_ASSERT( amount >= 0, "${o} should not be negative.", ("o", object_name) );
 }
 void validate_positive_asset( asset a, const string& object_name )
 {
