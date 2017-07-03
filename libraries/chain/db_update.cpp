@@ -483,11 +483,11 @@ void database::clear_expired_csaf_leases()
    {
       modify( get_account_statistics_by_uid( itr->from ), [&](account_statistics_object& s) {
          s.update_coin_seconds_earned( csaf_window, head_block_time() );
-         s.core_leased -= itr->amount;
+         s.core_leased_out -= itr->amount;
       });
       modify( get_account_statistics_by_uid( itr->to ), [&](account_statistics_object& s) {
          s.update_coin_seconds_earned( csaf_window, head_block_time() );
-         s.core_received -= itr->amount;
+         s.core_leased_in -= itr->amount;
       });
       remove( *itr );
       itr = idx.begin();

@@ -116,7 +116,7 @@ std::pair<fc::uint128_t,share_type> account_statistics_object::compute_coin_seco
    share_type new_average_coins;
    fc::uint128_t max_coin_seconds;
 
-   share_type effective_balance = core_balance + core_received - core_leased;
+   share_type effective_balance = core_balance + core_leased_in - core_leased_out;
 
    if( now <= average_coins_last_update )
       new_average_coins = average_coins;

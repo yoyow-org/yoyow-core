@@ -35,7 +35,7 @@ namespace graphene { namespace chain {
     * @ingroup protocol
     *
     */
-   class csaf_lease_object : public graphene::db::abstract_object<post_object>
+   class csaf_lease_object : public graphene::db::abstract_object<csaf_lease_object>
    {
       public:
          static const uint8_t space_id = implementation_ids;

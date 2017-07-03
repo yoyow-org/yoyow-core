@@ -99,10 +99,10 @@ void_result csaf_lease_evaluator::do_evaluate( const csaf_lease_operation& op )
 
    if( delta > 0 )
    {
-      FC_ASSERT( from_stats->core_balance - from_stats->core_leased >= delta,
+      FC_ASSERT( from_stats->core_balance - from_stats->core_leased_out >= delta,
                  "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                  ("a",op.from)
-                 ("b",d.to_pretty_core_string(from_stats->core_balance - from_stats->core_leased))
+                 ("b",d.to_pretty_core_string(from_stats->core_balance - from_stats->core_leased_out))
                  ("r",d.to_pretty_core_string(delta)) );
    }
 
@@ -141,11 +141,11 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
    const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
    d.modify( *from_stats, [&](account_statistics_object& s) {
       s.update_coin_seconds_earned( csaf_window, d.head_block_time() );
-      s.core_leased += delta;
+      s.core_leased_out += delta;
    });
    d.modify( *to_stats, [&](account_statistics_object& s) {
       s.update_coin_seconds_earned( csaf_window, d.head_block_time() );
-      s.core_received += delta;
+      s.core_leased_in += delta;
    });
 
    return return_result;

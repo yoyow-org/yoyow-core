@@ -99,10 +99,10 @@ void database::adjust_balance(account_uid_type account, asset delta )
    {
       const account_statistics_object& account_stats = get_account_statistics_by_uid( account );
       if( delta.amount < 0 )
-         FC_ASSERT( account_stats.core_balance - account_stats.core_leased >= -delta.amount,
+         FC_ASSERT( account_stats.core_balance - account_stats.core_leased_out >= -delta.amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",account)
-                    ("b",to_pretty_core_string(account_stats.core_balance - account_stats.core_leased))
+                    ("b",to_pretty_core_string(account_stats.core_balance - account_stats.core_leased_out))
                     ("r",to_pretty_string(-delta)) );
       const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
       modify( account_stats, [&](account_statistics_object& s) {

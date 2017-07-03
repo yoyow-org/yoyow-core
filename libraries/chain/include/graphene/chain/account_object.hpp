@@ -94,13 +94,13 @@ namespace graphene { namespace chain {
          share_type core_balance;
 
          /**
-          * Received as-fee coins (long-term).
+          * As-fee coins that leased from others to this account.
           */
-         share_type core_received;
+         share_type core_leased_in;
          /**
-          * Leased as-fee coins (long-term).
+          * As-fee coins that leased from this account to others.
           */
-         share_type core_leased;
+         share_type core_leased_out;
 
          /**
           * Tracks average coins for calculating csaf of this account. Lazy updating.
@@ -505,7 +505,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (lifetime_fees_paid)
                     (pending_fees)(pending_vested_fees)
                     (prepaid)(csaf)
-                    (core_balance)(core_received)(core_leased)
+                    (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)//(average_coins_next_update)
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                   )
