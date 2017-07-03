@@ -109,5 +109,8 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (accounts_per_fee_scale)
             (account_fee_scale_bitshifts)
             (max_authority_depth)
+            (csaf_rate)
+            (max_csaf_per_account)
+            (csaf_accumulate_window)
             (extensions)
           )
