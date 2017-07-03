@@ -474,4 +474,24 @@ void database::update_withdraw_permissions()
       remove(*permit_index.begin());
 }
 
+void database::clear_expired_csaf_leases()
+{
+   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+   auto& idx = get_index_type<csaf_lease_index>().indices().get<by_expiration>();
+   auto itr = idx.begin();
+   while( itr != idx.end() && itr->expiration <= head_block_time() )
+   {
+      modify( get_account_statistics_by_uid( itr->from ), [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned( csaf_window, head_block_time() );
+         s.core_leased -= itr->amount;
+      });
+      modify( get_account_statistics_by_uid( itr->to ), [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned( csaf_window, head_block_time() );
+         s.core_received -= itr->amount;
+      });
+      remove( *itr );
+      itr = idx.begin();
+   }
+}
+
 } }

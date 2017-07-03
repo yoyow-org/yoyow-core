@@ -87,14 +87,29 @@ namespace graphene { namespace chain {
           * Coin-seconds-as-fee.
           */
          share_type csaf;
+
          /**
-          * Received coin-seconds-as-fee (one-time).
+          * Core balance.
           */
-         share_type rcsaf_one_time;
+         share_type core_balance;
+
          /**
-          * Received coin-seconds-as-fee (long-term).
+          * Received as-fee coins (long-term).
           */
-         share_type rcsaf_long_term;
+         share_type core_received;
+         /**
+          * Leased as-fee coins (long-term).
+          */
+         share_type core_leased;
+
+         /**
+          * Tracks average coins for calculating csaf of this account. Lazy updating.
+          */
+         share_type                     average_coins;
+         /**
+          * Tracks the most recent time when @ref average_coins was updated.
+          */
+         fc::time_point_sec             average_coins_last_update;
 
          /**
           * Tracks the coin-seconds earned by this account. Lazy updating.
@@ -123,20 +138,21 @@ namespace graphene { namespace chain {
           * are available.
           */
          // TODO use a public funtion to do this job as well as same job in vesting_balance_object
-         fc::uint128_t compute_coin_seconds_earned(const asset& balance, fc::time_point_sec now)const;
+         std::pair<fc::uint128_t,share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now)const;
 
          /**
           * Update coin_seconds_earned and
           * coin_seconds_earned_last_update fields due to passing of time
           */
          // TODO use a public funtion to do this job and same job in vesting_balance_object
-         void update_coin_seconds_earned(const asset& balance, fc::time_point_sec now);
+         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now);
 
          /**
           * Update coin_seconds_earned and
           * coin_seconds_earned_last_update fields with new data
           */
-         void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, fc::time_point_sec now);
+         void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now);
+
    };
 
    /**
@@ -488,7 +504,9 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (total_core_in_orders)
                     (lifetime_fees_paid)
                     (pending_fees)(pending_vested_fees)
-                    (prepaid)(csaf)(rcsaf_one_time)(rcsaf_long_term)
+                    (prepaid)(csaf)
+                    (core_balance)(core_received)(core_leased)
+                    (average_coins)(average_coins_last_update)//(average_coins_next_update)
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                   )
 

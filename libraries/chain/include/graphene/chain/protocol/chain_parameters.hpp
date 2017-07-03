@@ -69,6 +69,9 @@ namespace graphene { namespace chain {
       uint16_t                accounts_per_fee_scale              = GRAPHENE_DEFAULT_ACCOUNTS_PER_FEE_SCALE; ///< number of accounts between fee scalings
       uint8_t                 account_fee_scale_bitshifts         = GRAPHENE_DEFAULT_ACCOUNT_FEE_SCALE_BITSHIFTS; ///< number of times to left bitshift account registration fee at each scaling
       uint8_t                 max_authority_depth                 = GRAPHENE_MAX_SIG_CHECK_DEPTH;
+      uint64_t                csaf_rate                           = GRAPHENE_DEFAULT_CSAF_RATE;
+      share_type              max_csaf_per_account                = GRAPHENE_DEFAULT_MAX_CSAF_PER_ACCOUNT;
+      uint64_t                csaf_accumulate_window              = GRAPHENE_DEFAULT_CSAF_ACCUMULATE_WINDOW;
       extensions_type         extensions;
 
       /** defined in fee_schedule.cpp */

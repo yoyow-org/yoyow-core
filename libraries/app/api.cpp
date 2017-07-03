@@ -381,6 +381,13 @@ namespace graphene { namespace app {
                   //assert( aobj != nullptr );
                   //result.push_back( aobj->owner );
                   break;
+               } case impl_csaf_lease_object_type:{
+                  // TODO review
+                  //const auto& aobj = dynamic_cast<const csaf_lease_object*>(obj);
+                  //assert( aobj != nullptr );
+                  //result.push_back( aobj->from );
+                  //result.push_back( aobj->to );
+                  break;
                } case impl_transaction_object_type:{
                   const auto& aobj = dynamic_cast<const transaction_object*>(obj);
                   assert( aobj != nullptr );

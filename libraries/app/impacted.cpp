@@ -44,7 +44,7 @@ struct get_impacted_account_uid_visitor
    void operator()( const account_create_operation& op )
    {
       _impacted.insert( op.uid );
-      _impacted.insert( op.reg_info.registrar );
+      //_impacted.insert( op.reg_info.registrar );
       _impacted.insert( op.reg_info.referrer );
       add_authority_account_uids( _impacted, op.owner );
       add_authority_account_uids( _impacted, op.active );
@@ -66,8 +66,18 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const account_manage_operation& op )
    {
-      _impacted.insert( op.executor );
+      //_impacted.insert( op.executor );
       _impacted.insert( op.account );
+   }
+
+   void operator()( const csaf_collect_operation& op )
+   {
+      _impacted.insert( op.to );
+   }
+
+   void operator()( const csaf_lease_operation& op )
+   {
+      _impacted.insert( op.to );
    }
 
    /*
@@ -240,6 +250,16 @@ struct get_impacted_account_visitor
    }
 
    void operator()( const post_operation& op )
+   {
+      // TODO review
+   }
+
+   void operator()( const csaf_collect_operation& op )
+   {
+      // TODO review
+   }
+
+   void operator()( const csaf_lease_operation& op )
    {
       // TODO review
    }

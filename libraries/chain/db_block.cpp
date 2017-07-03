@@ -532,6 +532,9 @@ void database::_apply_block( const signed_block& next_block )
    update_expired_feeds();
    update_withdraw_permissions();
 
+   dlog("after update_withdraw_permissions");
+   clear_expired_csaf_leases();
+
    dlog("before update_maintenance_flag");
    // n.b., update_maintenance_flag() happens this late
    // because get_slot_time() / get_slot_at_time() is needed above

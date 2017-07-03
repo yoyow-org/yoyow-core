@@ -30,6 +30,7 @@
 #include <graphene/chain/protocol/committee_member.hpp>
 #include <graphene/chain/protocol/confidential.hpp>
 #include <graphene/chain/protocol/content.hpp>
+#include <graphene/chain/protocol/csaf.hpp>
 #include <graphene/chain/protocol/custom.hpp>
 #include <graphene/chain/protocol/fba.hpp>
 #include <graphene/chain/protocol/market.hpp>
@@ -53,6 +54,8 @@ namespace graphene { namespace chain {
             balance_claim_operation,
             account_manage_operation,
             post_operation,
+            csaf_collect_operation,
+            csaf_lease_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
             call_order_update_operation,

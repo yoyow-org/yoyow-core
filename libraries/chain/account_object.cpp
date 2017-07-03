@@ -110,27 +110,66 @@ void account_statistics_object::pay_fee( share_type core_fee, share_type cashbac
       pending_vested_fees += core_fee;
 }
 
-fc::uint128_t account_statistics_object::compute_coin_seconds_earned(const asset& balance, fc::time_point_sec now)const
+std::pair<fc::uint128_t,share_type> account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now)const
 {
+   // check average coins and max coin-seconds
+   share_type new_average_coins;
+   fc::uint128_t max_coin_seconds;
+
+   share_type effective_balance = core_balance + core_received - core_leased;
+
+   if( now <= average_coins_last_update )
+      new_average_coins = average_coins;
+   else
+   {
+      uint64_t delta_seconds = ( now - average_coins_last_update ).to_seconds();
+      if( delta_seconds >= window )
+         new_average_coins = effective_balance;
+      else
+      {
+         uint64_t old_seconds = window - delta_seconds;
+
+         fc::uint128_t old_coin_seconds = fc::uint128_t( average_coins.value ) * old_seconds;
+         fc::uint128_t new_coin_seconds = fc::uint128_t( effective_balance.value ) * delta_seconds;
+
+         max_coin_seconds = old_coin_seconds + new_coin_seconds;
+         new_average_coins = ( max_coin_seconds / window ).to_uint64();
+      }
+   }
+   // kill rounding issue
+   max_coin_seconds = fc::uint128_t( new_average_coins.value ) * window;
+
+   // check earned coin-seconds
+   fc::uint128_t new_coin_seconds_earned;
    if( now <= coin_seconds_earned_last_update )
-      return coin_seconds_earned;
-   int64_t delta_seconds = (now - coin_seconds_earned_last_update).to_seconds();
+      new_coin_seconds_earned = coin_seconds_earned;
+   else
+   {
+      int64_t delta_seconds = ( now - coin_seconds_earned_last_update ).to_seconds();
 
-   fc::uint128_t delta_coin_seconds = balance.amount.value;
-   delta_coin_seconds *= delta_seconds;
+      fc::uint128_t delta_coin_seconds = effective_balance.value;
+      delta_coin_seconds *= delta_seconds;
 
-   return (coin_seconds_earned + delta_coin_seconds);
+      new_coin_seconds_earned = coin_seconds_earned + delta_coin_seconds;
+   }
+   if( new_coin_seconds_earned > max_coin_seconds )
+      new_coin_seconds_earned = max_coin_seconds;
+
+   return std::make_pair( new_coin_seconds_earned, new_average_coins );
 }
 
-void account_statistics_object::update_coin_seconds_earned(const asset& balance, fc::time_point_sec now)
+void account_statistics_object::update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now)
 {
-   if( now <= coin_seconds_earned_last_update )
+   if( now <= coin_seconds_earned_last_update && now <= average_coins_last_update )
       return;
-   coin_seconds_earned = compute_coin_seconds_earned(balance, now);
+   const auto& result = compute_coin_seconds_earned( window, now );
+   coin_seconds_earned = result.first;
    coin_seconds_earned_last_update = now;
+   average_coins = result.second;
+   average_coins_last_update = now;
 }
 
-void account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, fc::time_point_sec now)
+void account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now)
 {
    coin_seconds_earned = new_coin_seconds;
    coin_seconds_earned_last_update = now;

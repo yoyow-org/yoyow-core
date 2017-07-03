@@ -31,6 +31,16 @@ struct get_impacted_account_visitor
       // TODO review
    }
 
+   void operator()( const csaf_collect_operation& op )
+   {
+      // TODO review
+   }
+
+   void operator()( const csaf_lease_operation& op )
+   {
+      // TODO review
+   }
+
    void operator()( const asset_claim_fees_operation& op ){}
    void operator()( const limit_order_create_operation& op ) {}
    void operator()( const limit_order_cancel_operation& op )
@@ -328,6 +338,13 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
               //assert( aobj != nullptr );
               //accounts.insert( aobj->owner );
               break;
+            } case impl_csaf_lease_object_type:{
+               // TODO review
+               //const auto& aobj = dynamic_cast<const csaf_lease_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->from );
+               //result.push_back( aobj->to );
+               break;
            } case impl_transaction_object_type:{
               const auto& aobj = dynamic_cast<const transaction_object*>(obj);
               assert( aobj != nullptr );

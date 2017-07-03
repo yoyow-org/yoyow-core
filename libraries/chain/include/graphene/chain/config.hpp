@@ -115,6 +115,10 @@
 
 #define GRAPHENE_CORE_ASSET_AID                               (uint64_t(0))
 
+#define GRAPHENE_DEFAULT_CSAF_RATE                            (uint64_t(86400) * 10000)
+#define GRAPHENE_DEFAULT_MAX_CSAF_PER_ACCOUNT                 (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(100))
+#define GRAPHENE_DEFAULT_CSAF_ACCUMULATE_WINDOW               (60*60*24*7) // One week
+
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex
 #define GRAPHENE_NEAR_SCHEDULE_CTR_IV                    ( (uint64_t( 0x6a09 ) << 0x30)    \
@@ -148,7 +152,7 @@
 
 #define GRAPHENE_CURRENT_DB_VERSION                          "BTS2.9"
 
-#define GRAPHENE_IRREVERSIBLE_THRESHOLD                      (70 * GRAPHENE_1_PERCENT)
+#define GRAPHENE_IRREVERSIBLE_THRESHOLD                      (75 * GRAPHENE_1_PERCENT)
 
 /**
  *  Reserved Account IDs with special meaning

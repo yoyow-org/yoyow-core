@@ -83,13 +83,6 @@ void database::adjust_balance(account_uid_type account, asset delta )
          b.asset_type = delta.asset_id;
          b.balance = delta.amount.value;
       });
-      // Update coin_seconds_earned and etc
-      if( delta.asset_id == GRAPHENE_CORE_ASSET_AID )
-      {
-         modify( get_account_statistics_by_uid(account), [&](account_statistics_object& s) {
-            s.set_coin_seconds_earned( 0, head_block_time() );
-         });
-      }
    } else {
       if( delta.amount < 0 )
          FC_ASSERT( itr->get_balance() >= -delta,
@@ -97,18 +90,25 @@ void database::adjust_balance(account_uid_type account, asset delta )
                     ("a",account)
                     ("b",to_pretty_string(itr->get_balance()))
                     ("r",to_pretty_string(-delta)) );
-      const asset original_balance = itr->get_balance();
       modify(*itr, [delta](account_balance_object& b) {
          b.adjust_balance(delta);
       });
-      // Update coin_seconds_earned and etc
-      if( delta.asset_id == GRAPHENE_CORE_ASSET_AID )
-      {
-         modify( get_account_statistics_by_uid(account), [&](account_statistics_object& s) {
-            //TODO will coin_seconds_earned expire? seems hard to calculate
-            s.update_coin_seconds_earned( original_balance, head_block_time() );
-         });
-      }
+   }
+   // Update coin_seconds_earned and etc
+   if( delta.asset_id == GRAPHENE_CORE_ASSET_AID )
+   {
+      const account_statistics_object& account_stats = get_account_statistics_by_uid( account );
+      if( delta.amount < 0 )
+         FC_ASSERT( account_stats.core_balance - account_stats.core_leased >= -delta.amount,
+                    "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
+                    ("a",account)
+                    ("b",to_pretty_core_string(account_stats.core_balance - account_stats.core_leased))
+                    ("r",to_pretty_string(-delta)) );
+      const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+      modify( account_stats, [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned( csaf_window, head_block_time() );
+         s.core_balance += delta.amount;
+      });
    }
 
 } FC_CAPTURE_AND_RETHROW( (account)(delta) ) }
