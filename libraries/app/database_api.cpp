@@ -90,6 +90,15 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       map<string,account_id_type> lookup_accounts(const string& lower_bound_name, uint32_t limit)const;
       uint64_t get_account_count()const;
 
+      // CSAF
+      vector<csaf_lease_object> get_csaf_leases_by_from( const account_uid_type from,
+                                                         const account_uid_type lower_bound_to,
+                                                         const uint32_t limit )const;
+      vector<csaf_lease_object> get_csaf_leases_by_to( const account_uid_type to,
+                                                       const account_uid_type lower_bound_from,
+                                                       const uint32_t limit )const;
+
+
       // Platforms and posts
       optional<post_object> get_post( const platform_pid_type platform_pid,
                                       const account_uid_type poster_uid,
@@ -834,6 +843,72 @@ uint64_t database_api::get_account_count()const
 uint64_t database_api_impl::get_account_count()const
 {
    return _db.get_index_type<account_index>().indices().size();
+}
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// CSAF                                                             //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+vector<csaf_lease_object> database_api::get_csaf_leases_by_from( const account_uid_type from,
+                                                                 const account_uid_type lower_bound_to,
+                                                                 const uint32_t limit )const
+{
+   return my->get_csaf_leases_by_from( from, lower_bound_to, limit );
+}
+
+vector<csaf_lease_object> database_api_impl::get_csaf_leases_by_from( const account_uid_type from,
+                                                                      const account_uid_type lower_bound_to,
+                                                                      const uint32_t limit )const
+{
+   FC_ASSERT( limit <= 1000 );
+
+   vector<csaf_lease_object> result;
+
+   uint32_t count = 0;
+
+   const auto& idx = _db.get_index_type<csaf_lease_index>().indices().get<by_from_to>();
+   auto itr = idx.lower_bound( std::make_tuple( from, lower_bound_to ) );
+
+   while( itr != idx.end() && itr->from == from && count < limit )
+   {
+      result.push_back(*itr);
+      ++itr;
+      ++count;
+   }
+
+   return result;
+}
+
+vector<csaf_lease_object> database_api::get_csaf_leases_by_to( const account_uid_type to,
+                                                               const account_uid_type lower_bound_from,
+                                                               const uint32_t limit )const
+{
+   return my->get_csaf_leases_by_to( to, lower_bound_from, limit );
+}
+
+vector<csaf_lease_object> database_api_impl::get_csaf_leases_by_to( const account_uid_type to,
+                                                                    const account_uid_type lower_bound_from,
+                                                                    const uint32_t limit )const
+{
+   FC_ASSERT( limit <= 1000 );
+
+   vector<csaf_lease_object> result;
+
+   uint32_t count = 0;
+
+   const auto& idx = _db.get_index_type<csaf_lease_index>().indices().get<by_to_from>();
+   auto itr = idx.lower_bound( std::make_tuple( to, lower_bound_from ) );
+
+   while( itr != idx.end() && itr->to == to && count < limit )
+   {
+      result.push_back(*itr);
+      ++itr;
+      ++count;
+   }
+
+   return result;
 }
 
 //////////////////////////////////////////////////////////////////////

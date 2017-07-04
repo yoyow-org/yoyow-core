@@ -35,6 +35,7 @@
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/confidential_object.hpp>
+#include <graphene/chain/csaf_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
@@ -312,6 +313,33 @@ class database_api
        * @brief Get the total number of accounts registered with the blockchain
        */
       uint64_t get_account_count()const;
+
+      /////////////////////////
+      // CSAF                //
+      /////////////////////////
+
+      /**
+       * @brief Get CSAF leases by lessor
+       * @param from UID of the lessor
+       * @param lower_bound_to Lower bound of lessee UID to retrieve
+       * @param limit Maximum number of results to return -- must not exceed 1000
+       * @return Leases of same lessor, starts from a lessee whose UID not less than @ref lower_bound_to
+       */
+      vector<csaf_lease_object> get_csaf_leases_by_from( const account_uid_type from,
+                                                         const account_uid_type lower_bound_to,
+                                                         const uint32_t limit )const;
+
+      /**
+       * @brief Get CSAF leases by lessee
+       * @param to UID of the lessee
+       * @param lower_bound_from Lower bound of lessor UID to retrieve
+       * @param limit Maximum number of results to return -- must not exceed 1000
+       * @return Leases of same lessee, starts from a lessor whose UID not less than @ref lower_bound_from
+       */
+      vector<csaf_lease_object> get_csaf_leases_by_to( const account_uid_type to,
+                                                       const account_uid_type lower_bound_from,
+                                                       const uint32_t limit )const;
+
 
       /////////////////////////
       // Platforms and posts //
@@ -679,6 +707,10 @@ FC_API(graphene::app::database_api,
    (lookup_account_names)
    (lookup_accounts)
    (get_account_count)
+
+   // CSAF
+   (get_csaf_leases_by_from)
+   (get_csaf_leases_by_to)
 
    // Platforms and posts
    (get_post)
