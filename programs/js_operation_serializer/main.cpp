@@ -29,6 +29,8 @@
 #include <graphene/chain/balance_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/confidential_object.hpp>
+#include <graphene/chain/content_object.hpp>
+#include <graphene/chain/csaf_object.hpp>
 #include <graphene/chain/fba_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
@@ -116,6 +118,7 @@ template<typename T> struct js_name< fc::flat_set<T> >    { static std::string n
 template<typename T> struct js_name< std::vector<T> >     { static std::string name(){ return "array " + js_name<T>::name(); } };
 template<typename T> struct js_name< fc::safe<T> > { static std::string name(){ return js_name<T>::name(); } };
 
+template<typename T> struct js_name< extension<T> >       { static std::string name(){ return "extension " + js_name<T>::name(); } };
 
 template<> struct js_name< std::vector<char> > { static std::string name(){ return "bytes()";     } };
 template<> struct js_name<fc::uint160>         { static std::string name(){ return "bytes 20";   } };
@@ -125,6 +128,7 @@ template<> struct js_name<fc::unsigned_int>    { static std::string name(){ retu
 template<> struct js_name<fc::signed_int>      { static std::string name(){ return "varint32";   } };
 template<> struct js_name< vote_id_type >      { static std::string name(){ return "vote_id";    } };
 template<> struct js_name< time_point_sec >    { static std::string name(){ return "time_point_sec"; } };
+
 
 template<uint8_t S, uint8_t T, typename O>
 struct js_name<graphene::db::object_id<S,T,O> >
@@ -276,6 +280,13 @@ template<> struct serializer<int64_t,true> { static void init() {} static void g
 
 template<typename T>
 struct serializer<fc::optional<T>,false>
+{
+   static void init() { serializer<T>::init(); }
+   static void generate(){}
+};
+
+template<typename T>
+struct serializer<extension<T>,false>
 {
    static void init() { serializer<T>::init(); }
    static void generate(){}
