@@ -108,6 +108,14 @@ struct market_trade
    double                     value;
 };
 
+struct full_account_query_options
+{
+   optional<bool> fetch_account_object;
+   optional<bool> fetch_statistics;
+   optional<bool> fetch_csaf_leases_in;
+   optional<bool> fetch_csaf_leases_out;
+};
+
 /**
  * @brief The database_api class implements the RPC API for the chain database.
  *
@@ -262,6 +270,20 @@ class database_api
        *
        */
       std::map<string,full_account> get_full_accounts( const vector<string>& names_or_ids, bool subscribe );
+
+      /**
+       * @brief Fetch all objects relevant to the specified accounts
+       * @param uids Each item must be the UID of an account to retrieve
+       * @param options Which items to fetch
+       * @return Map of uid to the corresponding account
+       *
+       * This function fetches  relevant objects for the given accounts.
+       * If any of the uids in @ref uids cannot be tied to an account, that input will be
+       * ignored. All other accounts will be retrieved.
+       *
+       */
+      std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
+                                                                        const full_account_query_options& options );
 
       optional<account_object> get_account_by_name( string name )const;
 
@@ -669,6 +691,12 @@ FC_REFLECT( graphene::app::order_book, (base)(quote)(bids)(asks) );
 FC_REFLECT( graphene::app::market_ticker, (base)(quote)(latest)(lowest_ask)(highest_bid)(percent_change)(base_volume)(quote_volume) );
 FC_REFLECT( graphene::app::market_volume, (base)(quote)(base_volume)(quote_volume) );
 FC_REFLECT( graphene::app::market_trade, (date)(price)(amount)(value) );
+FC_REFLECT( graphene::app::full_account_query_options,
+            (fetch_account_object)
+            (fetch_statistics)
+            (fetch_csaf_leases_in)
+            (fetch_csaf_leases_out)
+          );
 
 FC_API(graphene::app::database_api,
    // Objects
@@ -702,6 +730,7 @@ FC_API(graphene::app::database_api,
    (get_accounts)
    (get_accounts_by_uid)
    (get_full_accounts)
+   (get_full_accounts_by_uid)
    (get_account_by_name)
    (get_account_references)
    (lookup_account_names)

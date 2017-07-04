@@ -24,6 +24,7 @@
 #pragma once
 
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/csaf_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/market_evaluator.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
@@ -48,6 +49,8 @@ namespace graphene { namespace app {
       vector<proposal_object>          proposals;
       vector<asset_id_type>            assets;
       vector<withdraw_permission_object> withdraws;
+      vector<csaf_lease_object>        csaf_leases_in;
+      vector<csaf_lease_object>        csaf_leases_out;
    };
 
 } }
@@ -68,4 +71,6 @@ FC_REFLECT( graphene::app::full_account,
             (proposals)
             (assets)
             (withdraws)
+            (csaf_leases_in)
+            (csaf_leases_out)
           )

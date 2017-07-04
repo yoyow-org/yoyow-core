@@ -84,6 +84,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<optional<account_object>> get_accounts(const vector<account_id_type>& account_ids)const;
       vector<optional<account_object>> get_accounts_by_uid(const vector<account_uid_type>& account_uids)const;
       std::map<string,full_account> get_full_accounts( const vector<string>& names_or_ids, bool subscribe );
+      std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
+                                                                        const full_account_query_options& options );
       optional<account_object> get_account_by_name( string name )const;
       vector<account_id_type> get_account_references( account_id_type account_id )const;
       vector<optional<account_object>> lookup_account_names(const vector<string>& account_names)const;
@@ -758,6 +760,40 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
    }
    return results;
 }
+
+std::map<account_uid_type,full_account> database_api::get_full_accounts_by_uid( const vector<account_uid_type>& uids,
+                                                                                const full_account_query_options& options )
+{
+   return my->get_full_accounts_by_uid( uids, options );
+}
+
+std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_uid( const vector<account_uid_type>& uids,
+                                                                                     const full_account_query_options& options )
+{
+   std::map<account_uid_type, full_account> results;
+
+   for( const account_uid_type uid : uids )
+   {
+      const account_object* account = _db.find_account_by_uid( uid );
+      if (account == nullptr)
+         continue;
+
+      // fc::mutable_variant_object full_account;
+      full_account acnt;
+      if( options.fetch_account_object.valid() && *options.fetch_account_object == true )
+         acnt.account = *account;
+      if( options.fetch_statistics.valid() && *options.fetch_statistics == true )
+         acnt.statistics = _db.get_account_statistics_by_uid( uid );
+      if( options.fetch_csaf_leases_in.valid() && *options.fetch_csaf_leases_in == true )
+         acnt.csaf_leases_in = get_csaf_leases_by_to( uid, 0, 100 );
+      if( options.fetch_csaf_leases_out.valid() && *options.fetch_csaf_leases_out == true )
+         acnt.csaf_leases_out = get_csaf_leases_by_from( uid, 0, 100 );
+
+      results[uid] = acnt;
+   }
+   return results;
+}
+
 
 optional<account_object> database_api::get_account_by_name( string name )const
 {
