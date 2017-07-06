@@ -66,7 +66,8 @@ string remove_namespace_if( const string& str, const string& match )
 string remove_namespace( string str )
 {
    str = remove_tail_if( str, '_', "operation" );
-   str = remove_tail_if( str, '_', "t" );
+   if( str.find( "void_t" ) ==  string::npos )
+      str = remove_tail_if( str, '_', "t" );
    str = remove_tail_if( str, '_', "object" );
    str = remove_tail_if( str, '_', "type" );
    str = remove_namespace_if( str, "graphene::chain" );
@@ -399,6 +400,7 @@ int main( int argc, char** argv )
 
     detail_ns::js_name<fee_parameters>::name("fee_parameters");
     detail_ns::js_name<operation>::name("operation");
+    detail_ns::js_name<special_authority>::name("special_authority");
     detail_ns::js_name<operation_result>::name("operation_result");
     detail_ns::js_name<future_extensions>::name("future_extensions");
     detail_ns::js_name<worker_initializer>::name("worker_initializer");
