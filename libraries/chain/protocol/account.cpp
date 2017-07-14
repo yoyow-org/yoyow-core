@@ -95,9 +95,10 @@ void validate_account_name( const string& name, const string& object_name = "" )
 
    FC_ASSERT( name_is_utf8, "${o}account name should be in UTF8", ("o", object_name) );
 
-   name_too_short = ( len <= GRAPHENE_MAX_ACCOUNT_NAME_LENGTH );
-   FC_ASSERT( !name_too_short, "${o}account name is too short", ("o", object_name) );
-   FC_ASSERT( !name_too_long, "${o}account name is too long", ("o", object_name) );
+   if( len < GRAPHENE_MIN_ACCOUNT_NAME_LENGTH )
+      name_too_short = true;
+   FC_ASSERT( !name_too_short, "${o}account name is too short", ("o", object_name)("length", len) );
+   FC_ASSERT( !name_too_long, "${o}account name is too long", ("o", object_name)("length", len) );
 
    FC_ASSERT( !name_contains_invalid_char, "${o}account name contains invalid character", ("o", object_name) );
 
