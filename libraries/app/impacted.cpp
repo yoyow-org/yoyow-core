@@ -80,6 +80,22 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.to );
    }
 
+   void operator()( const account_update_key_operation& op )
+   {
+      _impacted.insert( op.uid );
+   }
+
+   void operator()( const account_update_auth_operation& op )
+   {
+      //_impacted.insert( op.uid );
+      if( op.owner.valid() )
+         add_authority_account_uids( _impacted, *op.owner );
+      if( op.active.valid() )
+         add_authority_account_uids( _impacted, *op.active );
+      if( op.secondary.valid() )
+         add_authority_account_uids( _impacted, *op.secondary );
+   }
+
    /*
    void operator()( const asset_claim_fees_operation& op ){}
    void operator()( const limit_order_create_operation& op ) {}
@@ -260,6 +276,16 @@ struct get_impacted_account_visitor
    }
 
    void operator()( const csaf_lease_operation& op )
+   {
+      // TODO review
+   }
+
+   void operator()( const account_update_key_operation& op )
+   {
+      // TODO review
+   }
+
+   void operator()( const account_update_auth_operation& op )
    {
       // TODO review
    }

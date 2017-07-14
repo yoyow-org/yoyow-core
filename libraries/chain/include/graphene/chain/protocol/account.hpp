@@ -88,14 +88,6 @@ namespace graphene { namespace chain {
     */
    struct account_create_operation : public base_operation
    {
-      struct ext
-      {
-         optional< void_t >            null_ext;
-         optional< special_authority > owner_special_authority;
-         optional< special_authority > active_special_authority;
-         optional< buyback_account_options > buyback_options;
-      };
-
       struct fee_parameters_type
       {
          uint64_t basic_fee        = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
@@ -118,7 +110,7 @@ namespace graphene { namespace chain {
       account_options  options;
       account_reg_info reg_info;
 
-      optional< extension< ext > > extensions;
+      extensions_type extensions;
 
       account_uid_type fee_payer_uid()const { return reg_info.registrar; }
       void             validate()const;
@@ -178,6 +170,92 @@ namespace graphene { namespace chain {
    };
 
    /**
+    *  @ingroup operations
+    *  @brief Replace a key in an account with a new key. Need to be signed with the old key.
+    */
+   struct account_update_key_operation : public base_operation
+   {
+
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 1*GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type        extensions;
+      };
+
+      fee_type         fee;
+
+      account_uid_type fee_paying_account;
+
+      account_uid_type uid;
+
+      public_key_type  old_key;
+      public_key_type  new_key;
+      // for security reason, don't update owner with this op
+      bool             update_active;
+      bool             update_secondary;
+      // don't update memo key with this op as well
+
+      extensions_type extensions;
+
+      account_uid_type fee_payer_uid()const { return fee_paying_account; }
+      void             validate()const;
+      //use default
+      //share_type       calculate_fee(const fee_parameters_type& )const;
+
+      void get_required_authorities( vector<authority>& v )const
+      {
+         v.push_back( authority( 1, old_key, 1) );
+      }
+   };
+
+   /**
+    *  @ingroup operations
+    *  @brief Update account authorities and/or memo key
+    */
+   struct account_update_auth_operation : public base_operation
+   {
+
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 1*GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type        extensions;
+      };
+
+      fee_type         fee;
+
+      account_uid_type uid;
+
+      optional<authority> owner;
+      optional<authority> active;
+      optional<authority> secondary;
+      optional<public_key_type> memo_key;
+
+      extensions_type extensions;
+
+      account_uid_type fee_payer_uid()const { return uid; }
+      void             validate()const;
+      share_type       calculate_fee(const fee_parameters_type& )const;
+
+      void get_required_owner_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // update of owner or active authority requires owner authority
+         if( owner.valid() || active.valid() )
+            a.insert( uid );
+      }
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // update of other data requires active authority
+         if( !( owner.valid() || active.valid() ) )
+            a.insert( uid );
+      }
+   };
+
+   /**
     * @ingroup operations
     * @brief Update an existing account
     *
@@ -186,13 +264,6 @@ namespace graphene { namespace chain {
     */
    struct account_update_operation : public base_operation
    {
-      struct ext
-      {
-         optional< void_t >            null_ext;
-         optional< special_authority > owner_special_authority;
-         optional< special_authority > active_special_authority;
-      };
-
       struct fee_parameters_type
       {
          share_type fee             = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -217,14 +288,14 @@ namespace graphene { namespace chain {
 
       /// New account options
       optional<account_options> new_options;
-      extension< ext > extensions;
+      extensions_type extensions;
 
       account_id_type fee_payer()const { return account; }
       void            validate()const;
       share_type      calculate_fee( const fee_parameters_type& k )const;
 
       bool is_owner_update()const
-      { return owner || extensions.value.owner_special_authority.valid(); }
+      { return owner.valid(); }
 
       void get_required_owner_authorities( flat_set<account_id_type>& a )const
       { if( is_owner_update() ) a.insert( account ); }
@@ -345,7 +416,6 @@ FC_REFLECT(graphene::chain::account_reg_info, (registrar)(referrer)(registrar_pe
 FC_REFLECT_ENUM( graphene::chain::account_whitelist_operation::account_listing,
                 (no_listing)(white_listed)(black_listed)(white_and_black_listed))
 
-FC_REFLECT(graphene::chain::account_create_operation::ext, (null_ext)(owner_special_authority)(active_special_authority)(buyback_options) )
 FC_REFLECT( graphene::chain::account_create_operation,
             (fee)
             (uid)
@@ -363,7 +433,14 @@ FC_REFLECT( graphene::chain::account_manage_operation,
             (extensions)
           )
 
-FC_REFLECT(graphene::chain::account_update_operation::ext, (null_ext)(owner_special_authority)(active_special_authority) )
+FC_REFLECT( graphene::chain::account_update_key_operation,
+            (fee)(fee_paying_account)(uid)(old_key)(new_key)(update_active)(update_secondary)(extensions)
+          )
+
+FC_REFLECT( graphene::chain::account_update_auth_operation,
+            (fee)(uid)(owner)(active)(secondary)(memo_key)(extensions)
+          )
+
 FC_REFLECT( graphene::chain::account_update_operation,
             (fee)(account)(owner)(active)(new_options)(extensions)
           )
@@ -376,6 +453,9 @@ FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_acco
 FC_REFLECT( graphene::chain::account_create_operation::fee_parameters_type,
             (basic_fee)(premium_fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::account_manage_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::account_update_key_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::account_update_auth_operation::fee_parameters_type,
+            (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::account_update_operation::fee_parameters_type, (fee)(price_per_kbyte) )
 FC_REFLECT( graphene::chain::account_upgrade_operation::fee_parameters_type, (membership_annual_fee)(membership_lifetime_fee) )

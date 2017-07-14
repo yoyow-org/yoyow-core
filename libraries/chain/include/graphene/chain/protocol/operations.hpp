@@ -56,6 +56,8 @@ namespace graphene { namespace chain {
             post_operation,
             csaf_collect_operation,
             csaf_lease_operation,
+            account_update_key_operation,
+            account_update_auth_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
             call_order_update_operation,

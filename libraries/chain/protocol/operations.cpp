@@ -87,12 +87,19 @@ struct operation_get_required_uid_auth
      vector<authority>&  oth ):owner_uids(own),active_uids(a),secondary_uids(s),other(oth){}
 
    template<typename T>
-   void do_get_with_extended_fee(const T& v)const
+   void do_get_basic(const T& v)const
    {
       v.get_required_owner_uid_authorities( owner_uids );
       v.get_required_active_uid_authorities( active_uids );
       v.get_required_secondary_uid_authorities( secondary_uids );
       v.get_required_authorities( other );
+   }
+
+   template<typename T>
+   void do_get_with_extended_fee(const T& v)const
+   {
+      do_get_basic( v );
+
       // fee can be paid with any authority of the payer.
       // TODO: 1. review the order to minimize number of signatures. can also check before add
       //       2. review the depth,
@@ -126,10 +133,8 @@ struct operation_get_required_uid_auth
    template<typename T>
    void do_get(const T& v)const
    {
-      v.get_required_owner_uid_authorities( owner_uids );
-      v.get_required_active_uid_authorities( active_uids );
-      v.get_required_secondary_uid_authorities( secondary_uids );
-      v.get_required_authorities( other );
+      do_get_basic( v );
+
       // fee can be paid with any authority of the payer.
       // TODO: 1. review the order to minimize number of signatures. can also check before add
       //       2. review the depth,
@@ -172,6 +177,16 @@ struct operation_get_required_uid_auth
    }
 
    void operator()( const csaf_lease_operation& v )const
+   {
+      do_get_with_extended_fee(v);
+   }
+
+   void operator()( const account_update_key_operation& v )const
+   {
+      do_get_with_extended_fee(v);
+   }
+
+   void operator()( const account_update_auth_operation& v )const
    {
       do_get_with_extended_fee(v);
    }

@@ -66,6 +66,14 @@ struct get_impacted_account_visitor
    {
    }
 
+   void operator()( const account_update_key_operation& op )
+   {
+   }
+
+   void operator()( const account_update_auth_operation& op )
+   {
+   }
+
    void operator()( const account_update_operation& op )
    {
       _impacted.insert( op.account );

@@ -105,20 +105,6 @@ void verify_account_votes( const database& db, const account_options& options )
 void_result account_create_evaluator::do_evaluate( const account_create_operation& op )
 { try {
    database& d = db();
-   /*
-   if( d.head_block_time() < HARDFORK_516_TIME )
-   {
-      FC_ASSERT( !op.extensions.value.owner_special_authority.valid() );
-      FC_ASSERT( !op.extensions.value.active_special_authority.valid() );
-   }
-   if( d.head_block_time() < HARDFORK_599_TIME )
-   {
-      FC_ASSERT( !op.extensions.value.null_ext.valid() );
-      FC_ASSERT( !op.extensions.value.owner_special_authority.valid() );
-      FC_ASSERT( !op.extensions.value.active_special_authority.valid() );
-      FC_ASSERT( !op.extensions.value.buyback_options.valid() );
-   }
-   */
 
    FC_ASSERT( d.find_account_id_by_uid(op.options.voting_account).valid(), "Invalid proxy account specified." );
    FC_ASSERT( fee_paying_account->is_registrar, "Only registrars may register an account." );
@@ -136,12 +122,6 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
    GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_create_max_auth_exceeded )
    GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_create_auth_account_not_found )
 
-   if( op.extensions.valid() && op.extensions->value.owner_special_authority.valid() )
-      evaluate_special_authority( d, *op.extensions->value.owner_special_authority );
-   if( op.extensions.valid() && op.extensions->value.active_special_authority.valid() )
-      evaluate_special_authority( d, *op.extensions->value.active_special_authority );
-   if( op.extensions.valid() && op.extensions->value.buyback_options.valid() )
-      evaluate_buyback_account_options( d, *op.extensions->value.buyback_options );
    //verify_account_votes( d, op.options );
 
    auto& acnt_indx = d.get_index_type<account_index>();
@@ -149,7 +129,6 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
       auto current_account_itr = acnt_indx.indices().get<by_uid>().find( op.uid );
       FC_ASSERT( current_account_itr == acnt_indx.indices().get<by_uid>().end(), "account uid already exists." );
    }
-   if( op.name.size() )
    {
       auto current_account_itr = acnt_indx.indices().get<by_name>().find( op.name );
       FC_ASSERT( current_account_itr == acnt_indx.indices().get<by_name>().end(), "account name already exists." );
@@ -165,17 +144,6 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
    database& d = db();
 
    const auto& new_acnt_object = d.create<account_object>( [&]( account_object& obj ){
-
-
-         //obj.registrar = o.registrar;
-         //obj.referrer = o.referrer;
-         //obj.lifetime_referrer = o.referrer(db()).lifetime_referrer;
-
-         //auto& params = db().get_global_properties().parameters;
-         //obj.network_fee_percentage = params.network_percent_of_fee;
-         //obj.lifetime_referrer_fee_percentage = params.lifetime_referrer_percent_of_fee;
-         //obj.referrer_rewards_percentage = referrer_percent;
-
          obj.uid              = o.uid;
          obj.name             = o.name;
          obj.owner            = o.owner;
@@ -198,55 +166,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.last_update_time = d.head_block_time();
 
          obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.uid;}).id;
-
-         if( o.extensions.valid() && o.extensions->value.owner_special_authority.valid() )
-            obj.owner_special_authority = *(o.extensions->value.owner_special_authority);
-         if( o.extensions.valid() && o.extensions->value.active_special_authority.valid() )
-            obj.active_special_authority = *(o.extensions->value.active_special_authority);
-         if( o.extensions.valid() && o.extensions->value.buyback_options.valid() )
-         {
-            obj.allowed_assets = o.extensions->value.buyback_options->markets;
-            obj.allowed_assets->emplace( o.extensions->value.buyback_options->asset_to_buy );
-         }
    });
-
-   /*
-   const auto& dynamic_properties = db().get_dynamic_global_properties();
-   db().modify(dynamic_properties, [](dynamic_global_property_object& p) {
-      ++p.accounts_registered_this_interval;
-   });
-
-   const auto& global_properties = db().get_global_properties();
-   if( dynamic_properties.accounts_registered_this_interval %
-       global_properties.parameters.accounts_per_fee_scale == 0 )
-      db().modify(global_properties, [&dynamic_properties](global_property_object& p) {
-         p.parameters.current_fees->get<account_create_operation>().basic_fee <<= p.parameters.account_fee_scale_bitshifts;
-      });
-   */
-
-   if( o.extensions.valid() && ( o.extensions->value.owner_special_authority.valid()
-                              || o.extensions->value.active_special_authority.valid() ) )
-   {
-      d.create< special_authority_object >( [&]( special_authority_object& sa )
-      {
-         sa.account = new_acnt_object.id;
-      } );
-   }
-
-   if( o.extensions.valid() && o.extensions->value.buyback_options.valid() )
-   {
-      asset_id_type asset_to_buy = o.extensions->value.buyback_options->asset_to_buy;
-
-      d.create< buyback_object >( [&]( buyback_object& bo )
-      {
-         bo.asset_to_buy = asset_to_buy;
-      } );
-
-      d.modify( asset_to_buy(d), [&]( asset_object& a )
-      {
-         a.buyback_account = new_acnt_object.id;
-      } );
-   }
 
    return new_acnt_object.id;
 } FC_CAPTURE_AND_RETHROW((o)) }
@@ -289,20 +209,100 @@ void_result account_manage_evaluator::do_apply( const account_manage_operation& 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
+void_result account_update_key_evaluator::do_evaluate( const account_update_key_operation& o )
+{ try {
+   database& d = db();
+
+   acnt = &d.get_account_by_uid( o.uid );
+
+   if( o.update_active )
+   {
+      auto& ka = acnt->active.key_auths;
+      auto itr = ka.find( o.new_key );
+      bool new_key_found = ( itr != ka.end() );
+      FC_ASSERT( !new_key_found , "new_key is already in active authority" );
+
+      itr_active = ka.find( o.old_key );
+      bool old_key_found = ( itr_active != ka.end() );
+      FC_ASSERT( old_key_found , "old_key is not in active authority" );
+      active_weight = itr_active->second;
+   }
+
+   if( o.update_secondary )
+   {
+      auto& ka = acnt->secondary.key_auths;
+      auto itr = ka.find( o.new_key );
+      bool new_key_found = ( itr != ka.end() );
+      FC_ASSERT( !new_key_found , "new_key is already in secondary authority" );
+
+      itr_secondary = ka.find( o.old_key );
+      bool old_key_found = ( itr_secondary != ka.end() );
+      FC_ASSERT( old_key_found , "old_key is not in secondary authority" );
+      secondary_weight = itr_secondary->second;
+   }
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_update_key_evaluator::do_apply( const account_update_key_operation& o )
+{ try {
+   database& d = db();
+   d.modify( *acnt, [&](account_object& a){
+      if( o.update_active )
+      {
+         a.active.key_auths.erase( itr_active );
+         a.active.key_auths[ o.new_key ] = active_weight;
+      }
+      if( o.update_secondary )
+      {
+         a.secondary.key_auths.erase( itr_secondary );
+         a.secondary.key_auths[ o.new_key ] = secondary_weight;
+      }
+      a.last_update_time = d.head_block_time();
+   });
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_update_auth_evaluator::do_evaluate( const account_update_auth_operation& o )
+{ try {
+   database& d = db();
+
+   try
+   {
+      if( o.owner )  verify_authority_accounts( d, *o.owner );
+      if( o.active ) verify_authority_accounts( d, *o.active );
+      if( o.secondary ) verify_authority_accounts( d, *o.secondary );
+   }
+   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
+   GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
+
+   acnt = &d.get_account_by_uid( o.uid );
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_update_auth_evaluator::do_apply( const account_update_auth_operation& o )
+{ try {
+   database& d = db();
+   d.modify( *acnt, [&](account_object& a){
+      if( o.owner )
+         a.owner = *o.owner;
+      if( o.active )
+         a.active = *o.active;
+      if( o.secondary )
+         a.secondary = *o.secondary;
+      if( o.memo_key )
+         a.options.memo_key = *o.memo_key;
+      a.last_update_time = d.head_block_time();
+   });
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
 void_result account_update_evaluator::do_evaluate( const account_update_operation& o )
 { try {
    database& d = db();
-   if( d.head_block_time() < HARDFORK_516_TIME )
-   {
-      FC_ASSERT( !o.extensions.value.owner_special_authority.valid() );
-      FC_ASSERT( !o.extensions.value.active_special_authority.valid() );
-   }
-   if( d.head_block_time() < HARDFORK_599_TIME )
-   {
-      FC_ASSERT( !o.extensions.value.null_ext.valid() );
-      FC_ASSERT( !o.extensions.value.owner_special_authority.valid() );
-      FC_ASSERT( !o.extensions.value.active_special_authority.valid() );
-   }
 
    try
    {
@@ -311,11 +311,6 @@ void_result account_update_evaluator::do_evaluate( const account_update_operatio
    }
    GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
    GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
-
-   if( o.extensions.value.owner_special_authority.valid() )
-      evaluate_special_authority( d, *o.extensions.value.owner_special_authority );
-   if( o.extensions.value.active_special_authority.valid() )
-      evaluate_special_authority( d, *o.extensions.value.active_special_authority );
 
    acnt = &o.account(d);
 
@@ -328,7 +323,6 @@ void_result account_update_evaluator::do_evaluate( const account_update_operatio
 void_result account_update_evaluator::do_apply( const account_update_operation& o )
 { try {
    database& d = db();
-   bool sa_before, sa_after;
    d.modify( *acnt, [&](account_object& a){
       if( o.owner )
       {
@@ -341,34 +335,7 @@ void_result account_update_evaluator::do_apply( const account_update_operation& 
          a.top_n_control_flags = 0;
       }
       if( o.new_options ) a.options = *o.new_options;
-      sa_before = a.has_special_authority();
-      if( o.extensions.value.owner_special_authority.valid() )
-      {
-         a.owner_special_authority = *(o.extensions.value.owner_special_authority);
-         a.top_n_control_flags = 0;
-      }
-      if( o.extensions.value.active_special_authority.valid() )
-      {
-         a.active_special_authority = *(o.extensions.value.active_special_authority);
-         a.top_n_control_flags = 0;
-      }
-      sa_after = a.has_special_authority();
    });
-
-   if( sa_before & (!sa_after) )
-   {
-      const auto& sa_idx = d.get_index_type< special_authority_index >().indices().get<by_account>();
-      auto sa_it = sa_idx.find( o.account );
-      assert( sa_it != sa_idx.end() );
-      d.remove( *sa_it );
-   }
-   else if( (!sa_before) & sa_after )
-   {
-      d.create< special_authority_object >( [&]( special_authority_object& sa )
-      {
-         sa.account = o.account;
-      } );
-   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

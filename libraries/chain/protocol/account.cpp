@@ -21,20 +21,88 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <fc/utf8.hpp>
 #include <graphene/chain/protocol/account.hpp>
 #include <graphene/chain/hardfork.hpp>
-#include <graphene/utilities/string_escape.hpp>
+
+#include "../utf8/checked.h"
 
 namespace graphene { namespace chain {
 
 void validate_account_name( const string& name, const string& object_name = "" )
 {
-   const auto len = name.size();
-   FC_ASSERT( len >= GRAPHENE_MIN_ACCOUNT_NAME_LENGTH, "${o}account name is too short", ("o", object_name) );
-   FC_ASSERT( len <= GRAPHENE_MAX_ACCOUNT_NAME_LENGTH, "${o}account name is too long", ("o", object_name) );
-   FC_ASSERT( fc::is_utf8( name ), "${o}account name should be in UTF8", ("o", object_name) );
-   FC_ASSERT( !utilities::is_number( name ), "${o}account name should not be a number", ("o", object_name) );
+   // valid name should:
+   // 1. be encoded in UTF-8
+   // 2. not be shorter than GRAPHENE_MIN_ACCOUNT_NAME_LENGTH (in term of UTF-8)
+   // 3. not be longer than GRAPHENE_MAX_ACCOUNT_NAME_LENGTH (in term of UTF-8)
+   // 4. contains only Chinese chars, Latin letters (lower case), numbers, underline
+   // 5. not start with a number
+   // 6. not start with a underline, not end with a underline
+
+   bool name_is_utf8 = true;
+   bool name_too_short = false;
+   bool name_too_long = false;
+   bool name_contains_invalid_char = false;
+   bool name_start_with_number = false;
+   bool name_start_with_underline = false;
+   bool name_end_with_underline = false;
+
+   uint32_t len = 0;
+   uint32_t last_char = 0;
+   auto itr = name.begin();
+   while( itr != name.end() )
+   {
+      try
+      {
+         last_char = utf8::next( itr, name.end() );
+         ++len;
+         if( len > GRAPHENE_MAX_ACCOUNT_NAME_LENGTH )
+         {
+            name_too_long = true;
+            break;
+         }
+         if( len == 1 )
+         {
+            if( last_char == '_')
+            {
+               name_start_with_underline = true;
+               break;
+            }
+            if( last_char >= '0' && last_char <= '9' )
+            {
+               name_start_with_number = true;
+               break;
+            }
+         }
+         if( last_char != '_' &&
+             !( last_char >= '0' && last_char <= '9' ) &&
+             !( last_char >= 'a' && last_char <= 'z' ) &&
+             !( last_char >= 0x4E00 && last_char <= 0x9FA5 ) )
+         {
+            name_contains_invalid_char = true;
+            break;
+         }
+      }
+      catch( utf8::invalid_utf8 e )
+      {
+         name_is_utf8 = false;
+         break;
+      }
+   }
+
+   if( len > 0 && itr == name.end() && name_is_utf8 && last_char == '_' )
+      name_end_with_underline = true;
+
+   FC_ASSERT( name_is_utf8, "${o}account name should be in UTF8", ("o", object_name) );
+
+   name_too_short = ( len <= GRAPHENE_MAX_ACCOUNT_NAME_LENGTH );
+   FC_ASSERT( !name_too_short, "${o}account name is too short", ("o", object_name) );
+   FC_ASSERT( !name_too_long, "${o}account name is too long", ("o", object_name) );
+
+   FC_ASSERT( !name_contains_invalid_char, "${o}account name contains invalid character", ("o", object_name) );
+
+   FC_ASSERT( !name_start_with_number, "${o}account name should not start with a number", ("o", object_name) );
+   FC_ASSERT( !name_start_with_underline, "${o}account name should not start with an underline", ("o", object_name) );
+   FC_ASSERT( !name_end_with_underline, "${o}account name should not end with an underline", ("o", object_name) );
 }
 
 void validate_new_authority( const authority& au, const string& object_name = "" )
@@ -235,23 +303,6 @@ void account_create_operation::validate()const
    validate_new_authority( secondary, "new secondary " );
    options.validate();
    reg_info.validate();
-   if( extensions.valid() && extensions->value.owner_special_authority.valid() )
-      validate_special_authority( *extensions->value.owner_special_authority );
-   if( extensions.valid() && extensions->value.active_special_authority.valid() )
-      validate_special_authority( *extensions->value.active_special_authority );
-   if( extensions.valid() && extensions->value.buyback_options.valid() )
-   {
-      FC_ASSERT( !(extensions->value.owner_special_authority.valid()) );
-      FC_ASSERT( !(extensions->value.active_special_authority.valid()) );
-      FC_ASSERT( owner == authority::null_authority() );
-      FC_ASSERT( active == authority::null_authority() );
-      size_t n_markets = extensions->value.buyback_options->markets.size();
-      FC_ASSERT( n_markets > 0 );
-      for( const asset_id_type m : extensions->value.buyback_options->markets )
-      {
-         FC_ASSERT( m != extensions->value.buyback_options->asset_to_buy );
-      }
-   }
 }
 
 void account_manage_operation::validate()const
@@ -264,6 +315,46 @@ void account_manage_operation::validate()const
    FC_ASSERT( has_option, "Should update something" );
 }
 
+
+void account_update_key_operation::validate()const
+{
+   validate_op_fee( fee, "account key update " );
+   validate_account_uid( fee_paying_account, "fee paying " );
+   validate_account_uid( uid, "target " );
+   FC_ASSERT( old_key != new_key, "Should update something" );
+   FC_ASSERT( update_active || update_secondary, "Should update something" );
+}
+
+share_type account_update_auth_operation::calculate_fee( const fee_parameters_type& k )const
+{
+   auto core_fee_required = k.fee;
+
+   // Authorities can be arbitrarily large, so charge a data fee for big ones
+   size_t data_size = 0;
+   if( owner.valid() )
+      data_size += fc::raw::pack_size(owner);
+   if( active.valid() )
+      data_size += fc::raw::pack_size(active);
+   if( secondary.valid() )
+      data_size += fc::raw::pack_size(secondary);
+   auto data_fee =  calculate_data_fee( data_size, k.price_per_kbyte );
+   core_fee_required += data_fee;
+
+   return core_fee_required;
+}
+
+void account_update_auth_operation::validate()const
+{
+   validate_op_fee( fee, "account authority update " );
+   validate_account_uid( uid, "target " );
+   FC_ASSERT( owner.valid() || active.valid() || secondary.valid() || memo_key.valid(), "Should update something" );
+   if( owner.valid() )
+      validate_new_authority( *owner, "new owner " );
+   if( active.valid() )
+      validate_new_authority( *active, "new active " );
+   if( secondary.valid() )
+      validate_new_authority( *secondary, "new secondary " );
+}
 
 share_type account_update_operation::calculate_fee( const fee_parameters_type& k )const
 {
@@ -283,8 +374,6 @@ void account_update_operation::validate()const
          owner.valid()
       || active.valid()
       || new_options.valid()
-      || extensions.value.owner_special_authority.valid()
-      || extensions.value.active_special_authority.valid()
       );
 
    FC_ASSERT( has_action );
@@ -304,10 +393,6 @@ void account_update_operation::validate()const
 
    if( new_options )
       new_options->validate();
-   if( extensions.value.owner_special_authority.valid() )
-      validate_special_authority( *extensions.value.owner_special_authority );
-   if( extensions.value.active_special_authority.valid() )
-      validate_special_authority( *extensions.value.active_special_authority );
 }
 
 share_type account_upgrade_operation::calculate_fee(const fee_parameters_type& k) const

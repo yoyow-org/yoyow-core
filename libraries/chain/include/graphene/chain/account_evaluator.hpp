@@ -47,6 +47,32 @@ public:
    const account_object* acnt;
 };
 
+class account_update_key_evaluator : public evaluator<account_update_key_evaluator>
+{
+public:
+   typedef account_update_key_operation operation_type;
+
+   void_result do_evaluate( const operation_type& o );
+   void_result do_apply( const operation_type& o ) ;
+
+   const account_object* acnt;
+   flat_map<public_key_type,weight_type>::const_iterator itr_active;
+   flat_map<public_key_type,weight_type>::const_iterator itr_secondary;
+   weight_type active_weight = 0;
+   weight_type secondary_weight = 0;
+};
+
+class account_update_auth_evaluator : public evaluator<account_update_auth_evaluator>
+{
+public:
+   typedef account_update_auth_operation operation_type;
+
+   void_result do_evaluate( const operation_type& o );
+   void_result do_apply( const operation_type& o ) ;
+
+   const account_object* acnt;
+};
+
 class account_update_evaluator : public evaluator<account_update_evaluator>
 {
 public:
