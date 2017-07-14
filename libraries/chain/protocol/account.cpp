@@ -34,7 +34,7 @@ void validate_account_name( const string& name, const string& object_name = "" )
    // 1. be encoded in UTF-8
    // 2. not be shorter than GRAPHENE_MIN_ACCOUNT_NAME_LENGTH (in term of UTF-8)
    // 3. not be longer than GRAPHENE_MAX_ACCOUNT_NAME_LENGTH (in term of UTF-8)
-   // 4. contains only Chinese chars, Latin letters (lower case), numbers, underline
+   // 4. contains only common Chinese chars and parentheses, Latin letters (lower case), numbers, underline
    // 5. not start with a number
    // 6. not start with a underline, not end with a underline
 
@@ -76,7 +76,8 @@ void validate_account_name( const string& name, const string& object_name = "" )
          if( last_char != '_' &&
              !( last_char >= '0' && last_char <= '9' ) &&
              !( last_char >= 'a' && last_char <= 'z' ) &&
-             !( last_char >= 0x4E00 && last_char <= 0x9FA5 ) )
+             !( last_char >= 0x4E00 && last_char <= 0x9FA5 ) &&
+             !( last_char == 0xFF08 || last_char == 0xFF09 ) )
          {
             name_contains_invalid_char = true;
             break;
