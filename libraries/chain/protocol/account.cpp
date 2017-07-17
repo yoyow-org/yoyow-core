@@ -349,6 +349,13 @@ void account_update_auth_operation::validate()const
 {
    validate_op_fee( fee, "account authority update " );
    validate_account_uid( uid, "target " );
+   bool is_special_account = ( uid == GRAPHENE_COMMITTEE_ACCOUNT_UID ||
+                               uid == GRAPHENE_WITNESS_ACCOUNT_UID ||
+                               uid == GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID ||
+                               uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID ||
+                               uid == GRAPHENE_NULL_ACCOUNT_UID ||
+                               uid == GRAPHENE_TEMP_ACCOUNT_UID );
+   FC_ASSERT( !is_special_account, "Can not update this account" );
    FC_ASSERT( owner.valid() || active.valid() || secondary.valid() || memo_key.valid(), "Should update something" );
    if( owner.valid() )
       validate_new_authority( *owner, "new owner " );
