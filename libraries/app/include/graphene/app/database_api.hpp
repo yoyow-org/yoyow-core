@@ -108,6 +108,13 @@ struct market_trade
    double                     value;
 };
 
+struct required_fee_data
+{
+   account_uid_type fee_payer_uid;
+   int64_t          min_fee;
+   int64_t          min_real_fee;
+};
+
 struct full_account_query_options
 {
    optional<bool> fetch_account_object;
@@ -662,6 +669,11 @@ class database_api
        */
       vector< std::pair< int64_t, int64_t > > get_required_fee_pairs( const vector<operation>& ops )const;
 
+      /**
+       *  For each operation calculate the required fee data: payer, minimum total fee required, minimum real fee required.
+       */
+      vector< required_fee_data > get_required_fee_data( const vector<operation>& ops )const;
+
       ///////////////////////////
       // Proposed transactions //
       ///////////////////////////
@@ -691,6 +703,7 @@ FC_REFLECT( graphene::app::order_book, (base)(quote)(bids)(asks) );
 FC_REFLECT( graphene::app::market_ticker, (base)(quote)(latest)(lowest_ask)(highest_bid)(percent_change)(base_volume)(quote_volume) );
 FC_REFLECT( graphene::app::market_volume, (base)(quote)(base_volume)(quote_volume) );
 FC_REFLECT( graphene::app::market_trade, (date)(price)(amount)(value) );
+FC_REFLECT( graphene::app::required_fee_data, (fee_payer_uid)(min_fee)(min_real_fee) );
 FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_account_object)
             (fetch_statistics)
@@ -797,6 +810,7 @@ FC_API(graphene::app::database_api,
    (validate_transaction)
    (get_required_fees)
    (get_required_fee_pairs)
+   (get_required_fee_data)
 
    // Proposed transactions
    (get_proposed_transactions)
