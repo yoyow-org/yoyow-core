@@ -161,6 +161,15 @@ struct wallet_data
                      [](const account_object& ao) { return ao.id; });
       return ids;
    }
+   /// @return UIDs of all accounts in @ref my_accounts
+   vector<account_uid_type> my_account_uids()const
+   {
+      vector<account_uid_type> uids;
+      uids.reserve(my_accounts.size());
+      std::transform(my_accounts.begin(), my_accounts.end(), std::back_inserter(uids),
+                     [](const account_object& ao) { return ao.uid; });
+      return uids;
+   }
    /// Add acct to @ref my_accounts, or update it if it is already in @ref my_accounts
    /// @return true if the account was newly inserted; false if it was only updated
    bool update_account(const account_object& acct)
@@ -366,6 +375,7 @@ class wallet_api
       /** Returns the relative operations on the account from start number.
        *
        * @param uid the uid of the account
+       * @param op_type the operation_type to query
        * @param stop Sequence number of earliest operation.
        * @param limit the number of entries to return, should be no more than 100 if start is 0
        * @param start the sequence number where to start looping back throw the history, set 0 for most recent

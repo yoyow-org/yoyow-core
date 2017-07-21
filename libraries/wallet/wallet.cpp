@@ -65,6 +65,7 @@
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/utilities/git_revision.hpp>
 #include <graphene/utilities/key_conversion.hpp>
+#include <graphene/utilities/string_escape.hpp>
 #include <graphene/utilities/words.hpp>
 #include <graphene/wallet/wallet.hpp>
 #include <graphene/wallet/api_documentation.hpp>
@@ -568,14 +569,29 @@ public:
       if( _wallet.my_accounts.get<by_id>().count(id) )
          return *_wallet.my_accounts.get<by_id>().find(id);
       auto rec = _remote_db->get_accounts({id}).front();
-      FC_ASSERT(rec);
+      FC_ASSERT( rec, "Can not find account ${id}.", ("id",id) );
+      return *rec;
+   }
+   account_object get_account(account_uid_type uid) const
+   {
+      const auto& idx = _wallet.my_accounts.get<by_uid>();
+      auto itr = idx.find(uid);
+      if( itr != idx.end() )
+         return *itr;
+      auto rec = _remote_db->get_accounts_by_uid({uid}).front();
+      FC_ASSERT( rec, "Can not find account ${uid}.", ("uid",uid) );
       return *rec;
    }
    account_object get_account(string account_name_or_id) const
    {
       FC_ASSERT( account_name_or_id.size() > 0 );
 
-      if( auto id = maybe_id<account_id_type>(account_name_or_id) )
+      if( graphene::utilities::is_number( account_name_or_id ) )
+      {
+         // It's a UID
+         return get_account( fc::variant( account_name_or_id ).as<account_uid_type>() );
+      }
+      else if( auto id = maybe_id<account_id_type>(account_name_or_id) )
       {
          // It's an ID
          return get_account(*id);
