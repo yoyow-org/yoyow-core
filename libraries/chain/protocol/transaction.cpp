@@ -429,14 +429,14 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
    {
       GRAPHENE_ASSERT( std::get<0>( s.check_authority(id) ) ||
                        std::get<0>( s.check_authority(get_owner(id)) ),
-                       tx_missing_active_auth, "Missing Active Authority ${id}", ("id",id)("auth",*get_active(id))("owner",*get_owner(id)) );
+                       tx_missing_active_auth, "Missing Active Authority, account id: ${id}", ("id",id)("auth",*get_active(id))("owner",*get_owner(id)) );
    }
 
    for( auto id : required_owner )
    {
       GRAPHENE_ASSERT( owner_approvals.find(id) != owner_approvals.end() ||
                        std::get<0>( s.check_authority(get_owner(id)) ),
-                       tx_missing_owner_auth, "Missing Owner Authority ${id}", ("id",id)("auth",*get_owner(id)) );
+                       tx_missing_owner_auth, "Missing Owner Authority, account id: ${id}", ("id",id)("auth",*get_owner(id)) );
    }
 
    GRAPHENE_ASSERT(
@@ -498,7 +498,7 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
    {
       GRAPHENE_ASSERT( std::get<0>( s.check_authority( authority::account_uid_auth_type( uid, authority::owner_auth ) ) ),
                        tx_missing_owner_auth,
-                       "Missing Owner Authority ${uid}",
+                       "Missing Owner Authority, account uid: ${uid}",
                        ( "uid", uid ) ( "owner", *get_owner_by_uid( uid ) )
                      );
    }
@@ -508,7 +508,7 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
    {
       GRAPHENE_ASSERT( std::get<0>( s.check_authority( authority::account_uid_auth_type( uid, authority::active_auth ) ) ),
                        tx_missing_active_auth,
-                       "Missing Active Authority ${uid}",
+                       "Missing Active Authority, account uid: ${uid}",
                        ( "uid", uid ) ( "active", *get_active_by_uid( uid ) )
                      );
    }
@@ -518,14 +518,14 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
    {
       GRAPHENE_ASSERT( std::get<0>( s.check_authority( authority::account_uid_auth_type( uid, authority::secondary_auth ) ) ),
                        tx_missing_secondary_auth,
-                       "Missing Secondary Authority ${uid}",
+                       "Missing Secondary Authority, account uid: ${uid}",
                        ( "uid", uid ) ( "secondary", *get_secondary_by_uid( uid ) )
                      );
    }
 
    for( const auto& auth : other )
    {
-      GRAPHENE_ASSERT( std::get<0>( s.check_authority(&auth) ), tx_missing_other_auth, "Missing Authority", ("auth",auth)("sigs",sigs) );
+      GRAPHENE_ASSERT( std::get<0>( s.check_authority(&auth) ), tx_missing_other_auth, "Missing Authority: ${auth}", ("auth",auth)("sigs",sigs) );
    }
 
    GRAPHENE_ASSERT(
