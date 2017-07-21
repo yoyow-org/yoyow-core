@@ -566,8 +566,6 @@ public:
    }
    account_object get_account(account_id_type id) const
    {
-      if( _wallet.my_accounts.get<by_id>().count(id) )
-         return *_wallet.my_accounts.get<by_id>().find(id);
       auto rec = _remote_db->get_accounts({id}).front();
       FC_ASSERT( rec, "Can not find account ${id}.", ("id",id) );
       return *rec;
@@ -602,10 +600,10 @@ public:
             auto local_account = *_wallet.my_accounts.get<by_name>().find(account_name_or_id);
             auto blockchain_account = _remote_db->lookup_account_names({account_name_or_id}).front();
             FC_ASSERT( blockchain_account );
-            if (local_account.id != blockchain_account->id)
-               elog("my account id ${id} different from blockchain id ${id2}", ("id", local_account.id)("id2", blockchain_account->id));
+            if (local_account.uid != blockchain_account->uid)
+               elog("my account uid ${uid} different from blockchain uid ${uid2}", ("uid", local_account.uid)("uid2", blockchain_account->uid));
             if (local_account.name != blockchain_account->name)
-               elog("my account name ${id} different from blockchain name ${id2}", ("id", local_account.name)("id2", blockchain_account->name));
+               elog("my account name ${name} different from blockchain name ${name2}", ("name", local_account.name)("name2", blockchain_account->name));
 
             return *_wallet.my_accounts.get<by_name>().find(account_name_or_id);
          }
@@ -722,7 +720,7 @@ public:
 
       _wallet.update_account(account);
 
-      _wallet.extra_keys[account.id].insert(wif_pub_key);
+      _wallet.extra_keys[account.uid].insert(wif_pub_key);
 
       return all_keys_for_account.find(wif_pub_key) != all_keys_for_account.end();
    }
@@ -746,43 +744,43 @@ public:
             ("chain_id", _chain_id) );
 
       size_t account_pagination = 100;
-      vector< account_id_type > account_ids_to_send;
+      vector< account_uid_type > account_uids_to_send;
       size_t n = _wallet.my_accounts.size();
-      account_ids_to_send.reserve( std::min( account_pagination, n ) );
+      account_uids_to_send.reserve( std::min( account_pagination, n ) );
       auto it = _wallet.my_accounts.begin();
 
       for( size_t start=0; start<n; start+=account_pagination )
       {
          size_t end = std::min( start+account_pagination, n );
          assert( end > start );
-         account_ids_to_send.clear();
+         account_uids_to_send.clear();
          std::vector< account_object > old_accounts;
          for( size_t i=start; i<end; i++ )
          {
             assert( it != _wallet.my_accounts.end() );
             old_accounts.push_back( *it );
-            account_ids_to_send.push_back( old_accounts.back().id );
+            account_uids_to_send.push_back( old_accounts.back().uid );
             ++it;
          }
-         std::vector< optional< account_object > > accounts = _remote_db->get_accounts(account_ids_to_send);
+         std::vector< optional< account_object > > accounts = _remote_db->get_accounts_by_uid(account_uids_to_send);
          // server response should be same length as request
-         FC_ASSERT( accounts.size() == account_ids_to_send.size() );
+         FC_ASSERT( accounts.size() == account_uids_to_send.size() );
          size_t i = 0;
          for( const optional< account_object >& acct : accounts )
          {
             account_object& old_acct = old_accounts[i];
             if( !acct.valid() )
             {
-               elog( "Could not find account ${id} : \"${name}\" does not exist on the chain!", ("id", old_acct.id)("name", old_acct.name) );
+               elog( "Could not find account ${uid} : \"${name}\" does not exist on the chain!", ("uid", old_acct.uid)("name", old_acct.name) );
                i++;
                continue;
             }
             // this check makes sure the server didn't send results
             // in a different order, or accounts we didn't request
-            FC_ASSERT( acct->id == old_acct.id );
+            FC_ASSERT( acct->uid == old_acct.uid );
             if( fc::json::to_string(*acct) != fc::json::to_string(old_acct) )
             {
-               wlog( "Account ${id} : \"${name}\" updated on chain", ("id", acct->id)("name", acct->name) );
+               wlog( "Account ${uid} : \"${name}\" updated on chain", ("uid", acct->uid)("name", acct->name) );
             }
             _wallet.update_account( *acct );
             i++;
@@ -3823,7 +3821,7 @@ vector< signed_transaction > wallet_api_impl::import_balance( string name_or_id,
       {
          if( has_wildcard )
             continue;
-         for( const public_key_type& pub : _wallet.extra_keys[ claimer.id ] )
+         for( const public_key_type& pub : _wallet.extra_keys[ claimer.uid ] )
          {
             addrs.push_back( address( pub ) );
             auto it = _keys.find( pub );
@@ -4530,13 +4528,13 @@ vesting_balance_object_with_info::vesting_balance_object_with_info( const vestin
 
 } } // graphene::wallet
 
-void fc::to_variant(const account_multi_index_type& accts, fc::variant& vo)
+void fc::to_variant(const graphene::wallet::wallet_account_multi_index_type& accts, fc::variant& vo)
 {
    vo = vector<account_object>(accts.begin(), accts.end());
 }
 
-void fc::from_variant(const fc::variant& var, account_multi_index_type& vo)
+void fc::from_variant(const fc::variant& var, graphene::wallet::wallet_account_multi_index_type& vo)
 {
    const vector<account_object>& v = var.as<vector<account_object>>();
-   vo = account_multi_index_type(v.begin(), v.end());
+   vo = graphene::wallet::wallet_account_multi_index_type(v.begin(), v.end());
 }

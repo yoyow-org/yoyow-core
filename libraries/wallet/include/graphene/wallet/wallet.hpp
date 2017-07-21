@@ -31,12 +31,6 @@ using namespace graphene::chain;
 using namespace graphene::utilities;
 using namespace std;
 
-namespace fc
-{
-   void to_variant(const account_multi_index_type& accts, variant& vo);
-   void from_variant(const variant &var, account_multi_index_type &vo);
-}
-
 namespace graphene { namespace wallet {
 
 typedef uint16_t transaction_handle_type;
@@ -60,6 +54,15 @@ struct brain_key_info
    string wif_priv_key;
    public_key_type pub_key;
 };
+
+// account
+typedef multi_index_container<
+   account_object,
+   indexed_by<
+      ordered_unique< tag<by_name>, member<account_object, string, &account_object::name> >,
+      ordered_unique< tag<by_uid>, member<account_object, account_uid_type, &account_object::uid> >
+   >
+> wallet_account_multi_index_type;
 
 
 /**
@@ -151,7 +154,7 @@ struct wallet_data
 {
    /** Chain ID this wallet is used with */
    chain_id_type chain_id;
-   account_multi_index_type my_accounts;
+   wallet_account_multi_index_type my_accounts;
    /// @return IDs of all accounts in @ref my_accounts
    vector<object_id_type> my_account_ids()const
    {
@@ -174,8 +177,8 @@ struct wallet_data
    /// @return true if the account was newly inserted; false if it was only updated
    bool update_account(const account_object& acct)
    {
-      auto& idx = my_accounts.get<by_id>();
-      auto itr = idx.find(acct.get_id());
+      auto& idx = my_accounts.get<by_uid>();
+      auto itr = idx.find(acct.get_uid());
       if( itr != idx.end() )
       {
          idx.replace(itr, acct);
@@ -190,7 +193,7 @@ struct wallet_data
    vector<char>              cipher_keys;
 
    /** map an account to a set of extra keys that have been imported for that account */
-   map<account_id_type, set<public_key_type> >  extra_keys;
+   map<account_uid_type, set<public_key_type> >  extra_keys;
 
    // map of account_name -> base58_private_key for
    //    incomplete account regs
@@ -1560,6 +1563,12 @@ class wallet_api
 };
 
 } }
+
+namespace fc
+{
+   void to_variant(const graphene::wallet::wallet_account_multi_index_type& accts, variant& vo);
+   void from_variant(const variant &var, graphene::wallet::wallet_account_multi_index_type &vo);
+}
 
 FC_REFLECT( graphene::wallet::key_label, (label)(key) )
 FC_REFLECT( graphene::wallet::blind_balance, (amount)(from)(to)(one_time_key)(blinding_factor)(commitment)(used) )
