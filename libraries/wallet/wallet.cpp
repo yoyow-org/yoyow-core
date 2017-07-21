@@ -3173,11 +3173,6 @@ asset_bitasset_data_object wallet_api::get_bitasset_data(string asset_name_or_id
    return my->get_object<asset_bitasset_data_object>(*asset.bitasset_data_id);
 }
 
-account_id_type wallet_api::get_account_id(string account_name_or_id) const
-{
-   return my->get_account_id(account_name_or_id);
-}
-
 asset_id_type wallet_api::get_asset_id(string asset_symbol_or_id) const
 {
    return my->get_asset_id(asset_symbol_or_id);

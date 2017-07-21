@@ -426,12 +426,6 @@ class wallet_api
        */
       asset_bitasset_data_object        get_bitasset_data(string asset_name_or_id)const;
 
-      /** Lookup the id of a named account.
-       * @param account_name_or_id the name of the account to look up
-       * @returns the id of the named account
-       */
-      account_id_type                   get_account_id(string account_name_or_id) const;
-
       /**
        * Lookup the id of a named asset.
        * @param asset_name_or_id the symbol of an asset to look up
@@ -1694,7 +1688,6 @@ FC_API( graphene::wallet::wallet_api,
         (set_voting_proxy)
         (set_desired_witness_and_committee_member_count)
         (get_account)
-        (get_account_id)
         (get_block)
         (get_account_count)
         (get_account_history)
