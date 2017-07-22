@@ -476,20 +476,20 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
-                    (membership_expiration_date)(registrar)(referrer)(lifetime_referrer)
-                    (network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
+                    //(membership_expiration_date)(registrar)(referrer)(lifetime_referrer)
+                    //(network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
                     (uid)(name)(owner)(active)(secondary)(options)(reg_info)
                     (can_post)(can_reply)(can_rate)
                     (is_full_member)(is_registrar)(is_admin)
                     (create_time)(last_update_time)
                     (active_data)(secondary_data)
                     (statistics)
-                    (whitelisting_accounts)(blacklisting_accounts)
-                    (whitelisted_accounts)(blacklisted_accounts)
-                    (cashback_vb)
-                    (owner_special_authority)(active_special_authority)
-                    (top_n_control_flags)
-                    (allowed_assets)
+                    //(whitelisting_accounts)(blacklisting_accounts)
+                    //(whitelisted_accounts)(blacklisted_accounts)
+                    //(cashback_vb)
+                    //(owner_special_authority)(active_special_authority)
+                    //(top_n_control_flags)
+                    //(allowed_assets)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
