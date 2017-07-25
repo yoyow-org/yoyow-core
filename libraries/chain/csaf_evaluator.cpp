@@ -36,7 +36,7 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
    from_stats = &d.get_account_statistics_by_uid( op.from );
    to_stats = &d.get_account_statistics_by_uid( op.to );
 
-   const auto global_params = d.get_global_properties().parameters;
+   const auto& global_params = d.get_global_properties().parameters;
 
    FC_ASSERT( op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
               "Maximum CSAF per account exceeded" );
