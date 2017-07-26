@@ -484,6 +484,13 @@ void database::init_genesis(const genesis_state_type& genesis_state)
                 ("acct", name));
       return itr->get_id();
    };
+   auto get_account_uid = [&accounts_by_name](const string& name) {
+      auto itr = accounts_by_name.find(name);
+      FC_ASSERT(itr != accounts_by_name.end(),
+                "Unable to find account '${acct}'. Did you forget to add a record for it to initial_accounts?",
+                ("acct", name));
+      return itr->get_uid();
+   };
 
    // Helper function to get asset ID by symbol
    const auto& assets_by_symbol = get_index_type<asset_index>().indices().get<by_symbol>();
@@ -664,7 +671,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    std::for_each(genesis_state.initial_witness_candidates.begin(), genesis_state.initial_witness_candidates.end(),
                  [&](const genesis_state_type::initial_witness_type& witness) {
       witness_create_operation op;
-      op.witness_account = get_account_id(witness.owner_name);
+      op.witness_account = get_account_uid(witness.owner_name);
       op.block_signing_key = witness.block_signing_key;
       apply_operation(genesis_eval_state, op);
    });

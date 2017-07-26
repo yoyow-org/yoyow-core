@@ -116,11 +116,13 @@ struct get_impacted_account_visitor
    void operator()( const asset_publish_feed_operation& op ) {}
    void operator()( const witness_create_operation& op )
    {
-      _impacted.insert( op.witness_account );
+      // TODO review
+      //_impacted.insert( op.witness_account );
    }
    void operator()( const witness_update_operation& op )
    {
-      _impacted.insert( op.witness_account );
+      // TODO review
+      //_impacted.insert( op.witness_account );
    }
 
    void operator()( const proposal_create_operation& op )
@@ -272,9 +274,10 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            accounts.insert( aobj->committee_member_account );
            break;
         } case witness_object_type:{
-           const auto& aobj = dynamic_cast<const witness_object*>(obj);
-           assert( aobj != nullptr );
-           accounts.insert( aobj->witness_account );
+           // TODO review
+           //const auto& aobj = dynamic_cast<const witness_object*>(obj);
+           //assert( aobj != nullptr );
+           //accounts.insert( aobj->witness_account );
            break;
         } case limit_order_object_type:{
            const auto& aobj = dynamic_cast<const limit_order_object*>(obj);

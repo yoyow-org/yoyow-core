@@ -301,9 +301,10 @@ namespace graphene { namespace app {
                result.push_back( aobj->committee_member_account );
                break;
             } case witness_object_type:{
-               const auto& aobj = dynamic_cast<const witness_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->witness_account );
+               // TODO review
+               //const auto& aobj = dynamic_cast<const witness_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->witness_account );
                break;
             } case limit_order_object_type:{
                const auto& aobj = dynamic_cast<const limit_order_object*>(obj);

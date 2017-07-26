@@ -331,7 +331,7 @@ private:
          for( const fc::optional<graphene::chain::account_object>& optional_account : owner_account_objects )
             if (optional_account)
             {
-               fc::optional<witness_object> witness_obj = _remote_db->get_witness_by_account(optional_account->id);
+               fc::optional<witness_object> witness_obj = _remote_db->get_witness_by_account(optional_account->uid);
                if (witness_obj)
                   claim_registered_witness(optional_account->name);
             }
@@ -1412,8 +1412,8 @@ public:
             // then maybe it's the owner account
             try
             {
-               account_id_type owner_account_id = get_account_id(owner_account);
-               fc::optional<witness_object> witness = _remote_db->get_witness_by_account(owner_account_id);
+               account_uid_type owner_account_uid = get_account_uid(owner_account);
+               fc::optional<witness_object> witness = _remote_db->get_witness_by_account(owner_account_uid);
                if (witness)
                   return *witness;
                else
@@ -1474,7 +1474,7 @@ public:
       graphene::chain::public_key_type witness_public_key = witness_private_key.get_public_key();
 
       witness_create_operation witness_create_op;
-      witness_create_op.witness_account = witness_account.id;
+      witness_create_op.witness_account = witness_account.uid;
       witness_create_op.block_signing_key = witness_public_key;
       witness_create_op.url = url;
 
@@ -1501,8 +1501,8 @@ public:
       fc::ecc::private_key active_private_key = get_private_key_for_account(witness_account);
 
       witness_update_operation witness_update_op;
-      witness_update_op.witness = witness.id;
-      witness_update_op.witness_account = witness_account.id;
+      //witness_update_op.witness = witness.id;
+      witness_update_op.witness_account = witness_account.uid;
       if( url != "" )
          witness_update_op.new_url = url;
       if( block_signing_key != "" )
@@ -1673,8 +1673,9 @@ public:
       if( !vbid )
       {
          witness_object wit = get_witness( witness_name );
-         FC_ASSERT( wit.pay_vb );
-         vbid = wit.pay_vb;
+         // TODO review
+         //FC_ASSERT( wit.pay_vb );
+         //vbid = wit.pay_vb;
       }
 
       vesting_balance_object vbo = get_object< vesting_balance_object >( *vbid );
@@ -1736,8 +1737,8 @@ public:
                                         bool broadcast /* = false */)
    { try {
       account_object voting_account_object = get_account(voting_account);
-      account_id_type witness_owner_account_id = get_account_id(witness);
-      fc::optional<witness_object> witness_obj = _remote_db->get_witness_by_account(witness_owner_account_id);
+      account_uid_type witness_owner_account_uid = get_account_uid(witness);
+      fc::optional<witness_object> witness_obj = _remote_db->get_witness_by_account(witness_owner_account_uid);
       if (!witness_obj)
          FC_THROW("Account ${witness} is not registered as a witness", ("witness", witness));
       // TODO: review

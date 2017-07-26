@@ -72,6 +72,10 @@ namespace graphene { namespace chain {
       uint64_t                csaf_rate                           = GRAPHENE_DEFAULT_CSAF_RATE;
       share_type              max_csaf_per_account                = GRAPHENE_DEFAULT_MAX_CSAF_PER_ACCOUNT;
       uint64_t                csaf_accumulate_window              = GRAPHENE_DEFAULT_CSAF_ACCUMULATE_WINDOW;
+      uint64_t                min_witness_pledge                  = GRAPHENE_DEFAULT_MIN_WITNESS_PLEDGE;
+      uint64_t                max_witness_pledge_seconds          = GRAPHENE_DEFAULT_MAX_WITNESS_PLEDGE_SECONDS;
+      uint32_t                witness_avg_pledge_update_interval  = GRAPHENE_DEFAULT_WITNESS_AVG_PLEDGE_UPDATE_INTERVAL;
+      uint32_t                witness_pledge_release_delay        = GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY;
       extensions_type         extensions;
 
       /** defined in fee_schedule.cpp */
@@ -112,5 +116,9 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (csaf_rate)
             (max_csaf_per_account)
             (csaf_accumulate_window)
+            (min_witness_pledge)
+            (max_witness_pledge_seconds)
+            (witness_avg_pledge_update_interval)
+            (witness_pledge_release_delay)
             (extensions)
           )

@@ -124,6 +124,31 @@ namespace graphene { namespace chain {
           */
          fc::time_point_sec             coin_seconds_earned_last_update;
 
+         /**
+          * coins locked as witness pledge.
+          */
+         share_type total_witness_pledge;
+
+         /**
+          * coins that are requested to be released from witness pledge but not yet unlocked.
+          */
+         share_type releasing_witness_pledge;
+
+         /**
+          * block number that releasing witness pledge will be finally unlocked.
+          */
+         uint32_t witness_pledge_release_block_number = -1;
+
+         /**
+          * how many times have this account created witness object
+          */
+         uint32_t last_witness_sequence = 0;
+
+         /**
+          * uncollected witness pay.
+          */
+         share_type uncollected_witness_pay;
+
          /// @brief Split up and pay out @ref pending_fees and @ref pending_vested_fees
          void process_fees(const account_object& a, database& d) const;
 
@@ -456,6 +481,8 @@ namespace graphene { namespace chain {
     */
    typedef generic_index<account_object, account_multi_index_type> account_index;
 
+   struct by_witness_pledge_release;
+
    /**
     * @ingroup object_index
     */
@@ -463,7 +490,14 @@ namespace graphene { namespace chain {
       account_statistics_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_uid>, member<account_statistics_object, account_uid_type, &account_statistics_object::owner> >
+         ordered_unique< tag<by_uid>, member<account_statistics_object, account_uid_type, &account_statistics_object::owner> >,
+         ordered_unique< tag<by_witness_pledge_release>,
+            composite_key<
+               account_statistics_object,
+               member<account_statistics_object, uint32_t, &account_statistics_object::witness_pledge_release_block_number>,
+               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
+            >
+         >
       >
    > account_statistics_object_multi_index_type;
 
@@ -508,5 +542,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)//(average_coins_next_update)
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
+                    (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
+                    (last_witness_sequence)(uncollected_witness_pay)
                   )
 

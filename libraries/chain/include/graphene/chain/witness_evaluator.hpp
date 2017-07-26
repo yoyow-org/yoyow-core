@@ -34,6 +34,8 @@ namespace graphene { namespace chain {
 
          void_result do_evaluate( const witness_create_operation& o );
          object_id_type do_apply( const witness_create_operation& o );
+
+         const account_statistics_object* account_stats = nullptr;
    };
 
    class witness_update_evaluator : public evaluator<witness_update_evaluator>
@@ -43,6 +45,9 @@ namespace graphene { namespace chain {
 
          void_result do_evaluate( const witness_update_operation& o );
          void_result do_apply( const witness_update_operation& o );
+
+         const account_statistics_object* account_stats = nullptr;
+         const witness_object* witness_obj = nullptr;
    };
 
 } } // graphene::chain

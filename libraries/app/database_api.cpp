@@ -141,7 +141,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Witnesses
       vector<optional<witness_object>> get_witnesses(const vector<witness_id_type>& witness_ids)const;
-      fc::optional<witness_object> get_witness_by_account(account_id_type account)const;
+      fc::optional<witness_object> get_witness_by_account(account_uid_type account)const;
       map<string, witness_id_type> lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const;
       uint64_t get_witness_count()const;
 
@@ -1626,12 +1626,12 @@ vector<optional<witness_object>> database_api_impl::get_witnesses(const vector<w
    return result;
 }
 
-fc::optional<witness_object> database_api::get_witness_by_account(account_id_type account)const
+fc::optional<witness_object> database_api::get_witness_by_account(account_uid_type account)const
 {
    return my->get_witness_by_account( account );
 }
 
-fc::optional<witness_object> database_api_impl::get_witness_by_account(account_id_type account) const
+fc::optional<witness_object> database_api_impl::get_witness_by_account(account_uid_type account) const
 {
    const auto& idx = _db.get_index_type<witness_index>().indices().get<by_account>();
    auto itr = idx.find(account);
@@ -1657,7 +1657,7 @@ map<string, witness_id_type> database_api_impl::lookup_witness_accounts(const st
    // number of witnesses to be few and the frequency of calls to be rare
    std::map<std::string, witness_id_type> witnesses_by_account_name;
    for (const witness_object& witness : witnesses_by_id)
-       if (auto account_iter = _db.find(witness.witness_account))
+       if (auto account_iter = _db.find_account_by_uid(witness.witness_account))
            if (account_iter->name >= lower_bound_name) // we can ignore anything below lower_bound_name
                witnesses_by_account_name.insert(std::make_pair(account_iter->name, witness.id));
 
@@ -1758,7 +1758,7 @@ vector<variant> database_api_impl::lookup_vote_ids( const vector<vote_id_type>& 
 {
    FC_ASSERT( votes.size() < 1000, "Only 1000 votes can be queried at a time" );
 
-   const auto& witness_idx = _db.get_index_type<witness_index>().indices().get<by_vote_id>();
+   //const auto& witness_idx = _db.get_index_type<witness_index>().indices().get<by_vote_id>();
    const auto& committee_idx = _db.get_index_type<committee_member_index>().indices().get<by_vote_id>();
    const auto& for_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_for>();
    const auto& against_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_against>();
@@ -1780,11 +1780,12 @@ vector<variant> database_api_impl::lookup_vote_ids( const vector<vote_id_type>& 
          }
          case vote_id_type::witness:
          {
-            auto itr = witness_idx.find( id );
-            if( itr != witness_idx.end() )
-               result.emplace_back( variant( *itr ) );
-            else
-               result.emplace_back( variant() );
+            // TODO review
+            //auto itr = witness_idx.find( id );
+            //if( itr != witness_idx.end() )
+            //   result.emplace_back( variant( *itr ) );
+            //else
+            //   result.emplace_back( variant() );
             break;
          }
          case vote_id_type::worker:

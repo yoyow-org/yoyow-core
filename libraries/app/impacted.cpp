@@ -96,6 +96,16 @@ struct get_impacted_account_uid_visitor
          add_authority_account_uids( _impacted, *op.secondary );
    }
 
+   void operator()( const witness_create_operation& op )
+   {
+      //_impacted.insert( op.witness_account );
+   }
+
+   void operator()( const witness_update_operation& op )
+   {
+      //_impacted.insert( op.witness_account );
+   }
+
    /*
    void operator()( const asset_claim_fees_operation& op ){}
    void operator()( const limit_order_create_operation& op ) {}
@@ -149,15 +159,6 @@ struct get_impacted_account_uid_visitor
    void operator()( const asset_settle_operation& op ) {}
    void operator()( const asset_global_settle_operation& op ) {}
    void operator()( const asset_publish_feed_operation& op ) {}
-   void operator()( const witness_create_operation& op )
-   {
-      _impacted.insert( op.witness_account );
-   }
-   void operator()( const witness_update_operation& op )
-   {
-      _impacted.insert( op.witness_account );
-   }
-
    void operator()( const proposal_create_operation& op )
    {
       vector<authority> other;
@@ -357,11 +358,13 @@ struct get_impacted_account_visitor
    void operator()( const asset_publish_feed_operation& op ) {}
    void operator()( const witness_create_operation& op )
    {
-      _impacted.insert( op.witness_account );
+      // TODO review
+      //_impacted.insert( op.witness_account );
    }
    void operator()( const witness_update_operation& op )
    {
-      _impacted.insert( op.witness_account );
+      // TODO review
+      //_impacted.insert( op.witness_account );
    }
 
    void operator()( const proposal_create_operation& op )

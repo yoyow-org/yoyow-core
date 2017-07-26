@@ -25,6 +25,7 @@
 #include <graphene/chain/protocol/asset.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
+#include <boost/multi_index/composite_key.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
@@ -37,47 +38,98 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id = witness_object_type;
 
-         account_id_type  witness_account;
-         uint64_t         last_aslot = 0;
-         public_key_type  signing_key;
-         optional< vesting_balance_id_type > pay_vb;
-         vote_id_type     vote_id;
-         uint64_t         total_votes = 0;
-         string           url;
-         int64_t          total_missed = 0;
-         uint32_t         last_confirmed_block_num = 0;
+         account_uid_type    witness_account;
+         uint32_t            sequence;
 
-         witness_object() : vote_id(vote_id_type::witness) {}
+         public_key_type     signing_key;
+
+         uint64_t            pledge;
+         fc::time_point_sec  pledge_last_update;
+         uint64_t            average_pledge = 0;
+         fc::time_point_sec  average_pledge_last_update;
+         uint32_t            average_pledge_next_update_block;
+
+         vote_id_type        vote_id;                   // TODO remove
+
+         uint64_t            total_votes = 0;
+
+         fc::uint128_t       by_pledge_position;
+         fc::uint128_t       by_pledge_position_last_update;
+         fc::uint128_t       by_pledge_scheduled_time = fc::uint128_t::max_value();
+
+         fc::uint128_t       by_vote_position;
+         fc::uint128_t       by_vote_position_last_update;
+         fc::uint128_t       by_vote_scheduled_time = fc::uint128_t::max_value();
+
+         uint32_t            last_confirmed_block_num = 0;
+
+         uint64_t            last_aslot = 0;
+         uint64_t            total_missed = 0;
+         string              url;
+
    };
 
    struct by_account;
-   struct by_vote_id;
-   struct by_last_block;
-   using witness_multi_index_type = multi_index_container<
+   struct by_pledge_next_update;
+   struct by_pledge_schedule;
+   struct by_vote_schedule;
+
+   typedef multi_index_container<
       witness_object,
       indexed_by<
          ordered_unique< tag<by_id>,
             member<object, object_id_type, &object::id>
          >,
          ordered_unique< tag<by_account>,
-            member<witness_object, account_id_type, &witness_object::witness_account>
+            member<witness_object, account_uid_type, &witness_object::witness_account>
          >,
-         ordered_unique< tag<by_vote_id>,
-            member<witness_object, vote_id_type, &witness_object::vote_id>
+         ordered_unique< tag<by_pledge_next_update>,
+            composite_key<
+               witness_object,
+               member<witness_object, uint32_t, &witness_object::average_pledge_next_update_block>,
+               member<witness_object, account_uid_type, &witness_object::witness_account>
+            >
+         >,
+         ordered_unique< tag<by_pledge_schedule>,
+            composite_key<
+               witness_object,
+               member<witness_object, fc::uint128_t, &witness_object::by_pledge_scheduled_time>,
+               member<witness_object, account_uid_type, &witness_object::witness_account>
+            >
+         >,
+         ordered_unique< tag<by_vote_schedule>,
+            composite_key<
+               witness_object,
+               member<witness_object, fc::uint128_t, &witness_object::by_vote_scheduled_time>,
+               member<witness_object, account_uid_type, &witness_object::witness_account>
+            >
          >
       >
-   >;
-   using witness_index = generic_index<witness_object, witness_multi_index_type>;
+   > witness_multi_index_type;
+
+   typedef generic_index<witness_object, witness_multi_index_type> witness_index;
+
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (witness_account)
-                    (last_aslot)
+                    (sequence)
                     (signing_key)
-                    (pay_vb)
-                    (vote_id)
+                    (pledge)
+                    (pledge_last_update)
+                    (average_pledge)
+                    (average_pledge_last_update)
+                    (average_pledge_next_update_block)
+                    //(vote_id)
                     (total_votes)
-                    (url) 
-                    (total_missed)
+                    (by_pledge_position)
+                    (by_pledge_position_last_update)
+                    (by_pledge_scheduled_time)
+                    (by_vote_position)
+                    (by_vote_position_last_update)
+                    (by_vote_scheduled_time)
                     (last_confirmed_block_num)
+                    (last_aslot)
+                    (total_missed)
+                    (url)
                   )

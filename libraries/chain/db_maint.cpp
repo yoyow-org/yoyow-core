@@ -191,6 +191,8 @@ void database::update_active_witnesses()
    }
 
    // Update witness authority
+   /*
+   // TODO review
    modify( get(GRAPHENE_WITNESS_ACCOUNT), [&]( account_object& a )
    {
       if( head_block_time() < HARDFORK_533_TIME )
@@ -228,6 +230,7 @@ void database::update_active_witnesses()
          vc.finish( a.active );
       }
    } );
+   */
 
    modify(gpo, [&]( global_property_object& gp ){
       gp.active_witnesses.clear();

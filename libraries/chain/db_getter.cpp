@@ -133,6 +133,14 @@ const account_statistics_object& database::get_account_statistics_by_uid( accoun
    return *itr;
 }
 
+const witness_object& database::get_witness_by_uid( account_uid_type uid )const
+{
+   const auto& idx = get_index_type<witness_index>().indices().get<by_account>();
+   auto itr = idx.find(uid);
+   FC_ASSERT( itr != idx.end(), "witness ${uid} not found.", ("uid",uid) );
+   return *itr;
+}
+
 const platform_object& database::get_platform_by_pid( platform_pid_type pid )const
 {
    const auto& platforms_by_pid = get_index_type<platform_index>().indices().get<by_pid>();

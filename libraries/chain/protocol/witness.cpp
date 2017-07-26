@@ -27,15 +27,21 @@ namespace graphene { namespace chain {
 
 void witness_create_operation::validate() const
 {
-   FC_ASSERT(fee.amount >= 0);
-   FC_ASSERT(url.size() < GRAPHENE_MAX_URL_LENGTH );
+   validate_op_fee( fee, "witness creation " );
+   validate_account_uid( witness_account, "witness " );
+   validate_non_negative_asset( pledge, "pledge" );
+   FC_ASSERT( url.size() < GRAPHENE_MAX_URL_LENGTH, "url is too long" );
 }
 
 void witness_update_operation::validate() const
 {
-   FC_ASSERT(fee.amount >= 0);
+   validate_op_fee( fee, "witness update " );
+   validate_account_uid( witness_account, "witness " );
+   FC_ASSERT( new_pledge.valid() || new_signing_key.valid() || new_url.valid(), "Should change something" );
+   if( new_pledge.valid() )
+      validate_non_negative_asset( *new_pledge, "new pledge" );
    if( new_url.valid() )
-       FC_ASSERT(new_url->size() < GRAPHENE_MAX_URL_LENGTH );
+      FC_ASSERT( new_url->size() < GRAPHENE_MAX_URL_LENGTH, "new url is too long" );
 }
 
 } } // graphene::chain

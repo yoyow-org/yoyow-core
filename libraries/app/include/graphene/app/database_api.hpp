@@ -552,10 +552,10 @@ class database_api
 
       /**
        * @brief Get the witness owned by a given account
-       * @param account The ID of the account whose witness should be retrieved
+       * @param account The UID of the account whose witness should be retrieved
        * @return The witness object, or null if the account does not have a witness
        */
-      fc::optional<witness_object> get_witness_by_account(account_id_type account)const;
+      fc::optional<witness_object> get_witness_by_account(account_uid_type account)const;
 
       /**
        * @brief Get names and IDs for registered witnesses
@@ -563,6 +563,7 @@ class database_api
        * @param limit Maximum number of results to return -- must not exceed 1000
        * @return Map of witness names to corresponding IDs
        */
+      // TODO change to uid
       map<string, witness_id_type> lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const;
 
       /**

@@ -99,11 +99,14 @@ void database::adjust_balance(account_uid_type account, asset delta )
    {
       const account_statistics_object& account_stats = get_account_statistics_by_uid( account );
       if( delta.amount < 0 )
-         FC_ASSERT( account_stats.core_balance - account_stats.core_leased_out >= -delta.amount,
+      {
+         auto available_balance = account_stats.core_balance - account_stats.core_leased_out - account_stats.total_witness_pledge;
+         FC_ASSERT( available_balance >= -delta.amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",account)
-                    ("b",to_pretty_core_string(account_stats.core_balance - account_stats.core_leased_out))
+                    ("b",to_pretty_core_string(available_balance))
                     ("r",to_pretty_string(-delta)) );
+      }
       const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
       modify( account_stats, [&](account_statistics_object& s) {
          s.update_coin_seconds_earned( csaf_window, head_block_time() );
@@ -200,23 +203,15 @@ void database::deposit_cashback(const account_object& acct, share_type amount, b
 
 void database::deposit_witness_pay(const witness_object& wit, share_type amount)
 {
+   FC_ASSERT( amount >= 0 );
+
    if( amount == 0 )
       return;
 
-   optional< vesting_balance_id_type > new_vbid = deposit_lazy_vesting(
-      wit.pay_vb,
-      amount,
-      get_global_properties().parameters.witness_pay_vesting_seconds,
-      wit.witness_account,
-      true );
-
-   if( new_vbid.valid() )
-   {
-      modify( wit, [&]( witness_object& _wit )
-      {
-         _wit.pay_vb = *new_vbid;
-      } );
-   }
+   const auto& account_stats = get_account_statistics_by_uid( wit.witness_account );
+   modify( account_stats, [&](account_statistics_object& s) {
+      s.uncollected_witness_pay += amount;
+   } );
 
    return;
 }

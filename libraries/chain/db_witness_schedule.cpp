@@ -118,4 +118,127 @@ void database::update_witness_schedule()
    }
 }
 
+void database::update_witness_avg_pledge( const account_uid_type uid )
+{
+   update_witness_avg_pledge( get_witness_by_uid( uid ) );
+}
+
+void database::update_witness_avg_pledge( const witness_object& wit )
+{
+   const auto& global_params = get_global_properties().parameters;
+   const auto window = global_params.max_witness_pledge_seconds;
+   const auto now = head_block_time();
+
+   // update position
+   const witness_schedule_object& wso = witness_schedule_id_type()(*this);
+   if( wso.current_by_pledge_time > wit.by_pledge_position_last_update )
+   {
+      modify( wit, [&]( witness_object& w )
+      {
+         auto delta_pos = (wso.current_by_pledge_time - w.by_pledge_position_last_update) * w.average_pledge;
+         w.by_pledge_position += delta_pos;
+         w.by_pledge_position_last_update = wso.current_by_pledge_time;
+      } );
+   }
+
+   // update avg pledge
+   const auto old_avg_pledge = wit.average_pledge;
+   if( wit.average_pledge == wit.pledge )
+   {
+      modify( wit, [&]( witness_object& w )
+      {
+         w.average_pledge_last_update = now;
+         w.average_pledge_next_update_block = -1;
+      } );
+   }
+   else if( wit.average_pledge > wit.pledge || now >= wit.pledge_last_update + window )
+   {
+      modify( wit, [&]( witness_object& w )
+      {
+         w.average_pledge = w.pledge;
+         w.average_pledge_last_update = now;
+         w.average_pledge_next_update_block = -1;
+      } );
+   }
+   else if( now > wit.average_pledge_last_update )
+   {
+      // need to schedule next update because average_pledge < pledge, and need to update average_pledge
+      uint64_t delta_seconds = ( now - wit.average_pledge_last_update ).to_seconds();
+      uint64_t old_seconds = window - delta_seconds;
+
+      fc::uint128_t old_coin_seconds = fc::uint128_t( wit.average_pledge ) * old_seconds;
+      fc::uint128_t new_coin_seconds = fc::uint128_t( wit.pledge ) * delta_seconds;
+
+      uint64_t new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+
+      modify( wit, [&]( witness_object& w )
+      {
+         w.average_pledge = new_average_coins;
+         w.average_pledge_last_update = now;
+         w.average_pledge_next_update_block = head_block_num() + global_params.witness_avg_pledge_update_interval;
+      } );
+   }
+   else
+   {
+      // need to schedule next update because average_pledge < pledge, but no need to update average_pledge
+      modify( wit, [&]( witness_object& w )
+      {
+         w.average_pledge_next_update_block = head_block_num() + global_params.witness_avg_pledge_update_interval;
+      } );
+   }
+
+   // update scheduled time
+   if( old_avg_pledge != wit.average_pledge )
+   {
+      modify( wit, [&]( witness_object& w )
+      {
+         const auto need_time = ( GRAPHENE_VIRTUAL_LAP_LENGTH - w.by_pledge_position ) / ( w.average_pledge + 1 );
+         w.by_pledge_scheduled_time = w.by_pledge_position_last_update + need_time;
+         // check for overflow
+         if( w.by_pledge_scheduled_time < wso.current_by_pledge_time )
+            w.by_pledge_scheduled_time = fc::uint128_t::max_value();
+      } );
+   }
+}
+
+void database::reset_witness_by_pledge_schedule()
+{
+   const witness_schedule_object& wso = witness_schedule_id_type()(*this);
+   modify( wso, [&](witness_schedule_object& o )
+   {
+       o.current_by_pledge_time = fc::uint128_t(); // reset it to 0
+   } );
+
+   const auto& idx = get_index_type<witness_index>().indices();
+   for( const auto& witness : idx )
+   {
+      modify( witness, [&]( witness_object& w )
+      {
+         w.by_pledge_position             = fc::uint128_t();
+         w.by_pledge_position_last_update = fc::uint128_t();
+         w.by_pledge_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.average_pledge + 1 );
+      } );
+   }
+}
+
+void database::reset_witness_by_vote_schedule()
+{
+   const witness_schedule_object& wso = witness_schedule_id_type()(*this);
+   modify( wso, [&](witness_schedule_object& o )
+   {
+       o.current_by_vote_time = fc::uint128_t(); // reset it to 0
+   } );
+
+   const auto& idx = get_index_type<witness_index>().indices();
+   for( const auto& witness : idx )
+   {
+      modify( witness, [&]( witness_object& w )
+      {
+         w.by_vote_position             = fc::uint128_t();
+         w.by_vote_position_last_update = fc::uint128_t();
+         w.by_vote_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.average_pledge + 1 );
+      } );
+   }
+}
+
 } }

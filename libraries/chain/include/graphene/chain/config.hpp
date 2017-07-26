@@ -119,6 +119,19 @@
 #define GRAPHENE_DEFAULT_MAX_CSAF_PER_ACCOUNT                 (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(100))
 #define GRAPHENE_DEFAULT_CSAF_ACCUMULATE_WINDOW               (60*60*24*7) // One week
 
+#define GRAPHENE_DEFAULT_MIN_WITNESS_PLEDGE                   (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000))
+//TODO changed for test. change back when use new genesis
+#define GRAPHENE_DEFAULT_MAX_WITNESS_PLEDGE_SECONDS           (60*30) // 30 minutes
+#define GRAPHENE_DEFAULT_WITNESS_AVG_PLEDGE_UPDATE_INTERVAL   100  // blocks,  5 minutes if 3 seconds per block
+#define GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY         300  // blocks, 15 minutes if 3 seconds per block
+/*
+#define GRAPHENE_DEFAULT_MAX_WITNESS_PLEDGE_SECONDS           (60*60*24*7) // One week
+#define GRAPHENE_DEFAULT_WITNESS_AVG_PLEDGE_UPDATE_INTERVAL   1200  // blocks, one hour if 3 seconds per block
+#define GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY         28800 // blocks, one day if 3 seconds per block
+*/
+
+#define GRAPHENE_VIRTUAL_LAP_LENGTH                           (fc::uint128_t::max_value())
+
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex
 #define GRAPHENE_NEAR_SCHEDULE_CTR_IV                    ( (uint64_t( 0x6a09 ) << 0x30)    \

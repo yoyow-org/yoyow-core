@@ -248,6 +248,12 @@ namespace graphene { namespace chain {
 
          void update_witness_schedule();
 
+         void update_witness_avg_pledge( const account_uid_type uid );
+         void update_witness_avg_pledge( const witness_object& wit );
+
+         void reset_witness_by_pledge_schedule();
+         void reset_witness_by_vote_schedule();
+
          //////////////////// db_getter.cpp ////////////////////
 
          const chain_id_type&                   get_chain_id()const;
@@ -274,6 +280,8 @@ namespace graphene { namespace chain {
          const account_object* find_account_by_uid( account_uid_type uid )const;
          const optional<account_id_type> find_account_id_by_uid( account_uid_type uid )const;
          const account_statistics_object& get_account_statistics_by_uid( account_uid_type uid )const;
+
+         const witness_object& get_witness_by_uid( account_uid_type uid )const;
 
          const platform_object& get_platform_by_pid( platform_pid_type pid )const;
 
