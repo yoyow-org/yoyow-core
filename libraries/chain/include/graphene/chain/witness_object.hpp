@@ -32,6 +32,11 @@ namespace graphene { namespace chain {
 
    class witness_object;
 
+   /**
+    * @brief This class represents a witness on the object graph
+    * @ingroup object
+    * @ingroup protocol
+    */
    class witness_object : public abstract_object<witness_object>
    {
       public:
@@ -74,6 +79,9 @@ namespace graphene { namespace chain {
    struct by_pledge_schedule;
    struct by_vote_schedule;
 
+   /**
+    * @ingroup object_index
+    */
    typedef multi_index_container<
       witness_object,
       indexed_by<
@@ -107,7 +115,64 @@ namespace graphene { namespace chain {
       >
    > witness_multi_index_type;
 
+   /**
+    * @ingroup object_index
+    */
    typedef generic_index<witness_object, witness_multi_index_type> witness_index;
+
+
+   /**
+    * @brief This class represents a witness voting on the object graph
+    * @ingroup object
+    * @ingroup protocol
+    */
+   class witness_vote_object : public graphene::db::abstract_object<witness_vote_object>
+   {
+      public:
+         static const uint8_t space_id = implementation_ids;
+         static const uint8_t type_id  = impl_witness_vote_object_type;
+
+         account_uid_type    voter_uid = 0;
+         uint32_t            voter_sequence;
+         account_uid_type    witness_uid = 0;
+         uint32_t            witness_sequence;
+   };
+
+   struct by_voter_seq;
+   struct by_witness_seq;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef multi_index_container<
+      witness_vote_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+         ordered_unique< tag<by_voter_seq>,
+            composite_key<
+               witness_vote_object,
+               member< witness_vote_object, account_uid_type, &witness_vote_object::voter_uid>,
+               member< witness_vote_object, uint32_t, &witness_vote_object::voter_sequence>,
+               member< witness_vote_object, account_uid_type, &witness_vote_object::witness_uid>,
+               member< witness_vote_object, uint32_t, &witness_vote_object::witness_sequence>
+            >
+         >,
+         ordered_unique< tag<by_witness_seq>,
+            composite_key<
+               witness_vote_object,
+               member< witness_vote_object, account_uid_type, &witness_vote_object::witness_uid>,
+               member< witness_vote_object, uint32_t, &witness_vote_object::witness_sequence>,
+               member< witness_vote_object, account_uid_type, &witness_vote_object::voter_uid>,
+               member< witness_vote_object, uint32_t, &witness_vote_object::voter_sequence>
+            >
+         >
+      >
+   > witness_vote_multi_index_type;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef generic_index<witness_vote_object, witness_vote_multi_index_type> witness_vote_index;
 
 } } // graphene::chain
 
@@ -132,4 +197,11 @@ FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (last_aslot)
                     (total_missed)
                     (url)
+                  )
+
+FC_REFLECT_DERIVED( graphene::chain::witness_vote_object, (graphene::db::object),
+                    (voter_uid)
+                    (voter_sequence)
+                    (witness_uid)
+                    (witness_sequence)
                   )

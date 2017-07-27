@@ -124,6 +124,15 @@ struct get_impacted_account_visitor
       // TODO review
       //_impacted.insert( op.witness_account );
    }
+   void operator()( const witness_vote_update_operation& op )
+   {
+      // TODO review
+   }
+   void operator()( const witness_vote_proxy_operation& op )
+   {
+      // TODO review
+   }
+
 
    void operator()( const proposal_create_operation& op )
    {
@@ -348,6 +357,12 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
               //const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
               //assert( aobj != nullptr );
               //accounts.insert( aobj->owner );
+              break;
+            } case impl_voter_object_type:{
+               // TODO review
+              break;
+            } case impl_witness_vote_object_type:{
+               // TODO review
               break;
             } case impl_csaf_lease_object_type:{
                // TODO review

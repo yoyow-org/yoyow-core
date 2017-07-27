@@ -50,4 +50,28 @@ namespace graphene { namespace chain {
          const witness_object* witness_obj = nullptr;
    };
 
+   class witness_vote_update_evaluator : public evaluator<witness_vote_update_evaluator>
+   {
+      public:
+         typedef witness_vote_update_operation operation_type;
+
+         void_result do_evaluate( const witness_vote_update_operation& o );
+         void_result do_apply( const witness_vote_update_operation& o );
+
+         const account_statistics_object* account_stats = nullptr;
+         const voter_object* voter_obj = nullptr;
+   };
+
+   class witness_vote_proxy_evaluator : public evaluator<witness_vote_proxy_evaluator>
+   {
+      public:
+         typedef witness_vote_proxy_operation operation_type;
+
+         void_result do_evaluate( const witness_vote_proxy_operation& o );
+         void_result do_apply( const witness_vote_proxy_operation& o );
+
+         const account_statistics_object* account_stats = nullptr;
+         const voter_object* voter_obj = nullptr;
+   };
+
 } } // graphene::chain

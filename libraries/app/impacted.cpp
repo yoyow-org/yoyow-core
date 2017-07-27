@@ -106,6 +106,21 @@ struct get_impacted_account_uid_visitor
       //_impacted.insert( op.witness_account );
    }
 
+   void operator()( const witness_vote_update_operation& op )
+   {
+      //_impacted.insert( op.voter );
+      for( auto uid : op.witnesses_to_add )
+         _impacted.insert( uid );
+      for( auto uid : op.witnesses_to_remove )
+         _impacted.insert( uid );
+   }
+
+   void operator()( const witness_vote_proxy_operation& op )
+   {
+      //_impacted.insert( op.voter );
+      _impacted.insert( op.proxy );
+   }
+
    /*
    void operator()( const asset_claim_fees_operation& op ){}
    void operator()( const limit_order_create_operation& op ) {}
@@ -366,6 +381,15 @@ struct get_impacted_account_visitor
       // TODO review
       //_impacted.insert( op.witness_account );
    }
+   void operator()( const witness_vote_update_operation& op )
+   {
+      // TODO review
+   }
+   void operator()( const witness_vote_proxy_operation& op )
+   {
+      // TODO review
+   }
+
 
    void operator()( const proposal_create_operation& op )
    {

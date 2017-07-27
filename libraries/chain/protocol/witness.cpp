@@ -44,4 +44,42 @@ void witness_update_operation::validate() const
       FC_ASSERT( new_url->size() < GRAPHENE_MAX_URL_LENGTH, "new url is too long" );
 }
 
+share_type witness_vote_update_operation::calculate_fee( const fee_parameters_type& k )const
+{
+   auto core_fee_required = k.basic_fee;
+
+   auto total_size = witnesses_to_add.size() + witnesses_to_remove.size();
+   core_fee_required += ( k.price_per_witness * total_size );
+
+   return core_fee_required;
+}
+
+void witness_vote_update_operation::validate() const
+{
+   validate_op_fee( fee, "witness vote update " );
+   validate_account_uid( voter, "voter " );
+   auto itr_add = witnesses_to_add.begin();
+   auto itr_remove = witnesses_to_remove.begin();
+   while( itr_add != witnesses_to_add.end() && itr_remove != witnesses_to_remove.end() )
+   {
+      FC_ASSERT( *itr_add != *itr_remove, "Can not add and remove same witness, uid: ${w}", ("w",*itr_add) );
+      if( *itr_add < *itr_remove )
+         ++itr_add;
+      else
+         ++itr_remove;
+   }
+   for( const auto uid : witnesses_to_add )
+      validate_account_uid( uid, "witness " );
+   for( const auto uid : witnesses_to_remove )
+      validate_account_uid( uid, "witness " );
+   // can change nothing to only refresh last_vote_update_time
+}
+
+void witness_vote_proxy_operation::validate() const
+{
+   validate_op_fee( fee, "witness vote proxy " );
+   validate_account_uid( voter, "voter " );
+   validate_account_uid( proxy, "proxy " );
+}
+
 } } // graphene::chain

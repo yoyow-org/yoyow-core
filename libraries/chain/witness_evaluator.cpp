@@ -210,4 +210,44 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
+void_result witness_vote_update_evaluator::do_evaluate( const witness_vote_update_operation& op )
+{ try {
+   database& d = db();
+   //account_stats = &d.get_account_statistics_by_uid( op.witness_account );
+   //witness_obj   = &d.get_witness_by_uid( op.witness_account );
+
+   const auto& global_params = d.get_global_properties().parameters;
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result witness_vote_update_evaluator::do_apply( const witness_vote_update_operation& op )
+{ try {
+   database& d = db();
+
+   const auto& global_params = d.get_global_properties().parameters;
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result witness_vote_proxy_evaluator::do_evaluate( const witness_vote_proxy_operation& op )
+{ try {
+   database& d = db();
+   //account_stats = &d.get_account_statistics_by_uid( op.witness_account );
+   //witness_obj   = &d.get_witness_by_uid( op.witness_account );
+
+   const auto& global_params = d.get_global_properties().parameters;
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result witness_vote_proxy_evaluator::do_apply( const witness_vote_proxy_operation& op )
+{ try {
+   database& d = db();
+
+   const auto& global_params = d.get_global_properties().parameters;
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
 } } // graphene::chain

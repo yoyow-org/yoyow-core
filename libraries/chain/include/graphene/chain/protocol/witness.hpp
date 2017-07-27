@@ -98,6 +98,70 @@ namespace graphene { namespace chain {
       }
    };
 
+  /**
+    * @brief Change or refresh witness voting status.
+    * @ingroup operations
+    */
+   struct witness_vote_update_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t basic_fee         = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t price_per_witness = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee      = 0;
+         uint16_t min_rf_percent    = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type                   fee;
+      /// The account which vote for witnesses. This account pays the fee for this operation.
+      account_uid_type           voter;
+      flat_set<account_uid_type> witnesses_to_add;
+      flat_set<account_uid_type> witnesses_to_remove;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return voter; }
+      void              validate()const;
+      share_type        calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority
+         a.insert( voter );
+      }
+   };
+
+  /**
+    * @brief Change or refresh witness voting proxy.
+    * @ingroup operations
+    */
+   struct witness_vote_proxy_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type                   fee;
+      /// The account which vote for witnesses. This account pays the fee for this operation.
+      account_uid_type           voter;
+      account_uid_type           proxy;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return voter; }
+      void              validate()const;
+      //share_type      calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority
+         a.insert( voter );
+      }
+   };
+
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::witness_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
@@ -105,3 +169,10 @@ FC_REFLECT( graphene::chain::witness_create_operation, (fee)(witness_account)(bl
 
 FC_REFLECT( graphene::chain::witness_update_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::witness_update_operation, (fee)(witness_account)(new_signing_key)(new_pledge)(new_url)(extensions) )
+
+FC_REFLECT( graphene::chain::witness_vote_update_operation::fee_parameters_type,
+            (basic_fee)(price_per_witness)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::witness_vote_update_operation, (fee)(voter)(witnesses_to_add)(witnesses_to_remove)(extensions) )
+
+FC_REFLECT( graphene::chain::witness_vote_proxy_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::witness_vote_proxy_operation, (fee)(voter)(proxy)(extensions) )

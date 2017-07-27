@@ -201,6 +201,16 @@ struct operation_get_required_uid_auth
       do_get_with_extended_fee(v);
    }
 
+   void operator()( const witness_vote_update_operation& v )const
+   {
+      do_get_with_extended_fee(v);
+   }
+
+   void operator()( const witness_vote_proxy_operation& v )const
+   {
+      do_get_with_extended_fee(v);
+   }
+
    template<typename T>
    void operator()( const T& v )const
    {

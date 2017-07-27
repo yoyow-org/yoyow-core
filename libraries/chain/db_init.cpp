@@ -100,6 +100,9 @@ const uint8_t call_order_object::type_id;
 const uint8_t committee_member_object::space_id;
 const uint8_t committee_member_object::type_id;
 
+const uint8_t csaf_lease_object::space_id;
+const uint8_t csaf_lease_object::type_id;
+
 const uint8_t force_settlement_object::space_id;
 const uint8_t force_settlement_object::type_id;
 
@@ -127,11 +130,17 @@ const uint8_t transaction_object::type_id;
 const uint8_t vesting_balance_object::space_id;
 const uint8_t vesting_balance_object::type_id;
 
+const uint8_t voter_object::space_id;
+const uint8_t voter_object::type_id;
+
 const uint8_t withdraw_permission_object::space_id;
 const uint8_t withdraw_permission_object::type_id;
 
 const uint8_t witness_object::space_id;
 const uint8_t witness_object::type_id;
+
+const uint8_t witness_vote_object::space_id;
+const uint8_t witness_vote_object::type_id;
 
 const uint8_t worker_object::space_id;
 const uint8_t worker_object::type_id;
@@ -177,6 +186,8 @@ void database::initialize_evaluators()
    register_evaluator<vesting_balance_withdraw_evaluator>();
    register_evaluator<witness_create_evaluator>();
    register_evaluator<witness_update_evaluator>();
+   register_evaluator<witness_vote_update_evaluator>();
+   register_evaluator<witness_vote_proxy_evaluator>();
    register_evaluator<withdraw_permission_create_evaluator>();
    register_evaluator<withdraw_permission_claim_evaluator>();
    register_evaluator<withdraw_permission_update_evaluator>();
@@ -226,6 +237,8 @@ void database::initialize_indexes()
    add_index< primary_index<simple_index<global_property_object          >> >();
    add_index< primary_index<simple_index<dynamic_global_property_object  >> >();
    add_index< primary_index<account_statistics_index                      > >();
+   add_index< primary_index<voter_index                                   > >();
+   add_index< primary_index<witness_vote_index                            > >();
    add_index< primary_index<csaf_lease_index                              > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();
    add_index< primary_index<flat_index<  block_summary_object            >> >();

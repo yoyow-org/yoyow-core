@@ -60,6 +60,8 @@ namespace graphene { namespace chain {
             account_update_auth_operation,
             witness_create_operation,
             witness_update_operation,
+            witness_vote_update_operation,
+            witness_vote_proxy_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
             call_order_update_operation,

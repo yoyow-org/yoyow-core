@@ -149,6 +149,11 @@ namespace graphene { namespace chain {
           */
          share_type uncollected_witness_pay;
 
+         /**
+          * how many times have this account became a voter
+          */
+         uint32_t last_voter_sequence = 0;
+
          /// @brief Split up and pay out @ref pending_fees and @ref pending_vested_fees
          void process_fees(const account_object& a, database& d) const;
 
@@ -377,6 +382,39 @@ namespace graphene { namespace chain {
    };
 
    /**
+    * @brief This class represents a voting account on the object graph
+    * @ingroup object
+    * @ingroup protocol
+    */
+   class voter_object : public graphene::db::abstract_object<voter_object>
+   {
+      public:
+         static const uint8_t space_id = implementation_ids;
+         static const uint8_t type_id  = impl_voter_object_type;
+
+         /// The account's uid. This uid must be unique among all account uids.
+         account_uid_type    uid = 0;
+         uint32_t            sequence;
+         bool                is_valid = true;
+
+         uint64_t            votes = 0;
+         fc::time_point_sec  votes_last_update;
+
+         uint64_t            effective_votes = 0;
+         fc::time_point_sec  effective_votes_last_update;
+         uint32_t            effective_votes_next_update_block;
+
+         uint32_t            last_vote_block;
+
+         account_uid_type    proxy_uid = 0;
+         uint32_t            proxy_sequence;
+
+         vector<uint64_t>    proxied_votes;
+
+         uint16_t            number_of_witnesses_voted;
+   };
+
+   /**
     *  @brief This secondary index will allow a reverse lookup of all accounts that a particular key or account
     *  is an potential signing authority.
     */
@@ -461,8 +499,8 @@ namespace graphene { namespace chain {
     */
    typedef generic_index<account_balance_object, account_balance_object_multi_index_type> account_balance_index;
 
-   struct by_name{};
-   struct by_uid{};
+   struct by_name;
+   struct by_uid;
 
    /**
     * @ingroup object_index
@@ -480,6 +518,60 @@ namespace graphene { namespace chain {
     * @ingroup object_index
     */
    typedef generic_index<account_object, account_multi_index_type> account_index;
+
+
+   struct by_uid_seq;
+   struct by_votes_next_update;
+   struct by_last_vote;
+   struct by_proxy;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef multi_index_container<
+      voter_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+         ordered_unique< tag<by_uid_seq>,
+            composite_key<
+               voter_object,
+               member< voter_object, account_uid_type, &voter_object::uid>,
+               member< voter_object, uint32_t, &voter_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_votes_next_update>,
+            composite_key<
+               voter_object,
+               member< voter_object, uint32_t, &voter_object::effective_votes_next_update_block>,
+               member< voter_object, account_uid_type, &voter_object::uid>,
+               member< voter_object, uint32_t, &voter_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_last_vote>,
+            composite_key<
+               voter_object,
+               member< voter_object, uint32_t, &voter_object::last_vote_block>,
+               member< voter_object, account_uid_type, &voter_object::uid>,
+               member< voter_object, uint32_t, &voter_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_proxy>,
+            composite_key<
+               voter_object,
+               member< voter_object, account_uid_type, &voter_object::proxy_uid>,
+               member< voter_object, uint32_t, &voter_object::proxy_sequence>,
+               member< voter_object, account_uid_type, &voter_object::uid>,
+               member< voter_object, uint32_t, &voter_object::sequence>
+            >
+         >
+      >
+   > voter_multi_index_type;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef generic_index<voter_object, voter_multi_index_type> voter_index;
+
 
    struct by_witness_pledge_release;
 
@@ -526,6 +618,18 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     //(allowed_assets)
                   )
 
+FC_REFLECT_DERIVED( graphene::chain::voter_object,
+                    (graphene::db::object),
+                    (uid)(sequence)
+                    (is_valid)
+                    (votes)(votes_last_update)
+                    (effective_votes)(effective_votes_last_update)(effective_votes_next_update_block)
+                    (last_vote_block)
+                    (proxy_uid)(proxy_sequence)
+                    (proxied_votes)
+                    (number_of_witnesses_voted)
+                  )
+
 FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (graphene::db::object),
                     (owner)(asset_type)(balance) )
@@ -544,5 +648,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                     (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
                     (last_witness_sequence)(uncollected_witness_pay)
+                    (last_voter_sequence)
                   )
 
