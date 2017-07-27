@@ -495,4 +495,32 @@ void database::clear_expired_csaf_leases()
    }
 }
 
+void database::update_average_witness_pledges()
+{
+   const auto head_num = head_block_num();
+   const auto& idx = get_index_type<witness_index>().indices().get<by_pledge_next_update>();
+   auto itr = idx.begin();
+   while( itr != idx.end() && itr->average_pledge_next_update_block <= head_num )
+   {
+      update_witness_avg_pledge( *itr );
+      itr = idx.begin();
+   }
+}
+
+void database::release_witness_pledges()
+{
+   const auto head_num = head_block_num();
+   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_witness_pledge_release>();
+   auto itr = idx.begin();
+   while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
+   {
+      modify( *itr, [&](account_statistics_object& s) {
+         s.total_witness_pledge -= s.releasing_witness_pledge;
+         s.releasing_witness_pledge = 0;
+         s.witness_pledge_release_block_number = -1;
+      });
+      itr = idx.begin();
+   }
+}
+
 } }

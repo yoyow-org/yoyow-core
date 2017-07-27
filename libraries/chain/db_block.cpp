@@ -534,6 +534,8 @@ void database::_apply_block( const signed_block& next_block )
 
    dlog("after update_withdraw_permissions");
    clear_expired_csaf_leases();
+   update_average_witness_pledges();
+   release_witness_pledges();
 
    dlog("before update_maintenance_flag");
    // n.b., update_maintenance_flag() happens this late

@@ -469,6 +469,8 @@ namespace graphene { namespace chain {
          void update_maintenance_flag( bool new_maintenance_flag );
          void update_withdraw_permissions();
          void clear_expired_csaf_leases();
+         void update_average_witness_pledges();
+         void release_witness_pledges();
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true );
 
          ///Steps performed only at maintenance intervals
