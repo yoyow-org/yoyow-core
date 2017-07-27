@@ -99,10 +99,11 @@ void_result csaf_lease_evaluator::do_evaluate( const csaf_lease_operation& op )
 
    if( delta > 0 )
    {
-      FC_ASSERT( from_stats->core_balance - from_stats->core_leased_out >= delta,
+      auto available_balance = from_stats->core_balance - from_stats->core_leased_out - from_stats->total_witness_pledge;
+      FC_ASSERT( available_balance >= delta,
                  "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                  ("a",op.from)
-                 ("b",d.to_pretty_core_string(from_stats->core_balance - from_stats->core_leased_out))
+                 ("b",d.to_pretty_core_string(available_balance))
                  ("r",d.to_pretty_core_string(delta)) );
    }
 
@@ -132,7 +133,7 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
       });
       return_result = current_lease->id;
    }
-   else
+   else // o.amount.amount == 0
    {
       return_result = current_lease->id;
       d.remove( *current_lease );
