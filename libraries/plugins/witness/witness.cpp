@@ -181,7 +181,7 @@ block_production_condition::block_production_condition_enum witness_plugin::bloc
    switch( result )
    {
       case block_production_condition::produced:
-         ilog("Generated block #${n} with timestamp ${t} at time ${c} by ${w}", (capture));
+         ilog("Generated block #${n} ${bid} with timestamp ${t} at time ${c} by ${w}", (capture));
          break;
       case block_production_condition::not_synced:
          ilog("Not producing block because production is disabled until we receive a recent block (see: --enable-stale-production)");
@@ -193,7 +193,7 @@ block_production_condition::block_production_condition_enum witness_plugin::bloc
          //ilog("Not producing block because slot has not yet arrived");
          break;
       case block_production_condition::no_private_key:
-         ilog("Not producing block because I don't have the private key for ${scheduled_key}", (capture) );
+         ilog("Not producing block for ${w} because I don't have the private key for ${scheduled_key}", (capture) );
          break;
       case block_production_condition::low_participation:
          elog("Not producing block because node appears to be on a minority fork with only ${pct}% witness participation", (capture) );
@@ -260,7 +260,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
 
    if( private_key_itr == _private_keys.end() )
    {
-      capture("scheduled_key", scheduled_key);
+      capture("w", scheduled_witness)("scheduled_key", scheduled_key);
       return block_production_condition::no_private_key;
    }
 
@@ -283,7 +283,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
       private_key_itr->second,
       _production_skip_flags
       );
-   capture("n", block.block_num())("t", block.timestamp)("c", now)("w",scheduled_witness);
+   capture("n", block.block_num())("t", block.timestamp)("c", now)("w",scheduled_witness)("bid",block.id());
    fc::async( [this,block](){ p2p_node().broadcast(net::block_message(block)); } );
 
    return block_production_condition::produced;
