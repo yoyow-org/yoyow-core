@@ -477,16 +477,17 @@ void database::update_withdraw_permissions()
 void database::clear_expired_csaf_leases()
 {
    const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-   auto& idx = get_index_type<csaf_lease_index>().indices().get<by_expiration>();
+   const auto head_time = head_block_time();
+   const auto& idx = get_index_type<csaf_lease_index>().indices().get<by_expiration>();
    auto itr = idx.begin();
-   while( itr != idx.end() && itr->expiration <= head_block_time() )
+   while( itr != idx.end() && itr->expiration <= head_time )
    {
       modify( get_account_statistics_by_uid( itr->from ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned( csaf_window, head_block_time() );
+         s.update_coin_seconds_earned( csaf_window, head_time );
          s.core_leased_out -= itr->amount;
       });
       modify( get_account_statistics_by_uid( itr->to ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned( csaf_window, head_block_time() );
+         s.update_coin_seconds_earned( csaf_window, head_time );
          s.core_leased_in -= itr->amount;
       });
       remove( *itr );
