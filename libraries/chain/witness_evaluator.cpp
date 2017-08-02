@@ -51,6 +51,9 @@ void_result witness_create_evaluator::do_evaluate( const witness_create_operatio
               ("b",d.to_pretty_core_string(available_balance))
               ("r",d.to_pretty_string(op.pledge)) );
 
+   const witness_object* maybe_found = d.find_witness_by_uid( op.witness_account );
+   FC_ASSERT( maybe_found == nullptr, "This account is already a witness" );
+
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -63,6 +66,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    const auto& new_witness_object = d.create<witness_object>( [&]( witness_object& wit ){
       wit.witness_account     = op.witness_account;
       wit.sequence            = account_stats->last_witness_sequence + 1;
+      //wit.is_valid            = true; // default
       wit.signing_key         = op.block_signing_key;
       wit.pledge              = op.pledge.amount.value;
       wit.pledge_last_update  = d.head_block_time();
@@ -71,7 +75,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
       wit.average_pledge_last_update       = d.head_block_time();
       if( wit.pledge > 0 )
          wit.average_pledge_next_update_block = d.head_block_num() + global_params.witness_avg_pledge_update_interval;
-      else
+      else // init witnesses
          wit.average_pledge_next_update_block = -1;
 
       wit.url                 = op.url;
@@ -157,8 +161,12 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          s.releasing_witness_pledge = s.total_witness_pledge;
          s.witness_pledge_release_block_number = d.head_block_num() + global_params.witness_pledge_release_delay;
       });
-      d.remove( *witness_obj );
-      // TODO remove votes
+      d.modify( *witness_obj, [&]( witness_object& wit ) {
+         wit.is_valid = false; // will be processed later
+         wit.average_pledge_next_update_block = -1;
+         wit.by_pledge_scheduled_time = fc::uint128_t::max_value();
+         wit.by_vote_scheduled_time = fc::uint128_t::max_value();
+      });
    }
    else // change pledge
    {
@@ -213,10 +221,102 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
 void_result witness_vote_update_evaluator::do_evaluate( const witness_vote_update_operation& op )
 { try {
    database& d = db();
-   //account_stats = &d.get_account_statistics_by_uid( op.witness_account );
-   //witness_obj   = &d.get_witness_by_uid( op.witness_account );
+   account_stats = &d.get_account_statistics_by_uid( op.voter );
 
    const auto& global_params = d.get_global_properties().parameters;
+   FC_ASSERT( account_stats->core_balance >= global_params.min_governance_voting_balance,
+              "Need more balance to be able to vote: have ${b}, need ${r}",
+              ("b",d.to_pretty_core_string(account_stats->core_balance))
+              ("r",d.to_pretty_core_string(global_params.min_governance_voting_balance)) );
+
+   const auto max_witnesses = global_params.max_witnesses_voted_per_account;
+   FC_ASSERT( op.witnesses_to_add.size() <= max_witnesses,
+              "Trying to vote for ${n} witnesses, more than allowed maximum: ${m}",
+              ("n",op.witnesses_to_add.size())("m",max_witnesses) );
+
+   for( const auto uid : op.witnesses_to_remove )
+   {
+      const witness_object& wit = d.get_witness_by_uid( uid );
+      witnesses_to_remove.push_back( &wit );
+   }
+   for( const auto uid : op.witnesses_to_add )
+   {
+      const witness_object& wit = d.get_witness_by_uid( uid );
+      witnesses_to_add.push_back( &wit );
+   }
+
+   if( account_stats->is_voter ) // maybe valid voter
+   {
+      voter_obj = d.find_voter( op.voter, account_stats->last_voter_sequence );
+      FC_ASSERT( voter_obj != nullptr, "voter should exist" );
+
+      // check if the voter is still valid
+      bool still_valid = d.check_voter_valid( *voter_obj, true );
+      if( !still_valid )
+      {
+         invalid_voter_obj = voter_obj;
+         voter_obj = nullptr;
+      }
+   }
+   // else do nothing
+
+   if( voter_obj == nullptr ) // not voting
+      FC_ASSERT( op.witnesses_to_remove.empty(), "Not voting for any witness, or votes were no longer valid, can not remove" );
+   else if( voter_obj->proxy_uid != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID ) // voting with a proxy
+   {
+      // check if the proxy is still valid
+      const voter_object* current_proxy_voter_obj = d.find_voter( voter_obj->proxy_uid, voter_obj->proxy_sequence );
+      FC_ASSERT( current_proxy_voter_obj != nullptr, "proxy voter should exist" );
+      bool current_proxy_still_valid = d.check_voter_valid( *current_proxy_voter_obj, true );
+      if( current_proxy_still_valid ) // still valid
+         FC_ASSERT( op.witnesses_to_remove.empty() && op.witnesses_to_add.empty(),
+                    "Now voting with a proxy, can not add or remove witness" );
+      else // no longer valid
+      {
+         invalid_current_proxy_voter_obj = current_proxy_voter_obj;
+         FC_ASSERT( op.witnesses_to_remove.empty(),
+                    "Was voting with a proxy but it is now invalid, so not voting for any witness, can not remove" );
+      }
+   }
+   else // voting by self
+   {
+      // check for voted witnesses whom have became invalid
+      uint16_t witnesses_voted = voter_obj->number_of_witnesses_voted;
+      const auto& idx = d.get_index_type<witness_vote_index>().indices().get<by_voter_seq>();
+      auto itr = idx.lower_bound( std::make_tuple( op.voter, voter_obj->sequence ) );
+      while( itr != idx.end() && itr->voter_uid == op.voter && itr->voter_sequence == voter_obj->sequence )
+      {
+         const witness_object* witness = d.find_witness_by_uid( itr->witness_uid );
+         if( witness == nullptr || witness->sequence != itr->witness_sequence )
+         {
+            invalid_witness_votes_to_remove.push_back( &(*itr) );
+            --witnesses_voted;
+         }
+         ++itr;
+      }
+
+      FC_ASSERT( op.witnesses_to_remove.size() <= witnesses_voted,
+                 "Trying to remove ${n} witnesses, more than voted: ${m}",
+                 ("n",op.witnesses_to_remove.size())("m",witnesses_voted) );
+      uint16_t new_total = witnesses_voted - op.witnesses_to_remove.size() + op.witnesses_to_add.size();
+      FC_ASSERT( new_total <= max_witnesses,
+                 "Trying to vote for ${n} witnesses, more than allowed maximum: ${m}",
+                 ("n",new_total)("m",max_witnesses) );
+
+      for( const auto& wit : witnesses_to_remove )
+      {
+         const witness_vote_object* wit_vote = d.find_witness_vote( op.voter, voter_obj->sequence,
+                                                                    wit->witness_account, wit->sequence );
+         FC_ASSERT( wit_vote != nullptr, "Not voting for witness ${w}, can not remove", ("w",wit->witness_account) );
+         witness_votes_to_remove.push_back( wit_vote );
+      }
+      for( const auto& wit : witnesses_to_add )
+      {
+         const witness_vote_object* wit_vote = d.find_witness_vote( op.voter, voter_obj->sequence,
+                                                                    wit->witness_account, wit->sequence );
+         FC_ASSERT( wit_vote == nullptr, "Already voting for witness ${w}, can not add", ("w",wit->witness_account) );
+      }
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -224,8 +324,103 @@ void_result witness_vote_update_evaluator::do_evaluate( const witness_vote_updat
 void_result witness_vote_update_evaluator::do_apply( const witness_vote_update_operation& op )
 { try {
    database& d = db();
-
+   const auto head_block_time = d.head_block_time();
+   const auto head_block_num  = d.head_block_num();
    const auto& global_params = d.get_global_properties().parameters;
+   const auto max_level = global_params.max_governance_voting_proxy_level;
+
+   if( invalid_current_proxy_voter_obj != nullptr )
+      d.invalidate_voter( *invalid_current_proxy_voter_obj );
+
+   if( invalid_voter_obj != nullptr )
+      d.invalidate_voter( *invalid_voter_obj );
+
+   share_type total_votes = 0;
+   if( voter_obj != nullptr ) // voter already exists
+   {
+      // clear proxy votes
+      if( invalid_current_proxy_voter_obj != nullptr )
+      {
+         d.clear_voter_proxy_votes( *voter_obj );
+         // update proxy
+         d.modify( *invalid_current_proxy_voter_obj, [&](voter_object& v) {
+            v.proxied_voters -= 1;
+         });
+      }
+
+      // remove invalid witness votes
+      for( const auto& wit_vote : invalid_witness_votes_to_remove )
+         d.remove( *wit_vote );
+
+      // remove requested witness votes
+      total_votes = voter_obj->total_votes();
+      const size_t total_remove = witnesses_to_remove.size();
+      for( uint16_t i = 0; i < total_remove; ++i )
+      {
+         d.adjust_witness_votes( *witnesses_to_remove[i], -total_votes );
+         d.remove( *witness_votes_to_remove[i] );
+      }
+
+      d.modify( *voter_obj, [&](voter_object& v) {
+         // update voter proxy to self
+         if( invalid_current_proxy_voter_obj != nullptr )
+         {
+            v.proxy_uid      = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
+            v.proxy_sequence = 0;
+         }
+         v.proxy_last_vote_block[0]  = head_block_num;
+         v.effective_last_vote_block = head_block_num;
+         v.number_of_witnesses_voted = v.number_of_witnesses_voted
+                                     - invalid_witness_votes_to_remove.size()
+                                     - witnesses_to_remove.size()
+                                     + witnesses_to_add.size();
+      });
+   }
+   else // need to create a new voter object for this account
+   {
+      d.modify( *account_stats, [&](account_statistics_object& s) {
+         s.is_voter = true;
+         s.last_voter_sequence += 1;
+      });
+
+      voter_obj = &d.create<voter_object>( [&]( voter_object& v ){
+         v.uid               = op.voter;
+         v.sequence          = account_stats->last_voter_sequence;
+         //v.is_valid          = true; // default
+         v.votes             = account_stats->core_balance.value;
+         v.votes_last_update = head_block_time;
+
+         //v.effective_votes                 = 0; // default
+         v.effective_votes_last_update       = head_block_time;
+         v.effective_votes_next_update_block = head_block_num + global_params.governance_votes_update_interval;
+
+         v.proxy_uid         = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
+         // v.proxy_sequence = 0; // default
+
+         //v.proxied_voters    = 0; // default
+         v.proxied_votes.resize( max_level, 0 ); // [ level1, level2, ... ]
+         v.proxy_last_vote_block.resize( max_level+1, 0 ); // [ self, proxy, proxy->proxy, ... ]
+         v.proxy_last_vote_block[0] = head_block_num;
+
+         v.effective_last_vote_block         = head_block_num;
+
+         v.number_of_witnesses_voted         = witnesses_to_add.size();
+      });
+   }
+
+   // add requested witness votes
+   const size_t total_add = witnesses_to_add.size();
+   for( uint16_t i = 0; i < total_add; ++i )
+   {
+      d.create<witness_vote_object>( [&]( witness_vote_object& o ){
+         o.voter_uid        = op.voter;
+         o.voter_sequence   = voter_obj->sequence;
+         o.witness_uid      = witnesses_to_add[i]->witness_account;
+         o.witness_sequence = witnesses_to_add[i]->sequence;
+      });
+      if( total_votes > 0 )
+         d.adjust_witness_votes( *witnesses_to_add[i], total_votes );
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -233,10 +428,75 @@ void_result witness_vote_update_evaluator::do_apply( const witness_vote_update_o
 void_result witness_vote_proxy_evaluator::do_evaluate( const witness_vote_proxy_operation& op )
 { try {
    database& d = db();
-   //account_stats = &d.get_account_statistics_by_uid( op.witness_account );
-   //witness_obj   = &d.get_witness_by_uid( op.witness_account );
+   account_stats = &d.get_account_statistics_by_uid( op.voter );
 
    const auto& global_params = d.get_global_properties().parameters;
+   FC_ASSERT( account_stats->core_balance >= global_params.min_governance_voting_balance,
+              "Need more balance to be able to vote: have ${b}, need ${r}",
+              ("b",d.to_pretty_core_string(account_stats->core_balance))
+              ("r",d.to_pretty_core_string(global_params.min_governance_voting_balance)) );
+
+   if( op.proxy != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
+   {
+      const auto& proxy_account_stats = d.get_account_statistics_by_uid( op.proxy );
+      FC_ASSERT( proxy_account_stats.is_voter, "Proxy should already be a voter" );
+
+      proxy_voter_obj = d.find_voter( op.proxy, proxy_account_stats.last_voter_sequence );
+      FC_ASSERT( proxy_voter_obj != nullptr, "proxy voter should exist" );
+
+      bool proxy_still_valid = d.check_voter_valid( *proxy_voter_obj, true );
+      FC_ASSERT( proxy_still_valid, "proxy voter should still be valid" );
+   }
+
+   if( account_stats->is_voter ) // maybe valid voter
+   {
+      voter_obj = d.find_voter( op.voter, account_stats->last_voter_sequence );
+      FC_ASSERT( voter_obj != nullptr, "voter should exist" );
+
+      // check if the voter is still valid
+      bool still_valid = d.check_voter_valid( *voter_obj, true );
+      if( !still_valid )
+      {
+         invalid_voter_obj = voter_obj;
+         voter_obj = nullptr;
+      }
+   }
+   // else do nothing
+
+   if( voter_obj == nullptr || voter_obj->proxy_uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
+      FC_ASSERT( op.proxy != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID,
+                 "Already voting by self, or was voting with a proxy but the proxy is no longer valid" );
+   else
+   {
+      current_proxy_voter_obj = d.find_voter( voter_obj->proxy_uid, voter_obj->proxy_sequence );
+      FC_ASSERT( current_proxy_voter_obj != nullptr, "proxy voter should exist" );
+      bool current_proxy_still_valid = d.check_voter_valid( *current_proxy_voter_obj, true );
+      if( !current_proxy_still_valid )
+      {
+         FC_ASSERT( op.proxy != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID,
+                    "Already voting by self, or was voting with a proxy but the proxy is no longer valid" );
+         invalid_current_proxy_voter_obj = current_proxy_voter_obj;
+         current_proxy_voter_obj = nullptr;
+      }
+      else // current proxy is still valid
+         FC_ASSERT( op.proxy != voter_obj->proxy_uid, "Should change something" );
+   }
+
+   // check for proxy loop
+   if( voter_obj != nullptr && proxy_voter_obj != nullptr )
+   {
+      const auto max_level = global_params.max_governance_voting_proxy_level;
+      const voter_object* new_proxy = proxy_voter_obj;
+      for( uint8_t level = 0; level < max_level && new_proxy->proxy_uid != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID; ++level )
+      {
+         FC_ASSERT( new_proxy->proxy_uid != voter_obj->uid || new_proxy->proxy_sequence != voter_obj->sequence,
+                    "Proxy loop detected." );
+         if( level + 1 >= max_level )
+            break;
+         new_proxy = d.find_voter( new_proxy->proxy_uid, new_proxy->proxy_sequence );
+         FC_ASSERT( new_proxy != nullptr, "proxy voter should exist" );
+      }
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -244,8 +504,97 @@ void_result witness_vote_proxy_evaluator::do_evaluate( const witness_vote_proxy_
 void_result witness_vote_proxy_evaluator::do_apply( const witness_vote_proxy_operation& op )
 { try {
    database& d = db();
-
+   const auto head_block_time = d.head_block_time();
+   const auto head_block_num  = d.head_block_num();
    const auto& global_params = d.get_global_properties().parameters;
+   const auto max_level = global_params.max_governance_voting_proxy_level;
+
+   if( invalid_current_proxy_voter_obj != nullptr )
+      d.invalidate_voter( *invalid_current_proxy_voter_obj );
+
+   if( invalid_voter_obj != nullptr )
+      d.invalidate_voter( *invalid_voter_obj );
+
+   if( voter_obj != nullptr ) // voter already exists
+   {
+      // clear current votes
+      d.clear_voter_votes( *voter_obj );
+      // deal with current proxy
+      if( current_proxy_voter_obj != nullptr ) // current proxy is still valid
+      {
+         d.modify( *current_proxy_voter_obj, [&](voter_object& v) {
+            v.proxied_voters -= 1;
+         });
+      }
+      // setup new proxy
+      if( op.proxy == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID ) // self
+      {
+         d.modify( *voter_obj, [&](voter_object& v) {
+            v.proxy_uid                 = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
+            v.proxy_sequence            = 0;
+            v.proxy_last_vote_block[0]  = head_block_num;
+            v.effective_last_vote_block = head_block_num;
+         });
+      }
+      else // proxy to a voter
+      {
+         d.modify( *voter_obj, [&](voter_object& v) {
+            v.proxy_uid                 = op.proxy;
+            v.proxy_sequence            = proxy_voter_obj->sequence;
+            v.proxy_last_vote_block[0]  = head_block_num;
+            v.effective_last_vote_block = head_block_num;
+         });
+
+         // proxied votes
+         vector<share_type> delta( max_level ); // [ self, proxied_level1, proxied_level2, ... ]
+         delta[0] = voter_obj->effective_votes;
+         for( uint8_t i = 1; i < max_level; ++i )
+         {
+            delta[i] = voter_obj->proxied_votes[i-1];
+         }
+         d.adjust_voter_proxy_votes( *voter_obj, delta, false );
+      }
+   }
+   else // need to create a new voter object for this account
+   {
+      d.modify( *account_stats, [&](account_statistics_object& s) {
+         s.is_voter = true;
+         s.last_voter_sequence += 1;
+      });
+
+      voter_obj = &d.create<voter_object>( [&]( voter_object& v ){
+         v.uid               = op.voter;
+         v.sequence          = account_stats->last_voter_sequence;
+         //v.is_valid          = true; // default
+         v.votes             = account_stats->core_balance.value;
+         v.votes_last_update = head_block_time;
+
+         //v.effective_votes                 = 0; // default
+         v.effective_votes_last_update       = head_block_time;
+         v.effective_votes_next_update_block = head_block_num + global_params.governance_votes_update_interval;
+
+         v.proxy_uid         = op.proxy;
+         if( op.proxy != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
+            v.proxy_sequence = proxy_voter_obj->sequence;
+         // else proxy_sequence = 0; // default
+
+         //v.proxied_voters    = 0; // default
+         v.proxied_votes.resize( max_level, 0 ); // [ level1, level2, ... ]
+         v.proxy_last_vote_block.resize( max_level+1, 0 ); // [ self, proxy, proxy->proxy, ... ]
+         v.proxy_last_vote_block[0] = head_block_num;
+
+         v.effective_last_vote_block         = head_block_num;
+
+         //v.number_of_witnesses_voted = 0; // default
+      });
+   }
+
+   if( op.proxy != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
+   {
+      d.modify( *proxy_voter_obj, [&](voter_object& v) {
+         v.proxied_voters += 1;
+      });
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }

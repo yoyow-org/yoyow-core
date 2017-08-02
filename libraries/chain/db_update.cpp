@@ -523,4 +523,86 @@ void database::release_witness_pledges()
    }
 }
 
+void database::clear_resigned_witness_votes()
+{
+   const uint32_t max_votes_to_process = GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK;
+   uint32_t votes_processed = 0;
+   const auto& wit_idx = get_index_type<witness_index>().indices().get<by_valid>();
+   const auto& vote_idx = get_index_type<witness_vote_index>().indices().get<by_witness_seq>();
+   auto wit_itr = wit_idx.begin();
+   while( wit_itr != wit_idx.end() && wit_itr->is_valid == false )
+   {
+      auto vote_itr = vote_idx.lower_bound( std::make_tuple( wit_itr->witness_account, wit_itr->sequence ) );
+      while( vote_itr != vote_idx.end()
+            && vote_itr->witness_uid == wit_itr->witness_account
+            && vote_itr->witness_sequence == wit_itr->sequence )
+      {
+         const voter_object* voter = find_voter( vote_itr->voter_uid, vote_itr->voter_sequence );
+         modify( *voter, [&]( voter_object& v )
+         {
+            v.number_of_witnesses_voted -= 1;
+         } );
+
+         auto tmp_itr = vote_itr;
+         ++vote_itr;
+         remove( *tmp_itr );
+
+         votes_processed += 1;
+         if( votes_processed >= max_votes_to_process )
+            return;
+      }
+
+      remove( *wit_itr );
+
+      wit_itr = wit_idx.begin();
+   }
+}
+
+void database::update_voter_effective_votes()
+{
+   const auto head_num = head_block_num();
+   const auto& idx = get_index_type<voter_index>().indices().get<by_votes_next_update>();
+   auto itr = idx.begin();
+   while( itr != idx.end() && itr->effective_votes_next_update_block <= head_num )
+   {
+      update_voter_effective_votes( *itr );
+      itr = idx.begin();
+   }
+}
+
+void database::clear_expired_governance_votings()
+{
+   const auto expire_blocks = get_global_properties().parameters.governance_voting_expiration_blocks;
+   const auto head_num = head_block_num();
+   if( head_num < expire_blocks )
+      return;
+   const auto max_last_vote_block = head_num - expire_blocks;
+
+   // Firstly, check those who are voting by themselves
+   uint32_t voters_processed = 0;
+   const auto& idx = get_index_type<voter_index>().indices().get<by_valid>();
+   auto itr = idx.lower_bound( std::make_tuple( true, GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID ) );
+   while( itr != idx.end() && itr->is_valid && itr->proxy_uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID
+         && itr->effective_last_vote_block <= max_last_vote_block )
+   {
+      ++voters_processed;
+      const voter_object& voter = *itr;
+      ++itr;
+      // this voter become invalid.
+      invalidate_voter( voter );
+   }
+
+   // Secondly, check those who are voting with a proxy
+   const uint32_t max_voters_to_process = GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK;
+   itr = idx.lower_bound( false );
+   while( voters_processed < max_voters_to_process && itr != idx.end() && itr->is_valid == false )
+   {
+      // if there is an invalid voter, recursively process the voters who set it as proxy
+      const auto& result = process_invalid_proxied_voters( *itr, max_voters_to_process - voters_processed, 0 );
+      voters_processed += result.first;
+      itr = idx.lower_bound( false ); // this result should be different if still voters_processed < max_voters_to_process
+   }
+}
+
+
 } }

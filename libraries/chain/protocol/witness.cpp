@@ -80,6 +80,7 @@ void witness_vote_proxy_operation::validate() const
    validate_op_fee( fee, "witness vote proxy " );
    validate_account_uid( voter, "voter " );
    validate_account_uid( proxy, "proxy " );
+   FC_ASSERT( voter != proxy, "voter and proxy should not be same" );
 }
 
 } } // graphene::chain

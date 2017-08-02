@@ -129,8 +129,16 @@
 #define GRAPHENE_DEFAULT_WITNESS_AVG_PLEDGE_UPDATE_INTERVAL   1200  // blocks, one hour if 3 seconds per block
 #define GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY         28800 // blocks, one day if 3 seconds per block
 */
+#define GRAPHENE_DEFAULT_MIN_GOVERNANCE_VOTING_BALANCE        (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000))
+#define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTING_RPOXY_LEVEL    (4)
+#define GRAPHENE_DEFAULT_GOVERNANCE_VOTING_EXPIRATION_BLOCKS  (28800*90) // blocks, 90 days if 3 seconds per block
+#define GRAPHENE_DEFAULT_GOVERNANCE_VOTES_UPDATE_INTERVAL     28800 // blocks, 1 day if 3 seconds per block
+#define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS         (60*60*24*60) // 60 days
+#define GRAPHENE_DEFAULT_MAX_WITNESSES_VOTED_PER_ACCOUNT      (101)
 
 #define GRAPHENE_VIRTUAL_LAP_LENGTH                           (fc::uint128_t::max_value())
+#define GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK      (10000)
+#define GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK         (10000)
 
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex

@@ -45,6 +45,7 @@ namespace graphene { namespace chain {
 
          account_uid_type    witness_account;
          uint32_t            sequence;
+         bool                is_valid = true;
 
          public_key_type     signing_key;
 
@@ -78,6 +79,7 @@ namespace graphene { namespace chain {
    struct by_pledge_next_update;
    struct by_pledge_schedule;
    struct by_vote_schedule;
+   struct by_valid;
 
    /**
     * @ingroup object_index
@@ -89,27 +91,42 @@ namespace graphene { namespace chain {
             member<object, object_id_type, &object::id>
          >,
          ordered_unique< tag<by_account>,
-            member<witness_object, account_uid_type, &witness_object::witness_account>
+            composite_key<
+               witness_object,
+               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, uint32_t, &witness_object::sequence>
+            >
          >,
          ordered_unique< tag<by_pledge_next_update>,
             composite_key<
                witness_object,
                member<witness_object, uint32_t, &witness_object::average_pledge_next_update_block>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>
+               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, uint32_t, &witness_object::sequence>
             >
          >,
          ordered_unique< tag<by_pledge_schedule>,
             composite_key<
                witness_object,
                member<witness_object, fc::uint128_t, &witness_object::by_pledge_scheduled_time>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>
+               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, uint32_t, &witness_object::sequence>
             >
          >,
          ordered_unique< tag<by_vote_schedule>,
             composite_key<
                witness_object,
                member<witness_object, fc::uint128_t, &witness_object::by_vote_scheduled_time>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>
+               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, uint32_t, &witness_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_valid>,
+            composite_key<
+               witness_object,
+               member<witness_object, bool, &witness_object::is_valid>,
+               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, uint32_t, &witness_object::sequence>
             >
          >
       >
@@ -179,6 +196,7 @@ namespace graphene { namespace chain {
 FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (witness_account)
                     (sequence)
+                    (is_valid)
                     (signing_key)
                     (pledge)
                     (pledge_last_update)

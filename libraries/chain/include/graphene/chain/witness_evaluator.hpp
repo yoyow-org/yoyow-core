@@ -60,6 +60,12 @@ namespace graphene { namespace chain {
 
          const account_statistics_object* account_stats = nullptr;
          const voter_object* voter_obj = nullptr;
+         const voter_object* invalid_voter_obj = nullptr;
+         const voter_object* invalid_current_proxy_voter_obj = nullptr;
+         vector<const witness_object*> witnesses_to_add;
+         vector<const witness_object*> witnesses_to_remove;
+         vector<const witness_vote_object*> witness_votes_to_remove;
+         vector<const witness_vote_object*> invalid_witness_votes_to_remove;
    };
 
    class witness_vote_proxy_evaluator : public evaluator<witness_vote_proxy_evaluator>
@@ -72,6 +78,10 @@ namespace graphene { namespace chain {
 
          const account_statistics_object* account_stats = nullptr;
          const voter_object* voter_obj = nullptr;
+         const voter_object* invalid_voter_obj = nullptr;
+         const voter_object* current_proxy_voter_obj = nullptr;
+         const voter_object* invalid_current_proxy_voter_obj = nullptr;
+         const voter_object* proxy_voter_obj = nullptr;
    };
 
 } } // graphene::chain

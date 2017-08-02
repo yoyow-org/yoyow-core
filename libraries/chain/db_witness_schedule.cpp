@@ -241,4 +241,31 @@ void database::reset_witness_by_vote_schedule()
    }
 }
 
+void database::adjust_witness_votes( const witness_object& witness, share_type delta )
+{
+   if( delta == 0 )
+      return;
+
+   const witness_schedule_object& wso = witness_schedule_id_type()(*this);
+   modify( witness, [&]( witness_object& w )
+   {
+      // update position
+      if( wso.current_by_vote_time > w.by_vote_position_last_update )
+      {
+         auto delta_pos = (wso.current_by_vote_time - w.by_vote_position_last_update) * w.total_votes;
+         w.by_vote_position += delta_pos;
+         w.by_vote_position_last_update = wso.current_by_vote_time;
+      }
+
+      w.total_votes += delta.value;
+
+      const auto need_time = ( GRAPHENE_VIRTUAL_LAP_LENGTH - w.by_vote_position ) / ( w.total_votes + 1 );
+      w.by_vote_scheduled_time = w.by_vote_position_last_update + need_time;
+      // check for overflow
+      if( w.by_vote_scheduled_time < wso.current_by_vote_time )
+         w.by_vote_scheduled_time = fc::uint128_t::max_value();
+   } );
+}
+
+
 } }

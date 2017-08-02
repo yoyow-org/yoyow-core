@@ -76,6 +76,12 @@ namespace graphene { namespace chain {
       uint64_t                max_witness_pledge_seconds          = GRAPHENE_DEFAULT_MAX_WITNESS_PLEDGE_SECONDS;
       uint32_t                witness_avg_pledge_update_interval  = GRAPHENE_DEFAULT_WITNESS_AVG_PLEDGE_UPDATE_INTERVAL;
       uint32_t                witness_pledge_release_delay        = GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY;
+      uint64_t                min_governance_voting_balance       = GRAPHENE_DEFAULT_MIN_GOVERNANCE_VOTING_BALANCE;
+      uint8_t                 max_governance_voting_proxy_level   = GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTING_RPOXY_LEVEL;
+      uint32_t                governance_voting_expiration_blocks = GRAPHENE_DEFAULT_GOVERNANCE_VOTING_EXPIRATION_BLOCKS;
+      uint32_t                governance_votes_update_interval    = GRAPHENE_DEFAULT_GOVERNANCE_VOTES_UPDATE_INTERVAL;
+      uint64_t                max_governance_votes_seconds        = GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS;
+      uint16_t                max_witnesses_voted_per_account     = GRAPHENE_DEFAULT_MAX_WITNESSES_VOTED_PER_ACCOUNT;
       extensions_type         extensions;
 
       /** defined in fee_schedule.cpp */
@@ -120,5 +126,11 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (max_witness_pledge_seconds)
             (witness_avg_pledge_update_interval)
             (witness_pledge_release_delay)
+            (min_governance_voting_balance)
+            (max_governance_voting_proxy_level)
+            (governance_voting_expiration_blocks)
+            (governance_votes_update_interval)
+            (max_governance_votes_seconds)
+            (max_witnesses_voted_per_account)
             (extensions)
           )

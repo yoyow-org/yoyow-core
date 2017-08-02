@@ -150,7 +150,12 @@ namespace graphene { namespace chain {
          share_type uncollected_witness_pay;
 
          /**
-          * how many times have this account became a voter
+          * whether this account is a governance voter.
+          */
+         bool is_voter = false;
+
+         /**
+          * how many times has this account became a voter
           */
          uint32_t last_voter_sequence = 0;
 
@@ -394,7 +399,7 @@ namespace graphene { namespace chain {
 
          /// The account's uid. This uid must be unique among all account uids.
          account_uid_type    uid = 0;
-         uint32_t            sequence;
+         uint32_t            sequence = 0;
          bool                is_valid = true;
 
          uint64_t            votes = 0;
@@ -404,14 +409,25 @@ namespace graphene { namespace chain {
          fc::time_point_sec  effective_votes_last_update;
          uint32_t            effective_votes_next_update_block;
 
-         uint32_t            last_vote_block;
+         account_uid_type    proxy_uid = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
+         uint32_t            proxy_sequence = 0;
 
-         account_uid_type    proxy_uid = 0;
-         uint32_t            proxy_sequence;
+         uint64_t            proxied_voters = 0;
+         vector<uint64_t>    proxied_votes;         // [ level1, level2, ... ]
+         vector<uint32_t>    proxy_last_vote_block; // [ self, proxy, proxy->proxy, ... ]
 
-         vector<uint64_t>    proxied_votes;
+         uint32_t            effective_last_vote_block; // effective value, due to proxied voting
 
-         uint16_t            number_of_witnesses_voted;
+         uint16_t            number_of_witnesses_voted = 0; // directly voted
+
+         uint64_t total_votes() const
+         {
+            return std::accumulate( proxied_votes.begin(), proxied_votes.end(), effective_votes );
+         }
+         void update_effective_last_vote_block()
+         {
+            effective_last_vote_block = *std::max_element( proxy_last_vote_block.begin(), proxy_last_vote_block.end() );
+         }
    };
 
    /**
@@ -523,6 +539,7 @@ namespace graphene { namespace chain {
    struct by_uid_seq;
    struct by_votes_next_update;
    struct by_last_vote;
+   struct by_valid;
    struct by_proxy;
 
    /**
@@ -550,7 +567,18 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_last_vote>,
             composite_key<
                voter_object,
-               member< voter_object, uint32_t, &voter_object::last_vote_block>,
+               member< voter_object, uint32_t, &voter_object::effective_last_vote_block>,
+               member< voter_object, account_uid_type, &voter_object::uid>,
+               member< voter_object, uint32_t, &voter_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_valid>,
+            composite_key<
+               voter_object,
+               member< voter_object, bool, &voter_object::is_valid>,
+               member< voter_object, account_uid_type, &voter_object::proxy_uid>,
+               member< voter_object, uint32_t, &voter_object::proxy_sequence>,
+               member< voter_object, uint32_t, &voter_object::effective_last_vote_block>,
                member< voter_object, account_uid_type, &voter_object::uid>,
                member< voter_object, uint32_t, &voter_object::sequence>
             >
@@ -624,9 +652,9 @@ FC_REFLECT_DERIVED( graphene::chain::voter_object,
                     (is_valid)
                     (votes)(votes_last_update)
                     (effective_votes)(effective_votes_last_update)(effective_votes_next_update_block)
-                    (last_vote_block)
                     (proxy_uid)(proxy_sequence)
-                    (proxied_votes)
+                    (proxied_voters)(proxied_votes)(proxy_last_vote_block)
+                    (effective_last_vote_block)
                     (number_of_witnesses_voted)
                   )
 

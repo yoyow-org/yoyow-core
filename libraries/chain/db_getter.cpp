@@ -133,12 +133,45 @@ const account_statistics_object& database::get_account_statistics_by_uid( accoun
    return *itr;
 }
 
+const voter_object* database::find_voter( account_uid_type uid, uint32_t sequence )const
+{
+   const auto& idx = get_index_type<voter_index>().indices().get<by_uid_seq>();
+   auto itr = idx.find( std::make_tuple( uid, sequence) );
+   if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
 const witness_object& database::get_witness_by_uid( account_uid_type uid )const
 {
-   const auto& idx = get_index_type<witness_index>().indices().get<by_account>();
-   auto itr = idx.find(uid);
+   const auto& idx = get_index_type<witness_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, uid ) );
    FC_ASSERT( itr != idx.end(), "witness ${uid} not found.", ("uid",uid) );
    return *itr;
+}
+
+const witness_object* database::find_witness_by_uid( account_uid_type uid )const
+{
+   const auto& idx = get_index_type<witness_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, uid ) );
+   if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
+const witness_vote_object* database::find_witness_vote( account_uid_type voter_uid,
+                                                        uint32_t voter_sequence,
+                                                        account_uid_type witness_uid,
+                                                        uint32_t witness_sequence )const
+{
+   const auto& idx = get_index_type<witness_vote_index>().indices().get<by_voter_seq>();
+   auto itr = idx.find( std::make_tuple( voter_uid, voter_sequence, witness_uid, witness_sequence ) );
+   if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
 }
 
 const platform_object& database::get_platform_by_pid( platform_pid_type pid )const

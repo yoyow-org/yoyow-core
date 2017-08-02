@@ -254,6 +254,22 @@ namespace graphene { namespace chain {
          void reset_witness_by_pledge_schedule();
          void reset_witness_by_vote_schedule();
 
+         void adjust_witness_votes( const witness_object& witness, share_type delta );
+
+         //////////////////// db_voter.cpp ////////////////////
+         void update_voter_effective_votes( const voter_object& voter );
+         void adjust_voter_votes( const voter_object& voter, share_type delta );
+         void adjust_voter_self_votes( const voter_object& voter, share_type delta );
+         void adjust_voter_proxy_votes( const voter_object& voter, vector<share_type> delta, bool update_last_vote );
+         void clear_voter_proxy_votes( const voter_object& voter );
+         void clear_voter_witness_votes( const voter_object& voter );
+         void clear_voter_votes( const voter_object& voter );
+         void invalidate_voter( const voter_object& voter );
+         bool check_voter_valid( const voter_object& voter, bool deep_check );
+         std::pair<uint32_t,bool> process_invalid_proxied_voters( const voter_object& proxy,
+                                                                  uint32_t max_voters_to_process,
+                                                                  uint8_t current_level );
+
          //////////////////// db_getter.cpp ////////////////////
 
          const chain_id_type&                   get_chain_id()const;
@@ -281,7 +297,15 @@ namespace graphene { namespace chain {
          const optional<account_id_type> find_account_id_by_uid( account_uid_type uid )const;
          const account_statistics_object& get_account_statistics_by_uid( account_uid_type uid )const;
 
+         const voter_object* find_voter( account_uid_type uid, uint32_t sequence )const;
+
          const witness_object& get_witness_by_uid( account_uid_type uid )const;
+         const witness_object* find_witness_by_uid( account_uid_type uid )const;
+
+         const witness_vote_object* find_witness_vote( account_uid_type voter_uid,
+                                                       uint32_t voter_sequence,
+                                                       account_uid_type witness_uid,
+                                                       uint32_t witness_sequence )const;
 
          const platform_object& get_platform_by_pid( platform_pid_type pid )const;
 
@@ -471,6 +495,9 @@ namespace graphene { namespace chain {
          void clear_expired_csaf_leases();
          void update_average_witness_pledges();
          void release_witness_pledges();
+         void clear_resigned_witness_votes();
+         void clear_expired_governance_votings();
+         void update_voter_effective_votes();
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true );
 
          ///Steps performed only at maintenance intervals
