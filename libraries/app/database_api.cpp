@@ -1633,8 +1633,8 @@ fc::optional<witness_object> database_api::get_witness_by_account(account_uid_ty
 
 fc::optional<witness_object> database_api_impl::get_witness_by_account(account_uid_type account) const
 {
-   const auto& idx = _db.get_index_type<witness_index>().indices().get<by_account>();
-   auto itr = idx.find(account);
+   const auto& idx = _db.get_index_type<witness_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, account ) );
    if( itr != idx.end() )
       return *itr;
    return {};
@@ -1675,7 +1675,7 @@ uint64_t database_api::get_witness_count()const
 
 uint64_t database_api_impl::get_witness_count()const
 {
-   return _db.get_index_type<witness_index>().indices().size();
+   return _db.get_index_type<witness_index>().indices().get<by_valid>().count( true );
 }
 
 //////////////////////////////////////////////////////////////////////
