@@ -676,6 +676,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                     (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
                     (last_witness_sequence)(uncollected_witness_pay)
-                    (last_voter_sequence)
+                    (is_voter)(last_voter_sequence)
                   )
 

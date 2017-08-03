@@ -529,7 +529,7 @@ void database::clear_resigned_witness_votes()
    uint32_t votes_processed = 0;
    const auto& wit_idx = get_index_type<witness_index>().indices().get<by_valid>();
    const auto& vote_idx = get_index_type<witness_vote_index>().indices().get<by_witness_seq>();
-   auto wit_itr = wit_idx.begin();
+   auto wit_itr = wit_idx.begin(); // assume that false < true
    while( wit_itr != wit_idx.end() && wit_itr->is_valid == false )
    {
       auto vote_itr = vote_idx.lower_bound( std::make_tuple( wit_itr->witness_account, wit_itr->sequence ) );
@@ -549,7 +549,10 @@ void database::clear_resigned_witness_votes()
 
          votes_processed += 1;
          if( votes_processed >= max_votes_to_process )
+         {
+            ilog( "On block ${n}, reached threshold while removing votes for resigned witnesses", ("n",head_block_num()) );
             return;
+         }
       }
 
       remove( *wit_itr );
@@ -570,7 +573,7 @@ void database::update_voter_effective_votes()
    }
 }
 
-void database::clear_expired_governance_votings()
+void database::invalidate_expired_governance_voters()
 {
    const auto expire_blocks = get_global_properties().parameters.governance_voting_expiration_blocks;
    const auto head_num = head_block_num();
@@ -578,7 +581,6 @@ void database::clear_expired_governance_votings()
       return;
    const auto max_last_vote_block = head_num - expire_blocks;
 
-   // Firstly, check those who are voting by themselves
    uint32_t voters_processed = 0;
    const auto& idx = get_index_type<voter_index>().indices().get<by_valid>();
    auto itr = idx.lower_bound( std::make_tuple( true, GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID ) );
@@ -591,18 +593,24 @@ void database::clear_expired_governance_votings()
       // this voter become invalid.
       invalidate_voter( voter );
    }
-
-   // Secondly, check those who are voting with a proxy
-   const uint32_t max_voters_to_process = GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK;
-   itr = idx.lower_bound( false );
-   while( voters_processed < max_voters_to_process && itr != idx.end() && itr->is_valid == false )
-   {
-      // if there is an invalid voter, recursively process the voters who set it as proxy
-      const auto& result = process_invalid_proxied_voters( *itr, max_voters_to_process - voters_processed, 0 );
-      voters_processed += result.first;
-      itr = idx.lower_bound( false ); // this result should be different if still voters_processed < max_voters_to_process
-   }
+   if( voters_processed > 0 )
+      ilog( "Invalidated ${n} expired voters", ("n",voters_processed) );
 }
 
+void database::process_invalid_governance_voters()
+{
+   const uint32_t max_voters_to_process = GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK;
+   uint32_t voters_processed = 0;
+   const auto& idx = get_index_type<voter_index>().indices().get<by_valid>();
+   auto itr = idx.begin(); // assume that false < true
+   while( voters_processed < max_voters_to_process && itr != idx.end() && itr->is_valid == false )
+   {
+      // if there is an invalid voter, process the voters who set it as proxy
+      voters_processed += process_invalid_proxied_voters( *itr, max_voters_to_process - voters_processed );
+      itr = idx.begin(); // this result should be different if still voters_processed < max_voters_to_process
+   }
+   if( voters_processed >= max_voters_to_process )
+      ilog( "On block ${n}, reached threshold while processing invalid voters or proxies", ("n",head_block_num()) );
+}
 
 } }

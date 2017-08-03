@@ -266,9 +266,7 @@ namespace graphene { namespace chain {
          void clear_voter_votes( const voter_object& voter );
          void invalidate_voter( const voter_object& voter );
          bool check_voter_valid( const voter_object& voter, bool deep_check );
-         std::pair<uint32_t,bool> process_invalid_proxied_voters( const voter_object& proxy,
-                                                                  uint32_t max_voters_to_process,
-                                                                  uint8_t current_level );
+         uint32_t process_invalid_proxied_voters( const voter_object& proxy, uint32_t max_voters_to_process );
 
          //////////////////// db_getter.cpp ////////////////////
 
@@ -496,7 +494,8 @@ namespace graphene { namespace chain {
          void update_average_witness_pledges();
          void release_witness_pledges();
          void clear_resigned_witness_votes();
-         void clear_expired_governance_votings();
+         void invalidate_expired_governance_voters();
+         void process_invalid_governance_voters();
          void update_voter_effective_votes();
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true );
 

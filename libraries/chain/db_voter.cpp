@@ -275,7 +275,14 @@ void database::invalidate_voter( const voter_object& voter )
    // update voter info
    modify( voter, [&](voter_object& v) {
       v.is_valid = false;
-      v.effective_votes_next_update_block = -1;
+      // begin
+      // not really need to update these fields, since they will not be used before the object get removed.
+      v.votes = 0;
+      v.votes_last_update = head_block_time();
+      v.effective_votes = 0;
+      v.effective_votes_last_update = head_block_time();
+      // end
+      v.effective_votes_next_update_block = -1; // to avoid scheduled updating
       if( voter.proxy_uid != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
       {
          v.proxy_uid = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
@@ -321,12 +328,10 @@ bool database::check_voter_valid( const voter_object& voter, bool deep_check )
    return false;
 }
 
-std::pair<uint32_t,bool> database::process_invalid_proxied_voters( const voter_object& proxy,
-                                                                   uint32_t max_voters_to_process,
-                                                                   uint8_t current_level )
+uint32_t database::process_invalid_proxied_voters( const voter_object& proxy, uint32_t max_voters_to_process )
 {
    if( max_voters_to_process == 0 )
-      return std::make_pair( 0, false );
+      return 0;
 
    FC_ASSERT( !proxy.is_valid, "This function should only be called with an invalid proxy" );
 
@@ -335,7 +340,6 @@ std::pair<uint32_t,bool> database::process_invalid_proxied_voters( const voter_o
    const auto head_num = head_block_num();
 
    uint32_t processed = 0;
-   uint32_t proxied_voters_removed = 0;
    const auto& idx = get_index_type<voter_index>().indices().get<by_proxy>();
    auto itr = idx.lower_bound( std::make_tuple( proxy.uid, proxy.sequence ) );
    while( processed < max_voters_to_process
@@ -344,6 +348,8 @@ std::pair<uint32_t,bool> database::process_invalid_proxied_voters( const voter_o
       ++processed;
       bool was_valid = itr->is_valid;
       // need to keep track of proxy_last_vote_block so voters who proxied to this can be updated correctly
+      // Note: after this, proxy's `proxied_votes` would become stale, but it doesn't matter,
+      //       because it will not be used anymore and the object will be removed soon
       modify( *itr, [&](voter_object& v) {
          // update proxy_last_vote_block, effective_last_vote_block
          for( uint8_t i = 1; i <= max_level; ++i )
@@ -353,7 +359,17 @@ std::pair<uint32_t,bool> database::process_invalid_proxied_voters( const voter_o
          v.update_effective_last_vote_block();
          // check if it's still valid
          if( v.is_valid && v.effective_last_vote_block + expire_blocks <= head_num )
+         {
             v.is_valid = false;
+            // begin
+            // not really need to update these fields, since they will not be used before the object get removed.
+            v.votes = 0;
+            v.votes_last_update = head_block_time();
+            v.effective_votes = 0;
+            v.effective_votes_last_update = head_block_time();
+            // end
+            v.effective_votes_next_update_block = -1; // to avoid scheduled updating
+         }
          // the proxy is invalid, so should change this voter's proxy to self
          v.proxy_uid = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
          v.proxy_sequence = 0;
@@ -366,39 +382,22 @@ std::pair<uint32_t,bool> database::process_invalid_proxied_voters( const voter_o
             s.is_voter = false;
          });
       }
-      // else do nothing // it can be invalid already, for example, if max_voters_to_process has exceeded last time
+      // else do nothing
 
-      auto old_itr = itr;
       ++itr;
-      if( current_level < max_level )
-      {
-         if( old_itr->is_valid == false )
-         {
-            const auto& result = process_invalid_proxied_voters( *old_itr, max_voters_to_process - processed, current_level + 1 );
-            processed += result.first;
-            if( result.second )
-               ++proxied_voters_removed;
-         }
-         // else do nothing
-      }
-      // else do nothing?
    }
 
-   if( proxied_voters_removed > 0 )
+   if( processed > 0 )
    {
       modify( proxy, [&](voter_object& v) {
-         v.proxied_voters -= proxied_voters_removed;
+         v.proxied_voters -= processed;
       });
    }
 
-   bool is_removed = false;
    if( proxy.proxied_voters == 0 )
-   {
       remove( proxy );
-      is_removed = true;
-   }
-   return std::make_pair( processed, is_removed );
 
+   return processed;
 }
 
 
