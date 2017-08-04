@@ -107,7 +107,8 @@ namespace graphene { namespace chain {
       authority       active;
       authority       secondary;
 
-      account_options  options;
+      public_key_type memo_key;
+
       account_reg_info reg_info;
 
       extensions_type extensions;
@@ -420,7 +421,8 @@ FC_REFLECT( graphene::chain::account_create_operation,
             (fee)
             (uid)
             (name)(owner)(active)(secondary)
-            (options)(reg_info)
+            (memo_key)
+            (reg_info)
             (extensions)
           )
 

@@ -714,7 +714,7 @@ public:
       std::vector<public_key_type> owner_keys = account.owner.get_keys();
       std::copy(active_keys.begin(), active_keys.end(), std::inserter(all_keys_for_account, all_keys_for_account.end()));
       std::copy(owner_keys.begin(), owner_keys.end(), std::inserter(all_keys_for_account, all_keys_for_account.end()));
-      all_keys_for_account.insert(account.options.memo_key);
+      all_keys_for_account.insert(account.memo_key);
 
       _keys[wif_pub_key] = wif_key;
 
@@ -966,7 +966,7 @@ public:
       account_create_op.name = name;
       account_create_op.owner = authority(1, owner, 1);
       account_create_op.active = authority(1, active, 1);
-      account_create_op.options.memo_key = active;
+      account_create_op.memo_key = active;
 
       signed_transaction tx;
 
@@ -1091,7 +1091,7 @@ public:
          account_create_op.name = account_name;
          account_create_op.owner = authority(1, owner_pubkey, 1);
          account_create_op.active = authority(1, active_pubkey, 1);
-         account_create_op.options.memo_key = memo_pubkey;
+         account_create_op.memo_key = memo_pubkey;
 
          // current_fee_schedule()
          // find_account(pay_from_account)
@@ -1622,9 +1622,11 @@ public:
 
       account_update_operation update_op;
       update_op.account = acct.id;
-      update_op.new_options = acct.options;
       // TODO: review
-      //update_op.new_options->votes = new_votes;
+      /*
+      update_op.new_options = acct.options;
+      update_op.new_options->votes = new_votes;
+      */
 
       signed_transaction tx;
       tx.operations.push_back( update_op );
@@ -1721,7 +1723,8 @@ public:
       */
       account_update_operation account_update_op;
       account_update_op.account = voting_account_object.id;
-      account_update_op.new_options = voting_account_object.options;
+      // TODO review
+      //account_update_op.new_options = voting_account_object.options;
 
       signed_transaction tx;
       tx.operations.push_back( account_update_op );
@@ -1758,7 +1761,8 @@ public:
       */
       account_update_operation account_update_op;
       account_update_op.account = voting_account_object.id;
-      account_update_op.new_options = voting_account_object.options;
+      // TODO review
+      //account_update_op.new_options = voting_account_object.options;
 
       signed_transaction tx;
       tx.operations.push_back( account_update_op );
@@ -1773,6 +1777,8 @@ public:
                                        bool broadcast /* = false */)
    { try {
       account_object account_object_to_modify = get_account(account_to_modify);
+      // TODO review
+      /*
       if (voting_account)
       {
          account_uid_type new_voting_account_uid = get_account_uid(*voting_account);
@@ -1786,10 +1792,12 @@ public:
             FC_THROW("Account ${account} is already voting for itself", ("account", account_to_modify));
          account_object_to_modify.options.voting_account = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
       }
+      */
 
       account_update_operation account_update_op;
       account_update_op.account = account_object_to_modify.id;
-      account_update_op.new_options = account_object_to_modify.options;
+      // TODO review
+      //account_update_op.new_options = account_object_to_modify.options;
 
       signed_transaction tx;
       tx.operations.push_back( account_update_op );
@@ -1818,7 +1826,8 @@ public:
 
       account_update_operation account_update_op;
       account_update_op.account = account_object_to_modify.id;
-      account_update_op.new_options = account_object_to_modify.options;
+      // TODO review
+      //account_update_op.new_options = account_object_to_modify.options;
 
       signed_transaction tx;
       tx.operations.push_back( account_update_op );
@@ -2164,10 +2173,10 @@ public:
       if( memo.size() )
          {
             xfer_op.memo = memo_data();
-            xfer_op.memo->from = from_account.options.memo_key;
-            xfer_op.memo->to = to_account.options.memo_key;
-            xfer_op.memo->set_message(get_private_key(from_account.options.memo_key),
-                                      to_account.options.memo_key, memo);
+            xfer_op.memo->from = from_account.memo_key;
+            xfer_op.memo->to = to_account.memo_key;
+            xfer_op.memo->set_message(get_private_key(from_account.memo_key),
+                                      to_account.memo_key, memo);
          }
 
       signed_transaction tx;
@@ -2194,10 +2203,10 @@ public:
       if( memo.size() )
       {
          issue_op.memo = memo_data();
-         issue_op.memo->from = issuer.options.memo_key;
-         issue_op.memo->to = to.options.memo_key;
-         issue_op.memo->set_message(get_private_key(issuer.options.memo_key),
-                                    to.options.memo_key, memo);
+         issue_op.memo->from = issuer.memo_key;
+         issue_op.memo->to = to.memo_key;
+         issue_op.memo->set_message(get_private_key(issuer.memo_key),
+                                    to.memo_key, memo);
       }
 
       signed_transaction tx;

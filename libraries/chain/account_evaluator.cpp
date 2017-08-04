@@ -106,7 +106,6 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
 { try {
    database& d = db();
 
-   FC_ASSERT( d.find_account_id_by_uid(op.options.voting_account).valid(), "Invalid proxy account specified." );
    FC_ASSERT( fee_paying_account->is_registrar, "Only registrars may register an account." );
    const auto& referrer = d.get_account_by_uid( op.reg_info.referrer );
    FC_ASSERT( referrer.is_full_member, "The referrer must be a full member." );
@@ -121,8 +120,6 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
    }
    GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_create_max_auth_exceeded )
    GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_create_auth_account_not_found )
-
-   //verify_account_votes( d, op.options );
 
    auto& acnt_indx = d.get_index_type<account_index>();
    {
@@ -149,7 +146,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.owner            = o.owner;
          obj.active           = o.active;
          obj.secondary        = o.secondary;
-         obj.options          = o.options;
+         obj.memo_key         = o.memo_key;
          obj.reg_info         = o.reg_info;
          //TODO review: remove after related feature implemented
          // start
@@ -293,7 +290,7 @@ void_result account_update_auth_evaluator::do_apply( const account_update_auth_o
       if( o.secondary )
          a.secondary = *o.secondary;
       if( o.memo_key )
-         a.options.memo_key = *o.memo_key;
+         a.memo_key = *o.memo_key;
       a.last_update_time = d.head_block_time();
    });
 
@@ -334,7 +331,8 @@ void_result account_update_evaluator::do_apply( const account_update_operation& 
          a.active = *o.active;
          a.top_n_control_flags = 0;
       }
-      if( o.new_options ) a.options = *o.new_options;
+      // TODO review
+      //if( o.new_options ) a.options = *o.new_options;
    });
 
    return void_result();

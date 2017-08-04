@@ -303,7 +303,6 @@ void account_create_operation::validate()const
    validate_new_authority( owner, "new owner " );
    validate_new_authority( active, "new active " );
    validate_new_authority( secondary, "new secondary " );
-   options.validate();
    reg_info.validate();
 }
 

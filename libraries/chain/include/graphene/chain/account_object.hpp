@@ -270,8 +270,7 @@ namespace graphene { namespace chain {
          /// The secondary authority has control over a few operations.
          authority secondary;
 
-         typedef account_options  options_type;
-         account_options options;
+         public_key_type memo_key;
 
          account_reg_info reg_info;
 
@@ -632,7 +631,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
                     //(membership_expiration_date)(registrar)(referrer)(lifetime_referrer)
                     //(network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
-                    (uid)(name)(owner)(active)(secondary)(options)(reg_info)
+                    (uid)(name)(owner)(active)(secondary)(memo_key)(reg_info)
                     (can_post)(can_reply)(can_rate)
                     (is_full_member)(is_registrar)(is_admin)
                     (create_time)(last_update_time)

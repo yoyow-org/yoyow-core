@@ -191,7 +191,7 @@ set<public_key_type> account_member_index::get_key_members(const account_object&
       result.insert(auth.first);
    for( auto auth : a.active.key_auths )
       result.insert(auth.first);
-   result.insert( a.options.memo_key );
+   result.insert( a.memo_key );
    return result;
 }
 set<address> account_member_index::get_address_members(const account_object& a)const
@@ -201,7 +201,7 @@ set<address> account_member_index::get_address_members(const account_object& a)c
       result.insert(auth.first);
    for( auto auth : a.active.address_auths )
       result.insert(auth.first);
-   result.insert( address( a.options.memo_key ) );
+   result.insert( address( a.memo_key ) );
    return result;
 }
 

@@ -474,9 +474,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       else
          cop.secondary = authority(1, account.secondary_key, 1);
       if( account.memo_key == public_key_type() )
-         cop.options.memo_key = tmp_active_key;
+         cop.memo_key = tmp_active_key;
       else
-         cop.options.memo_key = account.memo_key;
+         cop.memo_key = account.memo_key;
       account_id_type account_id(apply_operation(genesis_eval_state, cop).get<object_id_type>());
 
       if( account.is_lifetime_member )

@@ -748,6 +748,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
             // There may be a difference between the account whose stake is voting and the one specifying opinions.
             // Usually they're the same, but if the stake account has specified a voting_account, that account is the one
             // specifying the opinions.
+            // TODO review
             /*
             const account_object& opinion_account =
                   (stake_account.options.voting_account ==
@@ -760,6 +761,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
                   + (stake_account.cashback_vb.valid() ? (*stake_account.cashback_vb)(d).balance.amount.value: 0)
                   + d.get_balance(stake_account.get_uid(), GRAPHENE_CORE_ASSET_AID).amount.value;
 
+            // TODO review
             /*
             for( vote_id_type id : opinion_account.options.votes )
             {
