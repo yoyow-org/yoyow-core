@@ -115,6 +115,8 @@ namespace graphene { namespace chain {
          string amount_to_pretty_string(const asset &amount)const
          { FC_ASSERT(amount.asset_id == id.instance()); return amount_to_pretty_string(amount.amount); }
 
+         /// asset ID (AID)
+         asset_aid_type asset_id = 0;
          /// Ticker symbol for this asset, i.e. "USD"
          string symbol;
          /// Maximum number of digits after the decimal point (must be <= 12)
@@ -133,6 +135,7 @@ namespace graphene { namespace chain {
          optional<account_id_type> buyback_account;
 
          asset_id_type get_id()const { return id; }
+         asset_aid_type get_asset_id()const { return asset_id; }
 
          void validate()const
          {
@@ -266,6 +269,7 @@ FC_REFLECT_DERIVED( graphene::chain::asset_bitasset_data_object, (graphene::db::
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::asset_object, (graphene::db::object),
+                    (asset_id)
                     (symbol)
                     (precision)
                     (issuer)

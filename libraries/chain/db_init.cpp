@@ -280,6 +280,8 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    // Create blockchain accounts
    fc::ecc::private_key null_private_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")));
    create<account_balance_object>([](account_balance_object& b) {
+      b.owner = GRAPHENE_COMMITTEE_ACCOUNT_UID;
+      b.asset_type = GRAPHENE_CORE_ASSET_AID;
       b.balance = GRAPHENE_MAX_SHARE_SUPPLY;
    });
    FC_ASSERT(create<account_object>([this](account_object& a) {
@@ -304,7 +306,10 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          n.active.weight_threshold = 1;
          n.secondary.weight_threshold = 1;
          n.name = "committee-account";
-         n.statistics = create<account_statistics_object>( [&](account_statistics_object& s){ s.owner = n.uid; }).id;
+         n.statistics = create<account_statistics_object>( [&](account_statistics_object& s){
+            s.owner = n.uid;
+            s.core_balance = GRAPHENE_MAX_SHARE_SUPPLY;
+         }).id;
       });
    FC_ASSERT(committee_account.get_id() == GRAPHENE_COMMITTEE_ACCOUNT);
    FC_ASSERT(create<account_object>([this](account_object& a) {
@@ -385,6 +390,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       });
    const asset_object& core_asset =
      create<asset_object>( [&]( asset_object& a ) {
+         a.asset_id = GRAPHENE_CORE_ASSET_AID;
          a.symbol = GRAPHENE_SYMBOL;
          a.options.max_supply = genesis_state.max_core_supply;
          a.precision = GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS;
@@ -397,8 +403,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          a.options.core_exchange_rate.quote.asset_id = GRAPHENE_CORE_ASSET_AID;
          a.dynamic_asset_data_id = dyn_asset.id;
       });
-   assert( asset_id_type(core_asset.id) == asset().asset_id );
-   assert( get_balance(account_id_type(), asset_id_type()) == asset(dyn_asset.current_supply) );
+   assert( object_id_type(core_asset.id).instance() == core_asset.asset_id );
+   assert( core_asset.asset_id == asset().asset_id );
+   assert( get_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID) == asset(dyn_asset.current_supply) );
    // Create more special assets
    while( true )
    {
@@ -486,6 +493,11 @@ void database::init_genesis(const genesis_state_type& genesis_state)
           op.upgrade_to_lifetime_member = true;
           apply_operation(genesis_eval_state, op);
       }
+      modify( get( account_id ), [&account](account_object& a) {
+         a.reg_info.registrar = account.registrar;
+         a.is_registrar = account.is_registrar;
+         a.is_full_member = account.is_full_member;
+      });
    }
 
    // Helper function to get account ID by name
@@ -578,7 +590,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
       total_supplies[ new_asset_id ] += asset.accumulated_fees;
 
-      create<asset_object>([&](asset_object& a) {
+      const asset_object& new_asset = create<asset_object>([&](asset_object& a) {
          a.symbol = asset.symbol;
          a.options.description = asset.description;
          a.precision = asset.precision;
@@ -590,6 +602,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
                                        ( asset.is_bitasset ? disable_force_settle | global_settle | witness_fed_asset | committee_fed_asset : 0 );
          a.dynamic_asset_data_id = dynamic_data_id;
          a.bitasset_data_id = bitasset_data_id;
+      });
+      modify( new_asset, [](asset_object& a) {
+         a.asset_id = object_id_type(a.id).instance();
       });
    }
 
@@ -603,6 +618,14 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          b.owner = handout.owner;
       });
 
+      total_supplies[ asset_id ] += handout.amount;
+   }
+
+   // Create initial account balances
+   for( const auto& handout : genesis_state.initial_account_balances )
+   {
+      const auto asset_id = get_asset_id(handout.asset_symbol);
+      adjust_balance( handout.uid, asset(handout.amount, asset_id) );
       total_supplies[ asset_id ] += handout.amount;
    }
 

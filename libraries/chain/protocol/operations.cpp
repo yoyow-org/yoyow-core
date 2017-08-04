@@ -156,11 +156,6 @@ struct operation_get_required_uid_auth
       do_get_with_extended_fee(v);
    }
 
-   void operator()( const balance_claim_operation& v )const
-   {
-      do_get(v);
-   }
-
    void operator()( const account_manage_operation& v )const
    {
       do_get_with_extended_fee(v);

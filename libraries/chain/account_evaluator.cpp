@@ -148,17 +148,6 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.secondary        = o.secondary;
          obj.memo_key         = o.memo_key;
          obj.reg_info         = o.reg_info;
-         //TODO review: remove after related feature implemented
-         // start
-         if( o.name == "init0" || o.name == "init1" )
-         {
-            obj.is_registrar = true;
-            obj.is_full_member = true;
-         }
-         if( o.name == "init3" || o.name == "init4" )
-            obj.is_full_member = true;
-         // end
-
          obj.create_time      = d.head_block_time();
          obj.last_update_time = d.head_block_time();
 

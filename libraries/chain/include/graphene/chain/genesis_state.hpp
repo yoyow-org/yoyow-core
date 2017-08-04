@@ -38,28 +38,37 @@ using std::vector;
 
 struct genesis_state_type {
    struct initial_account_type {
-      initial_account_type(const account_uid_type uid = 0,
-                           const string& name = string(),
-                           const public_key_type& owner_key = public_key_type(),
-                           const public_key_type& active_key = public_key_type(),
-                           const public_key_type& secondary_key = public_key_type(),
-                           const public_key_type& memo_key = public_key_type(),
-                           bool is_lifetime_member = false)
-         : uid(uid),
-           name(name),
-           owner_key(owner_key),
-           active_key(active_key == public_key_type()? owner_key : active_key),
-           secondary_key(secondary_key == public_key_type()? owner_key : secondary_key),
-           memo_key(memo_key == public_key_type()? owner_key : memo_key),
-           is_lifetime_member(is_lifetime_member)
+      initial_account_type(const account_uid_type _uid = 0,
+                           const string& _name = string(),
+                           const account_uid_type _registrar = 0,
+                           const public_key_type& _owner_key = public_key_type(),
+                           const public_key_type& _active_key = public_key_type(),
+                           const public_key_type& _secondary_key = public_key_type(),
+                           const public_key_type& _memo_key = public_key_type(),
+                           bool _is_lifetime_member = false,
+                           bool _is_registrar = false,
+                           bool _is_full_member = false)
+         : uid(_uid),
+           name(_name),
+           registrar(_registrar),
+           owner_key(_owner_key),
+           active_key(_active_key == public_key_type()? _owner_key : _active_key),
+           secondary_key(_secondary_key == public_key_type()? _owner_key : _secondary_key),
+           memo_key(_memo_key == public_key_type()? _owner_key : _memo_key),
+           is_lifetime_member(_is_lifetime_member),
+           is_registrar(_is_registrar),
+           is_full_member(_is_full_member)
       {}
       account_uid_type uid;
       string name;
+      account_uid_type registrar;
       public_key_type owner_key;
       public_key_type active_key;
       public_key_type secondary_key;
       public_key_type memo_key;
       bool is_lifetime_member = false;
+      bool is_registrar = false;
+      bool is_full_member = false;
    };
    struct initial_asset_type {
       struct initial_collateral_position {
@@ -82,6 +91,11 @@ struct genesis_state_type {
    };
    struct initial_balance_type {
       address owner;
+      string asset_symbol;
+      share_type amount;
+   };
+   struct initial_account_balance_type {
+      account_uid_type uid;
       string asset_symbol;
       share_type amount;
    };
@@ -122,6 +136,7 @@ struct genesis_state_type {
    vector<initial_account_type>             initial_accounts;
    vector<initial_asset_type>               initial_assets;
    vector<initial_balance_type>             initial_balances;
+   vector<initial_account_balance_type>     initial_account_balances;
    vector<initial_vesting_balance_type>     initial_vesting_balances;
    uint64_t                                 initial_active_witnesses = GRAPHENE_DEFAULT_MIN_WITNESS_COUNT;
    vector<initial_witness_type>             initial_witness_candidates;
@@ -145,7 +160,7 @@ struct genesis_state_type {
 } } // namespace graphene::chain
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_account_type,
-           (uid)(name)(owner_key)(active_key)(secondary_key)(memo_key)(is_lifetime_member))
+           (uid)(name)(registrar)(owner_key)(active_key)(secondary_key)(memo_key)(is_lifetime_member)(is_registrar)(is_full_member))
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_asset_type,
            (symbol)(issuer_name)(description)(precision)(max_supply)(accumulated_fees)(is_bitasset)(collateral_records))
@@ -155,6 +170,9 @@ FC_REFLECT(graphene::chain::genesis_state_type::initial_asset_type::initial_coll
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_balance_type,
            (owner)(asset_symbol)(amount))
+
+FC_REFLECT(graphene::chain::genesis_state_type::initial_account_balance_type,
+           (uid)(asset_symbol)(amount))
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_vesting_balance_type,
            (owner)(asset_symbol)(amount)(begin_timestamp)(vesting_duration_seconds)(begin_balance))
@@ -169,6 +187,7 @@ FC_REFLECT(graphene::chain::genesis_state_type::initial_platform_type, (pid)(own
 
 FC_REFLECT(graphene::chain::genesis_state_type,
            (initial_timestamp)(max_core_supply)(initial_parameters)(initial_accounts)(initial_assets)(initial_balances)
+           (initial_account_balances)
            (initial_vesting_balances)(initial_active_witnesses)(initial_witness_candidates)
            (initial_committee_candidates)(initial_worker_candidates)
            (initial_platforms)
