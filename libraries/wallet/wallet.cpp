@@ -2249,7 +2249,7 @@ public:
          return ss.str();
       };
 
-      m["list_account_balances_by_name"] = m["list_account_balances_by_uid"] = [this](variant result, const fc::variants& a)
+      m["list_account_balances"] = [this](variant result, const fc::variants& a)
       {
          auto r = result.as<vector<asset>>();
          vector<asset_object> asset_recs;
@@ -2960,14 +2960,9 @@ map<string,account_id_type> wallet_api::list_accounts(const string& lowerbound, 
    return my->_remote_db->lookup_accounts(lowerbound, limit);
 }
 
-vector<asset> wallet_api::list_account_balances_by_uid(const account_uid_type uid)
+vector<asset> wallet_api::list_account_balances(const string& account)
 {
-   return my->_remote_db->get_account_balances(uid, flat_set<asset_aid_type>());
-}
-
-vector<asset> wallet_api::list_account_balances_by_name(const string& name)
-{
-   return my->_remote_db->get_named_account_balances(name, flat_set<asset_aid_type>());
+   return my->_remote_db->get_account_balances( get_account( account ).uid, flat_set<asset_aid_type>() );
 }
 
 vector<asset_object> wallet_api::list_assets(const string& lowerbound, uint32_t limit)const
@@ -3004,10 +2999,11 @@ vector<operation_detail> wallet_api::get_account_history(string name, int limit)
    return result;
 }
 
-vector<operation_detail> wallet_api::get_relative_account_history(account_uid_type uid, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const
+vector<operation_detail> wallet_api::get_relative_account_history(string account, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const
 {
    vector<operation_detail> result;
 
+   account_uid_type uid = get_account( account ).uid;
    while( limit > 0 )
    {
       vector <pair<uint32_t,operation_history_object>> current = my->_remote_hist->get_relative_account_history(uid, op_type, stop, std::min<uint32_t>(100, limit), start);

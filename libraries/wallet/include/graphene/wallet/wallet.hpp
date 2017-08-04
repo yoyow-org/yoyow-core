@@ -342,18 +342,10 @@ class wallet_api
        * Each account can have multiple balances, one for each type of asset owned by that
        * account.  The returned list will only contain assets for which the account has a
        * nonzero balance
-       * @param uid the uid of the account whose balances you want
+       * @param name the name or UID of the account whose balances you want
        * @returns a list of the given account's balances
        */
-      vector<asset>                     list_account_balances_by_uid(const account_uid_type uid);
-      /** List the balances of an account.
-       * Each account can have multiple balances, one for each type of asset owned by that
-       * account.  The returned list will only contain assets for which the account has a
-       * nonzero balance
-       * @param name the name of the account whose balances you want
-       * @returns a list of the given account's balances
-       */
-      vector<asset>                     list_account_balances_by_name(const string& name);
+      vector<asset>                     list_account_balances(const string& name);
       /** Lists all assets registered on the blockchain.
        * 
        * To list all assets, pass the empty string \c "" for the lowerbound to start
@@ -377,14 +369,14 @@ class wallet_api
 
       /** Returns the relative operations on the account from start number.
        *
-       * @param uid the uid of the account
+       * @param account the name or UID of the account
        * @param op_type the operation_type to query
        * @param stop Sequence number of earliest operation.
        * @param limit the number of entries to return, should be no more than 100 if start is 0
        * @param start the sequence number where to start looping back throw the history, set 0 for most recent
        * @returns a list of \c operation_history_objects
        */
-     vector<operation_detail>  get_relative_account_history(account_uid_type uid, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const;
+     vector<operation_detail>  get_relative_account_history(string account, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const;
 
       vector<bucket_object>             get_market_history(string symbol, string symbol2, uint32_t bucket, fc::time_point_sec start, fc::time_point_sec end)const;
       vector<limit_order_object>        get_limit_orders(string a, string b, uint32_t limit)const;
@@ -1647,8 +1639,7 @@ FC_API( graphene::wallet::wallet_api,
         (dump_private_keys)
         (list_my_accounts)
         (list_accounts)
-        (list_account_balances_by_uid)
-        (list_account_balances_by_name)
+        (list_account_balances)
         (list_assets)
         (import_key)
         (import_accounts)
