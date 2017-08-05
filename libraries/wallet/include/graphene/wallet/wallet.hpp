@@ -1219,20 +1219,19 @@ class wallet_api
                                          string url, 
                                          bool broadcast = false);
 
-      /** Lists all witnesses registered in the blockchain.
-       * This returns a list of all account names that own witnesses, and the associated witness id,
-       * sorted by name.  This lists witnesses whether they are currently voted in or not.
+      /** Lists all witnesses registered in the blockchain. This returns a list of all witness objects,
+       * sorted by UID.  This lists witnesses whether they are currently voted in or not.
        *
        * Use the \c lowerbound and limit parameters to page through the list.  To retrieve all witnesss,
-       * start by setting \c lowerbound to the empty string \c "", and then each iteration, pass
-       * the last witness name returned as the \c lowerbound for the next \c list_witnesss() call.
+       * start by setting \c lowerbound to zero, and then each iteration, pass
+       * the last witness's UID returned as the \c lowerbound for the next \c list_witnesss() call.
        *
-       * @param lowerbound the name of the first witness to return.  If the named witness does not exist, 
+       * @param lowerbound the UID of the first witness to return.  If the witness does not exist,
        *                   the list will start at the witness that comes after \c lowerbound
-       * @param limit the maximum number of witnesss to return (max: 1000)
-       * @returns a list of witnesss mapping witness names to witness ids
+       * @param limit the maximum number of witnesss to return (max: 101)
+       * @returns a list of witnesses
        */
-      map<string,witness_id_type>       list_witnesses(const string& lowerbound, uint32_t limit);
+      vector<witness_object> list_witnesses(const account_uid_type lowerbound, uint32_t limit);
 
       /** Lists all committee_members registered in the blockchain.
        * This returns a list of all account names that own committee_members, and the associated committee_member id,

@@ -542,13 +542,11 @@ class database_api
       ///////////////
 
       /**
-       * @brief Get a list of witnesses by ID
-       * @param witness_ids IDs of the witnesses to retrieve
-       * @return The witnesses corresponding to the provided IDs
-       *
-       * This function has semantics identical to @ref get_objects
+       * @brief Get a list of witnesses by account UID
+       * @param account_uids account UIDs of the witnesses to retrieve
+       * @return The witnesses corresponding to the provided account UIDs
        */
-      vector<optional<witness_object>> get_witnesses(const vector<witness_id_type>& witness_ids)const;
+      vector<optional<witness_object>> get_witnesses(const vector<account_uid_type>& account_uids)const;
 
       /**
        * @brief Get the witness owned by a given account
@@ -558,13 +556,12 @@ class database_api
       fc::optional<witness_object> get_witness_by_account(account_uid_type account)const;
 
       /**
-       * @brief Get names and IDs for registered witnesses
-       * @param lower_bound_name Lower bound of the first name to return
-       * @param limit Maximum number of results to return -- must not exceed 1000
-       * @return Map of witness names to corresponding IDs
+       * @brief Query for registered witnesses
+       * @param lower_bound_uid Lower bound of the first uid to return
+       * @param limit Maximum number of results to return -- must not exceed 101
+       * @return A list of witness objects
        */
-      // TODO change to uid
-      map<string, witness_id_type> lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const;
+      vector<witness_object> lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit)const;
 
       /**
        * @brief Get the total number of witnesses registered with the blockchain
@@ -787,7 +784,7 @@ FC_API(graphene::app::database_api,
    // Witnesses
    (get_witnesses)
    (get_witness_by_account)
-   (lookup_witness_accounts)
+   (lookup_witnesses)
    (get_witness_count)
 
    // Committee members

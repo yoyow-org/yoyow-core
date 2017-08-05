@@ -1400,11 +1400,16 @@ public:
          fc::optional<witness_id_type> witness_id = maybe_id<witness_id_type>(owner_account);
          if (witness_id)
          {
-            std::vector<witness_id_type> ids_to_get;
+            std::vector<object_id_type> ids_to_get;
             ids_to_get.push_back(*witness_id);
-            std::vector<fc::optional<witness_object>> witness_objects = _remote_db->get_witnesses(ids_to_get);
-            if (witness_objects.front())
-               return *witness_objects.front();
+            fc::variants objects = _remote_db->get_objects( ids_to_get );
+            for( const variant& obj : objects )
+            {
+               optional<witness_object> wo;
+               from_variant( obj, wo );
+               if( wo )
+                  return *wo;
+            }
             FC_THROW("No witness is registered for id ${id}", ("id", owner_account));
          }
          else
@@ -3454,9 +3459,9 @@ signed_transaction wallet_api::create_committee_member(string owner_account, str
    return my->create_committee_member(owner_account, url, broadcast);
 }
 
-map<string,witness_id_type> wallet_api::list_witnesses(const string& lowerbound, uint32_t limit)
+vector<witness_object> wallet_api::list_witnesses(const account_uid_type lowerbound, uint32_t limit)
 {
-   return my->_remote_db->lookup_witness_accounts(lowerbound, limit);
+   return my->_remote_db->lookup_witnesses(lowerbound, limit);
 }
 
 map<string,committee_member_id_type> wallet_api::list_committee_members(const string& lowerbound, uint32_t limit)

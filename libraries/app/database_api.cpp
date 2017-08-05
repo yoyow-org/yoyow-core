@@ -140,9 +140,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<market_trade>               get_trade_history( const string& base, const string& quote, fc::time_point_sec start, fc::time_point_sec stop, unsigned limit = 100 )const;
 
       // Witnesses
-      vector<optional<witness_object>> get_witnesses(const vector<witness_id_type>& witness_ids)const;
+      vector<optional<witness_object>> get_witnesses(const vector<account_uid_type>& witness_uids)const;
       fc::optional<witness_object> get_witness_by_account(account_uid_type account)const;
-      map<string, witness_id_type> lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const;
+      vector<witness_object> lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit)const;
       uint64_t get_witness_count()const;
 
       // Committee members
@@ -1593,33 +1593,17 @@ vector<market_trade> database_api_impl::get_trade_history( const string& base,
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-vector<optional<witness_object>> database_api::get_witnesses(const vector<witness_id_type>& witness_ids)const
+vector<optional<witness_object>> database_api::get_witnesses(const vector<account_uid_type>& witness_uids)const
 {
-   return my->get_witnesses( witness_ids );
+   return my->get_witnesses( witness_uids );
 }
 
-vector<worker_object> database_api::get_workers_by_account(account_id_type account)const
+vector<optional<witness_object>> database_api_impl::get_witnesses(const vector<account_uid_type>& witness_uids)const
 {
-    const auto& idx = my->_db.get_index_type<worker_index>().indices().get<by_account>();
-    auto itr = idx.find(account);
-    vector<worker_object> result;
-
-    if( itr != idx.end() && itr->worker_account == account )
-    {
-       result.emplace_back( *itr );
-       ++itr;
-    }
-
-    return result;
-}
-
-
-vector<optional<witness_object>> database_api_impl::get_witnesses(const vector<witness_id_type>& witness_ids)const
-{
-   vector<optional<witness_object>> result; result.reserve(witness_ids.size());
-   std::transform(witness_ids.begin(), witness_ids.end(), std::back_inserter(result),
-                  [this](witness_id_type id) -> optional<witness_object> {
-      if(auto o = _db.find(id))
+   vector<optional<witness_object>> result; result.reserve(witness_uids.size());
+   std::transform(witness_uids.begin(), witness_uids.end(), std::back_inserter(result),
+                  [this](account_uid_type uid) -> optional<witness_object> {
+      if( auto o = _db.find_witness_by_uid( uid ) )
          return *o;
       return {};
    });
@@ -1640,32 +1624,25 @@ fc::optional<witness_object> database_api_impl::get_witness_by_account(account_u
    return {};
 }
 
-map<string, witness_id_type> database_api::lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const
+vector<witness_object> database_api::lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit)const
 {
-   return my->lookup_witness_accounts( lower_bound_name, limit );
+   return my->lookup_witnesses( lower_bound_uid, limit );
 }
 
-map<string, witness_id_type> database_api_impl::lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const
+vector<witness_object> database_api_impl::lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit)const
 {
-   FC_ASSERT( limit <= 1000 );
-   const auto& witnesses_by_id = _db.get_index_type<witness_index>().indices().get<by_id>();
+   FC_ASSERT( limit <= 101 );
+   vector<witness_object> result;
+   const auto& idx = _db.get_index_type<witness_index>().indices().get<by_valid>();
+   auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_uid ) );
+   while( itr != idx.end() && limit > 0 ) // assume false < true
+   {
+      result.push_back( *itr );
+      ++itr;
+      --limit;
+   }
 
-   // we want to order witnesses by account name, but that name is in the account object
-   // so the witness_index doesn't have a quick way to access it.
-   // get all the names and look them all up, sort them, then figure out what
-   // records to return.  This could be optimized, but we expect the
-   // number of witnesses to be few and the frequency of calls to be rare
-   std::map<std::string, witness_id_type> witnesses_by_account_name;
-   for (const witness_object& witness : witnesses_by_id)
-       if (auto account_iter = _db.find_account_by_uid(witness.witness_account))
-           if (account_iter->name >= lower_bound_name) // we can ignore anything below lower_bound_name
-               witnesses_by_account_name.insert(std::make_pair(account_iter->name, witness.id));
-
-   auto end_iter = witnesses_by_account_name.begin();
-   while (end_iter != witnesses_by_account_name.end() && limit--)
-       ++end_iter;
-   witnesses_by_account_name.erase(end_iter, witnesses_by_account_name.end());
-   return witnesses_by_account_name;
+   return result;
 }
 
 uint64_t database_api::get_witness_count()const
@@ -1741,6 +1718,22 @@ map<string, committee_member_id_type> database_api_impl::lookup_committee_member
        ++end_iter;
    committee_members_by_account_name.erase(end_iter, committee_members_by_account_name.end());
    return committee_members_by_account_name;
+}
+
+// Workers
+vector<worker_object> database_api::get_workers_by_account(account_id_type account)const
+{
+    const auto& idx = my->_db.get_index_type<worker_index>().indices().get<by_account>();
+    auto itr = idx.find(account);
+    vector<worker_object> result;
+
+    if( itr != idx.end() && itr->worker_account == account )
+    {
+       result.emplace_back( *itr );
+       ++itr;
+    }
+
+    return result;
 }
 
 //////////////////////////////////////////////////////////////////////
