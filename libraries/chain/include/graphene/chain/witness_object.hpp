@@ -79,6 +79,7 @@ namespace graphene { namespace chain {
    struct by_pledge_next_update;
    struct by_pledge_schedule;
    struct by_vote_schedule;
+   struct by_votes;
    struct by_valid;
 
    /**
@@ -108,6 +109,7 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_pledge_schedule>,
             composite_key<
                witness_object,
+               member<witness_object, bool, &witness_object::is_valid>,
                member<witness_object, fc::uint128_t, &witness_object::by_pledge_scheduled_time>,
                member<witness_object, account_uid_type, &witness_object::witness_account>,
                member<witness_object, uint32_t, &witness_object::sequence>
@@ -116,9 +118,25 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_vote_schedule>,
             composite_key<
                witness_object,
+               member<witness_object, bool, &witness_object::is_valid>,
                member<witness_object, fc::uint128_t, &witness_object::by_vote_scheduled_time>,
                member<witness_object, account_uid_type, &witness_object::witness_account>,
                member<witness_object, uint32_t, &witness_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_votes>,
+            composite_key<
+               witness_object,
+               member<witness_object, bool, &witness_object::is_valid>,
+               member<witness_object, uint64_t, &witness_object::total_votes>,
+               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, uint32_t, &witness_object::sequence>
+            >,
+            composite_key_compare<
+               std::less< bool >,
+               std::greater< uint64_t >,
+               std::less< account_uid_type >,
+               std::less< uint32_t >
             >
          >,
          ordered_unique< tag<by_valid>,

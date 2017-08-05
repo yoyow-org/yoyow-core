@@ -82,6 +82,12 @@ namespace graphene { namespace chain {
       uint32_t                governance_votes_update_interval    = GRAPHENE_DEFAULT_GOVERNANCE_VOTES_UPDATE_INTERVAL;
       uint64_t                max_governance_votes_seconds        = GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS;
       uint16_t                max_witnesses_voted_per_account     = GRAPHENE_DEFAULT_MAX_WITNESSES_VOTED_PER_ACCOUNT;
+      share_type              by_vote_top_witness_pay_per_block   = GRAPHENE_DEFAULT_BY_VOTE_TOP_WITNESS_PAY_PER_BLOCK;
+      share_type              by_vote_rest_witness_pay_per_block  = GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESS_PAY_PER_BLOCK;
+      share_type              by_pledge_witness_pay_per_block     = GRAPHENE_DEFAULT_BY_PLEDGE_WITNESS_PAY_PER_BLOCK;
+      uint16_t                by_vote_top_witness_count           = GRAPHENE_DEFAULT_BY_VOTE_TOP_WITNESSES;
+      uint16_t                by_vote_rest_witness_count          = GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESSES;
+      uint16_t                by_pledge_witness_count             = GRAPHENE_DEFAULT_BY_PLEDGE_WITNESSES;
       extensions_type         extensions;
 
       /** defined in fee_schedule.cpp */
@@ -132,5 +138,11 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (governance_votes_update_interval)
             (max_governance_votes_seconds)
             (max_witnesses_voted_per_account)
+            (by_vote_top_witness_pay_per_block)
+            (by_vote_rest_witness_pay_per_block)
+            (by_pledge_witness_pay_per_block)
+            (by_vote_top_witness_count)
+            (by_vote_rest_witness_count)
+            (by_pledge_witness_count)
             (extensions)
           )

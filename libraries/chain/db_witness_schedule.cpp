@@ -87,16 +87,139 @@ void database::update_witness_schedule()
 {
    const witness_schedule_object& wso = witness_schedule_id_type()(*this);
    const global_property_object& gpo = get_global_properties();
+   const auto top_max = gpo.parameters.by_vote_top_witness_count;
+   const auto rest_max = gpo.parameters.by_vote_rest_witness_count;
+   const auto pledge_max = gpo.parameters.by_pledge_witness_count;
 
    if( head_block_num() >= wso.next_schedule_block_num )
    {
+      // prepare to update active_witnesses
+      flat_map<account_uid_type, scheduled_witness_type> new_witnesses;
+      new_witnesses.reserve( top_max + rest_max + pledge_max );
+
+      // by vote top witnesses
+      const auto& top_idx = get_index_type<witness_index>().indices().get<by_votes>();
+      auto top_itr = top_idx.lower_bound( true );
+      while( top_itr != top_idx.end() && new_witnesses.size() < top_max )
+      {
+         if( top_itr->signing_key != public_key_type() )
+         {
+            new_witnesses.insert( std::make_pair( top_itr->witness_account, scheduled_by_vote_top ) );
+         }
+         ++top_itr;
+      }
+
+      // by vote rest witnesses
+      uint16_t rest_added = 0;
+      vector<const witness_object*> by_vote_processed;
+      fc::uint128_t new_by_vote_time = wso.current_by_vote_time;
+      const auto& rest_idx = get_index_type<witness_index>().indices().get<by_vote_schedule>();
+      auto rest_itr = rest_idx.lower_bound( true );
+      while( rest_itr != rest_idx.end() && rest_added < rest_max )
+      {
+         by_vote_processed.push_back( &(*rest_itr) );
+         new_by_vote_time = rest_itr->by_vote_scheduled_time;
+         account_uid_type uid = rest_itr->witness_account;
+         if( rest_itr->signing_key != public_key_type() && new_witnesses.find( uid ) == new_witnesses.end() )
+         {
+            new_witnesses.insert( std::make_pair( uid, scheduled_by_vote_rest ) );
+            ++rest_added;
+         }
+         ++rest_itr;
+      }
+
+      // update by_vote_schedule
+      if( rest_added > 0 )
+      {
+         bool reset_by_vote_time = false;
+         for( auto& wit : by_vote_processed )
+         {
+            fc::uint128_t new_time = new_by_vote_time + GRAPHENE_VIRTUAL_LAP_LENGTH / ( wit->total_votes + 1 );
+            if( new_time < new_by_vote_time ) // overflow
+            {
+               reset_by_vote_time = true;
+               break;
+            }
+            modify( *wit, [&]( witness_object& w )
+            {
+               w.by_vote_position             = fc::uint128_t();
+               w.by_vote_position_last_update = new_by_vote_time;
+               w.by_vote_scheduled_time       = new_time;
+            } );
+         }
+         if( reset_by_vote_time )
+            reset_witness_by_vote_schedule();
+         else
+         {
+            modify( wso, [&](witness_schedule_object& o )
+            {
+                o.current_by_vote_time = new_by_vote_time;
+            } );
+         }
+      }
+
+      // by pledge witnesses
+      uint16_t pledge_added = 0;
+      vector<const witness_object*> by_pledge_processed;
+      fc::uint128_t new_by_pledge_time = wso.current_by_pledge_time;
+      const auto& pledge_idx = get_index_type<witness_index>().indices().get<by_pledge_schedule>();
+      auto pledge_itr = pledge_idx.lower_bound( true );
+      while( pledge_itr != pledge_idx.end() && pledge_added < pledge_max )
+      {
+         by_pledge_processed.push_back( &(*pledge_itr) );
+         new_by_pledge_time = pledge_itr->by_pledge_scheduled_time;
+         account_uid_type uid = pledge_itr->witness_account;
+         if( pledge_itr->signing_key != public_key_type() && new_witnesses.find( uid ) == new_witnesses.end() )
+         {
+            new_witnesses.insert( std::make_pair( uid, scheduled_by_pledge ) );
+            ++pledge_added;
+         }
+         ++pledge_itr;
+      }
+
+      // update by_pledge_schedule
+      if( pledge_added > 0 )
+      {
+         bool reset_by_pledge_time = false;
+         for( auto& wit : by_pledge_processed )
+         {
+            fc::uint128_t new_time = new_by_pledge_time + GRAPHENE_VIRTUAL_LAP_LENGTH / ( wit->average_pledge + 1 );
+            if( new_time < new_by_pledge_time ) // overflow
+            {
+               reset_by_pledge_time = true;
+               break;
+            }
+            modify( *wit, [&]( witness_object& w )
+            {
+               w.by_pledge_position             = fc::uint128_t();
+               w.by_pledge_position_last_update = new_by_pledge_time;
+               w.by_pledge_scheduled_time       = new_time;
+            } );
+         }
+         if( reset_by_pledge_time )
+            reset_witness_by_pledge_schedule();
+         else
+         {
+            modify( wso, [&](witness_schedule_object& o )
+            {
+                o.current_by_pledge_time = new_by_pledge_time;
+            } );
+         }
+      }
+
+      // update active_witnesses
+      modify(gpo, [&]( global_property_object& gp ){
+         gp.active_witnesses.swap( new_witnesses );
+      });
+
+      // update current_shuffled_witnesses
       modify( wso, [&]( witness_schedule_object& _wso )
       {
          _wso.current_shuffled_witnesses.clear();
          _wso.current_shuffled_witnesses.reserve( gpo.active_witnesses.size() );
 
-         for( const account_uid_type& w : gpo.active_witnesses )
-            _wso.current_shuffled_witnesses.push_back( w );
+         for( const auto& w : gpo.active_witnesses )
+            _wso.current_shuffled_witnesses.push_back( w.first );
 
          auto now_hi = uint64_t(head_block_time().sec_since_epoch()) << 32;
          for( uint32_t i = 0; i < _wso.current_shuffled_witnesses.size(); ++i )
@@ -128,6 +251,9 @@ void database::update_witness_avg_pledge( const account_uid_type uid )
 
 void database::update_witness_avg_pledge( const witness_object& wit )
 {
+   if( !wit.is_valid )
+      return;
+
    const auto& global_params = get_global_properties().parameters;
    const auto window = global_params.max_witness_pledge_seconds;
    const auto now = head_block_time();
@@ -212,10 +338,10 @@ void database::reset_witness_by_pledge_schedule()
        o.current_by_pledge_time = fc::uint128_t(); // reset it to 0
    } );
 
-   const auto& idx = get_index_type<witness_index>().indices();
-   for( const auto& witness : idx )
+   const auto& idx = get_index_type<witness_index>().indices().get<by_valid>();
+   for( auto itr = idx.lower_bound( true ); itr != idx.end(); ++itr )
    {
-      modify( witness, [&]( witness_object& w )
+      modify( *itr, [&]( witness_object& w )
       {
          w.by_pledge_position             = fc::uint128_t();
          w.by_pledge_position_last_update = fc::uint128_t();
@@ -232,21 +358,21 @@ void database::reset_witness_by_vote_schedule()
        o.current_by_vote_time = fc::uint128_t(); // reset it to 0
    } );
 
-   const auto& idx = get_index_type<witness_index>().indices();
-   for( const auto& witness : idx )
+   const auto& idx = get_index_type<witness_index>().indices().get<by_valid>();
+   for( auto itr = idx.lower_bound( true ); itr != idx.end(); ++itr )
    {
-      modify( witness, [&]( witness_object& w )
+      modify( *itr, [&]( witness_object& w )
       {
          w.by_vote_position             = fc::uint128_t();
          w.by_vote_position_last_update = fc::uint128_t();
-         w.by_vote_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.average_pledge + 1 );
+         w.by_vote_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.total_votes + 1 );
       } );
    }
 }
 
 void database::adjust_witness_votes( const witness_object& witness, share_type delta )
 {
-   if( delta == 0 )
+   if( delta == 0 || !witness.is_valid )
       return;
 
    const witness_schedule_object& wso = witness_schedule_id_type()(*this);

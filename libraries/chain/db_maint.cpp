@@ -238,7 +238,7 @@ void database::update_active_witnesses()
       std::transform(wits.begin(), wits.end(),
                      std::inserter(gp.active_witnesses, gp.active_witnesses.end()),
                      [](const witness_object& w) {
-         return w.witness_account;
+         return std::make_pair( w.witness_account, scheduled_by_vote_top );
       });
    });
 
@@ -827,7 +827,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
                 c(_vote_tally_buffer);
 
    update_top_n_authorities(*this);
-   update_active_witnesses();
+   //update_active_witnesses();
    update_active_committee_members();
    update_worker_votes();
 

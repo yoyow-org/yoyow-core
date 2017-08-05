@@ -128,8 +128,8 @@ void database::update_last_irreversible_block()
 
    vector< const witness_object* > wit_objs;
    wit_objs.reserve( gpo.active_witnesses.size() );
-   for( const account_uid_type& wid : gpo.active_witnesses )
-      wit_objs.push_back( &(get_witness_by_uid( wid )) );
+   for( const auto& wid : gpo.active_witnesses )
+      wit_objs.push_back( &(get_witness_by_uid( wid.first )) );
 
    static_assert( GRAPHENE_IRREVERSIBLE_THRESHOLD > 0, "irreversible threshold must be nonzero" );
 
@@ -500,7 +500,7 @@ void database::update_average_witness_pledges()
    const auto head_num = head_block_num();
    const auto& idx = get_index_type<witness_index>().indices().get<by_pledge_next_update>();
    auto itr = idx.begin();
-   while( itr != idx.end() && itr->average_pledge_next_update_block <= head_num )
+   while( itr != idx.end() && itr->average_pledge_next_update_block <= head_num && itr->is_valid )
    {
       update_witness_avg_pledge( *itr );
       itr = idx.begin();

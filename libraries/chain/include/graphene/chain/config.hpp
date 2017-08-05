@@ -140,6 +140,13 @@
 #define GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK      (10000)
 #define GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK         (10000)
 
+#define GRAPHENE_DEFAULT_BY_VOTE_TOP_WITNESS_PAY_PER_BLOCK    (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1))
+#define GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESS_PAY_PER_BLOCK   (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1))
+#define GRAPHENE_DEFAULT_BY_PLEDGE_WITNESS_PAY_PER_BLOCK      (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1))
+#define GRAPHENE_DEFAULT_BY_VOTE_TOP_WITNESSES                (9)
+#define GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESSES               (1)
+#define GRAPHENE_DEFAULT_BY_PLEDGE_WITNESSES                  (1)
+
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex
 #define GRAPHENE_NEAR_SCHEDULE_CTR_IV                    ( (uint64_t( 0x6a09 ) << 0x30)    \

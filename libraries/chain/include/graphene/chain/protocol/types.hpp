@@ -109,6 +109,13 @@ namespace graphene { namespace chain {
       |witness_fed_asset|committee_fed_asset;
    const static uint32_t UIA_ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_confidential;
 
+   enum scheduled_witness_type
+   {
+      scheduled_by_vote_top  = 0,
+      scheduled_by_vote_rest = 1,
+      scheduled_by_pledge    = 2
+   };
+
    enum reserved_spaces
    {
       relative_protocol_ids = 0,
@@ -438,4 +445,10 @@ FC_REFLECT_ENUM( graphene::chain::asset_issuer_permission_flags,
    (disable_confidential)
    (witness_fed_asset)
    (committee_fed_asset)
+   )
+
+FC_REFLECT_ENUM( graphene::chain::scheduled_witness_type,
+   (scheduled_by_vote_top)
+   (scheduled_by_vote_rest)
+   (scheduled_by_pledge)
    )
