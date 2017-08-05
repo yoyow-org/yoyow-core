@@ -87,9 +87,9 @@ void debug_api_impl::debug_generate_blocks( const std::string& debug_key, uint32
    std::shared_ptr< graphene::chain::database > db = app.chain_database();
    for( uint32_t i=0; i<count; i++ )
    {
-      graphene::chain::witness_id_type scheduled_witness = db->get_scheduled_witness( 1 );
+      graphene::chain::account_uid_type scheduled_witness = db->get_scheduled_witness( 1 );
       fc::time_point_sec scheduled_time = db->get_slot_time( 1 );
-      graphene::chain::public_key_type scheduled_key = scheduled_witness( *db ).signing_key;
+      graphene::chain::public_key_type scheduled_key = db->get_witness_by_uid( scheduled_witness ).signing_key;
       if( scheduled_key != debug_public_key )
       {
          ilog( "Modified key for witness ${w}", ("w", scheduled_witness) );

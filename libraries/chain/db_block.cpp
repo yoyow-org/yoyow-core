@@ -296,7 +296,7 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
 
 signed_block database::generate_block(
    fc::time_point_sec when,
-   witness_id_type witness_id,
+   account_uid_type witness_uid,
    const fc::ecc::private_key& block_signing_private_key,
    uint32_t skip /* = 0 */
    )
@@ -304,14 +304,14 @@ signed_block database::generate_block(
    signed_block result;
    detail::with_skip_flags( *this, skip, [&]()
    {
-      result = _generate_block( when, witness_id, block_signing_private_key );
+      result = _generate_block( when, witness_uid, block_signing_private_key );
    } );
    return result;
 } FC_CAPTURE_AND_RETHROW() }
 
 signed_block database::_generate_block(
    fc::time_point_sec when,
-   witness_id_type witness_id,
+   account_uid_type witness_uid,
    const fc::ecc::private_key& block_signing_private_key
    )
 {
@@ -319,10 +319,10 @@ signed_block database::_generate_block(
    uint32_t skip = get_node_properties().skip_flags;
    uint32_t slot_num = get_slot_at_time( when );
    FC_ASSERT( slot_num > 0 );
-   witness_id_type scheduled_witness = get_scheduled_witness( slot_num );
-   FC_ASSERT( scheduled_witness == witness_id );
+   account_uid_type scheduled_witness = get_scheduled_witness( slot_num );
+   FC_ASSERT( scheduled_witness == witness_uid );
 
-   const auto& witness_obj = witness_id(*this);
+   const auto& witness_obj = get_witness_by_uid( witness_uid );
 
    if( !(skip & skip_witness_signature) )
       FC_ASSERT( witness_obj.signing_key == block_signing_private_key.get_public_key() );
@@ -395,7 +395,7 @@ signed_block database::_generate_block(
    pending_block.previous = head_block_id();
    pending_block.timestamp = when;
    pending_block.transaction_merkle_root = pending_block.calculate_merkle_root();
-   pending_block.witness = witness_id;
+   pending_block.witness = witness_uid;
 
    if( !(skip & skip_witness_signature) )
       pending_block.sign( block_signing_private_key );
@@ -409,7 +409,7 @@ signed_block database::_generate_block(
    push_block( pending_block, skip );
 
    return pending_block;
-} FC_CAPTURE_AND_RETHROW( (witness_id) ) }
+} FC_CAPTURE_AND_RETHROW( (witness_uid) ) }
 
 /**
  * Removes the most recent block from the database and
@@ -675,7 +675,7 @@ const witness_object& database::validate_block_header( uint32_t skip, const sign
 {
    FC_ASSERT( head_block_id() == next_block.previous, "", ("head_block_id",head_block_id())("next.prev",next_block.previous) );
    FC_ASSERT( head_block_time() < next_block.timestamp, "", ("head_block_time",head_block_time())("next",next_block.timestamp)("blocknum",next_block.block_num()) );
-   const witness_object& witness = next_block.witness(*this);
+   const witness_object& witness = get_witness_by_uid( next_block.witness );
 
    if( !(skip&skip_witness_signature) ) 
       FC_ASSERT( next_block.validate_signee( witness.signing_key ) );
@@ -685,7 +685,7 @@ const witness_object& database::validate_block_header( uint32_t skip, const sign
       uint32_t slot_num = get_slot_at_time( next_block.timestamp );
       FC_ASSERT( slot_num > 0 );
 
-      witness_id_type scheduled_witness = get_scheduled_witness( slot_num );
+      account_uid_type scheduled_witness = get_scheduled_witness( slot_num );
 
       FC_ASSERT( next_block.witness == scheduled_witness, "Witness produced block at wrong time",
                  ("block witness",next_block.witness)("scheduled",scheduled_witness)("slot_num",slot_num) );

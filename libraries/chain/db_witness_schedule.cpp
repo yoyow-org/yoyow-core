@@ -31,7 +31,7 @@ namespace graphene { namespace chain {
 
 using boost::container::flat_set;
 
-witness_id_type database::get_scheduled_witness( uint32_t slot_num )const
+account_uid_type database::get_scheduled_witness( uint32_t slot_num )const
 {
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    const witness_schedule_object& wso = witness_schedule_id_type()(*this);
@@ -88,14 +88,14 @@ void database::update_witness_schedule()
    const witness_schedule_object& wso = witness_schedule_id_type()(*this);
    const global_property_object& gpo = get_global_properties();
 
-   if( head_block_num() % gpo.active_witnesses.size() == 0 )
+   if( head_block_num() >= wso.next_schedule_block_num )
    {
       modify( wso, [&]( witness_schedule_object& _wso )
       {
          _wso.current_shuffled_witnesses.clear();
          _wso.current_shuffled_witnesses.reserve( gpo.active_witnesses.size() );
 
-         for( const witness_id_type& w : gpo.active_witnesses )
+         for( const account_uid_type& w : gpo.active_witnesses )
             _wso.current_shuffled_witnesses.push_back( w );
 
          auto now_hi = uint64_t(head_block_time().sec_since_epoch()) << 32;
@@ -114,7 +114,10 @@ void database::update_witness_schedule()
             std::swap( _wso.current_shuffled_witnesses[i],
                        _wso.current_shuffled_witnesses[j] );
          }
+         _wso.next_schedule_block_num += _wso.current_shuffled_witnesses.size();
       });
+      dlog( "witness schedule updated on block ${n}, next reschedule block is ${b}",
+            ("n",head_block_num())("b",wso.next_schedule_block_num) );
    }
 }
 

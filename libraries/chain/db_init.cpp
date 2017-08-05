@@ -751,7 +751,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    modify(get_global_properties(), [&](global_property_object& p) {
       for( uint32_t i = 1; i <= genesis_state.initial_active_witnesses; ++i )
       {
-         p.active_witnesses.insert(witness_id_type(i));
+         p.active_witnesses.insert( get( witness_id_type(i) ).witness_account );
       }
    });
 
@@ -763,8 +763,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    // Create witness scheduler
    create<witness_schedule_object>([&]( witness_schedule_object& wso )
    {
-      for( const witness_id_type& wid : get_global_properties().active_witnesses )
+      for( const account_uid_type & wid : get_global_properties().active_witnesses )
          wso.current_shuffled_witnesses.push_back( wid );
+      wso.next_schedule_block_num = wso.current_shuffled_witnesses.size();
    });
 
    // Create FBA counters

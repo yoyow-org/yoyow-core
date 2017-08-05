@@ -238,7 +238,7 @@ void database::update_active_witnesses()
       std::transform(wits.begin(), wits.end(),
                      std::inserter(gp.active_witnesses, gp.active_witnesses.end()),
                      [](const witness_object& w) {
-         return w.id;
+         return w.witness_account;
       });
    });
 

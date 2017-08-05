@@ -65,12 +65,11 @@ void witness_plugin::plugin_set_program_options(
    boost::program_options::options_description& config_file_options)
 {
    auto default_priv_key = fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("nathan")));
-   string witness_id_example = fc::json::to_string(chain::witness_id_type(5));
    command_line_options.add_options()
          ("enable-stale-production", bpo::bool_switch()->notifier([this](bool e){_production_enabled = e;}), "Enable block production, even if the chain is stale.")
          ("required-participation", bpo::bool_switch()->notifier([this](int e){_required_witness_participation = uint32_t(e*GRAPHENE_1_PERCENT);}), "Percent of witnesses (0-99) that must be participating in order to produce blocks")
-         ("witness-id,w", bpo::value<vector<string>>()->composing()->multitoken(),
-          ("ID of witness controlled by this node (e.g. " + witness_id_example + ", quotes are required, may specify multiple times)").c_str())
+         ("witness,w", bpo::value<vector<string>>()->composing()->multitoken(),
+          "Account UID of witness controlled by this node (may specify multiple times)")
          ("private-key", bpo::value<vector<string>>()->composing()->multitoken()->
           DEFAULT_VALUE_VECTOR(std::make_pair(chain::public_key_type(default_priv_key.get_public_key()), graphene::utilities::key_to_wif(default_priv_key))),
           "Tuple of [PublicKey, WIF private key] (may specify multiple times)")
@@ -87,7 +86,7 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
 { try {
    ilog("witness plugin:  plugin_initialize() begin");
    _options = &options;
-   LOAD_VALUE_SET(options, "witness-id", _witnesses, chain::witness_id_type)
+   LOAD_VALUE_SET(options, "witness", _witnesses, chain::account_uid_type )
 
    if( options.count("private-key") )
    {
@@ -181,7 +180,7 @@ block_production_condition::block_production_condition_enum witness_plugin::bloc
    switch( result )
    {
       case block_production_condition::produced:
-         ilog("Generated block #${n} ${bid} with timestamp ${t} at time ${c} by ${w}", (capture));
+         ilog("Generated block #${n} ${bid} with timestamp ${t} at time ${c} by ${w}/${wname}", (capture));
          break;
       case block_production_condition::not_synced:
          ilog("Not producing block because production is disabled until we receive a recent block (see: --enable-stale-production)");
@@ -246,7 +245,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
    //
    assert( now > db.head_block_time() );
 
-   graphene::chain::witness_id_type scheduled_witness = db.get_scheduled_witness( slot );
+   graphene::chain::account_uid_type scheduled_witness = db.get_scheduled_witness( slot );
    // we must control the witness scheduled to produce the next block.
    if( _witnesses.find( scheduled_witness ) == _witnesses.end() )
    {
@@ -255,7 +254,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
    }
 
    fc::time_point_sec scheduled_time = db.get_slot_time( slot );
-   graphene::chain::public_key_type scheduled_key = scheduled_witness( db ).signing_key;
+   graphene::chain::public_key_type scheduled_key = db.get_witness_by_uid( scheduled_witness ).signing_key;
    auto private_key_itr = _private_keys.find( scheduled_key );
 
    if( private_key_itr == _private_keys.end() )
@@ -283,7 +282,8 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
       private_key_itr->second,
       _production_skip_flags
       );
-   capture("n", block.block_num())("t", block.timestamp)("c", now)("w",scheduled_witness)("bid",block.id());
+   const auto& witness_name = db.get_account_by_uid( scheduled_witness ).name;
+   capture("n", block.block_num())("t", block.timestamp)("c", now)("w",scheduled_witness)("wname",witness_name)("bid",block.id());
    fc::async( [this,block](){ p2p_node().broadcast(net::block_message(block)); } );
 
    return block_production_condition::produced;

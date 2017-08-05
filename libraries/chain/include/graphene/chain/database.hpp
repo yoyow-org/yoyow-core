@@ -146,13 +146,13 @@ namespace graphene { namespace chain {
 
          signed_block generate_block(
             const fc::time_point_sec when,
-            witness_id_type witness_id,
+            account_uid_type witness_uid,
             const fc::ecc::private_key& block_signing_private_key,
             uint32_t skip
             );
          signed_block _generate_block(
             const fc::time_point_sec when,
-            witness_id_type witness_id,
+            account_uid_type witness_uid,
             const fc::ecc::private_key& block_signing_private_key
             );
 
@@ -224,7 +224,7 @@ namespace graphene { namespace chain {
           *
           * Passing slot_num == 0 returns GRAPHENE_NULL_WITNESS
           */
-         witness_id_type get_scheduled_witness(uint32_t slot_num)const;
+         account_uid_type get_scheduled_witness(uint32_t slot_num)const;
 
          /**
           * Get the time at which the given slot occurs.
@@ -281,7 +281,7 @@ namespace graphene { namespace chain {
          time_point_sec   head_block_time()const;
          uint32_t         head_block_num()const;
          block_id_type    head_block_id()const;
-         witness_id_type  head_block_witness()const;
+         account_uid_type head_block_witness()const;
 
          decltype( chain_parameters::block_interval ) block_interval( )const;
 

@@ -560,8 +560,7 @@ namespace detail {
          FC_ASSERT( (latency.count()/1000) > -5000, "Rejecting block with timestamp in the future" );
          if (!sync_mode || blk_msg.block.block_num() % 10000 == 0)
          {
-            const auto& witness = blk_msg.block.witness(*_chain_db);
-            const auto& witness_account = _chain_db->get_account_by_uid( witness.witness_account );
+            const auto& witness_account = _chain_db->get_account_by_uid( blk_msg.block.witness );
             auto last_irr = _chain_db->get_dynamic_global_properties().last_irreversible_block_num;
             ilog("Got block: #${n} ${bid} time: ${t} latency: ${l} ms from: ${u}/${w}  irreversible: ${i} (-${d})",
                  ("t",blk_msg.block.timestamp)

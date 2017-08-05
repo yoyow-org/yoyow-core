@@ -36,12 +36,10 @@ class witness_schedule_object : public graphene::db::abstract_object<witness_sch
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id = impl_witness_schedule_object_type;
 
-      uint32_t                  next_schedule_block_num = 0;
-      vector< witness_id_type > current_shuffled_witnesses;
-
-      fc::uint128_t             current_by_pledge_time;
-      fc::uint128_t             current_by_vote_time;
-
+      uint32_t                   next_schedule_block_num = 0;
+      fc::uint128_t              current_by_pledge_time;
+      fc::uint128_t              current_by_vote_time;
+      vector< account_uid_type > current_shuffled_witnesses;
 };
 
 } }
@@ -50,7 +48,7 @@ FC_REFLECT_DERIVED(
    graphene::chain::witness_schedule_object,
    (graphene::db::object),
    (next_schedule_block_num)
-   (current_shuffled_witnesses)
    (current_by_pledge_time)
    (current_by_vote_time)
+   (current_shuffled_witnesses)
 )

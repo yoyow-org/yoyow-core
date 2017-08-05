@@ -49,8 +49,8 @@ void database::update_global_dynamic_data( const signed_block& b )
    assert( missed_blocks != 0 );
    missed_blocks--;
    for( uint32_t i = 0; i < missed_blocks; ++i ) {
-      const auto& witness_missed = get_scheduled_witness( i+1 )(*this);
-      if(  witness_missed.id != b.witness ) {
+      const auto& witness_missed = get_witness_by_uid( get_scheduled_witness( i+1 ) );
+      if(  witness_missed.witness_account != b.witness ) {
          /*
          const auto& witness_account = witness_missed.witness_account(*this);
          if( (fc::time_point::now() - b.timestamp) < fc::seconds(30) )
@@ -128,8 +128,8 @@ void database::update_last_irreversible_block()
 
    vector< const witness_object* > wit_objs;
    wit_objs.reserve( gpo.active_witnesses.size() );
-   for( const witness_id_type& wid : gpo.active_witnesses )
-      wit_objs.push_back( &(wid(*this)) );
+   for( const account_uid_type& wid : gpo.active_witnesses )
+      wit_objs.push_back( &(get_witness_by_uid( wid )) );
 
    static_assert( GRAPHENE_IRREVERSIBLE_THRESHOLD > 0, "irreversible threshold must be nonzero" );
 

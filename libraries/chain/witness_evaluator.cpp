@@ -130,7 +130,7 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
       else if( op.new_pledge->amount == 0 ) // resign
       {
          const auto& active_witnesses = d.get_global_properties().active_witnesses;
-         FC_ASSERT( active_witnesses.find( witness_obj->id ) == active_witnesses.end(),
+         FC_ASSERT( active_witnesses.find( op.witness_account ) == active_witnesses.end(),
                     "Active witness can not resign" );
       }
    }

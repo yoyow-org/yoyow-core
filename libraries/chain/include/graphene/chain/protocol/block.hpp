@@ -32,7 +32,7 @@ namespace graphene { namespace chain {
       block_id_type                 previous;
       uint32_t                      block_num()const { return num_from_id(previous) + 1; }
       fc::time_point_sec            timestamp;
-      witness_id_type               witness;
+      account_uid_type              witness;
       checksum_type                 transaction_merkle_root;
       extensions_type               extensions;
 
