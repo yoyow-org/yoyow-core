@@ -552,6 +552,9 @@ void database::_apply_block( const signed_block& next_block )
    if( !_node_property_object.debug_updates.empty() )
       apply_debug_updates();
 
+   dlog("before check invariants");
+   check_invariants();
+
    dlog("before notify applied block");
    // notify observers that the block has been applied
    // TODO catch exceptions thrown by plugins but not the core
@@ -560,7 +563,7 @@ void database::_apply_block( const signed_block& next_block )
 
    dlog("before notify changed objects");
    notify_changed_objects();
-} FC_CAPTURE_AND_RETHROW( (next_block.block_num()) )  }
+} FC_CAPTURE_AND_RETHROW( (next_block.block_num())(next_block) )  }
 
 
 

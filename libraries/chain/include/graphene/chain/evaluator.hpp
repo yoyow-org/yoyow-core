@@ -198,7 +198,8 @@ namespace graphene { namespace chain {
          const auto& op = o.get<typename DerivedEvaluator::operation_type>();
 
          convert_fee();
-         pay_fee();
+         // removed for yy. no longer needed.
+         //pay_fee();
 
          auto result = eval->do_apply(op);
 

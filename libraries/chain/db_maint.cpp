@@ -726,8 +726,10 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
 {
    const auto& gpo = get_global_properties();
 
+   /* removed for yy. no longer needed.
    distribute_fba_balances(*this);
    create_buyback_orders(*this);
+   */
 
    struct vote_tally_helper {
       database& d;
@@ -811,10 +813,12 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
       }
    } fee_helper(*this, gpo);
 
+   /* removed for yy to improve performance. no long needed.
    perform_account_maintenance(std::tie(
       tally_helper,
       fee_helper
       ));
+   */
 
    struct clear_canary {
       clear_canary(vector<uint64_t>& target): target(target){}
@@ -826,10 +830,12 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
                 b(_committee_count_histogram_buffer),
                 c(_vote_tally_buffer);
 
+   /* removed for yy. no longer needed. TODO still need to update active committee members somehow
    update_top_n_authorities(*this);
    //update_active_witnesses();
    update_active_committee_members();
    update_worker_votes();
+   */
 
    modify(gpo, [this](global_property_object& p) {
       // Remove scaling of account registration fee
@@ -888,9 +894,11 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
    for( const asset_bitasset_data_object* d : get_index_type<asset_bitasset_data_index>() )
       modify(*d, [](asset_bitasset_data_object& d) { d.force_settled_volume = 0; });
 
+   /* removed for yy. no longer needed.
    // process_budget needs to run at the bottom because
    //   it needs to know the next_maintenance_time
    process_budget();
+   */
 }
 
 } }

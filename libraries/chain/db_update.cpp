@@ -654,4 +654,142 @@ void database::adjust_budgets()
    }
 }
 
+void database::check_invariants()
+{
+   const global_property_object& gpo = get_global_properties();
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   FC_ASSERT( dpo.budget_pool >= 0 );
+   //if( head_block_num() >= 1285 ) { idump( (dpo) ); }
+
+   share_type total_core_balance = 0;
+   share_type total_core_non_bal = dpo.budget_pool;
+   share_type total_core_leased_in = 0;
+   share_type total_core_leased_out = 0;
+   share_type total_core_pledge = 0;
+
+   uint64_t total_voting_accounts = 0;
+   share_type total_voting_core_balance = 0;
+
+   const auto& acc_stats_idx = get_index_type<account_statistics_index>().indices();
+   for( const auto& s: acc_stats_idx )
+   {
+      //if( head_block_num() >= 1285 ) { idump( (s) ); }
+      FC_ASSERT( s.core_balance == get_balance( s.owner, GRAPHENE_CORE_ASSET_AID ).amount );
+      FC_ASSERT( s.core_balance >= 0 );
+      FC_ASSERT( s.prepaid >= 0 );
+      FC_ASSERT( s.csaf >= 0 );
+      FC_ASSERT( s.core_leased_in >= 0 );
+      FC_ASSERT( s.core_leased_out >= 0 );
+      FC_ASSERT( s.total_witness_pledge >= s.releasing_witness_pledge );
+      FC_ASSERT( s.releasing_witness_pledge >= 0 );
+      FC_ASSERT( s.uncollected_witness_pay >= 0 );
+
+      total_core_balance += s.core_balance;
+      total_core_non_bal += ( s.prepaid + s.uncollected_witness_pay );
+      total_core_leased_in += s.core_leased_in;
+      total_core_leased_out += s.core_leased_out;
+      total_core_pledge += ( s.total_witness_pledge - s.releasing_witness_pledge );
+      FC_ASSERT( s.core_balance >= s.core_leased_out + s.total_witness_pledge );
+
+      if( s.is_voter )
+      {
+         ++total_voting_accounts;
+         total_voting_core_balance += s.core_balance;
+      }
+   }
+   FC_ASSERT( total_core_leased_in == total_core_leased_out );
+
+   share_type current_supply = asset_id_type()(*this).dynamic_data(*this).current_supply;
+   //if( head_block_num() >= 1285 )
+   //{ idump( (total_core_balance)(total_core_non_bal)(current_supply)( asset_id_type()(*this).dynamic_data(*this) ) ); }
+   FC_ASSERT( total_core_balance + total_core_non_bal  == current_supply );
+
+   share_type total_core_leased = 0;
+   const auto& csaf_lease_idx = get_index_type<csaf_lease_index>().indices();
+   for( const auto& s: csaf_lease_idx )
+   {
+      FC_ASSERT( s.amount > 0 );
+      total_core_leased += s.amount;
+   }
+   FC_ASSERT( total_core_leased_out == total_core_leased );
+
+   share_type total_core_balance_indexed = 0;
+   const auto& acc_bal_idx = get_index_type<account_balance_index>().indices();
+   for( const auto& s: acc_bal_idx )
+   {
+      FC_ASSERT( s.balance >= 0 );
+      if( s.asset_type == GRAPHENE_CORE_ASSET_AID)
+         total_core_balance_indexed += s.balance;
+   }
+   FC_ASSERT( total_core_balance == total_core_balance_indexed );
+
+   uint64_t total_voters = 0;
+   uint64_t total_witnesses_voted = 0;
+   uint64_t total_voter_votes = 0;
+   fc::uint128_t total_voter_witness_votes;
+   vector<share_type> total_got_proxied_votes;
+   vector<share_type> total_proxied_votes;
+   total_got_proxied_votes.resize( gpo.parameters.max_governance_voting_proxy_level );
+   total_proxied_votes.resize( gpo.parameters.max_governance_voting_proxy_level );
+   const auto& voter_idx = get_index_type<voter_index>().indices();
+   for( const auto& s: voter_idx )
+   {
+      if( s.is_valid )
+      {
+         const auto& stats = get_account_statistics_by_uid( s.uid );
+         FC_ASSERT( stats.last_voter_sequence == s.sequence );
+         FC_ASSERT( stats.core_balance == s.votes );
+         ++total_voters;
+         total_voter_votes += s.votes;
+         total_witnesses_voted += s.number_of_witnesses_voted;
+         if( s.proxy_uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
+            total_voter_witness_votes += fc::uint128_t( s.total_votes() ) * s.number_of_witnesses_voted;
+         else
+         {
+            total_proxied_votes[0] += s.effective_votes;
+            for( size_t i = 1; i < gpo.parameters.max_governance_voting_proxy_level; ++i )
+               total_proxied_votes[i] += s.proxied_votes[i-1];
+         }
+         for( size_t i = 0; i < gpo.parameters.max_governance_voting_proxy_level; ++i )
+            total_got_proxied_votes[i] += s.proxied_votes[i];
+      }
+   }
+   FC_ASSERT( total_voting_accounts == total_voters );
+   FC_ASSERT( total_voting_core_balance == total_voter_votes );
+   for( size_t i = 0; i < gpo.parameters.max_governance_voting_proxy_level; ++i )
+   {
+      FC_ASSERT( total_proxied_votes[i] == total_got_proxied_votes[i] );
+   }
+
+   share_type total_witness_pledges;
+   fc::uint128_t total_witness_received_votes;
+   const auto& wit_idx = get_index_type<witness_index>().indices();
+   for( const auto& s: wit_idx )
+   {
+      if( s.is_valid )
+      {
+         const auto& stats = get_account_statistics_by_uid( s.witness_account );
+         FC_ASSERT( stats.last_witness_sequence == s.sequence );
+         FC_ASSERT( stats.total_witness_pledge - stats.releasing_witness_pledge == s.pledge );
+         total_witness_pledges += s.pledge;
+         total_witness_received_votes += s.total_votes;
+      }
+   }
+   FC_ASSERT( total_witness_pledges == total_core_pledge );
+   FC_ASSERT( total_witness_received_votes == total_voter_witness_votes );
+
+   fc::uint128_t total_witness_vote_objects;
+   const auto& wit_vote_idx = get_index_type<witness_vote_index>().indices();
+   for( const auto& s: wit_vote_idx )
+   {
+      const auto wit = find_witness_by_uid( s.witness_uid );
+      const auto voter = find_voter( s.voter_uid, s.voter_sequence );
+      if( wit != nullptr && voter != nullptr && voter->is_valid )
+      {
+         ++total_witness_vote_objects;
+      }
+   }
+   FC_ASSERT( total_witnesses_voted == total_witnesses_voted );
+}
+
 } }

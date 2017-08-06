@@ -499,6 +499,7 @@ namespace graphene { namespace chain {
          void update_voter_effective_votes();
          void adjust_budgets();
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true );
+         void check_invariants();
 
          ///Steps performed only at maintenance intervals
          ///@{

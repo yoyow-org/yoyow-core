@@ -129,11 +129,13 @@ database& generic_evaluator::db()const { return trx_state->db(); }
          if( fov.from_csaf.valid() )
          {
             from_csaf = fov.from_csaf->amount;
+            /* this check is removed, so the payer can pay csaf collected in the same op
             FC_ASSERT( from_csaf <= fee_paying_account_statistics->csaf,
                        "Insufficient csaf: account ${a}'s csaf of ${b} is less than required ${r}",
                        ("a",fee_paying_account->uid)
                        ("b",d.to_pretty_core_string(fee_paying_account_statistics->csaf))
                        ("r",d.to_pretty_core_string(from_csaf)) );
+            */
          }
       }
 
@@ -218,6 +220,10 @@ database& generic_evaluator::db()const { return trx_state->db(); }
          {
             if( from_prepaid         > 0 ) s.prepaid         -= from_prepaid;
             if( from_csaf            > 0 ) s.csaf            -= from_csaf;
+         });
+         d.modify( asset_id_type()(d).dynamic_data(d), [&]( asset_dynamic_data_object& o )
+         {
+            o.current_supply -= (from_prepaid + from_balance);
          });
       }
    } FC_CAPTURE_AND_RETHROW() }
