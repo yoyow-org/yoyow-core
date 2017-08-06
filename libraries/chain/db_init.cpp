@@ -760,6 +760,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       p.parameters.current_fees = genesis_state.initial_parameters.current_fees;
    });
 
+   // Update budgets
+   adjust_budgets();
+
    // Create witness scheduler
    create<witness_schedule_object>([&]( witness_schedule_object& wso )
    {

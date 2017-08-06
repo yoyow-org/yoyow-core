@@ -105,11 +105,31 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    uint64_t new_block_aslot = dpo.current_aslot + get_slot_at_time( new_block.timestamp );
 
-   share_type witness_pay = std::min( gpo.parameters.witness_pay_per_block, dpo.witness_budget );
+   const auto& itr = gpo.active_witnesses.find( signing_witness.witness_account );
+   FC_ASSERT( itr != gpo.active_witnesses.end() );
+   auto wit_type = itr->second;
+
+   share_type witness_pay;
+   if( wit_type == scheduled_by_vote_top )
+      witness_pay = gpo.parameters.by_vote_top_witness_pay_per_block;
+   else if( wit_type == scheduled_by_vote_rest )
+      witness_pay = gpo.parameters.by_vote_rest_witness_pay_per_block;
+   else if( wit_type == scheduled_by_pledge )
+      witness_pay = gpo.parameters.by_pledge_witness_pay_per_block;
+   witness_pay = std::min( witness_pay, dpo.total_budget_per_block );
+
+   share_type budget_remained = dpo.total_budget_per_block - witness_pay;
+   FC_ASSERT( budget_remained >= 0 );
+
+   const auto& core_dyn_data = asset_id_type()(*this).dynamic_data(*this);
+   modify( core_dyn_data, [&]( asset_dynamic_data_object& dyn )
+   {
+      dyn.current_supply += dpo.total_budget_per_block;
+   } );
 
    modify( dpo, [&]( dynamic_global_property_object& _dpo )
    {
-      _dpo.witness_budget -= witness_pay;
+      _dpo.budget_pool += budget_remained;
    } );
 
    deposit_witness_pay( signing_witness, witness_pay );
@@ -611,6 +631,27 @@ void database::process_invalid_governance_voters()
    }
    if( voters_processed >= max_voters_to_process )
       ilog( "On block ${n}, reached threshold while processing invalid voters or proxies", ("n",head_block_num()) );
+}
+
+void database::adjust_budgets()
+{
+   const global_property_object& gpo = get_global_properties();
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   if( head_block_num() >= dpo.next_budget_adjust_block )
+   {
+      const auto& gparams = gpo.parameters;
+      share_type core_reserved = asset_id_type()(*this).reserved(*this);
+      // Normally shouldn't overflow
+      uint32_t blocks_per_year = 86400 * 365 / gparams.block_interval
+                               - 86400 * 365 * gparams.maintenance_skip_slots / gparams.maintenance_interval;
+      uint64_t new_budget = ( fc::uint128_t( core_reserved.value ) * gparams.budget_adjust_target
+                              / blocks_per_year / GRAPHENE_100_PERCENT ).to_uint64();
+      modify( dpo, [&]( dynamic_global_property_object& _dpo )
+      {
+         _dpo.total_budget_per_block = new_budget;
+         _dpo.next_budget_adjust_block += gpo.parameters.budget_adjust_interval;
+      } );
+   }
 }
 
 } }

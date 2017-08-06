@@ -72,10 +72,13 @@ namespace graphene { namespace chain {
          uint32_t          head_block_number = 0;
          block_id_type     head_block_id;
          time_point_sec    time;
-         account_uid_type  current_witness;
+         account_uid_type  current_witness = 0;
          time_point_sec    next_maintenance_time;
          time_point_sec    last_budget_time;
          share_type        witness_budget;
+         share_type        budget_pool;
+         share_type        total_budget_per_block = 0;
+         uint32_t          next_budget_adjust_block = 0;
          uint32_t          accounts_registered_this_interval = 0;
          /**
           *  Every time a block is missed this increases by
@@ -132,6 +135,9 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
                     (next_maintenance_time)
                     (last_budget_time)
                     (witness_budget)
+                    (budget_pool)
+                    (total_budget_per_block)
+                    (next_budget_adjust_block)
                     (accounts_registered_this_interval)
                     (recently_missed_count)
                     (current_aslot)

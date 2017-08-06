@@ -147,6 +147,9 @@
 #define GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESSES               (1)
 #define GRAPHENE_DEFAULT_BY_PLEDGE_WITNESSES                  (1)
 
+#define GRAPHENE_DEFAULT_BUDGET_ADJUST_INTERVAL               (28800*365) // blocks, 1 year if 3 seconds per block
+#define GRAPHENE_DEFAULT_BUDGET_ADJUST_TARGET                 (10 * GRAPHENE_1_PERCENT) // (max_supply - current_supply) * x%
+
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex
 #define GRAPHENE_NEAR_SCHEDULE_CTR_IV                    ( (uint64_t( 0x6a09 ) << 0x30)    \

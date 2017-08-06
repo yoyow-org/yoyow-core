@@ -88,6 +88,8 @@ namespace graphene { namespace chain {
       uint16_t                by_vote_top_witness_count           = GRAPHENE_DEFAULT_BY_VOTE_TOP_WITNESSES;
       uint16_t                by_vote_rest_witness_count          = GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESSES;
       uint16_t                by_pledge_witness_count             = GRAPHENE_DEFAULT_BY_PLEDGE_WITNESSES;
+      uint32_t                budget_adjust_interval              = GRAPHENE_DEFAULT_BUDGET_ADJUST_INTERVAL;
+      uint16_t                budget_adjust_target                = GRAPHENE_DEFAULT_BUDGET_ADJUST_TARGET;
       extensions_type         extensions;
 
       /** defined in fee_schedule.cpp */
@@ -144,5 +146,7 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (by_vote_top_witness_count)
             (by_vote_rest_witness_count)
             (by_pledge_witness_count)
+            (budget_adjust_interval)
+            (budget_adjust_target)
             (extensions)
           )
