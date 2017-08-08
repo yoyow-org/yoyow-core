@@ -135,6 +135,7 @@
 #define GRAPHENE_DEFAULT_GOVERNANCE_VOTES_UPDATE_INTERVAL     28800 // blocks, 1 day if 3 seconds per block
 #define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS         (60*60*24*60) // 60 days
 #define GRAPHENE_DEFAULT_MAX_WITNESSES_VOTED_PER_ACCOUNT      (101)
+#define GRAPHENE_DEFAULT_MAX_WITNESS_INACTIVE_BLOCKS          (28800) // blocks, 1 day if 3 seconds per block
 
 #define GRAPHENE_VIRTUAL_LAP_LENGTH                           (fc::uint128_t::max_value())
 #define GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK      (10000)

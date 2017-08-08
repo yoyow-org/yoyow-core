@@ -42,6 +42,7 @@ namespace graphene { namespace chain {
 
 void database::update_global_dynamic_data( const signed_block& b )
 {
+   const global_property_object& gpo = get_global_properties();
    const dynamic_global_property_object& _dgp =
       dynamic_global_property_id_type(0)(*this);
 
@@ -59,6 +60,8 @@ void database::update_global_dynamic_data( const signed_block& b )
 
          modify( witness_missed, [&]( witness_object& w ) {
            w.total_missed++;
+           if( w.last_confirmed_block_num + gpo.parameters.max_witness_inactive_blocks < b.block_num() )
+              w.signing_key = public_key_type();
          });
       } 
    }
