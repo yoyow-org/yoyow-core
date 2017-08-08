@@ -123,6 +123,13 @@ struct full_account_query_options
    optional<bool> fetch_csaf_leases_out;
 };
 
+enum witness_list_order_type
+{
+   order_by_uid = 0,
+   order_by_votes = 1,
+   order_by_pledge = 2
+};
+
 /**
  * @brief The database_api class implements the RPC API for the chain database.
  *
@@ -559,9 +566,11 @@ class database_api
        * @brief Query for registered witnesses
        * @param lower_bound_uid Lower bound of the first uid to return
        * @param limit Maximum number of results to return -- must not exceed 101
+       * @param order_type how the returned list will be ordered
        * @return A list of witness objects
        */
-      vector<witness_object> lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit)const;
+      vector<witness_object> lookup_witnesses(const account_uid_type lower_bound_uid,
+                                              uint32_t limit, witness_list_order_type order_type)const;
 
       /**
        * @brief Get the total number of witnesses registered with the blockchain
@@ -708,6 +717,12 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_csaf_leases_in)
             (fetch_csaf_leases_out)
           );
+
+FC_REFLECT_ENUM( graphene::app::witness_list_order_type,
+                 (order_by_uid)
+                 (order_by_votes)
+                 (order_by_pledge)
+               );
 
 FC_API(graphene::app::database_api,
    // Objects

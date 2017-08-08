@@ -1229,9 +1229,10 @@ class wallet_api
        * @param lowerbound the UID of the first witness to return.  If the witness does not exist,
        *                   the list will start at the witness that comes after \c lowerbound
        * @param limit the maximum number of witnesss to return (max: 101)
+       * @param order_type how the returned list will be ordered
        * @returns a list of witnesses
        */
-      vector<witness_object> list_witnesses(const account_uid_type lowerbound, uint32_t limit);
+      vector<witness_object> list_witnesses(const account_uid_type lowerbound, uint32_t limit, witness_list_order_type order_type);
 
       /** Lists all committee_members registered in the blockchain.
        * This returns a list of all account names that own committee_members, and the associated committee_member id,

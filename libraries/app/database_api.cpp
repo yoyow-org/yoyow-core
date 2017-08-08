@@ -142,7 +142,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // Witnesses
       vector<optional<witness_object>> get_witnesses(const vector<account_uid_type>& witness_uids)const;
       fc::optional<witness_object> get_witness_by_account(account_uid_type account)const;
-      vector<witness_object> lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit)const;
+      vector<witness_object> lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit,
+                                              witness_list_order_type order_type)const;
       uint64_t get_witness_count()const;
 
       // Committee members
@@ -1624,22 +1625,64 @@ fc::optional<witness_object> database_api_impl::get_witness_by_account(account_u
    return {};
 }
 
-vector<witness_object> database_api::lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit)const
+vector<witness_object> database_api::lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit,
+                                                      witness_list_order_type order_type)const
 {
-   return my->lookup_witnesses( lower_bound_uid, limit );
+   return my->lookup_witnesses( lower_bound_uid, limit, order_type );
 }
 
-vector<witness_object> database_api_impl::lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit)const
+vector<witness_object> database_api_impl::lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit,
+                                                           witness_list_order_type order_type)const
 {
    FC_ASSERT( limit <= 101 );
    vector<witness_object> result;
-   const auto& idx = _db.get_index_type<witness_index>().indices().get<by_valid>();
-   auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_uid ) );
-   while( itr != idx.end() && limit > 0 ) // assume false < true
+
+   if( order_type == order_by_uid )
    {
-      result.push_back( *itr );
-      ++itr;
-      --limit;
+      const auto& idx = _db.get_index_type<witness_index>().indices().get<by_valid>();
+      auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_uid ) );
+      while( itr != idx.end() && limit > 0 ) // assume false < true
+      {
+         result.push_back( *itr );
+         ++itr;
+         --limit;
+      }
+   }
+   else
+   {
+      account_uid_type new_lower_bound_uid = lower_bound_uid;
+      const witness_object* lower_bound_obj = _db.find_witness_by_uid( lower_bound_uid );
+      uint64_t lower_bound_shares = -1;
+      if( lower_bound_obj != nullptr )
+      {
+         if( order_type == order_by_votes )
+            lower_bound_shares = lower_bound_obj->total_votes;
+         else // by pledge
+            lower_bound_shares = lower_bound_obj->pledge;
+      }
+
+      if( order_type == order_by_votes )
+      {
+         const auto& idx = _db.get_index_type<witness_index>().indices().get<by_votes>();
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, lower_bound_uid ) );
+         while( itr != idx.end() && limit > 0 ) // assume false < true
+         {
+            result.push_back( *itr );
+            ++itr;
+            --limit;
+         }
+      }
+      else // by pledge
+      {
+         const auto& idx = _db.get_index_type<witness_index>().indices().get<by_pledge>();
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, lower_bound_uid ) );
+         while( itr != idx.end() && limit > 0 ) // assume false < true
+         {
+            result.push_back( *itr );
+            ++itr;
+            --limit;
+         }
+      }
    }
 
    return result;

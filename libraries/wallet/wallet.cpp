@@ -3459,9 +3459,10 @@ signed_transaction wallet_api::create_committee_member(string owner_account, str
    return my->create_committee_member(owner_account, url, broadcast);
 }
 
-vector<witness_object> wallet_api::list_witnesses(const account_uid_type lowerbound, uint32_t limit)
+vector<witness_object> wallet_api::list_witnesses(const account_uid_type lowerbound, uint32_t limit,
+                                                  witness_list_order_type order_type)
 {
-   return my->_remote_db->lookup_witnesses(lowerbound, limit);
+   return my->_remote_db->lookup_witnesses(lowerbound, limit, order_type);
 }
 
 map<string,committee_member_id_type> wallet_api::list_committee_members(const string& lowerbound, uint32_t limit)

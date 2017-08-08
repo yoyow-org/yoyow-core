@@ -79,7 +79,7 @@ void witness_collect_pay_operation::validate() const
 {
    validate_op_fee( fee, "witness pay collecting " );
    validate_account_uid( witness_account, "witness " );
-   validate_positive_asset( pay, "pay " );
+   validate_positive_asset( pay, "pay" );
 }
 
 } } // graphene::chain
