@@ -75,12 +75,11 @@ void witness_vote_update_operation::validate() const
    // can change nothing to only refresh last_vote_update_time
 }
 
-void witness_vote_proxy_operation::validate() const
+void witness_collect_pay_operation::validate() const
 {
-   validate_op_fee( fee, "witness vote proxy " );
-   validate_account_uid( voter, "voter " );
-   validate_account_uid( proxy, "proxy " );
-   FC_ASSERT( voter != proxy, "voter and proxy should not be same" );
+   validate_op_fee( fee, "witness pay collecting " );
+   validate_account_uid( witness_account, "witness " );
+   validate_positive_asset( pay, "pay " );
 }
 
 } } // graphene::chain

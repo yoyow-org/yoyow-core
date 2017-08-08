@@ -132,10 +132,10 @@ namespace graphene { namespace chain {
    };
 
   /**
-    * @brief Change or refresh witness voting proxy.
+    * @brief collects witness pay.
     * @ingroup operations
     */
-   struct witness_vote_proxy_operation : public base_operation
+   struct witness_collect_pay_operation : public base_operation
    {
       struct fee_parameters_type
       {
@@ -145,20 +145,22 @@ namespace graphene { namespace chain {
          extensions_type   extensions;
       };
 
-      fee_type                   fee;
-      /// The account which vote for witnesses. This account pays the fee for this operation.
-      account_uid_type           voter;
-      account_uid_type           proxy;
+      fee_type          fee;
+      /// The account which owns the witness. This account pays the fee for this operation.
+      account_uid_type  witness_account;
+
+      /// The amount to collect
+      asset             pay;
 
       extensions_type   extensions;
 
-      account_uid_type  fee_payer_uid()const { return voter; }
+      account_uid_type  fee_payer_uid()const { return witness_account; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
          // need active authority
-         a.insert( voter );
+         a.insert( witness_account );
       }
    };
 
@@ -174,5 +176,5 @@ FC_REFLECT( graphene::chain::witness_vote_update_operation::fee_parameters_type,
             (basic_fee)(price_per_witness)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::witness_vote_update_operation, (fee)(voter)(witnesses_to_add)(witnesses_to_remove)(extensions) )
 
-FC_REFLECT( graphene::chain::witness_vote_proxy_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
-FC_REFLECT( graphene::chain::witness_vote_proxy_operation, (fee)(voter)(proxy)(extensions) )
+FC_REFLECT( graphene::chain::witness_collect_pay_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::witness_collect_pay_operation, (fee)(witness_account)(pay)(extensions) )

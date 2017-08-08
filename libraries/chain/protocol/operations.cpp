@@ -130,6 +130,8 @@ struct operation_get_required_uid_auth
       }
    }
 
+   BOOST_TTI_HAS_MEMBER_DATA(fee)
+
    template<typename T>
    void do_get(const T& v)const
    {
@@ -146,77 +148,23 @@ struct operation_get_required_uid_auth
       other.push_back( fee_payer_auth );
    }
 
-   void operator()( const account_create_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const transfer_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const account_manage_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const post_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const csaf_collect_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const csaf_lease_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const account_update_key_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const account_update_auth_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const witness_create_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const witness_update_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const witness_vote_update_operation& v )const
-   {
-      do_get_with_extended_fee(v);
-   }
-
-   void operator()( const witness_vote_proxy_operation& v )const
+   template<typename T>
+   void operator()( const T& v, std::true_type )const
    {
       do_get_with_extended_fee(v);
    }
 
    template<typename T>
-   void operator()( const T& v )const
+   void operator()( const T& v, std::false_type )const
    {
       FC_ASSERT( false, "not implemented." );
-      /*
-      active.insert( v.fee_payer_uid() );
-      v.get_required_owner_uid_authorities( owner );
-      v.get_required_active_uid_authorities( active );
-      v.get_required_secondary_uid_authorities( secondary );
-      v.get_required_authorities( other );
-      */
+   }
+
+   template<typename T>
+   void operator()( const T& v )const
+   {
+      const bool b = has_member_data_fee< T, fee_type >::value;
+      operator()( v, std::integral_constant<bool, b>() );
    }
 };
 

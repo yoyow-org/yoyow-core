@@ -51,7 +51,7 @@ namespace graphene { namespace chain {
    typedef fc::static_variant<
             account_create_operation,
             transfer_operation,
-            balance_claim_operation,
+            witness_collect_pay_operation,
             account_manage_operation,
             post_operation,
             csaf_collect_operation,
@@ -61,7 +61,8 @@ namespace graphene { namespace chain {
             witness_create_operation,
             witness_update_operation,
             witness_vote_update_operation,
-            witness_vote_proxy_operation,
+            account_update_proxy_operation,
+            balance_claim_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
             call_order_update_operation,

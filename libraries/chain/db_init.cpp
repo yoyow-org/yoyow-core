@@ -153,6 +153,7 @@ void database::initialize_evaluators()
    register_evaluator<account_manage_evaluator>();
    register_evaluator<account_update_key_evaluator>();
    register_evaluator<account_update_auth_evaluator>();
+   register_evaluator<account_update_proxy_evaluator>();
    register_evaluator<account_update_evaluator>();
    register_evaluator<account_upgrade_evaluator>();
    register_evaluator<account_whitelist_evaluator>();
@@ -187,7 +188,7 @@ void database::initialize_evaluators()
    register_evaluator<witness_create_evaluator>();
    register_evaluator<witness_update_evaluator>();
    register_evaluator<witness_vote_update_evaluator>();
-   register_evaluator<witness_vote_proxy_evaluator>();
+   register_evaluator<witness_collect_pay_evaluator>();
    register_evaluator<withdraw_permission_create_evaluator>();
    register_evaluator<withdraw_permission_claim_evaluator>();
    register_evaluator<withdraw_permission_update_evaluator>();

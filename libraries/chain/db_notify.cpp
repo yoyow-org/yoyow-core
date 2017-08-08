@@ -74,6 +74,10 @@ struct get_impacted_account_visitor
    {
    }
 
+   void operator()( const account_update_proxy_operation& op )
+   {
+   }
+
    void operator()( const account_update_operation& op )
    {
       _impacted.insert( op.account );
@@ -128,7 +132,7 @@ struct get_impacted_account_visitor
    {
       // TODO review
    }
-   void operator()( const witness_vote_proxy_operation& op )
+   void operator()( const witness_collect_pay_operation& op )
    {
       // TODO review
    }

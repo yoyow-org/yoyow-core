@@ -364,6 +364,14 @@ void account_update_auth_operation::validate()const
       validate_new_authority( *secondary, "new secondary " );
 }
 
+void account_update_proxy_operation::validate() const
+{
+   validate_op_fee( fee, "account voting proxy update " );
+   validate_account_uid( voter, "voter " );
+   validate_account_uid( proxy, "proxy " );
+   FC_ASSERT( voter != proxy, "voter and proxy should not be same" );
+}
+
 share_type account_update_operation::calculate_fee( const fee_parameters_type& k )const
 {
    auto core_fee_required = k.fee;  

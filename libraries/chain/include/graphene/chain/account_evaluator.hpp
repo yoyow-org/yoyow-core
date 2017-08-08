@@ -73,6 +73,22 @@ public:
    const account_object* acnt;
 };
 
+class account_update_proxy_evaluator : public evaluator<account_update_proxy_evaluator>
+{
+   public:
+      typedef account_update_proxy_operation operation_type;
+
+      void_result do_evaluate( const account_update_proxy_operation& o );
+      void_result do_apply( const account_update_proxy_operation& o );
+
+      const account_statistics_object* account_stats = nullptr;
+      const voter_object* voter_obj = nullptr;
+      const voter_object* invalid_voter_obj = nullptr;
+      const voter_object* current_proxy_voter_obj = nullptr;
+      const voter_object* invalid_current_proxy_voter_obj = nullptr;
+      const voter_object* proxy_voter_obj = nullptr;
+};
+
 class account_update_evaluator : public evaluator<account_update_evaluator>
 {
 public:

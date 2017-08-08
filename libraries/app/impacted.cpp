@@ -44,7 +44,7 @@ struct get_impacted_account_uid_visitor
    void operator()( const account_create_operation& op )
    {
       _impacted.insert( op.uid );
-      //_impacted.insert( op.reg_info.registrar );
+      //_impacted.insert( op.reg_info.registrar ); // fee payer
       _impacted.insert( op.reg_info.referrer );
       add_authority_account_uids( _impacted, op.owner );
       add_authority_account_uids( _impacted, op.active );
@@ -53,41 +53,44 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const transfer_operation& op )
    {
+      //_impacted.insert( op.from ); // fee payer
       _impacted.insert( op.to );
    }
 
    void operator()( const post_operation& op )
    {
+      //_impacted.insert( op.poster ); // fee payer
       if( op.parent_poster.valid() )
          _impacted.insert( *(op.parent_poster) );
    }
 
-   void operator()( const balance_claim_operation& op ) {}
-
    void operator()( const account_manage_operation& op )
    {
-      //_impacted.insert( op.executor );
+      //_impacted.insert( op.executor ); // fee payer
       _impacted.insert( op.account );
    }
 
    void operator()( const csaf_collect_operation& op )
    {
+      //_impacted.insert( op.from ); // fee payer
       _impacted.insert( op.to );
    }
 
    void operator()( const csaf_lease_operation& op )
    {
+      //_impacted.insert( op.from ); // fee payer
       _impacted.insert( op.to );
    }
 
    void operator()( const account_update_key_operation& op )
    {
+      //_impacted.insert( op.fee_payer ); // fee payer
       _impacted.insert( op.uid );
    }
 
    void operator()( const account_update_auth_operation& op )
    {
-      //_impacted.insert( op.uid );
+      //_impacted.insert( op.uid ); // fee payer
       if( op.owner.valid() )
          add_authority_account_uids( _impacted, *op.owner );
       if( op.active.valid() )
@@ -96,32 +99,39 @@ struct get_impacted_account_uid_visitor
          add_authority_account_uids( _impacted, *op.secondary );
    }
 
+   void operator()( const account_update_proxy_operation& op )
+   {
+      //_impacted.insert( op.voter ); // fee payer
+      _impacted.insert( op.proxy );
+   }
+
    void operator()( const witness_create_operation& op )
    {
-      //_impacted.insert( op.witness_account );
+      //_impacted.insert( op.witness_account ); // fee payer
    }
 
    void operator()( const witness_update_operation& op )
    {
-      //_impacted.insert( op.witness_account );
+      //_impacted.insert( op.witness_account ); // fee payer
    }
 
    void operator()( const witness_vote_update_operation& op )
    {
-      //_impacted.insert( op.voter );
+      //_impacted.insert( op.voter ); // fee payer
       for( auto uid : op.witnesses_to_add )
          _impacted.insert( uid );
       for( auto uid : op.witnesses_to_remove )
          _impacted.insert( uid );
    }
 
-   void operator()( const witness_vote_proxy_operation& op )
+   void operator()( const witness_collect_pay_operation& op )
    {
-      //_impacted.insert( op.voter );
-      _impacted.insert( op.proxy );
+      //_impacted.insert( op.witness_account ); // fee payer
    }
 
    /*
+   void operator()( const balance_claim_operation& op ) {}
+
    void operator()( const asset_claim_fees_operation& op ){}
    void operator()( const limit_order_create_operation& op ) {}
    void operator()( const limit_order_cancel_operation& op )
@@ -306,6 +316,11 @@ struct get_impacted_account_visitor
       // TODO review
    }
 
+   void operator()( const account_update_proxy_operation& op )
+   {
+      // TODO review
+   }
+
    void operator()( const asset_claim_fees_operation& op ){}
    void operator()( const limit_order_create_operation& op ) {}
    void operator()( const limit_order_cancel_operation& op )
@@ -385,7 +400,7 @@ struct get_impacted_account_visitor
    {
       // TODO review
    }
-   void operator()( const witness_vote_proxy_operation& op )
+   void operator()( const witness_collect_pay_operation& op )
    {
       // TODO review
    }
