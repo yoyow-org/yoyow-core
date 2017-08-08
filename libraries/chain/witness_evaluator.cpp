@@ -223,6 +223,8 @@ void_result witness_vote_update_evaluator::do_evaluate( const witness_vote_updat
    database& d = db();
    account_stats = &d.get_account_statistics_by_uid( op.voter );
 
+   FC_ASSERT( account_stats->can_vote == true, "This account can not vote" );
+
    const auto& global_params = d.get_global_properties().parameters;
    FC_ASSERT( account_stats->core_balance >= global_params.min_governance_voting_balance,
               "Need more balance to be able to vote: have ${b}, need ${r}",

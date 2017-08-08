@@ -150,6 +150,11 @@ namespace graphene { namespace chain {
          share_type uncollected_witness_pay;
 
          /**
+          * whether this account is permitted to be a governance voter.
+          */
+         bool can_vote = true;
+
+         /**
           * whether this account is a governance voter.
           */
          bool is_voter = false;
@@ -675,6 +680,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                     (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
                     (last_witness_sequence)(uncollected_witness_pay)
-                    (is_voter)(last_voter_sequence)
+                    (can_vote)(is_voter)(last_voter_sequence)
                   )
 
