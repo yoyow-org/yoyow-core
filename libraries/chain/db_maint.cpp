@@ -204,7 +204,7 @@ void database::update_active_witnesses()
 
          for( const witness_object& wit : wits )
          {
-            weights.emplace(wit.witness_account, _vote_tally_buffer[wit.vote_id]);
+            weights.emplace(wit.account, _vote_tally_buffer[wit.vote_id]);
             total_votes += _vote_tally_buffer[wit.vote_id];
          }
 
@@ -226,7 +226,7 @@ void database::update_active_witnesses()
       {
          vote_counter vc;
          for( const witness_object& wit : wits )
-            vc.add( wit.witness_account, _vote_tally_buffer[wit.vote_id] );
+            vc.add( wit.account, _vote_tally_buffer[wit.vote_id] );
          vc.finish( a.active );
       }
    } );
@@ -238,7 +238,7 @@ void database::update_active_witnesses()
       std::transform(wits.begin(), wits.end(),
                      std::inserter(gp.active_witnesses, gp.active_witnesses.end()),
                      [](const witness_object& w) {
-         return std::make_pair( w.witness_account, scheduled_by_vote_top );
+         return std::make_pair( w.account, scheduled_by_vote_top );
       });
    });
 

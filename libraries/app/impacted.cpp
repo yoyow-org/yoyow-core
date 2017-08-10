@@ -107,12 +107,12 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const witness_create_operation& op )
    {
-      //_impacted.insert( op.witness_account ); // fee payer
+      //_impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const witness_update_operation& op )
    {
-      //_impacted.insert( op.witness_account ); // fee payer
+      //_impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const witness_vote_update_operation& op )
@@ -126,7 +126,7 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const witness_collect_pay_operation& op )
    {
-      //_impacted.insert( op.witness_account ); // fee payer
+      //_impacted.insert( op.account ); // fee payer
    }
 
    /*
@@ -389,12 +389,12 @@ struct get_impacted_account_visitor
    void operator()( const witness_create_operation& op )
    {
       // TODO review
-      //_impacted.insert( op.witness_account );
+      //_impacted.insert( op.account );
    }
    void operator()( const witness_update_operation& op )
    {
       // TODO review
-      //_impacted.insert( op.witness_account );
+      //_impacted.insert( op.account );
    }
    void operator()( const witness_vote_update_operation& op )
    {

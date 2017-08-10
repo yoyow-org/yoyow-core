@@ -51,9 +51,9 @@ void database::update_global_dynamic_data( const signed_block& b )
    missed_blocks--;
    for( uint32_t i = 0; i < missed_blocks; ++i ) {
       const auto& witness_missed = get_witness_by_uid( get_scheduled_witness( i+1 ) );
-      if(  witness_missed.witness_account != b.witness ) {
+      if(  witness_missed.account != b.witness ) {
          /*
-         const auto& witness_account = witness_missed.witness_account(*this);
+         const auto& witness_account = witness_missed.account(*this);
          if( (fc::time_point::now() - b.timestamp) < fc::seconds(30) )
             wlog( "Witness ${name} missed block ${n} around ${t}", ("name",witness_account.name)("n",b.block_num())("t",b.timestamp) );
             */
@@ -108,7 +108,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    uint64_t new_block_aslot = dpo.current_aslot + get_slot_at_time( new_block.timestamp );
 
-   const auto& itr = gpo.active_witnesses.find( signing_witness.witness_account );
+   const auto& itr = gpo.active_witnesses.find( signing_witness.account );
    FC_ASSERT( itr != gpo.active_witnesses.end() );
    auto wit_type = itr->second;
 
@@ -555,9 +555,9 @@ void database::clear_resigned_witness_votes()
    auto wit_itr = wit_idx.begin(); // assume that false < true
    while( wit_itr != wit_idx.end() && wit_itr->is_valid == false )
    {
-      auto vote_itr = vote_idx.lower_bound( std::make_tuple( wit_itr->witness_account, wit_itr->sequence ) );
+      auto vote_itr = vote_idx.lower_bound( std::make_tuple( wit_itr->account, wit_itr->sequence ) );
       while( vote_itr != vote_idx.end()
-            && vote_itr->witness_uid == wit_itr->witness_account
+            && vote_itr->witness_uid == wit_itr->account
             && vote_itr->witness_sequence == wit_itr->sequence )
       {
          const voter_object* voter = find_voter( vote_itr->voter_uid, vote_itr->voter_sequence );
@@ -771,7 +771,7 @@ void database::check_invariants()
    {
       if( s.is_valid )
       {
-         const auto& stats = get_account_statistics_by_uid( s.witness_account );
+         const auto& stats = get_account_statistics_by_uid( s.account );
          FC_ASSERT( stats.last_witness_sequence == s.sequence );
          FC_ASSERT( stats.total_witness_pledge - stats.releasing_witness_pledge == s.pledge );
          total_witness_pledges += s.pledge;

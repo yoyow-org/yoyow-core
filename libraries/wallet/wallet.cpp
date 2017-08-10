@@ -1479,11 +1479,11 @@ public:
       graphene::chain::public_key_type witness_public_key = witness_private_key.get_public_key();
 
       witness_create_operation witness_create_op;
-      witness_create_op.witness_account = witness_account.uid;
+      witness_create_op.account = witness_account.uid;
       witness_create_op.block_signing_key = witness_public_key;
       witness_create_op.url = url;
 
-      if (_remote_db->get_witness_by_account(witness_create_op.witness_account))
+      if (_remote_db->get_witness_by_account(witness_create_op.account))
          FC_THROW("Account ${owner_account} is already a witness", ("owner_account", owner_account));
 
       signed_transaction tx;
@@ -1502,12 +1502,12 @@ public:
                                      bool broadcast /* = false */)
    { try {
       witness_object witness = get_witness(witness_name);
-      account_object witness_account = get_account( witness.witness_account );
+      account_object witness_account = get_account( witness.account );
       fc::ecc::private_key active_private_key = get_private_key_for_account(witness_account);
 
       witness_update_operation witness_update_op;
       //witness_update_op.witness = witness.id;
-      witness_update_op.witness_account = witness_account.uid;
+      witness_update_op.account = witness_account.uid;
       if( url != "" )
          witness_update_op.new_url = url;
       if( block_signing_key != "" )

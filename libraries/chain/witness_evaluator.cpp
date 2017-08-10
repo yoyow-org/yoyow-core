@@ -33,8 +33,8 @@ namespace graphene { namespace chain {
 void_result witness_create_evaluator::do_evaluate( const witness_create_operation& op )
 { try {
    database& d = db();
-   //FC_ASSERT(db().get(op.witness_account).is_lifetime_member());
-   account_stats = &d.get_account_statistics_by_uid( op.witness_account );
+   //FC_ASSERT(db().get(op.account).is_lifetime_member());
+   account_stats = &d.get_account_statistics_by_uid( op.account );
 
    const auto& global_params = d.get_global_properties().parameters;
    // TODO review
@@ -47,11 +47,11 @@ void_result witness_create_evaluator::do_evaluate( const witness_create_operatio
    auto available_balance = account_stats->core_balance - account_stats->core_leased_out; // releasing pledge can be reused.
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
-              ("a",op.witness_account)
+              ("a",op.account)
               ("b",d.to_pretty_core_string(available_balance))
               ("r",d.to_pretty_string(op.pledge)) );
 
-   const witness_object* maybe_found = d.find_witness_by_uid( op.witness_account );
+   const witness_object* maybe_found = d.find_witness_by_uid( op.account );
    FC_ASSERT( maybe_found == nullptr, "This account is already a witness" );
 
    return void_result();
@@ -64,7 +64,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    const auto& global_params = d.get_global_properties().parameters;
 
    const auto& new_witness_object = d.create<witness_object>( [&]( witness_object& wit ){
-      wit.witness_account     = op.witness_account;
+      wit.account             = op.account;
       wit.sequence            = account_stats->last_witness_sequence + 1;
       //wit.is_valid            = true; // default
       wit.signing_key         = op.block_signing_key;
@@ -103,8 +103,8 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 void_result witness_update_evaluator::do_evaluate( const witness_update_operation& op )
 { try {
    database& d = db();
-   account_stats = &d.get_account_statistics_by_uid( op.witness_account );
-   witness_obj   = &d.get_witness_by_uid( op.witness_account );
+   account_stats = &d.get_account_statistics_by_uid( op.account );
+   witness_obj   = &d.get_witness_by_uid( op.account );
 
    const auto& global_params = d.get_global_properties().parameters;
    if( op.new_signing_key.valid() )
@@ -123,14 +123,14 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
          auto available_balance = account_stats->core_balance - account_stats->core_leased_out; // releasing pledge can be reused.
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
-                    ("a",op.witness_account)
+                    ("a",op.account)
                     ("b",d.to_pretty_core_string(available_balance))
                     ("r",d.to_pretty_string(*op.new_pledge)) );
       }
       else if( op.new_pledge->amount == 0 ) // resign
       {
          const auto& active_witnesses = d.get_global_properties().active_witnesses;
-         FC_ASSERT( active_witnesses.find( op.witness_account ) == active_witnesses.end(),
+         FC_ASSERT( active_witnesses.find( op.account ) == active_witnesses.end(),
                     "Active witness can not resign" );
       }
    }
@@ -307,16 +307,14 @@ void_result witness_vote_update_evaluator::do_evaluate( const witness_vote_updat
 
       for( const auto& wit : witnesses_to_remove )
       {
-         const witness_vote_object* wit_vote = d.find_witness_vote( op.voter, voter_obj->sequence,
-                                                                    wit->witness_account, wit->sequence );
-         FC_ASSERT( wit_vote != nullptr, "Not voting for witness ${w}, can not remove", ("w",wit->witness_account) );
+         const witness_vote_object* wit_vote = d.find_witness_vote( op.voter, voter_obj->sequence, wit->account, wit->sequence );
+         FC_ASSERT( wit_vote != nullptr, "Not voting for witness ${w}, can not remove", ("w",wit->account) );
          witness_votes_to_remove.push_back( wit_vote );
       }
       for( const auto& wit : witnesses_to_add )
       {
-         const witness_vote_object* wit_vote = d.find_witness_vote( op.voter, voter_obj->sequence,
-                                                                    wit->witness_account, wit->sequence );
-         FC_ASSERT( wit_vote == nullptr, "Already voting for witness ${w}, can not add", ("w",wit->witness_account) );
+         const witness_vote_object* wit_vote = d.find_witness_vote( op.voter, voter_obj->sequence, wit->account, wit->sequence );
+         FC_ASSERT( wit_vote == nullptr, "Already voting for witness ${w}, can not add", ("w",wit->account) );
       }
    }
 
@@ -417,7 +415,7 @@ void_result witness_vote_update_evaluator::do_apply( const witness_vote_update_o
       d.create<witness_vote_object>( [&]( witness_vote_object& o ){
          o.voter_uid        = op.voter;
          o.voter_sequence   = voter_obj->sequence;
-         o.witness_uid      = witnesses_to_add[i]->witness_account;
+         o.witness_uid      = witnesses_to_add[i]->account;
          o.witness_sequence = witnesses_to_add[i]->sequence;
       });
       if( total_votes > 0 )
@@ -430,7 +428,7 @@ void_result witness_vote_update_evaluator::do_apply( const witness_vote_update_o
 void_result witness_collect_pay_evaluator::do_evaluate( const witness_collect_pay_operation& op )
 { try {
    database& d = db();
-   account_stats = &d.get_account_statistics_by_uid( op.witness_account );
+   account_stats = &d.get_account_statistics_by_uid( op.account );
 
    FC_ASSERT( account_stats->uncollected_witness_pay >= op.pay.amount,
               "Can not collect so much: have ${b}, requested ${r}",
@@ -444,7 +442,7 @@ void_result witness_collect_pay_evaluator::do_apply( const witness_collect_pay_o
 { try {
    database& d = db();
 
-   d.adjust_balance( op.witness_account, op.pay );
+   d.adjust_balance( op.account, op.pay );
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.uncollected_witness_pay -= op.pay.amount;
    });

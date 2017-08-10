@@ -45,19 +45,19 @@ namespace graphene { namespace chain {
 
       fee_type          fee;
       /// The account which owns the witness. This account pays the fee for this operation.
-      account_uid_type  witness_account;
+      account_uid_type  account;
       public_key_type   block_signing_key;
       asset             pledge;
       string            url;
       extensions_type   extensions;
 
-      account_uid_type  fee_payer_uid()const { return witness_account; }
+      account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
          // need active authority
-         a.insert( witness_account );
+         a.insert( account );
       }
    };
 
@@ -77,7 +77,7 @@ namespace graphene { namespace chain {
 
       fee_type          fee;
       /// The account which owns the witness. This account pays the fee for this operation.
-      account_uid_type  witness_account;
+      account_uid_type  account;
 
       /// The new block signing key.
       optional< public_key_type >  new_signing_key;
@@ -88,13 +88,13 @@ namespace graphene { namespace chain {
 
       extensions_type   extensions;
 
-      account_uid_type  fee_payer_uid()const { return witness_account; }
+      account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
          // need active authority
-         a.insert( witness_account );
+         a.insert( account );
       }
    };
 
@@ -147,34 +147,34 @@ namespace graphene { namespace chain {
 
       fee_type          fee;
       /// The account which owns the witness. This account pays the fee for this operation.
-      account_uid_type  witness_account;
+      account_uid_type  account;
 
       /// The amount to collect
       asset             pay;
 
       extensions_type   extensions;
 
-      account_uid_type  fee_payer_uid()const { return witness_account; }
+      account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
          // need active authority
-         a.insert( witness_account );
+         a.insert( account );
       }
    };
 
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::witness_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
-FC_REFLECT( graphene::chain::witness_create_operation, (fee)(witness_account)(block_signing_key)(pledge)(url)(extensions) )
+FC_REFLECT( graphene::chain::witness_create_operation, (fee)(account)(block_signing_key)(pledge)(url)(extensions) )
 
 FC_REFLECT( graphene::chain::witness_update_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
-FC_REFLECT( graphene::chain::witness_update_operation, (fee)(witness_account)(new_signing_key)(new_pledge)(new_url)(extensions) )
+FC_REFLECT( graphene::chain::witness_update_operation, (fee)(account)(new_signing_key)(new_pledge)(new_url)(extensions) )
 
 FC_REFLECT( graphene::chain::witness_vote_update_operation::fee_parameters_type,
             (basic_fee)(price_per_witness)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::witness_vote_update_operation, (fee)(voter)(witnesses_to_add)(witnesses_to_remove)(extensions) )
 
 FC_REFLECT( graphene::chain::witness_collect_pay_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
-FC_REFLECT( graphene::chain::witness_collect_pay_operation, (fee)(witness_account)(pay)(extensions) )
+FC_REFLECT( graphene::chain::witness_collect_pay_operation, (fee)(account)(pay)(extensions) )

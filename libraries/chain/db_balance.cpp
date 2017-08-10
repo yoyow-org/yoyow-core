@@ -228,7 +228,7 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount)
    if( amount == 0 )
       return;
 
-   const auto& account_stats = get_account_statistics_by_uid( wit.witness_account );
+   const auto& account_stats = get_account_statistics_by_uid( wit.account );
    modify( account_stats, [&](account_statistics_object& s) {
       s.uncollected_witness_pay += amount;
    } );

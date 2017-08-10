@@ -121,12 +121,12 @@ struct get_impacted_account_visitor
    void operator()( const witness_create_operation& op )
    {
       // TODO review
-      //_impacted.insert( op.witness_account );
+      //_impacted.insert( op.account );
    }
    void operator()( const witness_update_operation& op )
    {
       // TODO review
-      //_impacted.insert( op.witness_account );
+      //_impacted.insert( op.account );
    }
    void operator()( const witness_vote_update_operation& op )
    {
@@ -290,7 +290,7 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            // TODO review
            //const auto& aobj = dynamic_cast<const witness_object*>(obj);
            //assert( aobj != nullptr );
-           //accounts.insert( aobj->witness_account );
+           //accounts.insert( aobj->account );
            break;
         } case limit_order_object_type:{
            const auto& aobj = dynamic_cast<const limit_order_object*>(obj);

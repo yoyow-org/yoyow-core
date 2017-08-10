@@ -43,7 +43,7 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id = witness_object_type;
 
-         account_uid_type    witness_account;
+         account_uid_type    account;
          uint32_t            sequence;
          bool                is_valid = true;
 
@@ -95,7 +95,7 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_account>,
             composite_key<
                witness_object,
-               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, account_uid_type, &witness_object::account>,
                member<witness_object, uint32_t, &witness_object::sequence>
             >
          >,
@@ -103,7 +103,7 @@ namespace graphene { namespace chain {
             composite_key<
                witness_object,
                member<witness_object, uint32_t, &witness_object::average_pledge_next_update_block>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, account_uid_type, &witness_object::account>,
                member<witness_object, uint32_t, &witness_object::sequence>
             >
          >,
@@ -112,7 +112,7 @@ namespace graphene { namespace chain {
                witness_object,
                member<witness_object, bool, &witness_object::is_valid>,
                member<witness_object, fc::uint128_t, &witness_object::by_pledge_scheduled_time>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, account_uid_type, &witness_object::account>,
                member<witness_object, uint32_t, &witness_object::sequence>
             >
          >,
@@ -121,7 +121,7 @@ namespace graphene { namespace chain {
                witness_object,
                member<witness_object, bool, &witness_object::is_valid>,
                member<witness_object, fc::uint128_t, &witness_object::by_vote_scheduled_time>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, account_uid_type, &witness_object::account>,
                member<witness_object, uint32_t, &witness_object::sequence>
             >
          >,
@@ -129,7 +129,7 @@ namespace graphene { namespace chain {
             composite_key<
                witness_object,
                member<witness_object, bool, &witness_object::is_valid>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, account_uid_type, &witness_object::account>,
                member<witness_object, uint32_t, &witness_object::sequence>
             >
          >,
@@ -138,7 +138,7 @@ namespace graphene { namespace chain {
                witness_object,
                member<witness_object, bool, &witness_object::is_valid>,
                member<witness_object, uint64_t, &witness_object::total_votes>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, account_uid_type, &witness_object::account>,
                member<witness_object, uint32_t, &witness_object::sequence>
             >,
             composite_key_compare<
@@ -153,7 +153,7 @@ namespace graphene { namespace chain {
                witness_object,
                member<witness_object, bool, &witness_object::is_valid>,
                member<witness_object, uint64_t, &witness_object::pledge>,
-               member<witness_object, account_uid_type, &witness_object::witness_account>,
+               member<witness_object, account_uid_type, &witness_object::account>,
                member<witness_object, uint32_t, &witness_object::sequence>
             >,
             composite_key_compare<
@@ -228,7 +228,7 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
-                    (witness_account)
+                    (account)
                     (sequence)
                     (is_valid)
                     (signing_key)

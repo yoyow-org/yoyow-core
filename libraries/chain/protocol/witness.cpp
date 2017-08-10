@@ -28,7 +28,7 @@ namespace graphene { namespace chain {
 void witness_create_operation::validate() const
 {
    validate_op_fee( fee, "witness creation " );
-   validate_account_uid( witness_account, "witness " );
+   validate_account_uid( account, "witness " );
    validate_non_negative_asset( pledge, "pledge" );
    FC_ASSERT( url.size() < GRAPHENE_MAX_URL_LENGTH, "url is too long" );
 }
@@ -36,7 +36,7 @@ void witness_create_operation::validate() const
 void witness_update_operation::validate() const
 {
    validate_op_fee( fee, "witness update " );
-   validate_account_uid( witness_account, "witness " );
+   validate_account_uid( account, "witness " );
    FC_ASSERT( new_pledge.valid() || new_signing_key.valid() || new_url.valid(), "Should change something" );
    if( new_pledge.valid() )
       validate_non_negative_asset( *new_pledge, "new pledge" );
@@ -78,7 +78,7 @@ void witness_vote_update_operation::validate() const
 void witness_collect_pay_operation::validate() const
 {
    validate_op_fee( fee, "witness pay collecting " );
-   validate_account_uid( witness_account, "witness " );
+   validate_account_uid( account, "witness " );
    validate_positive_asset( pay, "pay" );
 }
 

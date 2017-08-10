@@ -708,7 +708,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    std::for_each(genesis_state.initial_witness_candidates.begin(), genesis_state.initial_witness_candidates.end(),
                  [&](const genesis_state_type::initial_witness_type& witness) {
       witness_create_operation op;
-      op.witness_account = get_account_uid(witness.owner_name);
+      op.account = get_account_uid(witness.owner_name);
       op.block_signing_key = witness.block_signing_key;
       apply_operation(genesis_eval_state, op);
    });
@@ -752,7 +752,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    modify(get_global_properties(), [&](global_property_object& p) {
       for( uint32_t i = 1; i <= genesis_state.initial_active_witnesses; ++i )
       {
-         p.active_witnesses.insert( std::make_pair( get( witness_id_type(i) ).witness_account, scheduled_by_vote_top ) );
+         p.active_witnesses.insert( std::make_pair( get( witness_id_type(i) ).account, scheduled_by_vote_top ) );
       }
    });
 

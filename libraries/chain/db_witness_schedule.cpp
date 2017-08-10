@@ -104,7 +104,7 @@ void database::update_witness_schedule()
       {
          if( top_itr->signing_key != public_key_type() )
          {
-            new_witnesses.insert( std::make_pair( top_itr->witness_account, scheduled_by_vote_top ) );
+            new_witnesses.insert( std::make_pair( top_itr->account, scheduled_by_vote_top ) );
          }
          ++top_itr;
       }
@@ -119,7 +119,7 @@ void database::update_witness_schedule()
       {
          by_vote_processed.push_back( &(*rest_itr) );
          new_by_vote_time = rest_itr->by_vote_scheduled_time;
-         account_uid_type uid = rest_itr->witness_account;
+         account_uid_type uid = rest_itr->account;
          if( rest_itr->signing_key != public_key_type() && new_witnesses.find( uid ) == new_witnesses.end() )
          {
             new_witnesses.insert( std::make_pair( uid, scheduled_by_vote_rest ) );
@@ -168,7 +168,7 @@ void database::update_witness_schedule()
       {
          by_pledge_processed.push_back( &(*pledge_itr) );
          new_by_pledge_time = pledge_itr->by_pledge_scheduled_time;
-         account_uid_type uid = pledge_itr->witness_account;
+         account_uid_type uid = pledge_itr->account;
          if( pledge_itr->signing_key != public_key_type() && new_witnesses.find( uid ) == new_witnesses.end() )
          {
             new_witnesses.insert( std::make_pair( uid, scheduled_by_pledge ) );

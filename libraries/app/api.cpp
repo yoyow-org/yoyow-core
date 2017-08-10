@@ -304,7 +304,7 @@ namespace graphene { namespace app {
                // TODO review
                //const auto& aobj = dynamic_cast<const witness_object*>(obj);
                //assert( aobj != nullptr );
-               //result.push_back( aobj->witness_account );
+               //result.push_back( aobj->account );
                break;
             } case limit_order_object_type:{
                const auto& aobj = dynamic_cast<const limit_order_object*>(obj);
