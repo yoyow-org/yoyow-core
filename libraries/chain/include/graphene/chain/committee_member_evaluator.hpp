@@ -34,6 +34,8 @@ namespace graphene { namespace chain {
 
          void_result do_evaluate( const committee_member_create_operation& o );
          object_id_type do_apply( const committee_member_create_operation& o );
+
+         const account_statistics_object* account_stats = nullptr;
    };
 
    class committee_member_update_evaluator : public evaluator<committee_member_update_evaluator>
@@ -43,6 +45,27 @@ namespace graphene { namespace chain {
 
          void_result do_evaluate( const committee_member_update_operation& o );
          void_result do_apply( const committee_member_update_operation& o );
+
+         const account_statistics_object* account_stats = nullptr;
+         const committee_member_object* committee_member_obj = nullptr;
+   };
+
+   class committee_member_vote_update_evaluator : public evaluator<committee_member_vote_update_evaluator>
+   {
+      public:
+         typedef committee_member_vote_update_operation operation_type;
+
+         void_result do_evaluate( const committee_member_vote_update_operation& o );
+         void_result do_apply( const committee_member_vote_update_operation& o );
+
+         const account_statistics_object* account_stats = nullptr;
+         const voter_object* voter_obj = nullptr;
+         const voter_object* invalid_voter_obj = nullptr;
+         const voter_object* invalid_current_proxy_voter_obj = nullptr;
+         vector<const committee_member_object*> committee_members_to_add;
+         vector<const committee_member_object*> committee_members_to_remove;
+         vector<const committee_member_vote_object*> committee_member_votes_to_remove;
+         vector<const committee_member_vote_object*> invalid_committee_member_votes_to_remove;
    };
 
    class committee_member_update_global_parameters_evaluator : public evaluator<committee_member_update_global_parameters_evaluator>

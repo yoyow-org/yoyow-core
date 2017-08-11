@@ -44,7 +44,9 @@ void_result witness_create_evaluator::do_evaluate( const witness_create_operatio
                  ("p",d.to_pretty_string(op.pledge))
                  ("r",d.to_pretty_core_string(global_params.min_witness_pledge)) );
 
-   auto available_balance = account_stats->core_balance - account_stats->core_leased_out; // releasing pledge can be reused.
+   auto available_balance = account_stats->core_balance
+                          - account_stats->core_leased_out
+                          - account_stats->total_committee_member_pledge; // releasing witness pledge can be reused.
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
               ("a",op.account)
@@ -120,7 +122,9 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
 
          FC_ASSERT( op.new_pledge->amount != witness_obj->pledge, "new_pledge specified but did not change" );
 
-         auto available_balance = account_stats->core_balance - account_stats->core_leased_out; // releasing pledge can be reused.
+         auto available_balance = account_stats->core_balance
+                                - account_stats->core_leased_out
+                                - account_stats->total_committee_member_pledge; // releasing witness pledge can be reused.
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",op.account)

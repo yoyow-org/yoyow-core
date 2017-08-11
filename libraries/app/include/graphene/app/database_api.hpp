@@ -582,28 +582,33 @@ class database_api
       ///////////////////////
 
       /**
-       * @brief Get a list of committee_members by ID
-       * @param committee_member_ids IDs of the committee_members to retrieve
-       * @return The committee_members corresponding to the provided IDs
-       *
-       * This function has semantics identical to @ref get_objects
+       * @brief Get a list of committee_members by account UID
+       * @param committee_member_uids account UIDs of the committee_members to retrieve
+       * @return The committee_members corresponding to the provided account UIDs
        */
-      vector<optional<committee_member_object>> get_committee_members(const vector<committee_member_id_type>& committee_member_ids)const;
+      vector<optional<committee_member_object>> get_committee_members(const vector<account_uid_type>& committee_member_uids)const;
 
       /**
        * @brief Get the committee_member owned by a given account
-       * @param account The ID of the account whose committee_member should be retrieved
+       * @param account The UID of the account whose committee_member should be retrieved
        * @return The committee_member object, or null if the account does not have a committee_member
        */
-      fc::optional<committee_member_object> get_committee_member_by_account(account_id_type account)const;
+      fc::optional<committee_member_object> get_committee_member_by_account(account_uid_type account)const;
 
       /**
-       * @brief Get names and IDs for registered committee_members
-       * @param lower_bound_name Lower bound of the first name to return
-       * @param limit Maximum number of results to return -- must not exceed 1000
-       * @return Map of committee_member names to corresponding IDs
+       * @brief Query for registered committee members
+       * @param lower_bound_uid Lower bound of the first uid to return
+       * @param limit Maximum number of results to return -- must not exceed 101
+       * @param order_type how the returned list will be ordered
+       * @return A list of committee member objects
        */
-      map<string, committee_member_id_type> lookup_committee_member_accounts(const string& lower_bound_name, uint32_t limit)const;
+      vector<committee_member_object> lookup_committee_members(const account_uid_type lower_bound_uid,
+                                                               uint32_t limit, witness_list_order_type order_type)const;
+
+      /**
+       * @brief Get the total number of committee members registered with the blockchain
+       */
+      uint64_t get_committee_member_count()const;
 
 
       /// WORKERS
@@ -805,7 +810,8 @@ FC_API(graphene::app::database_api,
    // Committee members
    (get_committee_members)
    (get_committee_member_by_account)
-   (lookup_committee_member_accounts)
+   (lookup_committee_members)
+   (get_committee_member_count)
 
    // workers
    (get_workers_by_account)

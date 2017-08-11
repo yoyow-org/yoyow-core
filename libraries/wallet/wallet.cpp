@@ -1380,9 +1380,9 @@ public:
    { try {
 
       committee_member_create_operation committee_member_create_op;
-      committee_member_create_op.committee_member_account = get_account_id(owner_account);
+      committee_member_create_op.account = get_account_uid(owner_account);
       committee_member_create_op.url = url;
-      if (_remote_db->get_committee_member_by_account(committee_member_create_op.committee_member_account))
+      if (_remote_db->get_committee_member_by_account(committee_member_create_op.account))
          FC_THROW("Account ${owner_account} is already a committee_member", ("owner_account", owner_account));
 
       signed_transaction tx;
@@ -1440,11 +1440,16 @@ public:
          fc::optional<committee_member_id_type> committee_member_id = maybe_id<committee_member_id_type>(owner_account);
          if (committee_member_id)
          {
-            std::vector<committee_member_id_type> ids_to_get;
+            std::vector<object_id_type> ids_to_get;
             ids_to_get.push_back(*committee_member_id);
-            std::vector<fc::optional<committee_member_object>> committee_member_objects = _remote_db->get_committee_members(ids_to_get);
-            if (committee_member_objects.front())
-               return *committee_member_objects.front();
+            fc::variants objects = _remote_db->get_objects( ids_to_get );
+            for( const variant& obj : objects )
+            {
+               optional<committee_member_object> wo;
+               from_variant( obj, wo );
+               if( wo )
+                  return *wo;
+            }
             FC_THROW("No committee_member is registered for id ${id}", ("id", owner_account));
          }
          else
@@ -1452,8 +1457,8 @@ public:
             // then maybe it's the owner account
             try
             {
-               account_id_type owner_account_id = get_account_id(owner_account);
-               fc::optional<committee_member_object> committee_member = _remote_db->get_committee_member_by_account(owner_account_id);
+               account_uid_type owner_account_uid = get_account_uid(owner_account);
+               fc::optional<committee_member_object> committee_member = _remote_db->get_committee_member_by_account(owner_account_uid);
                if (committee_member)
                   return *committee_member;
                else
@@ -1707,8 +1712,8 @@ public:
                                         bool broadcast /* = false */)
    { try {
       account_object voting_account_object = get_account(voting_account);
-      account_id_type committee_member_owner_account_id = get_account_id(committee_member);
-      fc::optional<committee_member_object> committee_member_obj = _remote_db->get_committee_member_by_account(committee_member_owner_account_id);
+      account_uid_type committee_member_owner_account_uid = get_account_uid(committee_member);
+      fc::optional<committee_member_object> committee_member_obj = _remote_db->get_committee_member_by_account(committee_member_owner_account_uid);
       if (!committee_member_obj)
          FC_THROW("Account ${committee_member} is not registered as a committee_member", ("committee_member", committee_member));
       // TODO: review
@@ -3465,9 +3470,10 @@ vector<witness_object> wallet_api::list_witnesses(const account_uid_type lowerbo
    return my->_remote_db->lookup_witnesses(lowerbound, limit, order_type);
 }
 
-map<string,committee_member_id_type> wallet_api::list_committee_members(const string& lowerbound, uint32_t limit)
+vector<committee_member_object> wallet_api::list_committee_members(const account_uid_type lowerbound, uint32_t limit,
+                                                                   witness_list_order_type order_type)
 {
-   return my->_remote_db->lookup_committee_member_accounts(lowerbound, limit);
+   return my->_remote_db->lookup_committee_members(lowerbound, limit, order_type);
 }
 
 witness_object wallet_api::get_witness(string owner_account)

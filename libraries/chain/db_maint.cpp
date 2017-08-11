@@ -269,6 +269,8 @@ void database::update_active_committee_members()
    }
 
    // Update committee authorities
+   /*
+   // TODO review
    if( !committee_members.empty() )
    {
       modify(get(GRAPHENE_COMMITTEE_ACCOUNT), [&](account_object& a)
@@ -312,11 +314,12 @@ void database::update_active_committee_members()
          a.active = get(GRAPHENE_COMMITTEE_ACCOUNT).active;
       });
    }
+   */
    modify(get_global_properties(), [&](global_property_object& gp) {
       gp.active_committee_members.clear();
       std::transform(committee_members.begin(), committee_members.end(),
                      std::inserter(gp.active_committee_members, gp.active_committee_members.begin()),
-                     [](const committee_member_object& d) { return d.id; });
+                     [](const committee_member_object& d) { return d.account; });
    });
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -830,10 +833,10 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
                 b(_committee_count_histogram_buffer),
                 c(_vote_tally_buffer);
 
-   /* removed for yy. no longer needed. TODO still need to update active committee members somehow
+   /* removed for yy. no longer needed.
    update_top_n_authorities(*this);
    //update_active_witnesses();
-   update_active_committee_members();
+   //update_active_committee_members();
    update_worker_votes();
    */
 

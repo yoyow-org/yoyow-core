@@ -147,9 +147,11 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       uint64_t get_witness_count()const;
 
       // Committee members
-      vector<optional<committee_member_object>> get_committee_members(const vector<committee_member_id_type>& committee_member_ids)const;
-      fc::optional<committee_member_object> get_committee_member_by_account(account_id_type account)const;
-      map<string, committee_member_id_type> lookup_committee_member_accounts(const string& lower_bound_name, uint32_t limit)const;
+      vector<optional<committee_member_object>> get_committee_members(const vector<account_uid_type>& committee_member_uids)const;
+      fc::optional<committee_member_object> get_committee_member_by_account(account_uid_type account)const;
+      vector<committee_member_object> lookup_committee_members(const account_uid_type lower_bound_uid, uint32_t limit,
+                                                               witness_list_order_type order_type)const;
+      uint64_t get_committee_member_count()const;
 
       // Votes
       vector<variant> lookup_vote_ids( const vector<vote_id_type>& votes )const;
@@ -1653,7 +1655,9 @@ vector<witness_object> database_api_impl::lookup_witnesses(const account_uid_typ
       account_uid_type new_lower_bound_uid = lower_bound_uid;
       const witness_object* lower_bound_obj = _db.find_witness_by_uid( lower_bound_uid );
       uint64_t lower_bound_shares = -1;
-      if( lower_bound_obj != nullptr )
+      if( lower_bound_obj == nullptr )
+         new_lower_bound_uid = 0;
+      else
       {
          if( order_type == order_by_votes )
             lower_bound_shares = lower_bound_obj->total_votes;
@@ -1664,7 +1668,7 @@ vector<witness_object> database_api_impl::lookup_witnesses(const account_uid_typ
       if( order_type == order_by_votes )
       {
          const auto& idx = _db.get_index_type<witness_index>().indices().get<by_votes>();
-         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, lower_bound_uid ) );
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
          while( itr != idx.end() && limit > 0 ) // assume false < true
          {
             result.push_back( *itr );
@@ -1675,7 +1679,7 @@ vector<witness_object> database_api_impl::lookup_witnesses(const account_uid_typ
       else // by pledge
       {
          const auto& idx = _db.get_index_type<witness_index>().indices().get<by_pledge>();
-         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, lower_bound_uid ) );
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
          while( itr != idx.end() && limit > 0 ) // assume false < true
          {
             result.push_back( *itr );
@@ -1704,63 +1708,110 @@ uint64_t database_api_impl::get_witness_count()const
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-vector<optional<committee_member_object>> database_api::get_committee_members(const vector<committee_member_id_type>& committee_member_ids)const
+vector<optional<committee_member_object>> database_api::get_committee_members(const vector<account_uid_type>& committee_member_uids)const
 {
-   return my->get_committee_members( committee_member_ids );
+   return my->get_committee_members( committee_member_uids );
 }
 
-vector<optional<committee_member_object>> database_api_impl::get_committee_members(const vector<committee_member_id_type>& committee_member_ids)const
+vector<optional<committee_member_object>> database_api_impl::get_committee_members(const vector<account_uid_type>& committee_member_uids)const
 {
-   vector<optional<committee_member_object>> result; result.reserve(committee_member_ids.size());
-   std::transform(committee_member_ids.begin(), committee_member_ids.end(), std::back_inserter(result),
-                  [this](committee_member_id_type id) -> optional<committee_member_object> {
-      if(auto o = _db.find(id))
+   vector<optional<committee_member_object>> result; result.reserve(committee_member_uids.size());
+   std::transform(committee_member_uids.begin(), committee_member_uids.end(), std::back_inserter(result),
+                  [this](account_uid_type uid) -> optional<committee_member_object> {
+      if( auto o = _db.find_committee_member_by_uid( uid ) )
          return *o;
       return {};
    });
    return result;
 }
 
-fc::optional<committee_member_object> database_api::get_committee_member_by_account(account_id_type account)const
+fc::optional<committee_member_object> database_api::get_committee_member_by_account(account_uid_type account)const
 {
    return my->get_committee_member_by_account( account );
 }
 
-fc::optional<committee_member_object> database_api_impl::get_committee_member_by_account(account_id_type account) const
+fc::optional<committee_member_object> database_api_impl::get_committee_member_by_account(account_uid_type account) const
 {
-   const auto& idx = _db.get_index_type<committee_member_index>().indices().get<by_account>();
-   auto itr = idx.find(account);
+   const auto& idx = _db.get_index_type<committee_member_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, account ) );
    if( itr != idx.end() )
       return *itr;
    return {};
 }
 
-map<string, committee_member_id_type> database_api::lookup_committee_member_accounts(const string& lower_bound_name, uint32_t limit)const
+vector<committee_member_object> database_api::lookup_committee_members(const account_uid_type lower_bound_uid, uint32_t limit,
+                                                                       witness_list_order_type order_type)const
 {
-   return my->lookup_committee_member_accounts( lower_bound_name, limit );
+   return my->lookup_committee_members( lower_bound_uid, limit, order_type );
 }
 
-map<string, committee_member_id_type> database_api_impl::lookup_committee_member_accounts(const string& lower_bound_name, uint32_t limit)const
+vector<committee_member_object> database_api_impl::lookup_committee_members(const account_uid_type lower_bound_uid, uint32_t limit,
+                                                                            witness_list_order_type order_type)const
 {
-   FC_ASSERT( limit <= 1000 );
-   const auto& committee_members_by_id = _db.get_index_type<committee_member_index>().indices().get<by_id>();
+   FC_ASSERT( limit <= 101 );
+   vector<committee_member_object> result;
 
-   // we want to order committee_members by account name, but that name is in the account object
-   // so the committee_member_index doesn't have a quick way to access it.
-   // get all the names and look them all up, sort them, then figure out what
-   // records to return.  This could be optimized, but we expect the
-   // number of committee_members to be few and the frequency of calls to be rare
-   std::map<std::string, committee_member_id_type> committee_members_by_account_name;
-   for (const committee_member_object& committee_member : committee_members_by_id)
-       if (auto account_iter = _db.find(committee_member.committee_member_account))
-           if (account_iter->name >= lower_bound_name) // we can ignore anything below lower_bound_name
-               committee_members_by_account_name.insert(std::make_pair(account_iter->name, committee_member.id));
+   if( order_type == order_by_uid )
+   {
+      const auto& idx = _db.get_index_type<committee_member_index>().indices().get<by_valid>();
+      auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_uid ) );
+      while( itr != idx.end() && limit > 0 ) // assume false < true
+      {
+         result.push_back( *itr );
+         ++itr;
+         --limit;
+      }
+   }
+   else
+   {
+      account_uid_type new_lower_bound_uid = lower_bound_uid;
+      const committee_member_object* lower_bound_obj = _db.find_committee_member_by_uid( lower_bound_uid );
+      uint64_t lower_bound_shares = -1;
+      if( lower_bound_obj == nullptr )
+         new_lower_bound_uid = 0;
+      else
+      {
+         if( order_type == order_by_votes )
+            lower_bound_shares = lower_bound_obj->total_votes;
+         else // by pledge
+            lower_bound_shares = lower_bound_obj->pledge;
+      }
 
-   auto end_iter = committee_members_by_account_name.begin();
-   while (end_iter != committee_members_by_account_name.end() && limit--)
-       ++end_iter;
-   committee_members_by_account_name.erase(end_iter, committee_members_by_account_name.end());
-   return committee_members_by_account_name;
+      if( order_type == order_by_votes )
+      {
+         const auto& idx = _db.get_index_type<committee_member_index>().indices().get<by_votes>();
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
+         while( itr != idx.end() && limit > 0 ) // assume false < true
+         {
+            result.push_back( *itr );
+            ++itr;
+            --limit;
+         }
+      }
+      else // by pledge
+      {
+         const auto& idx = _db.get_index_type<committee_member_index>().indices().get<by_pledge>();
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
+         while( itr != idx.end() && limit > 0 ) // assume false < true
+         {
+            result.push_back( *itr );
+            ++itr;
+            --limit;
+         }
+      }
+   }
+
+   return result;
+}
+
+uint64_t database_api::get_committee_member_count()const
+{
+   return my->get_committee_member_count();
+}
+
+uint64_t database_api_impl::get_committee_member_count()const
+{
+   return _db.get_index_type<committee_member_index>().indices().get<by_valid>().count( true );
 }
 
 // Workers
@@ -1795,7 +1846,7 @@ vector<variant> database_api_impl::lookup_vote_ids( const vector<vote_id_type>& 
    FC_ASSERT( votes.size() < 1000, "Only 1000 votes can be queried at a time" );
 
    //const auto& witness_idx = _db.get_index_type<witness_index>().indices().get<by_vote_id>();
-   const auto& committee_idx = _db.get_index_type<committee_member_index>().indices().get<by_vote_id>();
+   //const auto& committee_idx = _db.get_index_type<committee_member_index>().indices().get<by_vote_id>();
    const auto& for_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_for>();
    const auto& against_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_against>();
 
@@ -1807,11 +1858,12 @@ vector<variant> database_api_impl::lookup_vote_ids( const vector<vote_id_type>& 
       {
          case vote_id_type::committee:
          {
-            auto itr = committee_idx.find( id );
-            if( itr != committee_idx.end() )
-               result.emplace_back( variant( *itr ) );
-            else
-               result.emplace_back( variant() );
+            // TODO review
+            //auto itr = committee_idx.find( id );
+            //if( itr != committee_idx.end() )
+            //   result.emplace_back( variant( *itr ) );
+            //else
+            //   result.emplace_back( variant() );
             break;
          }
          case vote_id_type::witness:

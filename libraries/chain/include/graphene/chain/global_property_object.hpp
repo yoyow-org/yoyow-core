@@ -49,7 +49,7 @@ namespace graphene { namespace chain {
          optional<chain_parameters> pending_parameters;
 
          uint32_t                                             next_available_vote_id = 0;
-         vector<committee_member_id_type>                     active_committee_members; // updated once per maintenance interval
+         flat_set<account_uid_type>                           active_committee_members; // updated once per committee_update interval
          flat_map<account_uid_type, scheduled_witness_type>   active_witnesses; // updated once per round
          // n.b. witness scheduling is done by witness_schedule object
    };
@@ -79,6 +79,7 @@ namespace graphene { namespace chain {
          share_type        budget_pool;
          share_type        total_budget_per_block = 0;
          uint32_t          next_budget_adjust_block = 0;
+         uint32_t          next_committee_update_block = 0;
          uint32_t          accounts_registered_this_interval = 0;
          /**
           *  Every time a block is missed this increases by
@@ -138,6 +139,7 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
                     (budget_pool)
                     (total_budget_per_block)
                     (next_budget_adjust_block)
+                    (next_committee_update_block)
                     (accounts_registered_this_interval)
                     (recently_missed_count)
                     (current_aslot)

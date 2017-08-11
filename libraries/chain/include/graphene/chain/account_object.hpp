@@ -150,6 +150,26 @@ namespace graphene { namespace chain {
          share_type uncollected_witness_pay;
 
          /**
+          * coins locked as committee member pledge.
+          */
+         share_type total_committee_member_pledge;
+
+         /**
+          * coins that are requested to be released from committee member pledge but not yet unlocked.
+          */
+         share_type releasing_committee_member_pledge;
+
+         /**
+          * block number that releasing committee member pledge will be finally unlocked.
+          */
+         uint32_t committee_member_pledge_release_block_number = -1;
+
+         /**
+          * how many times have this account created committee member object
+          */
+         uint32_t last_committee_member_sequence = 0;
+
+         /**
           * whether this account is permitted to be a governance voter.
           */
          bool can_vote = true;
@@ -423,6 +443,7 @@ namespace graphene { namespace chain {
          uint32_t            effective_last_vote_block; // effective value, due to proxied voting
 
          uint16_t            number_of_witnesses_voted = 0; // directly voted
+         uint16_t            number_of_committee_members_voted = 0; // directly voted
 
          uint64_t total_votes() const
          {
@@ -606,6 +627,7 @@ namespace graphene { namespace chain {
 
 
    struct by_witness_pledge_release;
+   struct by_committee_member_pledge_release;
 
    /**
     * @ingroup object_index
@@ -619,6 +641,13 @@ namespace graphene { namespace chain {
             composite_key<
                account_statistics_object,
                member<account_statistics_object, uint32_t, &account_statistics_object::witness_pledge_release_block_number>,
+               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
+            >
+         >,
+         ordered_unique< tag<by_committee_member_pledge_release>,
+            composite_key<
+               account_statistics_object,
+               member<account_statistics_object, uint32_t, &account_statistics_object::committee_member_pledge_release_block_number>,
                member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
             >
          >
@@ -660,6 +689,7 @@ FC_REFLECT_DERIVED( graphene::chain::voter_object,
                     (proxied_voters)(proxied_votes)(proxy_last_vote_block)
                     (effective_last_vote_block)
                     (number_of_witnesses_voted)
+                    (number_of_committee_members_voted)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
@@ -680,6 +710,8 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                     (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
                     (last_witness_sequence)(uncollected_witness_pay)
+                    (total_committee_member_pledge)(releasing_committee_member_pledge)(committee_member_pledge_release_block_number)
+                    (last_committee_member_sequence)
                     (can_vote)(is_voter)(last_voter_sequence)
                   )
 

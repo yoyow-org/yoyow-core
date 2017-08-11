@@ -172,11 +172,17 @@ struct get_impacted_account_visitor
 
    void operator()( const committee_member_create_operation& op )
    {
-      _impacted.insert( op.committee_member_account );
+      // TODO review
+      //_impacted.insert( op.committee_member_account );
    }
    void operator()( const committee_member_update_operation& op )
    {
-      _impacted.insert( op.committee_member_account );
+      // TODO review
+      //_impacted.insert( op.committee_member_account );
+   }
+   void operator()( const committee_member_vote_update_operation& op )
+   {
+      // TODO review
    }
    void operator()( const committee_member_update_global_parameters_operation& op ) {}
 
@@ -282,9 +288,10 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            accounts.insert( aobj->owner );
            break;
         } case committee_member_object_type:{
-           const auto& aobj = dynamic_cast<const committee_member_object*>(obj);
-           assert( aobj != nullptr );
-           accounts.insert( aobj->committee_member_account );
+           // TODO review
+           //const auto& aobj = dynamic_cast<const committee_member_object*>(obj);
+           //assert( aobj != nullptr );
+           //accounts.insert( aobj->committee_member_account );
            break;
         } case witness_object_type:{
            // TODO review
@@ -366,6 +373,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
                // TODO review
               break;
             } case impl_witness_vote_object_type:{
+               // TODO review
+              break;
+            } case impl_committee_member_vote_object_type:{
                // TODO review
               break;
             } case impl_csaf_lease_object_type:{

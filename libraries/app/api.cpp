@@ -296,9 +296,10 @@ namespace graphene { namespace app {
                result.push_back( aobj->owner );
                break;
             } case committee_member_object_type:{
-               const auto& aobj = dynamic_cast<const committee_member_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->committee_member_account );
+               // TODO review
+               //const auto& aobj = dynamic_cast<const committee_member_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->committee_member_account );
                break;
             } case witness_object_type:{
                // TODO review
@@ -401,6 +402,13 @@ namespace graphene { namespace app {
                   //assert( aobj != nullptr );
                   //result.push_back( aobj->voter_uid );
                   //result.push_back( aobj->witness_uid );
+                  break;
+               } case impl_committee_member_vote_object_type:{
+                  // TODO review
+                  //const auto& aobj = dynamic_cast<const committee_member_vote_object*>(obj);
+                  //assert( aobj != nullptr );
+                  //result.push_back( aobj->voter_uid );
+                  //result.push_back( aobj->committee_member_uid );
                   break;
                } case impl_transaction_object_type:{
                   const auto& aobj = dynamic_cast<const transaction_object*>(obj);

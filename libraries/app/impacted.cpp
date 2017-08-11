@@ -129,6 +129,22 @@ struct get_impacted_account_uid_visitor
       //_impacted.insert( op.account ); // fee payer
    }
 
+   void operator()( const committee_member_create_operation& op )
+   {
+      //_impacted.insert( op.account ); // fee payer
+   }
+   void operator()( const committee_member_update_operation& op )
+   {
+      //_impacted.insert( op.account ); // fee payer
+   }
+   void operator()( const committee_member_vote_update_operation& op )
+   {
+      //_impacted.insert( op.voter ); // fee payer
+      for( auto uid : op.committee_members_to_add )
+         _impacted.insert( uid );
+      for( auto uid : op.committee_members_to_remove )
+         _impacted.insert( uid );
+   }
    /*
    void operator()( const balance_claim_operation& op ) {}
 
@@ -216,14 +232,6 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.authorized_account );
    }
 
-   void operator()( const committee_member_create_operation& op )
-   {
-      _impacted.insert( op.committee_member_account );
-   }
-   void operator()( const committee_member_update_operation& op )
-   {
-      _impacted.insert( op.committee_member_account );
-   }
    void operator()( const committee_member_update_global_parameters_operation& op ) {}
 
    void operator()( const vesting_balance_create_operation& op )
@@ -440,11 +448,17 @@ struct get_impacted_account_visitor
 
    void operator()( const committee_member_create_operation& op )
    {
-      _impacted.insert( op.committee_member_account );
+      // TODO review
+      //_impacted.insert( op.committee_member_account );
    }
    void operator()( const committee_member_update_operation& op )
    {
-      _impacted.insert( op.committee_member_account );
+      // TODO review
+      //_impacted.insert( op.committee_member_account );
+   }
+   void operator()( const committee_member_vote_update_operation& op )
+   {
+      // TODO review
    }
    void operator()( const committee_member_update_global_parameters_operation& op ) {}
 

@@ -98,7 +98,7 @@ namespace graphene { namespace chain {
       }
    };
 
-  /**
+   /**
     * @brief Change or refresh witness voting status.
     * @ingroup operations
     */

@@ -142,6 +142,9 @@ const uint8_t witness_object::type_id;
 const uint8_t witness_vote_object::space_id;
 const uint8_t witness_vote_object::type_id;
 
+const uint8_t committee_member_vote_object::space_id;
+const uint8_t committee_member_vote_object::type_id;
+
 const uint8_t worker_object::space_id;
 const uint8_t worker_object::type_id;
 
@@ -159,6 +162,7 @@ void database::initialize_evaluators()
    register_evaluator<account_whitelist_evaluator>();
    register_evaluator<committee_member_create_evaluator>();
    register_evaluator<committee_member_update_evaluator>();
+   register_evaluator<committee_member_vote_update_evaluator>();
    register_evaluator<committee_member_update_global_parameters_evaluator>();
    register_evaluator<custom_evaluator>();
    register_evaluator<post_evaluator>();
@@ -240,6 +244,7 @@ void database::initialize_indexes()
    add_index< primary_index<account_statistics_index                      > >();
    add_index< primary_index<voter_index                                   > >();
    add_index< primary_index<witness_vote_index                            > >();
+   add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();
    add_index< primary_index<flat_index<  block_summary_object            >> >();
@@ -717,7 +722,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    std::for_each(genesis_state.initial_committee_candidates.begin(), genesis_state.initial_committee_candidates.end(),
                  [&](const genesis_state_type::initial_committee_member_type& member) {
       committee_member_create_operation op;
-      op.committee_member_account = get_account_id(member.owner_name);
+      op.account = get_account_uid(member.owner_name);
       apply_operation(genesis_eval_state, op);
    });
 
@@ -763,6 +768,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
    // Update budgets
    adjust_budgets();
+
+   // Update committee
+   update_committee();
 
    // Create witness scheduler
    create<witness_schedule_object>([&]( witness_schedule_object& wso )

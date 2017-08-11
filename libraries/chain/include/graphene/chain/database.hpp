@@ -25,6 +25,8 @@
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/node_property_object.hpp>
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/witness_object.hpp>
+#include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/content_object.hpp>
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/fork_database.hpp>
@@ -260,13 +262,18 @@ namespace graphene { namespace chain {
          void update_voter_effective_votes( const voter_object& voter );
          void adjust_voter_votes( const voter_object& voter, share_type delta );
          void adjust_voter_self_votes( const voter_object& voter, share_type delta );
+         void adjust_voter_self_witness_votes( const voter_object& voter, share_type delta );
+         void adjust_voter_self_committee_member_votes( const voter_object& voter, share_type delta );
          void adjust_voter_proxy_votes( const voter_object& voter, vector<share_type> delta, bool update_last_vote );
          void clear_voter_proxy_votes( const voter_object& voter );
          void clear_voter_witness_votes( const voter_object& voter );
+         void clear_voter_committee_member_votes( const voter_object& voter );
          void clear_voter_votes( const voter_object& voter );
          void invalidate_voter( const voter_object& voter );
          bool check_voter_valid( const voter_object& voter, bool deep_check );
          uint32_t process_invalid_proxied_voters( const voter_object& proxy, uint32_t max_voters_to_process );
+
+         void adjust_committee_member_votes( const committee_member_object& committee_member, share_type delta );
 
          //////////////////// db_getter.cpp ////////////////////
 
@@ -301,9 +308,17 @@ namespace graphene { namespace chain {
          const witness_object* find_witness_by_uid( account_uid_type uid )const;
 
          const witness_vote_object* find_witness_vote( account_uid_type voter_uid,
-                                                       uint32_t voter_sequence,
+                                                       uint32_t         voter_sequence,
                                                        account_uid_type witness_uid,
-                                                       uint32_t witness_sequence )const;
+                                                       uint32_t         witness_sequence )const;
+
+         const committee_member_object& get_committee_member_by_uid( account_uid_type uid )const;
+         const committee_member_object* find_committee_member_by_uid( account_uid_type uid )const;
+
+         const committee_member_vote_object* find_committee_member_vote( account_uid_type voter_uid,
+                                                                         uint32_t         voter_sequence,
+                                                                         account_uid_type committee_member_uid,
+                                                                         uint32_t         committee_member_sequence )const;
 
          const platform_object& get_platform_by_pid( platform_pid_type pid )const;
 
@@ -493,11 +508,14 @@ namespace graphene { namespace chain {
          void clear_expired_csaf_leases();
          void update_average_witness_pledges();
          void release_witness_pledges();
+         void release_committee_member_pledges();
          void clear_resigned_witness_votes();
+         void clear_resigned_committee_member_votes();
          void invalidate_expired_governance_voters();
          void process_invalid_governance_voters();
          void update_voter_effective_votes();
          void adjust_budgets();
+         void update_committee();
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true );
          void check_invariants();
 

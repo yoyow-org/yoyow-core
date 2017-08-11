@@ -1220,7 +1220,7 @@ class wallet_api
                                          bool broadcast = false);
 
       /** Lists all witnesses registered in the blockchain. This returns a list of all witness objects,
-       * sorted by UID.  This lists witnesses whether they are currently voted in or not.
+       * sorted by specified order.  This lists witnesses whether they are currently voted in or not.
        *
        * Use the \c lowerbound and limit parameters to page through the list.  To retrieve all witnesss,
        * start by setting \c lowerbound to zero, and then each iteration, pass
@@ -1234,20 +1234,21 @@ class wallet_api
        */
       vector<witness_object> list_witnesses(const account_uid_type lowerbound, uint32_t limit, witness_list_order_type order_type);
 
-      /** Lists all committee_members registered in the blockchain.
-       * This returns a list of all account names that own committee_members, and the associated committee_member id,
-       * sorted by name.  This lists committee_members whether they are currently voted in or not.
+      /** Lists all committee members registered in the blockchain. This returns a list of all committee member objects,
+       * sorted by specified order.  This lists committee members whether they are currently voted in or not.
        *
-       * Use the \c lowerbound and limit parameters to page through the list.  To retrieve all committee_members,
-       * start by setting \c lowerbound to the empty string \c "", and then each iteration, pass
-       * the last committee_member name returned as the \c lowerbound for the next \c list_committee_members() call.
+       * Use the \c lowerbound and limit parameters to page through the list.  To retrieve all committee members,
+       * start by setting \c lowerbound to zero, and then each iteration, pass
+       * the last committee member's UID returned as the \c lowerbound for the next \c list_committee_members() call.
        *
-       * @param lowerbound the name of the first committee_member to return.  If the named committee_member does not exist, 
-       *                   the list will start at the committee_member that comes after \c lowerbound
-       * @param limit the maximum number of committee_members to return (max: 1000)
-       * @returns a list of committee_members mapping committee_member names to committee_member ids
+       * @param lowerbound the UID of the first committee member to return.  If the committee member does not exist,
+       *                   the list will start at the committee member that comes after \c lowerbound
+       * @param limit the maximum number of committee members to return (max: 101)
+       * @param order_type how the returned list will be ordered
+       * @returns a list of committee members
        */
-      map<string, committee_member_id_type>       list_committee_members(const string& lowerbound, uint32_t limit);
+      vector<committee_member_object> list_committee_members(const account_uid_type lowerbound, uint32_t limit,
+                                                             witness_list_order_type order_type);
 
       /** Returns information about the given witness.
        * @param owner_account the name or id of the witness account owner, or the id of the witness

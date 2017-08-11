@@ -28,6 +28,7 @@
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/witness_object.hpp>
+#include <graphene/chain/committee_member_object.hpp>
 
 #include <fc/uint128.hpp>
 
@@ -110,7 +111,7 @@ void database::adjust_voter_votes( const voter_object& voter, share_type delta )
       ++level;
    }
 
-   if( current_voter->proxy_uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID && level < max_level )
+   if( current_voter->proxy_uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
    {
       adjust_voter_self_votes( *current_voter, delta );
    }
@@ -118,6 +119,12 @@ void database::adjust_voter_votes( const voter_object& voter, share_type delta )
 }
 
 void database::adjust_voter_self_votes( const voter_object& voter, share_type delta )
+{
+   adjust_voter_self_witness_votes( voter, delta );
+   adjust_voter_self_committee_member_votes( voter, delta );
+}
+
+void database::adjust_voter_self_witness_votes( const voter_object& voter, share_type delta )
 {
    // adjust witness votes
    uint16_t invalid_witness_votes_removed = 0;
@@ -144,6 +151,37 @@ void database::adjust_voter_self_votes( const voter_object& voter, share_type de
       modify( voter, [&]( voter_object& v )
       {
          v.number_of_witnesses_voted -= invalid_witness_votes_removed;
+      } );
+   }
+}
+
+void database::adjust_voter_self_committee_member_votes( const voter_object& voter, share_type delta )
+{
+   // adjust committee_member votes
+   uint16_t invalid_committee_member_votes_removed = 0;
+   const auto& idx = get_index_type<committee_member_vote_index>().indices().get<by_voter_seq>();
+   auto itr = idx.lower_bound( std::make_tuple( voter.uid, voter.sequence ) );
+   while( itr != idx.end() && itr->voter_uid == voter.uid && itr->voter_sequence == voter.sequence )
+   {
+      const committee_member_object* committee_member = find_committee_member_by_uid( itr->committee_member_uid );
+      bool to_remove = false;
+      if( committee_member != nullptr && committee_member->sequence == itr->committee_member_sequence )
+         adjust_committee_member_votes( *committee_member, delta );
+      else
+      {
+         to_remove = true;
+         invalid_committee_member_votes_removed += 1;
+      }
+      auto old_itr = itr;
+      ++itr;
+      if( to_remove )
+         remove( *old_itr );
+   }
+   if( invalid_committee_member_votes_removed > 0 )
+   {
+      modify( voter, [&]( voter_object& v )
+      {
+         v.number_of_committee_members_voted -= invalid_committee_member_votes_removed;
       } );
    }
    // TODO adjust committee votes
@@ -220,6 +258,27 @@ void database::clear_voter_witness_votes( const voter_object& voter )
    });
 }
 
+void database::clear_voter_committee_member_votes( const voter_object& voter )
+{
+   const share_type votes = voter.total_votes();
+   const auto& idx = get_index_type<committee_member_vote_index>().indices().get<by_voter_seq>();
+   auto itr = idx.lower_bound( std::make_tuple( voter.uid, voter.sequence ) );
+   while( itr != idx.end() && itr->voter_uid == voter.uid && itr->voter_sequence == voter.sequence )
+   {
+      const committee_member_object* committee_member = find_committee_member_by_uid( itr->committee_member_uid );
+      if( committee_member != nullptr && committee_member->sequence == itr->committee_member_sequence )
+      {
+         adjust_committee_member_votes( *committee_member, -votes );
+      }
+      auto old_itr = itr;
+      ++itr;
+      remove( *old_itr );
+   }
+   modify( voter, [&](voter_object& v) {
+      v.number_of_committee_members_voted = 0;
+   });
+}
+
 void database::clear_voter_proxy_votes( const voter_object& voter )
 {
    FC_ASSERT( voter.proxy_uid != GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID );
@@ -242,7 +301,8 @@ void database::clear_voter_votes( const voter_object& voter )
    {
       // remove its all witness votes
       clear_voter_witness_votes( voter );
-      // TODO: remove its all committee votes
+      // remove its all committee votes
+      clear_voter_committee_member_votes( voter );
    }
    else // voting with a proxy
    {
@@ -400,5 +460,15 @@ uint32_t database::process_invalid_proxied_voters( const voter_object& proxy, ui
    return processed;
 }
 
+void database::adjust_committee_member_votes( const committee_member_object& committee_member, share_type delta )
+{
+   if( delta == 0 || !committee_member.is_valid )
+      return;
+
+   modify( committee_member, [&]( committee_member_object& w )
+   {
+      w.total_votes += delta.value;
+   } );
+}
 
 } }

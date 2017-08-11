@@ -162,12 +162,43 @@ const witness_object* database::find_witness_by_uid( account_uid_type uid )const
 }
 
 const witness_vote_object* database::find_witness_vote( account_uid_type voter_uid,
-                                                        uint32_t voter_sequence,
+                                                        uint32_t         voter_sequence,
                                                         account_uid_type witness_uid,
-                                                        uint32_t witness_sequence )const
+                                                        uint32_t         witness_sequence )const
 {
    const auto& idx = get_index_type<witness_vote_index>().indices().get<by_voter_seq>();
    auto itr = idx.find( std::make_tuple( voter_uid, voter_sequence, witness_uid, witness_sequence ) );
+   if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
+const committee_member_object& database::get_committee_member_by_uid( account_uid_type uid )const
+{
+   const auto& idx = get_index_type<committee_member_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, uid ) );
+   FC_ASSERT( itr != idx.end(), "committee member ${uid} not found.", ("uid",uid) );
+   return *itr;
+}
+
+const committee_member_object* database::find_committee_member_by_uid( account_uid_type uid )const
+{
+   const auto& idx = get_index_type<committee_member_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, uid ) );
+   if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
+const committee_member_vote_object* database::find_committee_member_vote( account_uid_type voter_uid,
+                                                                          uint32_t         voter_sequence,
+                                                                          account_uid_type committee_member_uid,
+                                                                          uint32_t         committee_member_sequence )const
+{
+   const auto& idx = get_index_type<committee_member_vote_index>().indices().get<by_voter_seq>();
+   auto itr = idx.find( std::make_tuple( voter_uid, voter_sequence, committee_member_uid, committee_member_sequence ) );
    if( itr != idx.end() )
       return &(*itr);
    else

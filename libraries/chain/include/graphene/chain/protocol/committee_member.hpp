@@ -36,37 +36,96 @@ namespace graphene { namespace chain {
     */
    struct committee_member_create_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = 5000 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint16_t min_rf_percent   = 10000;
+         extensions_type   extensions;
+      };
 
-      asset                                 fee;
+      fee_type          fee;
       /// The account which owns the committee_member. This account pays the fee for this operation.
-      account_id_type                       committee_member_account;
-      string                                url;
+      account_uid_type  account;
+      asset             pledge;
+      string            url;
+      extensions_type   extensions;
 
-      account_id_type fee_payer()const { return committee_member_account; }
-      void            validate()const;
+      account_uid_type  fee_payer_uid()const { return account; }
+      void              validate()const;
+      //share_type      calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority
+         a.insert( account );
+      }
    };
 
    /**
     * @brief Update a committee_member object.
     * @ingroup operations
-    *
-    * Currently the only field which can be updated is the `url`
-    * field.
     */
    struct committee_member_update_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
 
-      asset                                 fee;
-      /// The committee member to update.
-      committee_member_id_type              committee_member;
-      /// The account which owns the committee_member. This account pays the fee for this operation.
-      account_id_type                       committee_member_account;
-      optional< string >                    new_url;
+      fee_type          fee;
+      /// The account which owns the committee member. This account pays the fee for this operation.
+      account_uid_type  account;
 
-      account_id_type fee_payer()const { return committee_member_account; }
-      void            validate()const;
+      /// The new pledge
+      optional< asset           >  new_pledge;
+      /// The new URL.
+      optional< string          >  new_url;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return account; }
+      void              validate()const;
+      //share_type      calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority
+         a.insert( account );
+      }
+   };
+
+   /**
+    * @brief Change or refresh committee member voting status.
+    * @ingroup operations
+    */
+   struct committee_member_vote_update_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee               = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee      = 0;
+         uint16_t min_rf_percent    = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type                   fee;
+      /// The account which vote for committee members. This account pays the fee for this operation.
+      account_uid_type           voter;
+      flat_set<account_uid_type> committee_members_to_add;
+      flat_set<account_uid_type> committee_members_to_remove;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return voter; }
+      void              validate()const;
+      //share_type      calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority
+         a.insert( voter );
+      }
    };
 
    /**
@@ -94,13 +153,19 @@ namespace graphene { namespace chain {
    /// TODO: committee_member_resign_operation : public base_operation
 
 } } // graphene::chain
-FC_REFLECT( graphene::chain::committee_member_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::committee_member_update_operation::fee_parameters_type, (fee) )
+
+FC_REFLECT( graphene::chain::committee_member_create_operation::fee_parameters_type,
+            (fee)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::committee_member_create_operation, (fee)(account)(pledge)(url)(extensions) )
+
+FC_REFLECT( graphene::chain::committee_member_update_operation::fee_parameters_type,
+            (fee)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::committee_member_update_operation, (fee)(account)(new_pledge)(new_url)(extensions) )
+
+FC_REFLECT( graphene::chain::committee_member_vote_update_operation::fee_parameters_type,
+            (fee)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::committee_member_vote_update_operation,
+            (fee)(voter)(committee_members_to_add)(committee_members_to_remove)(extensions) )
+
 FC_REFLECT( graphene::chain::committee_member_update_global_parameters_operation::fee_parameters_type, (fee) )
-
-
-FC_REFLECT( graphene::chain::committee_member_create_operation,
-            (fee)(committee_member_account)(url) )
-FC_REFLECT( graphene::chain::committee_member_update_operation,
-            (fee)(committee_member)(committee_member_account)(new_url) )
 FC_REFLECT( graphene::chain::committee_member_update_global_parameters_operation, (fee)(new_parameters) );

@@ -120,16 +120,18 @@ database& generic_evaluator::db()const { return trx_state->db(); }
          if( fov.from_prepaid.valid() )
          {
             from_prepaid = fov.from_prepaid->amount;
+            /* this check is removed, so the payer can pay with prepaid got in the same op
             FC_ASSERT( from_prepaid <= fee_paying_account_statistics->prepaid,
                        "Insufficient prepaid fee: account ${a}'s prepaid fee of ${b} is less than required ${r}",
                        ("a",fee_paying_account->uid)
                        ("b",d.to_pretty_core_string(fee_paying_account_statistics->prepaid))
                        ("r",d.to_pretty_core_string(from_prepaid)) );
+            */
          }
          if( fov.from_csaf.valid() )
          {
             from_csaf = fov.from_csaf->amount;
-            /* this check is removed, so the payer can pay csaf collected in the same op
+            /* this check is removed, so the payer can pay with csaf collected in the same op
             FC_ASSERT( from_csaf <= fee_paying_account_statistics->csaf,
                        "Insufficient csaf: account ${a}'s csaf of ${b} is less than required ${r}",
                        ("a",fee_paying_account->uid)

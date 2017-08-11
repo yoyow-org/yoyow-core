@@ -25,6 +25,7 @@
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
+#include <boost/multi_index/composite_key.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
@@ -48,30 +49,147 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id  = committee_member_object_type;
 
-         account_id_type  committee_member_account;
-         vote_id_type     vote_id;
-         uint64_t         total_votes = 0;
-         string           url;
+         account_uid_type    account;
+         uint32_t            sequence;
+         bool                is_valid = true;
+         uint64_t            pledge;
+         vote_id_type        vote_id; // TODO remove
+         uint64_t            total_votes = 0;
+         string              url;
    };
 
    struct by_account;
-   struct by_vote_id;
-   using committee_member_multi_index_type = multi_index_container<
+   struct by_valid;
+   struct by_votes;
+   struct by_pledge;
+
+   typedef multi_index_container<
       committee_member_object,
       indexed_by<
          ordered_unique< tag<by_id>,
             member<object, object_id_type, &object::id>
          >,
          ordered_unique< tag<by_account>,
-            member<committee_member_object, account_id_type, &committee_member_object::committee_member_account>
+            composite_key<
+               committee_member_object,
+               member<committee_member_object, account_uid_type, &committee_member_object::account>,
+               member<committee_member_object, uint32_t, &committee_member_object::sequence>
+            >
          >,
-         ordered_unique< tag<by_vote_id>,
-            member<committee_member_object, vote_id_type, &committee_member_object::vote_id>
+         ordered_unique< tag<by_valid>,
+            composite_key<
+               committee_member_object,
+               member<committee_member_object, bool, &committee_member_object::is_valid>,
+               member<committee_member_object, account_uid_type, &committee_member_object::account>,
+               member<committee_member_object, uint32_t, &committee_member_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_votes>,
+            composite_key<
+               committee_member_object,
+               member<committee_member_object, bool, &committee_member_object::is_valid>,
+               member<committee_member_object, uint64_t, &committee_member_object::total_votes>,
+               member<committee_member_object, account_uid_type, &committee_member_object::account>,
+               member<committee_member_object, uint32_t, &committee_member_object::sequence>
+            >,
+            composite_key_compare<
+               std::less< bool >,
+               std::greater< uint64_t >,
+               std::less< account_uid_type >,
+               std::less< uint32_t >
+            >
+         >,
+         ordered_unique< tag<by_pledge>, // for API
+            composite_key<
+               committee_member_object,
+               member<committee_member_object, bool, &committee_member_object::is_valid>,
+               member<committee_member_object, uint64_t, &committee_member_object::pledge>,
+               member<committee_member_object, account_uid_type, &committee_member_object::account>,
+               member<committee_member_object, uint32_t, &committee_member_object::sequence>
+            >,
+            composite_key_compare<
+               std::less< bool >,
+               std::greater< uint64_t >,
+               std::less< account_uid_type >,
+               std::less< uint32_t >
+            >
          >
       >
-   >;
-   using committee_member_index = generic_index<committee_member_object, committee_member_multi_index_type>;
+   > committee_member_multi_index_type;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef generic_index<committee_member_object, committee_member_multi_index_type> committee_member_index;
+
+   /**
+    * @brief This class represents a committee member voting on the object graph
+    * @ingroup object
+    * @ingroup protocol
+    */
+   class committee_member_vote_object : public graphene::db::abstract_object<committee_member_vote_object>
+   {
+      public:
+         static const uint8_t space_id = implementation_ids;
+         static const uint8_t type_id  = impl_committee_member_vote_object_type;
+
+         account_uid_type    voter_uid = 0;
+         uint32_t            voter_sequence;
+         account_uid_type    committee_member_uid = 0;
+         uint32_t            committee_member_sequence;
+   };
+
+   struct by_voter_seq;
+   struct by_committee_member_seq;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef multi_index_container<
+      committee_member_vote_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+         ordered_unique< tag<by_voter_seq>,
+            composite_key<
+               committee_member_vote_object,
+               member< committee_member_vote_object, account_uid_type, &committee_member_vote_object::voter_uid>,
+               member< committee_member_vote_object, uint32_t, &committee_member_vote_object::voter_sequence>,
+               member< committee_member_vote_object, account_uid_type, &committee_member_vote_object::committee_member_uid>,
+               member< committee_member_vote_object, uint32_t, &committee_member_vote_object::committee_member_sequence>
+            >
+         >,
+         ordered_unique< tag<by_committee_member_seq>,
+            composite_key<
+               committee_member_vote_object,
+               member< committee_member_vote_object, account_uid_type, &committee_member_vote_object::committee_member_uid>,
+               member< committee_member_vote_object, uint32_t, &committee_member_vote_object::committee_member_sequence>,
+               member< committee_member_vote_object, account_uid_type, &committee_member_vote_object::voter_uid>,
+               member< committee_member_vote_object, uint32_t, &committee_member_vote_object::voter_sequence>
+            >
+         >
+      >
+   > committee_member_vote_multi_index_type;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef generic_index<committee_member_vote_object, committee_member_vote_multi_index_type> committee_member_vote_index;
+
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::committee_member_object, (graphene::db::object),
-                    (committee_member_account)(vote_id)(total_votes)(url) )
+                    (account)
+                    (sequence)
+                    (is_valid)
+                    (pledge)
+                    //(vote_id)
+                    (total_votes)
+                    (url)
+                  )
+
+FC_REFLECT_DERIVED( graphene::chain::committee_member_vote_object, (graphene::db::object),
+                    (voter_uid)
+                    (voter_sequence)
+                    (committee_member_uid)
+                    (committee_member_sequence)
+                  )
