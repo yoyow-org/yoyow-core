@@ -501,6 +501,8 @@ void database::_apply_block( const signed_block& next_block )
    _current_block_num    = next_block_num;
    _current_trx_in_block = 0;
 
+   update_global_dynamic_data(next_block);
+
    dlog("before apply_transaction");
    for( const auto& trx : next_block.transactions )
    {
@@ -515,7 +517,7 @@ void database::_apply_block( const signed_block& next_block )
    }
 
    dlog("after apply_transaction");
-   update_global_dynamic_data(next_block);
+   update_undo_db_size();
    update_signing_witness(signing_witness, next_block);
    update_last_irreversible_block();
 

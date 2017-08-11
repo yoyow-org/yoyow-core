@@ -97,6 +97,11 @@ void database::update_global_dynamic_data( const signed_block& b )
                  ("last_irreversible_block_num",_dgp.last_irreversible_block_num)("head", _dgp.head_block_number)
                  ("recently_missed",_dgp.recently_missed_count)("max_undo",GRAPHENE_MAX_UNDO_HISTORY) );
    }
+}
+
+void database::update_undo_db_size()
+{
+   const dynamic_global_property_object& _dgp = dynamic_global_property_id_type(0)(*this);
 
    _undo_db.set_max_size( _dgp.head_block_number - _dgp.last_irreversible_block_num + 1 );
    _fork_db.set_max_size( _dgp.head_block_number - _dgp.last_irreversible_block_num + 1 );
