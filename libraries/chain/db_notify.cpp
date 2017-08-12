@@ -184,6 +184,14 @@ struct get_impacted_account_visitor
    {
       // TODO review
    }
+   void operator()( const committee_proposal_create_operation& op )
+   {
+      // TODO review
+   }
+   void operator()( const committee_proposal_update_operation& op )
+   {
+      // TODO review
+   }
    void operator()( const committee_member_update_global_parameters_operation& op ) {}
 
    void operator()( const vesting_balance_create_operation& op )

@@ -145,6 +145,24 @@ struct get_impacted_account_uid_visitor
       for( auto uid : op.committee_members_to_remove )
          _impacted.insert( uid );
    }
+   void operator()( const committee_proposal_create_operation& op )
+   {
+      //_impacted.insert( op.proposer ); // fee payer
+      for( const auto& item : op.items )
+      {
+         if( item.which() == committee_proposal_item_type::tag< committee_update_account_priviledge_item_type >::value )
+         {
+            const auto& account_item = item.get< committee_update_account_priviledge_item_type >();
+            _impacted.insert( account_item.account );
+            if( account_item.new_priviledges.value.takeover_registrar.valid() )
+               _impacted.insert( *account_item.new_priviledges.value.takeover_registrar );
+         }
+      }
+   }
+   void operator()( const committee_proposal_update_operation& op )
+   {
+      //_impacted.insert( op.account ); // fee payer
+   }
    /*
    void operator()( const balance_claim_operation& op ) {}
 
@@ -457,6 +475,14 @@ struct get_impacted_account_visitor
       //_impacted.insert( op.committee_member_account );
    }
    void operator()( const committee_member_vote_update_operation& op )
+   {
+      // TODO review
+   }
+   void operator()( const committee_proposal_create_operation& op )
+   {
+      // TODO review
+   }
+   void operator()( const committee_proposal_update_operation& op )
    {
       // TODO review
    }

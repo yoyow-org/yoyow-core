@@ -65,6 +65,148 @@ void committee_member_vote_update_operation::validate() const
    // can change nothing to only refresh last_vote_update_time
 }
 
+share_type committee_proposal_create_operation::calculate_fee( const fee_parameters_type& k )const
+{
+   auto core_fee_required = k.basic_fee;
+
+   auto total_size = items.size();
+   core_fee_required += ( k.price_per_item * total_size );
+
+   return core_fee_required;
+}
+
+void committee_update_account_priviledge_item_type::validate()const
+{
+   validate_account_uid( account, "target " );
+   bool to_update_something =  new_priviledges.value.can_vote.valid()
+                            || new_priviledges.value.is_admin.valid()
+                            || new_priviledges.value.is_registrar.valid()
+                            || new_priviledges.value.takeover_registrar.valid();
+   FC_ASSERT( to_update_something, "Should update something for account ${a}", ("a",account) );
+   if( new_priviledges.value.is_registrar.valid() && *new_priviledges.value.is_registrar == false )
+      FC_ASSERT( new_priviledges.value.takeover_registrar.valid(), "Should specify a take over registrar account" );
+   if( new_priviledges.value.takeover_registrar.valid() )
+      validate_account_uid( *new_priviledges.value.takeover_registrar, "take over registrar " );
+}
+
+void committee_updatable_parameters::validate()const
+{
+   if( maximum_transaction_size.valid() )
+      FC_ASSERT( *maximum_transaction_size >= GRAPHENE_MIN_TRANSACTION_SIZE_LIMIT,
+                 "Transaction size limit is too low" );
+   if( maximum_block_size.valid() )
+      FC_ASSERT( *maximum_block_size >= GRAPHENE_MIN_BLOCK_SIZE_LIMIT,
+                 "Block size limit is too low" );
+   // TODO check in evaluator
+   //if( maximum_time_until_expiration.valid() )
+   //   FC_ASSERT( *maximum_time_until_expiration > block_interval,
+   //              "Maximum transaction expiration time must be greater than a block interval" );
+   if( maximum_authority_membership.valid() )
+      FC_ASSERT( *maximum_authority_membership > 0,
+                 "Maximum authority membership should be positive" );
+   // max_authority_depth: no limitation so far
+   if( csaf_rate.valid() )
+      FC_ASSERT( *csaf_rate > 0,
+                 "CSAF rate should be positive" );
+   if( max_csaf_per_account.valid() )
+      FC_ASSERT( *max_csaf_per_account >= 0,
+                 "Maximum CSAF per account should not be negative" );
+   // csaf_accumulate_window: no limitation so far
+   // min_witness_pledge: no limitation so far
+   if( max_witness_pledge_seconds.valid() )
+      FC_ASSERT( *max_witness_pledge_seconds > 0,
+                 "Maximum witness pledge accumulation seconds must be positive" );
+   if( witness_avg_pledge_update_interval.valid() )
+      FC_ASSERT( *witness_avg_pledge_update_interval > 0,
+                 "Witness average pledge update interval must be positive" );
+   // witness_pledge_release_delay: no limitation so far
+   // min_governance_voting_balance: no limitation so far
+   // max_governance_voting_proxy_level: unable to update so far
+   if( governance_voting_expiration_blocks.valid() )
+      FC_ASSERT( *governance_voting_expiration_blocks >= GRAPHENE_MIN_GOVERNANCE_VOTING_EXPIRATION_BLOCKS,
+                 "Governance voting expiration blocks should be larger" );
+   if( governance_votes_update_interval.valid() )
+      FC_ASSERT( *governance_votes_update_interval > 0,
+                 "Governance votes update interval must be positive" );
+   if( max_governance_votes_seconds.valid() )
+      FC_ASSERT( *max_governance_votes_seconds > 0,
+                 "Governance votes accumulation seconds must be positive" );
+   if( max_witnesses_voted_per_account.valid() )
+      FC_ASSERT( *max_witnesses_voted_per_account > 0,
+                 "Maximum witnesses voted per account must be positive" );
+   // max_witness_inactive_blocks: no limitation so far
+   if( by_vote_top_witness_pay_per_block.valid() )
+      FC_ASSERT( *by_vote_top_witness_pay_per_block >= 0,
+                 "Witness pay per block should not be negative" );
+   if( by_vote_rest_witness_pay_per_block.valid() )
+      FC_ASSERT( *by_vote_rest_witness_pay_per_block >= 0,
+                 "Witness pay per block should not be negative" );
+   if( by_pledge_witness_pay_per_block.valid() )
+      FC_ASSERT( *by_pledge_witness_pay_per_block >= 0,
+                 "Witness pay per block should not be negative" );
+   if( by_vote_top_witness_count.valid() )
+      FC_ASSERT( *by_vote_top_witness_count > 0,
+                 "Witness pay per block should be positive" );
+   // by_vote_rest_witness_count: no limitation so far
+   // by_pledge_witness_count: no limitation so far
+   if( budget_adjust_interval.valid() )
+      FC_ASSERT( *budget_adjust_interval > 0,
+                 "Budget adjustment interval should be positive" );
+   // budget_adjust_target: no limitation so far
+   // committee_size: unable to update so far
+   // committee_update_interval: unable to update so far
+   // min_committee_member_pledge: no limitation so far
+   // committee_member_pledge_release_delay: no limitation so far
+   // max_committee_members_voted_per_account: unable to update so far
+}
+
+void committee_proposal_create_operation::validate()const
+{
+   validate_op_fee( fee, "committee proposal creation " );
+   validate_account_uid( proposer, "proposer " );
+   FC_ASSERT( items.size() > 0, "Should propose something" );
+   uint32_t account_item_count = 0;
+   uint32_t fee_item_count = 0;
+   uint32_t param_item_count = 0;
+   //vector<committee_update_account_priviledge_item_type> account_items;
+   flat_map< account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
+   for( const auto& item : items )
+   {
+      if( item.which() == committee_proposal_item_type::tag< committee_update_account_priviledge_item_type >::value )
+      {
+         account_item_count += 1;
+         const auto& account_item = item.get< committee_update_account_priviledge_item_type >();
+         account_item.validate();
+         const auto& result = account_items.insert( std::make_pair( account_item.account, account_item.new_priviledges.value ) );
+         FC_ASSERT( result.second, "Duplicate target accounts detected" );
+      }
+      else if( item.which() == committee_proposal_item_type::tag< committee_update_fee_schedule_item_type >::value )
+      {
+         fee_item_count += 1;
+         FC_ASSERT( fee_item_count <= 1, "No more than one fee schedule update item is allowed" );
+         // TODO check if really need to validate
+         //const auto& fee_item = item.get< committee_update_fee_schedule_item_type >();
+         //fee_item->validate();
+      }
+      else if( item.which() == committee_proposal_item_type::tag< committee_update_global_parameter_item_type >::value )
+      {
+         param_item_count += 1;
+         FC_ASSERT( param_item_count <= 1, "No more than one global parameter update item is allowed" );
+         const auto& param_item = item.get< committee_update_global_parameter_item_type >();
+         param_item.value.validate();
+      }
+      else
+         FC_ASSERT( false, "Bad proposal item type: ${n}", ("n",item.which()) );
+   }
+
+}
+
+void committee_proposal_update_operation::validate()const
+{
+   validate_op_fee( fee, "committee proposal update " );
+   validate_account_uid( account, "committee member " );
+}
+
 void committee_member_update_global_parameters_operation::validate() const
 {
    FC_ASSERT( fee.amount >= 0 );

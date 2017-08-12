@@ -127,7 +127,7 @@
 #define GRAPHENE_DEFAULT_BUDGET_ADJUST_INTERVAL               (28800*3) // blocks, 3 days if 3 seconds per block
 #define GRAPHENE_DEFAULT_GOVERNANCE_VOTING_EXPIRATION_BLOCKS  (28800*5) // blocks, 5 days if 3 seconds per block
 #define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS         (60*60*24*4) // 4 days
-#define GRAPHENE_DEFAULT_COMMITTEE_UPDATE_INTERVAL               (28800*2) // blocks, 2 days if 3 seconds per block
+#define GRAPHENE_DEFAULT_COMMITTEE_UPDATE_INTERVAL               (1200) // blocks, 1 hour if 3 seconds per block
 /*
 #define GRAPHENE_DEFAULT_MAX_WITNESS_PLEDGE_SECONDS           (60*60*24*7) // One week
 #define GRAPHENE_DEFAULT_WITNESS_AVG_PLEDGE_UPDATE_INTERVAL   1200  // blocks, one hour if 3 seconds per block
@@ -136,6 +136,7 @@
 #define GRAPHENE_DEFAULT_MIN_GOVERNANCE_VOTING_BALANCE        (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000))
 #define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTING_RPOXY_LEVEL    (4)
 //#define GRAPHENE_DEFAULT_GOVERNANCE_VOTING_EXPIRATION_BLOCKS  (28800*90) // blocks, 90 days if 3 seconds per block
+#define GRAPHENE_MIN_GOVERNANCE_VOTING_EXPIRATION_BLOCKS      (28800) // blocks, 1 day if 3 seconds per block
 #define GRAPHENE_DEFAULT_GOVERNANCE_VOTES_UPDATE_INTERVAL     (28800) // blocks, 1 day if 3 seconds per block
 //#define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS         (60*60*24*60) // 60 days
 #define GRAPHENE_DEFAULT_MAX_WITNESSES_VOTED_PER_ACCOUNT      (101)

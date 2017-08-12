@@ -65,6 +65,8 @@ namespace graphene { namespace chain {
             committee_member_create_operation,
             committee_member_update_operation,
             committee_member_vote_update_operation,
+            committee_proposal_create_operation,
+            committee_proposal_update_operation,
             // the operations below are not supported
             balance_claim_operation,
             limit_order_create_operation,
