@@ -117,6 +117,9 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    FC_ASSERT( itr != gpo.active_witnesses.end() );
    auto wit_type = itr->second;
 
+   const auto& core_asset = asset_id_type()(*this);
+   share_type budget_this_block = std::min( dpo.total_budget_per_block, core_asset.reserved( *this ) );
+
    share_type witness_pay;
    if( wit_type == scheduled_by_vote_top )
       witness_pay = gpo.parameters.by_vote_top_witness_pay_per_block;
@@ -124,23 +127,30 @@ void database::update_signing_witness(const witness_object& signing_witness, con
       witness_pay = gpo.parameters.by_vote_rest_witness_pay_per_block;
    else if( wit_type == scheduled_by_pledge )
       witness_pay = gpo.parameters.by_pledge_witness_pay_per_block;
-   witness_pay = std::min( witness_pay, dpo.total_budget_per_block );
+   witness_pay = std::min( witness_pay, budget_this_block );
 
-   share_type budget_remained = dpo.total_budget_per_block - witness_pay;
+   share_type budget_remained = budget_this_block - witness_pay;
    FC_ASSERT( budget_remained >= 0 );
 
-   const auto& core_dyn_data = asset_id_type()(*this).dynamic_data(*this);
-   modify( core_dyn_data, [&]( asset_dynamic_data_object& dyn )
+   if( budget_this_block > 0 )
    {
-      dyn.current_supply += dpo.total_budget_per_block;
-   } );
+      const auto& core_dyn_data = core_asset.dynamic_data(*this);
+      modify( core_dyn_data, [&]( asset_dynamic_data_object& dyn )
+      {
+         dyn.current_supply += budget_this_block;
+      } );
+   }
 
-   modify( dpo, [&]( dynamic_global_property_object& _dpo )
+   if( budget_remained > 0 )
    {
-      _dpo.budget_pool += budget_remained;
-   } );
+      modify( dpo, [&]( dynamic_global_property_object& _dpo )
+      {
+         _dpo.budget_pool += budget_remained;
+      } );
+   }
 
-   deposit_witness_pay( signing_witness, witness_pay );
+   if( witness_pay > 0 )
+      deposit_witness_pay( signing_witness, witness_pay );
 
    modify( signing_witness, [&]( witness_object& _wit )
    {

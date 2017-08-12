@@ -160,7 +160,7 @@ namespace graphene { namespace chain {
           */
          template<class DB>
          share_type reserved( const DB& db )const
-         { return options.max_supply - dynamic_data(db).current_supply; }
+         { return std::max( share_type(0), options.max_supply - dynamic_data(db).current_supply ); }
    };
 
    /**
