@@ -88,6 +88,7 @@ add_library( graphene_chain
 
              account_object.cpp
              asset_object.cpp
+             committee_member_object.cpp
              fba_object.cpp
              proposal_object.cpp
              vesting_balance_object.cpp

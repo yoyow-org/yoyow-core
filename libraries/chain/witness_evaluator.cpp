@@ -37,7 +37,7 @@ void_result witness_create_evaluator::do_evaluate( const witness_create_operatio
    account_stats = &d.get_account_statistics_by_uid( op.account );
 
    const auto& global_params = d.get_global_properties().parameters;
-   // TODO review
+   // don't enforce pledge check for initial witnesses
    if( d.head_block_num() > 0 )
       FC_ASSERT( op.pledge.amount >= global_params.min_witness_pledge,
                  "Insufficient pledge: provided ${p}, need ${r}",

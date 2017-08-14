@@ -164,7 +164,14 @@ void_result account_manage_evaluator::do_evaluate( const account_manage_operatio
 
    acnt = &d.get_account_by_uid( o.account );
 
-   FC_ASSERT( acnt->reg_info.registrar == o.executor, "account should be managed by registrar" );
+   const account_object& registrar = d.get_account_by_uid( acnt->reg_info.registrar );
+   if( registrar.is_registrar )
+      FC_ASSERT( acnt->reg_info.registrar == o.executor, "account should be managed by registrar" );
+   else
+   {
+      const account_uid_type takeover_registrar = d.get_registrar_takeover_object( registrar.uid ).takeover_registrar;
+      FC_ASSERT( takeover_registrar == o.executor, "account should be managed by registrar" );
+   }
 
    const auto& ao = o.options.value;
    if( ao.can_post.valid() )

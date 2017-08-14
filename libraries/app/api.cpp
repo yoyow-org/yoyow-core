@@ -307,6 +307,12 @@ namespace graphene { namespace app {
                //assert( aobj != nullptr );
                //result.push_back( aobj->account );
                break;
+            } case committee_proposal_object_type:{
+               // TODO review
+               //const auto& aobj = dynamic_cast<const committee_proposal_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->committee_member_uid );
+               break;
             } case limit_order_object_type:{
                const auto& aobj = dynamic_cast<const limit_order_object*>(obj);
                assert( aobj != nullptr );
@@ -409,6 +415,13 @@ namespace graphene { namespace app {
                   //assert( aobj != nullptr );
                   //result.push_back( aobj->voter_uid );
                   //result.push_back( aobj->committee_member_uid );
+                  break;
+               } case impl_registrar_takeover_object_type:{
+                  // TODO review
+                  //const auto& aobj = dynamic_cast<const registrar_takeover_object*>(obj);
+                  //assert( aobj != nullptr );
+                  //result.push_back( aobj->original_registrar );
+                  //result.push_back( aobj->takeover_registrar );
                   break;
                } case impl_transaction_object_type:{
                   const auto& aobj = dynamic_cast<const transaction_object*>(obj);

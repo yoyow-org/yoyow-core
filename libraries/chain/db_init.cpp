@@ -100,6 +100,9 @@ const uint8_t call_order_object::type_id;
 const uint8_t committee_member_object::space_id;
 const uint8_t committee_member_object::type_id;
 
+const uint8_t committee_proposal_object::space_id;
+const uint8_t committee_proposal_object::type_id;
+
 const uint8_t csaf_lease_object::space_id;
 const uint8_t csaf_lease_object::type_id;
 
@@ -123,6 +126,9 @@ const uint8_t post_object::type_id;
 
 const uint8_t proposal_object::space_id;
 const uint8_t proposal_object::type_id;
+
+const uint8_t registrar_takeover_object::space_id;
+const uint8_t registrar_takeover_object::type_id;
 
 const uint8_t transaction_object::space_id;
 const uint8_t transaction_object::type_id;
@@ -163,6 +169,8 @@ void database::initialize_evaluators()
    register_evaluator<committee_member_create_evaluator>();
    register_evaluator<committee_member_update_evaluator>();
    register_evaluator<committee_member_vote_update_evaluator>();
+   register_evaluator<committee_proposal_create_evaluator>();
+   register_evaluator<committee_proposal_update_evaluator>();
    register_evaluator<committee_member_update_global_parameters_evaluator>();
    register_evaluator<custom_evaluator>();
    register_evaluator<post_evaluator>();
@@ -222,6 +230,7 @@ void database::initialize_indexes()
    add_index< primary_index<post_index> >();
 
    add_index< primary_index<committee_member_index> >();
+   add_index< primary_index<committee_proposal_index> >();
    add_index< primary_index<witness_index> >();
    add_index< primary_index<limit_order_index > >();
    add_index< primary_index<call_order_index > >();
@@ -243,6 +252,7 @@ void database::initialize_indexes()
    add_index< primary_index<simple_index<dynamic_global_property_object  >> >();
    add_index< primary_index<account_statistics_index                      > >();
    add_index< primary_index<voter_index                                   > >();
+   add_index< primary_index<registrar_takeover_index                      > >();
    add_index< primary_index<witness_vote_index                            > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();

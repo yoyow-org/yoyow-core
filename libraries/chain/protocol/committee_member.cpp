@@ -83,10 +83,20 @@ void committee_update_account_priviledge_item_type::validate()const
                             || new_priviledges.value.is_registrar.valid()
                             || new_priviledges.value.takeover_registrar.valid();
    FC_ASSERT( to_update_something, "Should update something for account ${a}", ("a",account) );
-   if( new_priviledges.value.is_registrar.valid() && *new_priviledges.value.is_registrar == false )
-      FC_ASSERT( new_priviledges.value.takeover_registrar.valid(), "Should specify a take over registrar account" );
+
+   if( new_priviledges.value.is_registrar.valid() )
+   {
+      if( *new_priviledges.value.is_registrar == false )
+         FC_ASSERT( new_priviledges.value.takeover_registrar.valid(), "Should specify a takeover registrar account" );
+      else // the account is updated to be a registrar
+         FC_ASSERT( !new_priviledges.value.takeover_registrar.valid(), "Should not specify a takeover registrar account" );
+   }
+
    if( new_priviledges.value.takeover_registrar.valid() )
-      validate_account_uid( *new_priviledges.value.takeover_registrar, "take over registrar " );
+   {
+      FC_ASSERT( account != *new_priviledges.value.takeover_registrar , "Takeover registrar account should not be self" );
+      validate_account_uid( *new_priviledges.value.takeover_registrar, "takeover registrar " );
+   }
 }
 
 void committee_updatable_parameters::validate()const
@@ -97,7 +107,7 @@ void committee_updatable_parameters::validate()const
    if( maximum_block_size.valid() )
       FC_ASSERT( *maximum_block_size >= GRAPHENE_MIN_BLOCK_SIZE_LIMIT,
                  "Block size limit is too low" );
-   // TODO check in evaluator
+   // this is checked in evaluator
    //if( maximum_time_until_expiration.valid() )
    //   FC_ASSERT( *maximum_time_until_expiration > block_interval,
    //              "Maximum transaction expiration time must be greater than a block interval" );
@@ -165,11 +175,12 @@ void committee_proposal_create_operation::validate()const
    validate_op_fee( fee, "committee proposal creation " );
    validate_account_uid( proposer, "proposer " );
    FC_ASSERT( items.size() > 0, "Should propose something" );
+   FC_ASSERT( expiration_block_num >= execution_block_num,
+              "Expiration block number should not be earlier than execution block number" );
    uint32_t account_item_count = 0;
    uint32_t fee_item_count = 0;
    uint32_t param_item_count = 0;
-   //vector<committee_update_account_priviledge_item_type> account_items;
-   flat_map< account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
+   //flat_map< account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
    for( const auto& item : items )
    {
       if( item.which() == committee_proposal_item_type::tag< committee_update_account_priviledge_item_type >::value )
@@ -177,8 +188,8 @@ void committee_proposal_create_operation::validate()const
          account_item_count += 1;
          const auto& account_item = item.get< committee_update_account_priviledge_item_type >();
          account_item.validate();
-         const auto& result = account_items.insert( std::make_pair( account_item.account, account_item.new_priviledges.value ) );
-         FC_ASSERT( result.second, "Duplicate target accounts detected" );
+         //const auto& result = account_items.insert( std::make_pair( account_item.account, account_item.new_priviledges.value ) );
+         //FC_ASSERT( result.second, "Duplicate target accounts detected" );
       }
       else if( item.which() == committee_proposal_item_type::tag< committee_update_fee_schedule_item_type >::value )
       {

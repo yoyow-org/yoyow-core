@@ -320,6 +320,11 @@ namespace graphene { namespace chain {
                                                                          account_uid_type committee_member_uid,
                                                                          uint32_t         committee_member_sequence )const;
 
+         const committee_proposal_object& get_committee_proposal_by_number( committee_proposal_number_type number )const;
+
+         const registrar_takeover_object& get_registrar_takeover_object( account_uid_type uid )const;
+         const registrar_takeover_object* find_registrar_takeover_object( account_uid_type uid )const;
+
          const platform_object& get_platform_by_pid( platform_pid_type pid )const;
 
          const post_object& get_post_by_pid( platform_pid_type platform,
@@ -496,6 +501,9 @@ namespace graphene { namespace chain {
          void create_block_summary(const signed_block& next_block);
 
          //////////////////// db_update.cpp ////////////////////
+      public:
+         void execute_committee_proposal( const committee_proposal_object& proposal, bool silent_fail = false );
+      private:
          void update_global_dynamic_data( const signed_block& b );
          void update_undo_db_size();
          void update_signing_witness(const witness_object& signing_witness, const signed_block& new_block);
@@ -517,6 +525,8 @@ namespace graphene { namespace chain {
          void update_voter_effective_votes();
          void adjust_budgets();
          void update_committee();
+         void clear_unapproved_committee_proposals();
+         void execute_committee_proposals();
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true );
          void check_invariants();
 

@@ -91,7 +91,7 @@ namespace graphene { namespace chain {
       uint16_t                by_pledge_witness_count             = GRAPHENE_DEFAULT_BY_PLEDGE_WITNESSES;
       uint32_t                budget_adjust_interval              = GRAPHENE_DEFAULT_BUDGET_ADJUST_INTERVAL;
       uint16_t                budget_adjust_target                = GRAPHENE_DEFAULT_BUDGET_ADJUST_TARGET;
-      uint16_t                committee_size                      = GRAPHENE_DEFAULT_COMMITTEE_SIZE;
+      uint8_t                 committee_size                      = GRAPHENE_DEFAULT_COMMITTEE_SIZE;
       uint32_t                committee_update_interval           = GRAPHENE_DEFAULT_COMMITTEE_UPDATE_INTERVAL;
       uint64_t                min_committee_member_pledge         = GRAPHENE_DEFAULT_MIN_COMMITTEE_MEMBER_PLEDGE;
       uint32_t                committee_member_pledge_release_delay   = GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY;

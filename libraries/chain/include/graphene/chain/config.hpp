@@ -163,6 +163,43 @@
 #define GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY   (28800) // blocks, 1 day if 3 seconds per block
 #define GRAPHENE_DEFAULT_MAX_COMMITTEE_MEMBERS_VOTED_PER_ACCOUNT (1)
 
+// committee proposal pass thresholds
+#define GRAPHENE_CPPT_FEE_DEFAULT                                 (uint16_t(5001)) // 50.01%
+#define GRAPHENE_CPPT_FEE_COMMITTEE_MEMBER_CREATE_OP              (uint16_t(8500))
+#define GRAPHENE_CPPT_ACCOUNT_CAN_VOTE                            (uint16_t(6500))
+#define GRAPHENE_CPPT_ACCOUNT_IS_ADMIN                            (uint16_t(5001))
+#define GRAPHENE_CPPT_ACCOUNT_IS_REGISTRAR                        (uint16_t(6500))
+#define GRAPHENE_CPPT_ACCOUNT_TAKEOVER_REGISTRAR                  (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_MAX_TRX_SIZE                          (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_MAX_BLOCK_SIZE                        (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_MAX_EXPIRATION_TIME                   (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_MAX_AUTHORITY_MEMBERSHIP              (uint16_t(7500))
+#define GRAPHENE_CPPT_PARAM_MAX_AUTHORITY_DEPTH                   (uint16_t(7500))
+#define GRAPHENE_CPPT_PARAM_CSAF_RATE                             (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_MAX_CSAF_PER_ACCOUNT                  (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_CSAF_ACCUMULATE_WINDOW                (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_MIN_WITNESS_PLEDGE                    (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_MAX_WITNESS_PLEDGE_SECONDS            (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_AVG_WITNESS_PLEDGE_UPDATE_INTERVAL    (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_WITNESS_PLEDGE_RELEASE_DELAY          (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_MIN_GOVERNANCE_VOTING_BALANCE         (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_GOVERNANCE_VOTING_EXPIRATION_BLOCKS   (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_GOVERNANCE_VOTES_UPDATE_INTERVAL      (uint16_t(5001))
+#define GRAPHENE_CPPT_PARAM_MAX_GOVERNANCE_VOTES_SECONDS          (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_MAX_WITNESSES_VOTED_PER_ACCOUNT       (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_MAX_WITNESS_INACTIVE_BLOCKS           (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_BY_VOTE_TOP_WITNESS_PAY_PER_BLOCK     (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_BY_VOTE_REST_WITNESS_PAY_PER_BLOCK    (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_BY_PLEDGE_WITNESS_PAY_PER_BLOCK       (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_BY_VOTE_TOP_WITNESS_COUNT             (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_BY_VOTE_REST_WITNESS_COUNT            (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_BY_PLEDGE_WITNESS_COUNT               (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_BUDGET_ADJUST_INTERVAL                (uint16_t(8500))
+#define GRAPHENE_CPPT_PARAM_BUDGET_ADJUST_TARGET                  (uint16_t(8500))
+#define GRAPHENE_CPPT_PARAM_MIN_COMMITTEE_MEMBER_PLEDGE           (uint16_t(8500))
+#define GRAPHENE_CPPT_PARAM_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY (uint16_t(8500))
+
+
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex
 #define GRAPHENE_NEAR_SCHEDULE_CTR_IV                    ( (uint64_t( 0x6a09 ) << 0x30)    \

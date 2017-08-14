@@ -205,6 +205,32 @@ const committee_member_vote_object* database::find_committee_member_vote( accoun
       return nullptr;
 }
 
+const committee_proposal_object& database::get_committee_proposal_by_number( committee_proposal_number_type number )const
+{
+   const auto& idx = get_index_type<committee_proposal_index>().indices().get<by_number>();
+   auto itr = idx.find( number );
+   FC_ASSERT( itr != idx.end(), "committee proposal ${n} not found.", ("n",number) );
+   return *itr;
+}
+
+const registrar_takeover_object& database::get_registrar_takeover_object( account_uid_type uid )const
+{
+   const auto& idx = get_index_type<registrar_takeover_index>().indices().get<by_original>();
+   auto itr = idx.find( uid );
+   FC_ASSERT( itr != idx.end(), "takeover registrar for registrar ${uid} not found.", ("uid",uid) );
+   return *itr;
+}
+
+const registrar_takeover_object* database::find_registrar_takeover_object( account_uid_type uid )const
+{
+   const auto& idx = get_index_type<registrar_takeover_index>().indices().get<by_original>();
+   auto itr = idx.find( uid );
+   if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
 const platform_object& database::get_platform_by_pid( platform_pid_type pid )const
 {
    const auto& platforms_by_pid = get_index_type<platform_index>().indices().get<by_pid>();

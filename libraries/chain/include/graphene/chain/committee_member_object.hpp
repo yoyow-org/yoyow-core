@@ -23,6 +23,8 @@
  */
 #pragma once
 #include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/protocol/vote.hpp>
+#include <graphene/chain/protocol/committee_member.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
@@ -30,7 +32,8 @@
 namespace graphene { namespace chain {
    using namespace graphene::db;
 
-   class account_object;
+   class committee_member_object;
+   class committee_proposal_object;
 
    /**
     *  @brief tracks information about a committee_member account.
@@ -175,6 +178,84 @@ namespace graphene { namespace chain {
     */
    typedef generic_index<committee_member_vote_object, committee_member_vote_multi_index_type> committee_member_vote_index;
 
+   /**
+    * @brief This class represents a committee proposal on the object graph
+    * @ingroup object
+    * @ingroup protocol
+    */
+   class committee_proposal_object : public graphene::db::abstract_object<committee_proposal_object>
+   {
+      public:
+         static const uint8_t space_id = protocol_ids;
+         static const uint8_t type_id  = committee_proposal_object_type;
+
+         committee_proposal_number_type                  proposal_number = 0;
+         account_uid_type                                proposer;
+         vector<committee_proposal_item_type>            items;
+         uint32_t                                        voting_closing_block_num;
+         uint32_t                                        execution_block_num;
+         uint32_t                                        expiration_block_num;
+         flat_map<account_uid_type, voting_opinion_type> opinions;
+         uint16_t                                        approve_threshold;
+         bool                                            is_approved = false;
+
+         uint16_t          get_approve_threshold()const;
+         void              update_approve_threshold();
+   };
+
+   struct by_number;
+   struct by_proposer;
+   struct by_closing_block;
+   struct by_approved_closing_block;
+   struct by_approved_execution_block;
+
+   typedef multi_index_container<
+      committee_proposal_object,
+      indexed_by<
+         ordered_unique< tag<by_id>,
+            member<object, object_id_type, &object::id>
+         >,
+         ordered_unique< tag<by_number>,
+            member<committee_proposal_object, committee_proposal_number_type, &committee_proposal_object::proposal_number>
+         >,
+         ordered_unique< tag<by_approved_closing_block>,
+            composite_key<
+               committee_proposal_object,
+               member<committee_proposal_object, bool, &committee_proposal_object::is_approved>,
+               member<committee_proposal_object, uint32_t, &committee_proposal_object::voting_closing_block_num>,
+               member<committee_proposal_object, committee_proposal_number_type, &committee_proposal_object::proposal_number>
+            >
+         >,
+         ordered_unique< tag<by_approved_execution_block>,
+            composite_key<
+               committee_proposal_object,
+               member<committee_proposal_object, bool, &committee_proposal_object::is_approved>,
+               member<committee_proposal_object, uint32_t, &committee_proposal_object::execution_block_num>,
+               member<committee_proposal_object, committee_proposal_number_type, &committee_proposal_object::proposal_number>
+            >
+         >,
+         ordered_unique< tag<by_proposer>, // for API
+            composite_key<
+               committee_proposal_object,
+               member<committee_proposal_object, account_uid_type, &committee_proposal_object::proposer>,
+               member<committee_proposal_object, committee_proposal_number_type, &committee_proposal_object::proposal_number>
+            >
+         >,
+         ordered_unique< tag<by_closing_block>, // for API
+            composite_key<
+               committee_proposal_object,
+               member<committee_proposal_object, uint32_t, &committee_proposal_object::voting_closing_block_num>,
+               member<committee_proposal_object, committee_proposal_number_type, &committee_proposal_object::proposal_number>
+            >
+         >
+      >
+   > committee_proposal_multi_index_type;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef generic_index<committee_proposal_object, committee_proposal_multi_index_type> committee_proposal_index;
+
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::committee_member_object, (graphene::db::object),
@@ -192,4 +273,16 @@ FC_REFLECT_DERIVED( graphene::chain::committee_member_vote_object, (graphene::db
                     (voter_sequence)
                     (committee_member_uid)
                     (committee_member_sequence)
+                  )
+
+FC_REFLECT_DERIVED( graphene::chain::committee_proposal_object, (graphene::db::object),
+                    (proposal_number)
+                    (proposer)
+                    (items)
+                    (voting_closing_block_num)
+                    (execution_block_num)
+                    (expiration_block_num)
+                    (opinions)
+                    (approve_threshold)
+                    (is_approved)
                   )

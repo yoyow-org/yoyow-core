@@ -456,6 +456,22 @@ namespace graphene { namespace chain {
    };
 
    /**
+    * @brief This class represents an account registrar takeover relationship on the object graph
+    * @ingroup object
+    * @ingroup protocol
+    */
+   class registrar_takeover_object : public graphene::db::abstract_object<registrar_takeover_object>
+   {
+      public:
+         static const uint8_t space_id = implementation_ids;
+         static const uint8_t type_id  = impl_registrar_takeover_object_type;
+
+         /// The account's uid. This uid must be unique among all account uids.
+         account_uid_type    original_registrar = 0;
+         account_uid_type    takeover_registrar = 0;
+   };
+
+   /**
     *  @brief This secondary index will allow a reverse lookup of all accounts that a particular key or account
     *  is an potential signing authority.
     */
@@ -626,6 +642,35 @@ namespace graphene { namespace chain {
    typedef generic_index<voter_object, voter_multi_index_type> voter_index;
 
 
+   struct by_original;
+   struct by_takeover;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef multi_index_container<
+      registrar_takeover_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+         ordered_unique< tag<by_original>,
+            member< registrar_takeover_object, account_uid_type, &registrar_takeover_object::original_registrar>
+         >,
+         ordered_unique< tag<by_takeover>,
+            composite_key<
+               registrar_takeover_object,
+               member< registrar_takeover_object, account_uid_type, &registrar_takeover_object::takeover_registrar>,
+               member< registrar_takeover_object, account_uid_type, &registrar_takeover_object::original_registrar>
+            >
+         >
+      >
+   > registrar_takeover_multi_index_type;
+
+   /**
+    * @ingroup object_index
+    */
+   typedef generic_index<registrar_takeover_object, registrar_takeover_multi_index_type> registrar_takeover_index;
+
+
    struct by_witness_pledge_release;
    struct by_committee_member_pledge_release;
 
@@ -691,6 +736,10 @@ FC_REFLECT_DERIVED( graphene::chain::voter_object,
                     (number_of_witnesses_voted)
                     (number_of_committee_members_voted)
                   )
+
+FC_REFLECT_DERIVED( graphene::chain::registrar_takeover_object,
+                    (graphene::db::object),
+                    (original_registrar)(takeover_registrar) )
 
 FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (graphene::db::object),

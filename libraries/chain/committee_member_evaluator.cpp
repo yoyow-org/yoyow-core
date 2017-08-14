@@ -40,7 +40,7 @@ void_result committee_member_create_evaluator::do_evaluate( const committee_memb
    account_stats = &d.get_account_statistics_by_uid( op.account );
 
    const auto& global_params = d.get_global_properties().parameters;
-   // TODO review
+   // don't enforce pledge check for initial committee members
    if( d.head_block_num() > 0 )
       FC_ASSERT( op.pledge.amount >= global_params.min_committee_member_pledge,
                  "Insufficient pledge: provided ${p}, need ${r}",
@@ -413,6 +413,139 @@ void_result committee_member_vote_update_evaluator::do_apply( const committee_me
       if( total_votes > 0 )
          d.adjust_committee_member_votes( *committee_members_to_add[i], total_votes );
    }
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result committee_proposal_create_evaluator::do_evaluate( const committee_proposal_create_operation& op )
+{ try {
+   database& d = db();
+
+   const auto& gpo = d.get_global_properties();
+   const auto& dpo = d.get_dynamic_global_properties();
+   const auto& global_params = gpo.parameters;
+   const auto& current_committee = gpo.active_committee_members;
+
+   FC_ASSERT( current_committee.find( op.proposer ) != current_committee.end(),
+              "Account ${a} is not an active committee member",
+              ("a",op.proposer) );
+
+   FC_ASSERT( op.voting_closing_block_num >= d.head_block_num(),
+              "Voting closing block number should not be earlier than head block number" );
+   FC_ASSERT( op.voting_closing_block_num <= dpo.next_committee_update_block,
+              "Voting closing block number should not be later than next committee update block number" );
+   FC_ASSERT( op.execution_block_num <= dpo.next_committee_update_block,
+              "Proposal execution block number should not be later than next committee update block number" );
+   FC_ASSERT( op.expiration_block_num <= dpo.next_committee_update_block,
+              "Proposal expiration block number should not be later than next committee update block number" );
+
+   for( const auto& item : op.items )
+   {
+      if( item.which() == committee_proposal_item_type::tag< committee_update_account_priviledge_item_type >::value )
+      {
+         const auto& account_item = item.get< committee_update_account_priviledge_item_type >();
+         // make sure the accounts exist
+         d.get_account_by_uid( account_item.account );
+         if( account_item.new_priviledges.value.takeover_registrar.valid() )
+            d.get_account_by_uid( *account_item.new_priviledges.value.takeover_registrar );
+      }
+      else if( item.which() == committee_proposal_item_type::tag< committee_update_global_parameter_item_type >::value )
+      {
+         const auto& param_item = item.get< committee_update_global_parameter_item_type >();
+         if( param_item.value.maximum_time_until_expiration.valid() )
+            FC_ASSERT( *param_item.value.maximum_time_until_expiration > global_params.block_interval,
+                       "Maximum transaction expiration time must be greater than a block interval" );
+      }
+   }
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+object_id_type committee_proposal_create_evaluator::do_apply( const committee_proposal_create_operation& op )
+{ try {
+   database& d = db();
+   const auto& gpo = d.get_global_properties();
+   const auto& dpo = d.get_dynamic_global_properties();
+
+   uint16_t new_for = 0;
+   if( op.proposer_opinion.valid() && *op.proposer_opinion == opinion_for )
+      new_for = GRAPHENE_100_PERCENT / gpo.active_committee_members.size();
+
+   const auto& new_committee_proposal_object = d.create<committee_proposal_object>( [&]( committee_proposal_object& cpo ){
+      cpo.proposal_number          = dpo.next_committee_proposal_number;
+      cpo.proposer                 = op.proposer;
+      cpo.items                    = op.items;
+      cpo.voting_closing_block_num = op.voting_closing_block_num;
+      cpo.execution_block_num      = op.execution_block_num;
+      cpo.expiration_block_num     = op.expiration_block_num;
+      if( op.proposer_opinion.valid() )
+         cpo.opinions.insert( std::make_pair( op.proposer, *op.proposer_opinion ) );
+      cpo.approve_threshold        = cpo.get_approve_threshold();
+      cpo.is_approved              = ( new_for >= cpo.approve_threshold ? true : false );
+   });
+
+   d.modify( dpo, [&]( dynamic_global_property_object& _dpo )
+   {
+      _dpo.next_committee_proposal_number += 1;
+   } );
+
+   const auto new_id = new_committee_proposal_object.id;
+
+   if( new_committee_proposal_object.is_approved && d.head_block_num() >= op.execution_block_num )
+      d.execute_committee_proposal( new_committee_proposal_object );
+
+   return new_id;
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result committee_proposal_update_evaluator::do_evaluate( const committee_proposal_update_operation& op )
+{ try {
+   database& d = db();
+
+   const auto& gpo = d.get_global_properties();
+   const auto& current_committee = gpo.active_committee_members;
+
+   FC_ASSERT( current_committee.find( op.account ) != current_committee.end(),
+              "Account ${a} is not an active committee member",
+              ("a",op.account) );
+
+
+   proposal_obj = &d.get_committee_proposal_by_number( op.proposal_number );
+
+   FC_ASSERT( d.head_block_num() <= proposal_obj->voting_closing_block_num,
+              "Voting for proposal ${n} has closed, can not vote",
+              ("n",op.proposal_number) );
+
+   auto itr = proposal_obj->opinions.find( op.account );
+   if( itr != proposal_obj->opinions.end() )
+   {
+      const auto old_opinion = itr->second;
+      FC_ASSERT( old_opinion != op.opinion, "Opinion on proposal ${n} did not change.", ("n",op.proposal_number) );
+   }
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result committee_proposal_update_evaluator::do_apply( const committee_proposal_update_operation& op )
+{ try {
+   database& d = db();
+   const auto& gpo = d.get_global_properties();
+
+   d.modify( *proposal_obj, [&]( committee_proposal_object& cpo ){
+      cpo.opinions[ op.account ] = op.opinion;
+      uint8_t new_yeses = 0;
+      for( const auto& opinion : cpo.opinions )
+      {
+         if( opinion.second == opinion_for )
+            new_yeses += 1;
+      }
+      auto new_yes_percent = uint32_t( new_yeses ) * GRAPHENE_100_PERCENT / gpo.active_committee_members.size();
+      bool new_approved = ( new_yes_percent >= cpo.approve_threshold );
+      if( new_approved != cpo.is_approved )
+         cpo.is_approved = new_approved;
+   });
+
+   if( proposal_obj->is_approved && d.head_block_num() >= proposal_obj->execution_block_num )
+      d.execute_committee_proposal( *proposal_obj );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }

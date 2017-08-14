@@ -517,6 +517,7 @@ void database::_apply_block( const signed_block& next_block )
    }
 
    dlog("after apply_transaction");
+   execute_committee_proposals();
    update_undo_db_size();
    update_signing_witness(signing_witness, next_block);
    update_last_irreversible_block();

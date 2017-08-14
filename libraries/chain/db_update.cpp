@@ -712,7 +712,13 @@ void database::update_committee()
 
    if( head_block_num() >= dpo.next_committee_update_block )
    {
-      // TODO expire all unfinished committee proposals
+      // expire all committee proposals
+      const auto& idx = get_index_type<committee_proposal_index>().indices();
+      for( auto itr = idx.begin(); itr != idx.end(); itr = idx.begin() )
+      {
+         ilog( "expiring committee proposal #${n}: ${p}", ("n",itr->proposal_number)("p", *itr) );
+         remove( *itr );
+      }
 
       // prepare to update active_committee_members
       flat_set<account_uid_type> new_committee;
@@ -765,6 +771,317 @@ void database::adjust_budgets()
 
       ilog( "budgets adjusted on block ${n}, next scheduled adjust block is ${b}",
             ("n",head_block_num())("b",dpo.next_budget_adjust_block) );
+   }
+}
+
+void database::clear_unapproved_committee_proposals()
+{
+   const auto head_num = head_block_num();
+   const auto& idx = get_index_type<committee_proposal_index>().indices().get<by_approved_closing_block>();
+   auto itr = idx.begin(); // assume false < true
+   while( itr != idx.end() && itr->is_approved == false && itr->voting_closing_block_num <= head_num )
+   {
+      ilog( "removing voting closed but still unapproved committee proposal #${n}: ${p}",
+            ("n",itr->proposal_number)("p",*itr) );
+      remove( *itr );
+      itr = idx.begin();
+   }
+}
+
+void database::execute_committee_proposals()
+{
+   const auto head_num = head_block_num();
+   const auto& idx = get_index_type<committee_proposal_index>().indices().get<by_approved_execution_block>();
+   auto itr = idx.lower_bound( true );
+   while( itr != idx.end() && itr->is_approved == true && itr->execution_block_num <= head_num )
+   {
+      ilog( "executing committee proposal #${n}: ${p}", ("n",itr->proposal_number)("p",*itr) );
+      auto old_itr = itr;
+      ++itr;
+      execute_committee_proposal( *old_itr, true ); // the 2nd param is true, which means if it fail, won't throw fc::exception
+   }
+}
+
+void database::execute_committee_proposal( const committee_proposal_object& proposal, bool silent_fail )
+{
+   try
+   {
+      FC_ASSERT( proposal.is_approved, "proposal should have been approved by the committee" );
+      FC_ASSERT( head_block_num() >= proposal.execution_block_num, "has not yet reached execution block number" );
+
+      // check registrar takeovers, and prepare for objects to be updated
+      flat_map<account_uid_type, const account_object*> accounts;
+      flat_map<account_uid_type, bool> account_is_registrar;
+      flat_map<account_uid_type, account_uid_type> takeover_map;
+      flat_map<account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
+      const committee_update_fee_schedule_item_type* fee_item = nullptr;
+      const committee_update_global_parameter_item_type* param_item = nullptr;
+      for( const auto& item : proposal.items )
+      {
+         // account update item
+         if( item.which() == committee_proposal_item_type::tag< committee_update_account_priviledge_item_type >::value )
+         {
+            const auto& account_item = item.get< committee_update_account_priviledge_item_type >();
+            const auto& pv = account_item.new_priviledges.value;
+
+            bool first_takeover = false;
+            account_uid_type first_takeover_registrar = 0;
+            if( account_items.find( account_item.account ) == account_items.end() ) // first time process this account
+            {
+               account_items[ account_item.account ] = account_item.new_priviledges.value;
+               if( pv.is_registrar.valid() && *pv.is_registrar == false )
+               {
+                  first_takeover = true;
+                  FC_ASSERT( pv.takeover_registrar.valid(), "Should have takeover registrar account" );
+                  first_takeover_registrar = *pv.takeover_registrar;
+               }
+            }
+            else // this account has been already processed at least once
+            {
+               auto& mv = account_items[ account_item.account ];
+               if( pv.can_vote.valid() )
+                  mv.can_vote = pv.can_vote;
+               if( pv.is_admin.valid() )
+                  mv.is_admin = pv.is_admin;
+               if( pv.is_registrar.valid() )
+               {
+                  if( *pv.is_registrar == false && !mv.is_registrar.valid() ) // if it's the first time to be taken-over
+                  {
+                     first_takeover = true;
+                     FC_ASSERT( pv.takeover_registrar.valid(), "Should have takeover registrar account" );
+                     first_takeover_registrar = *pv.takeover_registrar;
+                  }
+                  mv.is_registrar = pv.is_registrar;
+               }
+            }
+
+            // cache new takeovers
+            if( first_takeover )
+            {
+               const auto& idx = get_index_type<registrar_takeover_index>().indices().get<by_takeover>();
+               auto itr = idx.lower_bound( account_item.account );
+               while( itr != idx.end() && itr->takeover_registrar == account_item.account )
+               {
+                  takeover_map[ itr->original_registrar ] = first_takeover_registrar;
+                  ++itr;
+               }
+            }
+
+            if( accounts.find( account_item.account ) == accounts.end() )
+            {
+               const account_object* account = &get_account_by_uid( account_item.account );
+               accounts[ account_item.account ] = account;
+               account_is_registrar[ account_item.account ] = account->is_registrar;
+            }
+
+            if( pv.is_registrar.valid() )
+            {
+               account_is_registrar[ account_item.account ] = *pv.is_registrar;
+               if( *pv.is_registrar == true )
+                  takeover_map.erase( account_item.account );
+            }
+
+            if( pv.takeover_registrar.valid() )
+            {
+               FC_ASSERT( account_is_registrar[ account_item.account ] == false,
+                          "Should not take over an active registrar" );
+
+               if( accounts.find( *pv.takeover_registrar ) != accounts.end() )
+                  FC_ASSERT( account_is_registrar[ *pv.takeover_registrar ] == true,
+                             "Takeover account should be a registrar already" );
+               else
+               {
+                  const account_object* takeover_account = &get_account_by_uid( *pv.takeover_registrar );
+                  FC_ASSERT( takeover_account->is_registrar == true,
+                             "Takeover account should be a registrar already" );
+                  accounts[ takeover_account->uid ] = takeover_account;
+                  account_is_registrar[ takeover_account->uid ] = takeover_account->is_registrar;
+               }
+
+               // update cache
+               for( auto& t : takeover_map )
+               {
+                  if( t.second == account_item.account )
+                     t.second = *pv.takeover_registrar;
+               }
+               takeover_map[ account_item.account ] = *pv.takeover_registrar;
+            }
+         }
+         // fee update item
+         else if( item.which() == committee_proposal_item_type::tag< committee_update_fee_schedule_item_type >::value )
+         {
+            fee_item = &item.get< committee_update_fee_schedule_item_type >();
+         }
+         // parameter update item
+         else if( item.which() == committee_proposal_item_type::tag< committee_update_global_parameter_item_type >::value )
+         {
+            param_item = &item.get< committee_update_global_parameter_item_type >();
+         }
+      }
+
+      // apply changes : new takeover registrars
+      for( const auto& takeover_item : takeover_map )
+      {
+         const registrar_takeover_object* t = find_registrar_takeover_object( takeover_item.first );
+         if( t == nullptr )
+         {
+            create<registrar_takeover_object>( [&](registrar_takeover_object& o){
+               o.original_registrar = takeover_item.first;
+               o.takeover_registrar = takeover_item.second;
+            });
+         }
+         else
+         {
+            modify( *t, [&](registrar_takeover_object& o){
+               o.takeover_registrar = takeover_item.second;
+            });
+         }
+      }
+      // apply changes : account updates
+      for( const auto& account_item : account_items )
+      {
+         const auto& pv = account_item.second;
+         if( pv.is_admin.valid() || pv.is_registrar.valid() )
+         {
+            const account_object* acc = accounts[ account_item.first ];
+            modify( *acc, [&](account_object& a){
+               if( pv.is_admin.valid() )
+                  a.is_admin = *pv.is_admin;
+               if( pv.is_registrar.valid() )
+                  a.is_registrar = *pv.is_registrar;
+               a.last_update_time = head_block_time();
+            });
+            if( pv.is_registrar.valid() && *pv.is_registrar == true )
+            {
+               const registrar_takeover_object* t = find_registrar_takeover_object( account_item.first );
+               if( t != nullptr )
+                  remove( *t );
+            }
+         }
+         if( pv.can_vote.valid() )
+         {
+            const account_statistics_object& st = get_account_statistics_by_uid( account_item.first );
+            if( *pv.can_vote == false && st.is_voter == true )
+               invalidate_voter( *find_voter( st.owner, st.last_voter_sequence )  );
+            modify( st, [&](account_statistics_object& a){
+               a.can_vote = *pv.can_vote;
+            });
+         }
+      }
+      // apply changes : fee schedule update
+      if( fee_item != nullptr )
+      {
+         modify( get_global_properties(), [&]( global_property_object& o )
+         {
+            auto& cp = o.parameters.current_fees->parameters;
+            for( const auto& f : (*fee_item)->parameters )
+            {
+               fee_parameters params; params.set_which(f.which());
+               auto itr = cp.find(params);
+               if( itr != cp.end() )
+                  *itr = f;
+               else
+                  cp.insert( f );
+            }
+         });
+      }
+      // apply changes : global params update
+      if( param_item != nullptr )
+      {
+         const auto& pv = param_item->value;
+         modify( get_global_properties(), [&]( global_property_object& _gpo )
+         {
+            auto& o = _gpo.parameters;
+            if( pv.maximum_transaction_size.valid() )
+               o.maximum_transaction_size = *pv.maximum_transaction_size;
+            if( pv.maximum_block_size.valid() )
+               o.maximum_block_size = *pv.maximum_block_size;
+            if( pv.maximum_time_until_expiration.valid() )
+               o.maximum_time_until_expiration = *pv.maximum_time_until_expiration;
+            if( pv.maximum_authority_membership.valid() )
+               o.maximum_authority_membership = *pv.maximum_authority_membership;
+            if( pv.max_authority_depth.valid() )
+               o.max_authority_depth = *pv.max_authority_depth;
+            if( pv.csaf_rate.valid() )
+               o.csaf_rate = *pv.csaf_rate;
+            if( pv.max_csaf_per_account.valid() )
+               o.max_csaf_per_account = *pv.max_csaf_per_account;
+            if( pv.csaf_accumulate_window.valid() )
+               o.csaf_accumulate_window = *pv.csaf_accumulate_window;
+            if( pv.min_witness_pledge.valid() )
+               o.min_witness_pledge = *pv.min_witness_pledge;
+            if( pv.max_witness_pledge_seconds.valid() )
+               o.max_witness_pledge_seconds = *pv.max_witness_pledge_seconds;
+            if( pv.witness_avg_pledge_update_interval.valid() )
+               o.witness_avg_pledge_update_interval = *pv.witness_avg_pledge_update_interval;
+            if( pv.witness_pledge_release_delay.valid() )
+               o.witness_pledge_release_delay = *pv.witness_pledge_release_delay;
+            if( pv.min_governance_voting_balance.valid() )
+               o.min_governance_voting_balance = *pv.min_governance_voting_balance;
+            if( pv.governance_voting_expiration_blocks.valid() )
+               o.governance_voting_expiration_blocks = *pv.governance_voting_expiration_blocks;
+            if( pv.governance_votes_update_interval.valid() )
+               o.governance_votes_update_interval = *pv.governance_votes_update_interval;
+            if( pv.max_governance_votes_seconds.valid() )
+               o.max_governance_votes_seconds = *pv.max_governance_votes_seconds;
+            if( pv.max_witnesses_voted_per_account.valid() )
+               o.max_witnesses_voted_per_account = *pv.max_witnesses_voted_per_account;
+            if( pv.max_witness_inactive_blocks.valid() )
+               o.max_witness_inactive_blocks = *pv.max_witness_inactive_blocks;
+            if( pv.by_vote_top_witness_pay_per_block.valid() )
+               o.by_vote_top_witness_pay_per_block = *pv.by_vote_top_witness_pay_per_block;
+            if( pv.by_vote_rest_witness_pay_per_block.valid() )
+               o.by_vote_rest_witness_pay_per_block = *pv.by_vote_rest_witness_pay_per_block;
+            if( pv.by_pledge_witness_pay_per_block.valid() )
+               o.by_pledge_witness_pay_per_block = *pv.by_pledge_witness_pay_per_block;
+            if( pv.by_vote_top_witness_count.valid() )
+               o.by_vote_top_witness_count = *pv.by_vote_top_witness_count;
+            if( pv.by_vote_rest_witness_count.valid() )
+               o.by_vote_rest_witness_count = *pv.by_vote_rest_witness_count;
+            if( pv.by_pledge_witness_count.valid() )
+               o.by_pledge_witness_count = *pv.by_pledge_witness_count;
+            if( pv.budget_adjust_interval.valid() )
+               o.budget_adjust_interval = *pv.budget_adjust_interval;
+            if( pv.budget_adjust_target.valid() )
+               o.budget_adjust_target = *pv.budget_adjust_target;
+            if( pv.min_committee_member_pledge.valid() )
+               o.min_committee_member_pledge = *pv.min_committee_member_pledge;
+            if( pv.committee_member_pledge_release_delay.valid() )
+               o.committee_member_pledge_release_delay = *pv.committee_member_pledge_release_delay;
+         });
+      }
+
+      // remove the executed proposal
+      remove( proposal );
+
+   } catch ( const fc::exception& e ) {
+      if( silent_fail )
+      {
+         if( proposal.execution_block_num >= proposal.expiration_block_num
+               || proposal.expiration_block_num <= head_block_num() )
+         {
+            wlog( "exception thrown while executing committee proposal ${p} :\n${e}\nexpired, removing.",
+                  ("p",proposal)("e",e.to_detail_string() ) );
+            try {
+               remove( proposal );
+            } catch( ... ) {}
+         }
+         else
+         {
+            wlog( "exception thrown while executing committee proposal ${p} :\n${e}\nwill try again on expiration block #${n}.",
+                  ("p",proposal)("e",e.to_detail_string() )("n",proposal.expiration_block_num) );
+            try {
+               modify( proposal, [&]( committee_proposal_object& cpo ){
+                  cpo.execution_block_num = cpo.expiration_block_num;
+               });
+            } catch( ... ) {}
+         }
+      }
+      else
+      {
+         wlog( "exception thrown while executing committee proposal ${p} :\n${e}", ("p",proposal)("e",e.to_detail_string() ) );
+         throw e;
+      }
    }
 }
 

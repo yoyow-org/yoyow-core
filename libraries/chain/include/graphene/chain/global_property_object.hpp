@@ -56,7 +56,7 @@ namespace graphene { namespace chain {
 
    /**
     * @class dynamic_global_property_object
-    * @brief Maintains global state information (committee_member list, current fees)
+    * @brief Maintains dynamic global state information
     * @ingroup object
     * @ingroup implementation
     *
@@ -69,18 +69,19 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = implementation_ids;
          static const uint8_t type_id  = impl_dynamic_global_property_object_type;
 
-         uint32_t          head_block_number = 0;
-         block_id_type     head_block_id;
-         time_point_sec    time;
-         account_uid_type  current_witness = 0;
-         time_point_sec    next_maintenance_time;
-         time_point_sec    last_budget_time;
-         share_type        witness_budget;
-         share_type        budget_pool;
-         share_type        total_budget_per_block = 0;
-         uint32_t          next_budget_adjust_block = 0;
-         uint32_t          next_committee_update_block = 0;
-         uint32_t          accounts_registered_this_interval = 0;
+         uint32_t                        head_block_number = 0;
+         block_id_type                   head_block_id;
+         time_point_sec                  time;
+         account_uid_type                current_witness = 0;
+         time_point_sec                  next_maintenance_time;
+         time_point_sec                  last_budget_time;
+         share_type                      witness_budget;
+         share_type                      budget_pool;
+         share_type                      total_budget_per_block = 0;
+         uint32_t                        next_budget_adjust_block = 0;
+         uint32_t                        next_committee_update_block = 0;
+         committee_proposal_number_type  next_committee_proposal_number = 1;
+         uint32_t                        accounts_registered_this_interval = 0;
          /**
           *  Every time a block is missed this increases by
           *  RECENTLY_MISSED_COUNT_INCREMENT,
@@ -133,14 +134,15 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
                     (head_block_id)
                     (time)
                     (current_witness)
-                    (next_maintenance_time)
-                    (last_budget_time)
-                    (witness_budget)
+                    //(next_maintenance_time)
+                    //(last_budget_time)
+                    //(witness_budget)
                     (budget_pool)
                     (total_budget_per_block)
                     (next_budget_adjust_block)
                     (next_committee_update_block)
-                    (accounts_registered_this_interval)
+                    (next_committee_proposal_number)
+                    //(accounts_registered_this_interval)
                     (recently_missed_count)
                     (current_aslot)
                     (recent_slots_filled)
@@ -150,8 +152,8 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
 
 FC_REFLECT_DERIVED( graphene::chain::global_property_object, (graphene::db::object),
                     (parameters)
-                    (pending_parameters)
-                    (next_available_vote_id)
+                    //(pending_parameters)
+                    //(next_available_vote_id)
                     (active_committee_members)
                     (active_witnesses)
                   )

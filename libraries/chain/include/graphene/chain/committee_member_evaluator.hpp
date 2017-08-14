@@ -68,6 +68,26 @@ namespace graphene { namespace chain {
          vector<const committee_member_vote_object*> invalid_committee_member_votes_to_remove;
    };
 
+   class committee_proposal_create_evaluator : public evaluator<committee_proposal_create_evaluator>
+   {
+      public:
+         typedef committee_proposal_create_operation operation_type;
+
+         void_result do_evaluate( const committee_proposal_create_operation& o );
+         object_id_type do_apply( const committee_proposal_create_operation& o );
+   };
+
+   class committee_proposal_update_evaluator : public evaluator<committee_proposal_update_evaluator>
+   {
+      public:
+         typedef committee_proposal_update_operation operation_type;
+
+         void_result do_evaluate( const committee_proposal_update_operation& o );
+         void_result do_apply( const committee_proposal_update_operation& o );
+
+         const committee_proposal_object* proposal_obj = nullptr;
+   };
+
    class committee_member_update_global_parameters_evaluator : public evaluator<committee_member_update_global_parameters_evaluator>
    {
       public:

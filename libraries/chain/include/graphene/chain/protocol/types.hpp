@@ -143,6 +143,7 @@ namespace graphene { namespace chain {
       witness_object_type,
       platform_object_type,
       post_object_type,
+      committee_proposal_object_type,
       force_settlement_object_type,
       limit_order_object_type,
       call_order_object_type,
@@ -168,6 +169,7 @@ namespace graphene { namespace chain {
       impl_voter_object_type,
       impl_witness_vote_object_type,
       impl_committee_member_vote_object_type,
+      impl_registrar_takeover_object_type,
       impl_csaf_lease_object_type,
       impl_transaction_object_type,
       impl_block_summary_object_type,
@@ -189,6 +191,7 @@ namespace graphene { namespace chain {
    class committee_member_object;
    class witness_object;
    class asset_object;
+   class committee_proposal_object;
    class force_settlement_object;
    class limit_order_object;
    class call_order_object;
@@ -207,6 +210,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, witness_object_type,            witness_object>               witness_id_type;
    typedef object_id< protocol_ids, platform_object_type,           platform_object>              platform_id_type;
    typedef object_id< protocol_ids, post_object_type,               post_object>                  post_id_type;
+   typedef object_id< protocol_ids, committee_proposal_object_type, committee_proposal_object>    committee_proposal_id_type;
    typedef object_id< protocol_ids, force_settlement_object_type,   force_settlement_object>      force_settlement_id_type;
    typedef object_id< protocol_ids, limit_order_object_type,        limit_order_object>           limit_order_id_type;
    typedef object_id< protocol_ids, call_order_object_type,         call_order_object>            call_order_id_type;
@@ -228,6 +232,7 @@ namespace graphene { namespace chain {
    class voter_object;
    class witness_vote_object;
    class committee_member_vote_object;
+   class registrar_takeover_object;
    class csaf_lease_object;
    class transaction_object;
    class block_summary_object;
@@ -248,6 +253,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_voter_object_type,            voter_object>                              voter_id_type;
    typedef object_id< implementation_ids, impl_witness_vote_object_type,     witness_vote_object>                       witness_vote_id_type;
    typedef object_id< implementation_ids, impl_committee_member_vote_object_type,     committee_member_vote_object>     committee_member_vote_id_type;
+   typedef object_id< implementation_ids, impl_registrar_takeover_object_type, registrar_takeover_object>               registrar_takeover_id_type;
    typedef object_id< implementation_ids, impl_csaf_lease_object_type,       csaf_lease_object>                         csaf_lease_id_type;
    typedef object_id< implementation_ids, impl_transaction_object_type,      transaction_object>                        transaction_obj_id_type;
    typedef object_id< implementation_ids, impl_block_summary_object_type,    block_summary_object>                      block_summary_id_type;
@@ -367,6 +373,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (witness_object_type)
                  (platform_object_type)
                  (post_object_type)
+                 (committee_proposal_object_type)
                  (force_settlement_object_type)
                  (limit_order_object_type)
                  (call_order_object_type)
@@ -390,6 +397,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_voter_object_type)
                  (impl_witness_vote_object_type)
                  (impl_committee_member_vote_object_type)
+                 (impl_registrar_takeover_object_type)
                  (impl_csaf_lease_object_type)
                  (impl_transaction_object_type)
                  (impl_block_summary_object_type)
@@ -412,6 +420,7 @@ FC_REFLECT_TYPENAME( graphene::chain::post_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::force_settlement_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::witness_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::committee_proposal_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::limit_order_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::call_order_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::custom_id_type )
@@ -430,6 +439,7 @@ FC_REFLECT_TYPENAME( graphene::chain::account_statistics_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::voter_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::witness_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_vote_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::registrar_takeover_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::csaf_lease_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::transaction_obj_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::block_summary_id_type )

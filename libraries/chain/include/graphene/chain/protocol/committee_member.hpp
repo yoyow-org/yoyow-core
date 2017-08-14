@@ -193,7 +193,7 @@ namespace graphene { namespace chain {
       optional< uint32_t              >  budget_adjust_interval              ;
       optional< uint16_t              >  budget_adjust_target                ;
       // Don't update this parameter so far
-      //optional< uint16_t              >  committee_size                      ;
+      //optional< uint8_t               >  committee_size                      ;
       // Don't update this parameter so far
       //optional< uint32_t              >  committee_update_interval           ;
       optional< uint64_t              >  min_committee_member_pledge         ;
@@ -256,6 +256,8 @@ namespace graphene { namespace chain {
       uint32_t                             voting_closing_block_num;
       /// When will the proposal be executed if approved
       uint32_t                             execution_block_num;
+      /// When will the proposal be tried to executed again if failed on first execution, will be ignored if failed again.
+      uint32_t                             expiration_block_num;
       /// Whether the proposer agree with the proposal
       optional<voting_opinion_type>        proposer_opinion;
 
@@ -395,7 +397,10 @@ FC_REFLECT_ENUM( graphene::chain::voting_opinion_type,
 FC_REFLECT( graphene::chain::committee_proposal_create_operation::fee_parameters_type,
             (basic_fee)(price_per_item)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::committee_proposal_create_operation,
-            (fee)(proposer)(items)(proposer_opinion)(voting_closing_block_num)(execution_block_num)(extensions) )
+            (fee)(proposer)(items)
+            (voting_closing_block_num)(execution_block_num)(expiration_block_num)
+            (proposer_opinion)
+            (extensions) )
 
 FC_REFLECT( graphene::chain::committee_proposal_update_operation::fee_parameters_type,
             (fee)(min_real_fee)(min_rf_percent)(extensions) )

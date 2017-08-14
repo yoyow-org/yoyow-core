@@ -301,6 +301,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            //assert( aobj != nullptr );
            //accounts.insert( aobj->committee_member_account );
            break;
+        } case committee_proposal_object_type:{
+           // TODO review
+           break;
         } case witness_object_type:{
            // TODO review
            //const auto& aobj = dynamic_cast<const witness_object*>(obj);
@@ -384,6 +387,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
                // TODO review
               break;
             } case impl_committee_member_vote_object_type:{
+               // TODO review
+              break;
+            } case impl_registrar_takeover_object_type:{
                // TODO review
               break;
             } case impl_csaf_lease_object_type:{
