@@ -123,7 +123,7 @@ struct full_account_query_options
    optional<bool> fetch_csaf_leases_out;
 };
 
-enum witness_list_order_type
+enum data_sorting_type
 {
    order_by_uid = 0,
    order_by_votes = 1,
@@ -566,11 +566,11 @@ class database_api
        * @brief Query for registered witnesses
        * @param lower_bound_uid Lower bound of the first uid to return
        * @param limit Maximum number of results to return -- must not exceed 101
-       * @param order_type how the returned list will be ordered
+       * @param order_by how the returned list will be sorted
        * @return A list of witness objects
        */
       vector<witness_object> lookup_witnesses(const account_uid_type lower_bound_uid,
-                                              uint32_t limit, witness_list_order_type order_type)const;
+                                              uint32_t limit, data_sorting_type order_by)const;
 
       /**
        * @brief Get the total number of witnesses registered with the blockchain
@@ -599,11 +599,11 @@ class database_api
        * @brief Query for registered committee members
        * @param lower_bound_uid Lower bound of the first uid to return
        * @param limit Maximum number of results to return -- must not exceed 101
-       * @param order_type how the returned list will be ordered
+       * @param order_by how the returned list will be sorted
        * @return A list of committee member objects
        */
       vector<committee_member_object> lookup_committee_members(const account_uid_type lower_bound_uid,
-                                                               uint32_t limit, witness_list_order_type order_type)const;
+                                                               uint32_t limit, data_sorting_type order_by)const;
 
       /**
        * @brief Get the total number of committee members registered with the blockchain
@@ -723,7 +723,7 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_csaf_leases_out)
           );
 
-FC_REFLECT_ENUM( graphene::app::witness_list_order_type,
+FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_uid)
                  (order_by_votes)
                  (order_by_pledge)

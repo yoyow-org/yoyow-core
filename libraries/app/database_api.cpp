@@ -143,14 +143,14 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<optional<witness_object>> get_witnesses(const vector<account_uid_type>& witness_uids)const;
       fc::optional<witness_object> get_witness_by_account(account_uid_type account)const;
       vector<witness_object> lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit,
-                                              witness_list_order_type order_type)const;
+                                              data_sorting_type order_by)const;
       uint64_t get_witness_count()const;
 
       // Committee members
       vector<optional<committee_member_object>> get_committee_members(const vector<account_uid_type>& committee_member_uids)const;
       fc::optional<committee_member_object> get_committee_member_by_account(account_uid_type account)const;
       vector<committee_member_object> lookup_committee_members(const account_uid_type lower_bound_uid, uint32_t limit,
-                                                               witness_list_order_type order_type)const;
+                                                               data_sorting_type order_by)const;
       uint64_t get_committee_member_count()const;
 
       // Votes
@@ -1628,18 +1628,18 @@ fc::optional<witness_object> database_api_impl::get_witness_by_account(account_u
 }
 
 vector<witness_object> database_api::lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit,
-                                                      witness_list_order_type order_type)const
+                                                      data_sorting_type order_by)const
 {
-   return my->lookup_witnesses( lower_bound_uid, limit, order_type );
+   return my->lookup_witnesses( lower_bound_uid, limit, order_by );
 }
 
 vector<witness_object> database_api_impl::lookup_witnesses(const account_uid_type lower_bound_uid, uint32_t limit,
-                                                           witness_list_order_type order_type)const
+                                                           data_sorting_type order_by)const
 {
    FC_ASSERT( limit <= 101 );
    vector<witness_object> result;
 
-   if( order_type == order_by_uid )
+   if( order_by == order_by_uid )
    {
       const auto& idx = _db.get_index_type<witness_index>().indices().get<by_valid>();
       auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_uid ) );
@@ -1659,13 +1659,13 @@ vector<witness_object> database_api_impl::lookup_witnesses(const account_uid_typ
          new_lower_bound_uid = 0;
       else
       {
-         if( order_type == order_by_votes )
+         if( order_by == order_by_votes )
             lower_bound_shares = lower_bound_obj->total_votes;
          else // by pledge
             lower_bound_shares = lower_bound_obj->pledge;
       }
 
-      if( order_type == order_by_votes )
+      if( order_by == order_by_votes )
       {
          const auto& idx = _db.get_index_type<witness_index>().indices().get<by_votes>();
          auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
@@ -1740,18 +1740,18 @@ fc::optional<committee_member_object> database_api_impl::get_committee_member_by
 }
 
 vector<committee_member_object> database_api::lookup_committee_members(const account_uid_type lower_bound_uid, uint32_t limit,
-                                                                       witness_list_order_type order_type)const
+                                                                       data_sorting_type order_by)const
 {
-   return my->lookup_committee_members( lower_bound_uid, limit, order_type );
+   return my->lookup_committee_members( lower_bound_uid, limit, order_by );
 }
 
 vector<committee_member_object> database_api_impl::lookup_committee_members(const account_uid_type lower_bound_uid, uint32_t limit,
-                                                                            witness_list_order_type order_type)const
+                                                                            data_sorting_type order_by)const
 {
    FC_ASSERT( limit <= 101 );
    vector<committee_member_object> result;
 
-   if( order_type == order_by_uid )
+   if( order_by == order_by_uid )
    {
       const auto& idx = _db.get_index_type<committee_member_index>().indices().get<by_valid>();
       auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_uid ) );
@@ -1771,13 +1771,13 @@ vector<committee_member_object> database_api_impl::lookup_committee_members(cons
          new_lower_bound_uid = 0;
       else
       {
-         if( order_type == order_by_votes )
+         if( order_by == order_by_votes )
             lower_bound_shares = lower_bound_obj->total_votes;
          else // by pledge
             lower_bound_shares = lower_bound_obj->pledge;
       }
 
-      if( order_type == order_by_votes )
+      if( order_by == order_by_votes )
       {
          const auto& idx = _db.get_index_type<committee_member_index>().indices().get<by_votes>();
          auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );

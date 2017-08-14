@@ -1229,10 +1229,10 @@ class wallet_api
        * @param lowerbound the UID of the first witness to return.  If the witness does not exist,
        *                   the list will start at the witness that comes after \c lowerbound
        * @param limit the maximum number of witnesss to return (max: 101)
-       * @param order_type how the returned list will be ordered
+       * @param order_by how the returned list will be sorted
        * @returns a list of witnesses
        */
-      vector<witness_object> list_witnesses(const account_uid_type lowerbound, uint32_t limit, witness_list_order_type order_type);
+      vector<witness_object> list_witnesses(const account_uid_type lowerbound, uint32_t limit, data_sorting_type order_by);
 
       /** Lists all committee members registered in the blockchain. This returns a list of all committee member objects,
        * sorted by specified order.  This lists committee members whether they are currently voted in or not.
@@ -1244,11 +1244,11 @@ class wallet_api
        * @param lowerbound the UID of the first committee member to return.  If the committee member does not exist,
        *                   the list will start at the committee member that comes after \c lowerbound
        * @param limit the maximum number of committee members to return (max: 101)
-       * @param order_type how the returned list will be ordered
+       * @param order_by how the returned list will be sorted
        * @returns a list of committee members
        */
       vector<committee_member_object> list_committee_members(const account_uid_type lowerbound, uint32_t limit,
-                                                             witness_list_order_type order_type);
+                                                             data_sorting_type order_by);
 
       /** Returns information about the given witness.
        * @param owner_account the name or id of the witness account owner, or the id of the witness

@@ -3465,15 +3465,15 @@ signed_transaction wallet_api::create_committee_member(string owner_account, str
 }
 
 vector<witness_object> wallet_api::list_witnesses(const account_uid_type lowerbound, uint32_t limit,
-                                                  witness_list_order_type order_type)
+                                                  data_sorting_type order_by)
 {
-   return my->_remote_db->lookup_witnesses(lowerbound, limit, order_type);
+   return my->_remote_db->lookup_witnesses(lowerbound, limit, order_by);
 }
 
 vector<committee_member_object> wallet_api::list_committee_members(const account_uid_type lowerbound, uint32_t limit,
-                                                                   witness_list_order_type order_type)
+                                                                   data_sorting_type order_by)
 {
-   return my->_remote_db->lookup_committee_members(lowerbound, limit, order_type);
+   return my->_remote_db->lookup_committee_members(lowerbound, limit, order_by);
 }
 
 witness_object wallet_api::get_witness(string owner_account)
