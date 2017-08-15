@@ -322,6 +322,8 @@ class wallet_api
       /** Lists all accounts controlled by this wallet.
        * This returns a list of the full account objects for all accounts whose private keys 
        * we possess.
+       * Note: current implementation only returns data from local cache, so it may be stale.
+       *       To get latest data, a workaround is to reopen the wallet file.
        * @returns a list of account objects
        */
       vector<account_object>            list_my_accounts();

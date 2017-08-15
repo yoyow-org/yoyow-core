@@ -572,10 +572,13 @@ public:
    }
    account_object get_account(account_uid_type uid) const
    {
+      /*
+      // TODO review. commented out to get around the caching issue
       const auto& idx = _wallet.my_accounts.get<by_uid>();
       auto itr = idx.find(uid);
       if( itr != idx.end() )
          return *itr;
+      */
       auto rec = _remote_db->get_accounts_by_uid({uid}).front();
       FC_ASSERT( rec, "Can not find account ${uid}.", ("uid",uid) );
       return *rec;
@@ -595,6 +598,8 @@ public:
          return get_account(*id);
       } else {
          // It's a name
+         /*
+         // TODO review. commented out to get around the caching issue
          if( _wallet.my_accounts.get<by_name>().count(account_name_or_id) )
          {
             auto local_account = *_wallet.my_accounts.get<by_name>().find(account_name_or_id);
@@ -607,6 +612,7 @@ public:
 
             return *_wallet.my_accounts.get<by_name>().find(account_name_or_id);
          }
+         */
          auto rec = _remote_db->lookup_account_names({account_name_or_id}).front();
          FC_ASSERT( rec && rec->name == account_name_or_id );
          return *rec;
@@ -2962,6 +2968,7 @@ uint64_t wallet_api::get_account_count() const
 
 vector<account_object> wallet_api::list_my_accounts()
 {
+   // TODO this implementation has caching issue. To get latest data, check the steps in `load_wallet_file()`
    return vector<account_object>(my->_wallet.my_accounts.begin(), my->_wallet.my_accounts.end());
 }
 
