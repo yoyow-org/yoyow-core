@@ -715,7 +715,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (is_full_member)(is_registrar)(is_admin)
                     (create_time)(last_update_time)
                     (active_data)(secondary_data)
-                    (statistics)
+                    //(statistics)
                     //(whitelisting_accounts)(blacklisting_accounts)
                     //(whitelisted_accounts)(blacklisted_accounts)
                     //(cashback_vb)

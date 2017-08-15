@@ -146,7 +146,7 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
                     (recently_missed_count)
                     (current_aslot)
                     (recent_slots_filled)
-                    (dynamic_flags)
+                    //(dynamic_flags)
                     (last_irreversible_block_num)
                   )
 
