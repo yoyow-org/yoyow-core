@@ -424,7 +424,7 @@ public:
       catch (const fc::exception& e)
       {
          // Right now the wallet_api has no way of knowing if the connection to the
-         // witness has already disconnected (via the witness node exiting first).
+         // node has already disconnected (via the node exiting first).
          // If it has exited, cancel_all_subscriptsions() will throw and there's
          // nothing we can do about it.
          // dlog("Caught exception ${e} while canceling database subscriptions", ("e", e));
@@ -2632,7 +2632,7 @@ public:
       catch( const fc::exception& e )
       {
          std::cerr << "\nCouldn't get network node API.  You probably are not configured\n"
-         "to access the network API on the witness_node you are\n"
+         "to access the network API on the yoyow_node you are\n"
          "connecting to.  Please follow the instructions in README.md to set up an apiaccess file.\n"
          "\n";
          throw(e);
