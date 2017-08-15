@@ -91,7 +91,7 @@ namespace graphene { namespace chain {
       struct fee_parameters_type
       {
          uint64_t basic_fee        = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
-         uint64_t premium_fee      = 2000*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+         //uint64_t premium_fee      = 2000*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
          uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t min_real_fee     = 0;
          uint16_t min_rf_percent   = 0;
@@ -486,7 +486,9 @@ FC_REFLECT( graphene::chain::account_upgrade_operation,
 FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 
 FC_REFLECT( graphene::chain::account_create_operation::fee_parameters_type,
-            (basic_fee)(premium_fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
+            (basic_fee)
+            //(premium_fee)
+            (price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::account_manage_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::account_update_key_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::account_update_auth_operation::fee_parameters_type,
