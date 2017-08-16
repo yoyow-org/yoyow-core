@@ -299,6 +299,11 @@ class database_api
       std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
                                                                         const full_account_query_options& options );
 
+      /**
+       * @brief Get an account by name
+       * @param name name of the account to retrieve
+       * @return The account corresponding to the provided name, or null if not found
+       */
       optional<account_object> get_account_by_name( string name )const;
 
       /**
