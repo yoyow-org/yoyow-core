@@ -25,6 +25,8 @@
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/csaf_object.hpp>
+#include <graphene/chain/witness_object.hpp>
+#include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/market_evaluator.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
@@ -51,6 +53,11 @@ namespace graphene { namespace app {
       vector<withdraw_permission_object> withdraws;
       vector<csaf_lease_object>        csaf_leases_in;
       vector<csaf_lease_object>        csaf_leases_out;
+      optional<voter_object>           voter;
+      optional<witness_object>         witness;
+      vector<account_uid_type>         witness_votes;
+      optional<committee_member_object>    committee_member;
+      vector<account_uid_type>         committee_member_votes;
    };
 
 } }
@@ -58,19 +65,24 @@ namespace graphene { namespace app {
 FC_REFLECT( graphene::app::full_account,
             (account)
             (statistics)
-            (registrar_name)
-            (referrer_name)
-            (lifetime_referrer_name)
-            (votes)
-            (cashback_balance)
-            (balances)
-            (vesting_balances)
-            (limit_orders)
-            (call_orders)
-            (settle_orders)
-            (proposals)
-            (assets)
-            (withdraws)
+            //(registrar_name)
+            //(referrer_name)
+            //(lifetime_referrer_name)
+            //(votes)
+            //(cashback_balance)
+            //(balances)
+            //(vesting_balances)
+            //(limit_orders)
+            //(call_orders)
+            //(settle_orders)
+            //(proposals)
+            //(assets)
+            //(withdraws)
             (csaf_leases_in)
             (csaf_leases_out)
+            (voter)
+            (witness)
+            (witness_votes)
+            (committee_member)
+            (committee_member_votes)
           )

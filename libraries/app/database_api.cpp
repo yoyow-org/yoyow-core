@@ -783,15 +783,48 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
          continue;
 
       // fc::mutable_variant_object full_account;
+      auto& account_stats = _db.get_account_statistics_by_uid( uid );
       full_account acnt;
       if( options.fetch_account_object.valid() && *options.fetch_account_object == true )
          acnt.account = *account;
       if( options.fetch_statistics.valid() && *options.fetch_statistics == true )
-         acnt.statistics = _db.get_account_statistics_by_uid( uid );
+         acnt.statistics = account_stats;
       if( options.fetch_csaf_leases_in.valid() && *options.fetch_csaf_leases_in == true )
          acnt.csaf_leases_in = get_csaf_leases_by_to( uid, 0, 100 );
       if( options.fetch_csaf_leases_out.valid() && *options.fetch_csaf_leases_out == true )
          acnt.csaf_leases_out = get_csaf_leases_by_from( uid, 0, 100 );
+      if( options.fetch_voter_object.valid() && *options.fetch_voter_object == true && account_stats.is_voter )
+         acnt.voter = *_db.find_voter( uid, account_stats.last_voter_sequence );
+      if( options.fetch_witness_object.valid() && *options.fetch_witness_object == true )
+      {
+         const witness_object* wit = _db.find_witness_by_uid( uid );
+         if( wit != nullptr )
+            acnt.witness = *wit;
+      }
+      if( options.fetch_witness_votes.valid() && *options.fetch_witness_votes == true && account_stats.is_voter )
+      {
+         auto range = _db.get_index_type<witness_vote_index>().indices().get<by_voter_seq>()
+                         .equal_range( std::make_tuple( uid, account_stats.last_voter_sequence ) );
+         std::for_each(range.first, range.second,
+                    [&acnt] (const witness_vote_object& o) {
+                       acnt.witness_votes.emplace_back( o.witness_uid );
+                    });
+      }
+      if( options.fetch_committee_member_object.valid() && *options.fetch_committee_member_object == true )
+      {
+         const committee_member_object* com = _db.find_committee_member_by_uid( uid );
+         if( com != nullptr )
+            acnt.committee_member = *com;
+      }
+      if( options.fetch_committee_member_votes.valid() && *options.fetch_committee_member_votes == true && account_stats.is_voter )
+      {
+         auto range = _db.get_index_type<committee_member_vote_index>().indices().get<by_voter_seq>()
+                         .equal_range( std::make_tuple( uid, account_stats.last_voter_sequence ) );
+         std::for_each(range.first, range.second,
+                    [&acnt] (const committee_member_vote_object& o) {
+                       acnt.committee_member_votes.emplace_back( o.committee_member_uid );
+                    });
+      }
 
       results[uid] = acnt;
    }

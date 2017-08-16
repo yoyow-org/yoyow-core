@@ -2251,10 +2251,16 @@ public:
          auto r = result.as<vector<operation_detail>>();
          std::stringstream ss;
 
+         ss << "#" << " ";
+         ss << "block_num" << " ";
+         ss << "time     " << " ";
+         ss << "description/fee_payer/fee" << " ";
+         ss << " \n";
          for( operation_detail& d : r )
          {
             operation_history_object& i = d.op;
             ss << d.sequence << " ";
+            ss << i.block_num << " ";
             auto b = _remote_db->get_block_header(i.block_num);
             FC_ASSERT(b);
             ss << b->timestamp.to_iso_string() << " ";
@@ -3178,6 +3184,15 @@ void wallet_api::remove_builder_transaction(transaction_handle_type handle)
 account_object wallet_api::get_account(string account_name_or_id) const
 {
    return my->get_account(account_name_or_id);
+}
+
+full_account wallet_api::get_full_account(string account_name_or_uid) const
+{
+   account_uid_type uid = my->get_account_uid( account_name_or_uid );
+   vector<account_uid_type> uids( 1, uid );
+   full_account_query_options opt( { true, true, true, true, true, true, true, true, true } );
+   const auto& results = my->_remote_db->get_full_accounts_by_uid( uids, opt );
+   return results.at( uid );
 }
 
 asset_object wallet_api::get_asset(string asset_name_or_id) const

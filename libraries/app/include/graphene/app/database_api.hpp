@@ -121,6 +121,11 @@ struct full_account_query_options
    optional<bool> fetch_statistics;
    optional<bool> fetch_csaf_leases_in;
    optional<bool> fetch_csaf_leases_out;
+   optional<bool> fetch_voter_object;
+   optional<bool> fetch_witness_object;
+   optional<bool> fetch_witness_votes;
+   optional<bool> fetch_committee_member_object;
+   optional<bool> fetch_committee_member_votes;
 };
 
 enum data_sorting_type
@@ -726,6 +731,11 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_statistics)
             (fetch_csaf_leases_in)
             (fetch_csaf_leases_out)
+            (fetch_voter_object)
+            (fetch_witness_object)
+            (fetch_witness_votes)
+            (fetch_committee_member_object)
+            (fetch_committee_member_votes)
           );
 
 FC_REFLECT_ENUM( graphene::app::data_sorting_type,

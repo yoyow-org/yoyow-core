@@ -409,6 +409,13 @@ class wallet_api
        */
       account_object                    get_account(string account_name_or_id) const;
 
+      /** Returns information about the given account.
+       *
+       * @param account_name_or_id the name or uid of the account to provide information about
+       * @returns the public account data stored in the blockchain
+       */
+      full_account                      get_full_account(string account_name_or_uid) const;
+
       /** Returns information about the given asset.
        * @param asset_name_or_id the symbol or id of the asset in question
        * @returns the information about the asset stored in the block chain
@@ -1691,6 +1698,7 @@ FC_API( graphene::wallet::wallet_api,
         (set_voting_proxy)
         (set_desired_witness_and_committee_member_count)
         (get_account)
+        (get_full_account)
         (get_block)
         (get_account_count)
         (get_account_history)
