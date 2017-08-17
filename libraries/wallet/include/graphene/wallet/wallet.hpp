@@ -1395,8 +1395,8 @@ class wallet_api
 
       /** Vote for a given committee_member.
        *
-       * An account can publish a list of all committee_memberes they approve of.  This 
-       * command allows you to add or remove committee_memberes from this list.
+       * An account can publish a list of all committee_members they approve of.  This
+       * command allows you to add or remove committee_members from this list.
        * Each account's vote is weighted according to the number of shares of the
        * core asset owned by that account at the time the votes are tallied.
        *
@@ -1417,7 +1417,7 @@ class wallet_api
 
       /** Vote for a given witness.
        *
-       * An account can publish a list of all witnesses they approve of.  This 
+       * An account can publish a list of all witnesses they approve of.  This
        * command allows you to add or remove witnesses from this list.
        * Each account's vote is weighted according to the number of shares of the
        * core asset owned by that account at the time the votes are tallied.
@@ -1437,19 +1437,59 @@ class wallet_api
                                           bool approve,
                                           bool broadcast = false);
 
+      /** Update witness voting options.
+       *
+       * An account can publish a list of all witnesses they approve of.  This
+       * command allows you to add and/or remove witnesses from this list.
+       * Each account's vote is weighted according to the number of shares of the
+       * core asset owned by that account at the time the votes are tallied.
+       *
+       * @note you cannot vote against a witness, you can only vote for the witness
+       *       or not vote for the witness.
+       *
+       * @param voting_account the name or uid of the account who is voting with their shares
+       * @param witnesses_to_add a list of name or uid of witnesses that to be voted for
+       * @param witnesses_to_remove a list of name or uid of witnesses that to revoke votes from
+       * @param broadcast true if you wish to broadcast the transaction
+       * @return the signed transaction changing your vote for the given witnesses
+       */
+      signed_transaction update_witness_votes(string voting_account,
+                                          flat_set<string> witnesses_to_add,
+                                          flat_set<string> witnesses_to_remove,
+                                          bool broadcast = false);
+
+      /** Update committee member voting options.
+       *
+       * An account can publish a list of all committee members they approve of.  This
+       * command allows you to add and/or remove committee members from this list.
+       * Each account's vote is weighted according to the number of shares of the
+       * core asset owned by that account at the time the votes are tallied.
+       *
+       * @note you cannot vote against a committee member, you can only vote for the committee member
+       *       or not vote for the committee member.
+       *
+       * @param voting_account the name or uid of the account who is voting with their shares
+       * @param committee_members_to_add a list of name or uid of committee members that to be voted for
+       * @param committee_members_to_remove a list of name or uid of committee members that to revoke votes from
+       * @param broadcast true if you wish to broadcast the transaction
+       * @return the signed transaction changing your vote for the given committee members
+       */
+      signed_transaction update_committee_member_votes(string voting_account,
+                                          flat_set<string> committee_members_to_add,
+                                          flat_set<string> committee_members_to_remove,
+                                          bool broadcast = false);
+
       /** Set the voting proxy for an account.
        *
        * If a user does not wish to take an active part in voting, they can choose
        * to allow another account to vote their stake.
        *
-       * Setting a vote proxy does not remove your previous votes from the blockchain,
-       * they remain there but are ignored.  If you later null out your vote proxy,
-       * your previous votes will take effect again.
+       * Setting a vote proxy will remove your previous votes from the blockchain.
        *
        * This setting can be changed at any time.
        *
-       * @param account_to_modify the name or id of the account to update
-       * @param voting_account the name or id of an account authorized to vote account_to_modify's shares,
+       * @param account_to_modify the name or uid of the account to update
+       * @param voting_account the name or uid of an account authorized to vote account_to_modify's shares,
        *                       or null to vote your own shares
        *
        * @param broadcast true if you wish to broadcast the transaction
@@ -1554,7 +1594,22 @@ class wallet_api
          const variant_object& changed_values,
          bool broadcast = false);
 
-      /** Approve or disapprove a proposal.
+      /** Vote on a committee proposal.
+       *
+       * @param committee_member_account The committee member that casted the vote.
+       * @param proposal_number The proposal to vote.
+       * @param opinion The voter's opinion.
+       * @param broadcast true if you wish to broadcast the transaction
+       * @return the signed version of the transaction
+       */
+      signed_transaction committee_proposal_vote(
+         const string committee_member_account,
+         const uint64_t proposal_number,
+         const voting_opinion_type opinion,
+         bool broadcast = false
+         );
+
+       /** Approve or disapprove a proposal.
        *
        * @param fee_paying_account The account paying the fee for the op.
        * @param proposal_id The proposal to modify.
@@ -1734,6 +1789,8 @@ FC_API( graphene::wallet::wallet_api,
         (withdraw_vesting)
         (vote_for_committee_member)
         (vote_for_witness)
+        (update_witness_votes)
+        (update_committee_member_votes)
         (set_voting_proxy)
         (set_desired_witness_and_committee_member_count)
         (get_account)
@@ -1760,6 +1817,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_prototype_operation)
         (propose_parameter_change)
         (propose_fee_change)
+        (committee_proposal_vote)
         (approve_proposal)
         (dbg_make_uia)
         (dbg_make_mia)

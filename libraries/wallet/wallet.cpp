@@ -1856,6 +1856,62 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (voting_account)(committee_member)(approve)(broadcast) ) }
 
+   signed_transaction update_witness_votes(string voting_account,
+                                          flat_set<string> witnesses_to_add,
+                                          flat_set<string> witnesses_to_remove,
+                                          bool broadcast /* = false */)
+   { try {
+      account_object voting_account_object = get_account(voting_account);
+      flat_set<account_uid_type> uids_to_add;
+      flat_set<account_uid_type> uids_to_remove;
+      uids_to_add.reserve( witnesses_to_add.size() );
+      uids_to_remove.reserve( witnesses_to_remove.size() );
+      for( string wit : witnesses_to_add )
+         uids_to_add.insert( get_witness( wit ).account );
+      for( string wit : witnesses_to_remove )
+         uids_to_remove.insert( get_witness( wit ).account );
+
+      witness_vote_update_operation witness_vote_update_op;
+      witness_vote_update_op.voter = voting_account_object.uid;
+      witness_vote_update_op.witnesses_to_add = uids_to_add;
+      witness_vote_update_op.witnesses_to_remove = uids_to_remove;
+
+      signed_transaction tx;
+      tx.operations.push_back( witness_vote_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (voting_account)(witnesses_to_add)(witnesses_to_remove)(broadcast) ) }
+
+   signed_transaction update_committee_member_votes(string voting_account,
+                                          flat_set<string> committee_members_to_add,
+                                          flat_set<string> committee_members_to_remove,
+                                          bool broadcast /* = false */)
+   { try {
+      account_object voting_account_object = get_account(voting_account);
+      flat_set<account_uid_type> uids_to_add;
+      flat_set<account_uid_type> uids_to_remove;
+      uids_to_add.reserve( committee_members_to_add.size() );
+      uids_to_remove.reserve( committee_members_to_remove.size() );
+      for( string com : committee_members_to_add )
+         uids_to_add.insert( get_committee_member( com ).account );
+      for( string com : committee_members_to_remove )
+         uids_to_remove.insert( get_committee_member( com ).account );
+
+      committee_member_vote_update_operation committee_member_vote_update_op;
+      committee_member_vote_update_op.voter = voting_account_object.uid;
+      committee_member_vote_update_op.committee_members_to_add = uids_to_add;
+      committee_member_vote_update_op.committee_members_to_remove = uids_to_remove;
+
+      signed_transaction tx;
+      tx.operations.push_back( committee_member_vote_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (voting_account)(committee_members_to_add)(committee_members_to_remove)(broadcast) ) }
+
    signed_transaction vote_for_witness(string voting_account,
                                         string witness,
                                         bool approve,
@@ -1898,28 +1954,13 @@ public:
                                        optional<string> voting_account,
                                        bool broadcast /* = false */)
    { try {
-      account_object account_object_to_modify = get_account(account_to_modify);
-      // TODO review
-      /*
-      if (voting_account)
-      {
-         account_uid_type new_voting_account_uid = get_account_uid(*voting_account);
-         if (account_object_to_modify.options.voting_account == new_voting_account_uid)
-            FC_THROW("Voting proxy for ${account} is already set to ${voter}", ("account", account_to_modify)("voter", *voting_account));
-         account_object_to_modify.options.voting_account = new_voting_account_uid;
-      }
-      else
-      {
-         if (account_object_to_modify.options.voting_account == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID)
-            FC_THROW("Account ${account} is already voting for itself", ("account", account_to_modify));
-         account_object_to_modify.options.voting_account = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
-      }
-      */
 
-      account_update_operation account_update_op;
-      account_update_op.account = account_object_to_modify.id;
-      // TODO review
-      //account_update_op.new_options = account_object_to_modify.options;
+      account_update_proxy_operation account_update_op;
+      account_update_op.voter = get_account_uid(account_to_modify);
+      if (voting_account)
+         account_update_op.proxy = get_account_uid(*voting_account);
+      else
+         account_update_op.proxy = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
 
       signed_transaction tx;
       tx.operations.push_back( account_update_op );
@@ -2656,6 +2697,26 @@ public:
 
       return sign_transaction(tx, broadcast);
    }
+
+   signed_transaction committee_proposal_vote(
+      const string committee_member_account,
+      const uint64_t proposal_number,
+      const voting_opinion_type opinion,
+      bool broadcast = false
+      )
+   { try {
+      committee_proposal_update_operation update_op;
+      update_op.account = get_account_uid( committee_member_account );
+      update_op.proposal_number = proposal_number;
+      update_op.opinion = opinion;
+
+      signed_transaction tx;
+      tx.operations.push_back( update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(proposal_number)(opinion)(broadcast) ) }
 
    signed_transaction approve_proposal(
       const string& fee_paying_account,
@@ -3697,6 +3758,22 @@ signed_transaction wallet_api::vote_for_committee_member(string voting_account,
    return my->vote_for_committee_member(voting_account, witness, approve, broadcast);
 }
 
+signed_transaction wallet_api::update_witness_votes(string voting_account,
+                                          flat_set<string> witnesses_to_add,
+                                          flat_set<string> witnesses_to_remove,
+                                          bool broadcast /* = false */)
+{
+   return my->update_witness_votes( voting_account, witnesses_to_add, witnesses_to_remove, broadcast );
+}
+
+signed_transaction wallet_api::update_committee_member_votes(string voting_account,
+                                          flat_set<string> committee_members_to_add,
+                                          flat_set<string> committee_members_to_remove,
+                                          bool broadcast /* = false */)
+{
+   return my->update_committee_member_votes( voting_account, committee_members_to_add, committee_members_to_remove, broadcast );
+}
+
 signed_transaction wallet_api::vote_for_witness(string voting_account,
                                                 string witness,
                                                 bool approve,
@@ -3807,6 +3884,16 @@ signed_transaction wallet_api::propose_fee_change(
    )
 {
    return my->propose_fee_change( proposing_account, expiration_time, changed_fees, broadcast );
+}
+
+signed_transaction wallet_api::committee_proposal_vote(
+   const string committee_member_account,
+   const uint64_t proposal_number,
+   const voting_opinion_type opinion,
+   bool broadcast /* = false */
+   )
+{
+   return my->committee_proposal_vote( committee_member_account, proposal_number, opinion, broadcast );
 }
 
 signed_transaction wallet_api::approve_proposal(
