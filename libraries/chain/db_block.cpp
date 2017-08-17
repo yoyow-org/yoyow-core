@@ -441,6 +441,7 @@ uint32_t database::push_applied_operation( const operation& op )
 {
    _applied_ops.emplace_back(op);
    operation_history_object& oh = *(_applied_ops.back());
+   oh.block_timestamp = _current_block_time;
    oh.block_num    = _current_block_num;
    oh.trx_in_block = _current_trx_in_block;
    oh.op_in_trx    = _current_op_in_trx;
@@ -498,6 +499,7 @@ void database::_apply_block( const signed_block& next_block )
    const auto& dynamic_global_props = get<dynamic_global_property_object>(dynamic_global_property_id_type());
    bool maint_needed = (dynamic_global_props.next_maintenance_time <= next_block.timestamp);
 
+   _current_block_time   = next_block.timestamp;
    _current_block_num    = next_block_num;
    _current_trx_in_block = 0;
 

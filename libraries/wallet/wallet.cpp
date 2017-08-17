@@ -2359,17 +2359,15 @@ public:
 
          ss << "#" << " ";
          ss << "block_num" << " ";
-         ss << "time     " << " ";
-         ss << "description/fee_payer/fee" << " ";
+         ss << "time             " << " ";
+         ss << "description/fee_payer/fee/operation_result" << " ";
          ss << " \n";
          for( operation_detail& d : r )
          {
             operation_history_object& i = d.op;
             ss << d.sequence << " ";
             ss << i.block_num << " ";
-            auto b = _remote_db->get_block_header(i.block_num);
-            FC_ASSERT(b);
-            ss << b->timestamp.to_iso_string() << " ";
+            ss << i.block_timestamp.to_iso_string() << " ";
             i.op.visit(operation_printer(ss, *this, i.result));
             ss << " \n";
          }
