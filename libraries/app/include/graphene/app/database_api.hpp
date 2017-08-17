@@ -587,9 +587,9 @@ class database_api
        */
       uint64_t get_witness_count()const;
 
-      ///////////////////////
-      // Committee members //
-      ///////////////////////
+      /////////////////////////////////////
+      // Committee members and proposals //
+      /////////////////////////////////////
 
       /**
        * @brief Get a list of committee_members by account UID
@@ -619,6 +619,12 @@ class database_api
        * @brief Get the total number of committee members registered with the blockchain
        */
       uint64_t get_committee_member_count()const;
+
+      /**
+       * @brief Query for committee proposals
+       * @return A list of committee proposals
+       */
+      vector<committee_proposal_object> list_committee_proposals() const;
 
 
       /// WORKERS
@@ -827,6 +833,7 @@ FC_API(graphene::app::database_api,
    (get_committee_member_by_account)
    (lookup_committee_members)
    (get_committee_member_count)
+   (list_committee_proposals)
 
    // workers
    (get_workers_by_account)

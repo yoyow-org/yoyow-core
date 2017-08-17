@@ -146,12 +146,13 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                               data_sorting_type order_by)const;
       uint64_t get_witness_count()const;
 
-      // Committee members
+      // Committee members and proposals
       vector<optional<committee_member_object>> get_committee_members(const vector<account_uid_type>& committee_member_uids)const;
       fc::optional<committee_member_object> get_committee_member_by_account(account_uid_type account)const;
       vector<committee_member_object> lookup_committee_members(const account_uid_type lower_bound_uid, uint32_t limit,
                                                                data_sorting_type order_by)const;
       uint64_t get_committee_member_count()const;
+      vector<committee_proposal_object> list_committee_proposals()const;
 
       // Votes
       vector<variant> lookup_vote_ids( const vector<vote_id_type>& votes )const;
@@ -1737,7 +1738,7 @@ uint64_t database_api_impl::get_witness_count()const
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
-// Committee members                                                //
+// Committee members and proposals                                  //
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
@@ -1845,6 +1846,25 @@ uint64_t database_api::get_committee_member_count()const
 uint64_t database_api_impl::get_committee_member_count()const
 {
    return _db.get_index_type<committee_member_index>().indices().get<by_valid>().count( true );
+}
+
+vector<committee_proposal_object> database_api::list_committee_proposals()const
+{
+   return my->list_committee_proposals();
+}
+
+vector<committee_proposal_object> database_api_impl::list_committee_proposals()const
+{
+   const auto& idx = _db.get_index_type<committee_proposal_index>().indices();
+   vector<committee_proposal_object> result;
+   result.reserve( idx.size() );
+
+   for( const committee_proposal_object& o : idx )
+   {
+      result.emplace_back( o );
+   }
+
+   return result;
 }
 
 // Workers

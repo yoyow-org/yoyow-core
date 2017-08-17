@@ -1259,6 +1259,12 @@ class wallet_api
       vector<committee_member_object> list_committee_members(const account_uid_type lowerbound, uint32_t limit,
                                                              data_sorting_type order_by);
 
+      /** List all committee proposal.
+       *
+       * @returns a list of committee proposals
+       */
+      vector<committee_proposal_object> list_committee_proposals();
+
       /** Returns information about the given witness.
        * @param owner_account the name or id of the witness account owner, or the id of the witness
        * @returns the information about the witness stored in the block chain
@@ -1687,6 +1693,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_committee_member)
         (list_witnesses)
         (list_committee_members)
+        (list_committee_proposals)
         (create_witness)
         (update_witness)
         (create_worker)

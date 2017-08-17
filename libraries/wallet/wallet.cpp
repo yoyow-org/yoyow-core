@@ -3498,6 +3498,11 @@ vector<committee_member_object> wallet_api::list_committee_members(const account
    return my->_remote_db->lookup_committee_members(lowerbound, limit, order_by);
 }
 
+vector<committee_proposal_object> wallet_api::list_committee_proposals()
+{
+   return my->_remote_db->list_committee_proposals();
+}
+
 witness_object wallet_api::get_witness(string owner_account)
 {
    return my->get_witness(owner_account);
