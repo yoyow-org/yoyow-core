@@ -1381,15 +1381,24 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (authorizing_account)(account_to_list)(new_listing_status)(broadcast) ) }
 
-   signed_transaction create_committee_member(string owner_account, string url,
-                                      bool broadcast /* = false */)
+   signed_transaction create_committee_member(string owner_account,
+                                              string pledge_amount,
+                                              string pledge_asset_symbol,
+                                              string url,
+                                              bool broadcast /* = false */)
    { try {
+      account_object committee_member_account = get_account(owner_account);
+
+      if( _remote_db->get_committee_member_by_account( committee_member_account.uid ) )
+         FC_THROW( "Account ${owner_account} is already a committee_member", ("owner_account", owner_account) );
+
+      fc::optional<asset_object> asset_obj = get_asset( pledge_asset_symbol );
+      FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", pledge_asset_symbol) );
 
       committee_member_create_operation committee_member_create_op;
-      committee_member_create_op.account = get_account_uid(owner_account);
+      committee_member_create_op.account = committee_member_account.uid;
+      committee_member_create_op.pledge = asset_obj->amount_from_string( pledge_amount );
       committee_member_create_op.url = url;
-      if (_remote_db->get_committee_member_by_account(committee_member_create_op.account))
-         FC_THROW("Account ${owner_account} is already a committee_member", ("owner_account", owner_account));
 
       signed_transaction tx;
       tx.operations.push_back( committee_member_create_op );
@@ -1397,7 +1406,7 @@ public:
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(pledge_amount)(pledge_asset_symbol)(broadcast) ) }
 
    witness_object get_witness(string owner_account)
    {
@@ -1479,6 +1488,35 @@ public:
       FC_CAPTURE_AND_RETHROW( (owner_account) )
    }
 
+   signed_transaction create_witness_with_details(string owner_account,
+                                                  public_key_type block_signing_key,
+                                                  string pledge_amount,
+                                                  string pledge_asset_symbol,
+                                                  string url,
+                                                  bool broadcast /* = false */)
+   { try {
+      account_object witness_account = get_account(owner_account);
+
+      if( _remote_db->get_witness_by_account( witness_account.uid ) )
+         FC_THROW( "Account ${owner_account} is already a witness", ("owner_account", owner_account) );
+
+      fc::optional<asset_object> asset_obj = get_asset( pledge_asset_symbol );
+      FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", pledge_asset_symbol) );
+
+      witness_create_operation witness_create_op;
+      witness_create_op.account = witness_account.uid;
+      witness_create_op.block_signing_key = block_signing_key;
+      witness_create_op.pledge = asset_obj->amount_from_string( pledge_amount );
+      witness_create_op.url = url;
+
+      signed_transaction tx;
+      tx.operations.push_back( witness_create_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(broadcast) ) }
+
    signed_transaction create_witness(string owner_account,
                                      string url,
                                      bool broadcast /* = false */)
@@ -1506,6 +1544,74 @@ public:
 
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
+
+   signed_transaction update_committee_member(
+                                        string committee_member_account,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
+                                        bool broadcast /* = false */)
+   { try {
+      FC_ASSERT( pledge_amount.valid() == pledge_asset_symbol.valid(),
+                 "Pledge amount and asset symbol should be both set or both not set" );
+      fc::optional<asset> pledge;
+      if( pledge_amount.valid() )
+      {
+         fc::optional<asset_object> asset_obj = get_asset( *pledge_asset_symbol );
+         FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", *pledge_asset_symbol) );
+         pledge = asset_obj->amount_from_string( *pledge_amount );
+      }
+
+      committee_member_object committee_member = get_committee_member( committee_member_account );
+      account_object committee_member_account = get_account( committee_member.account );
+
+      committee_member_update_operation committee_member_update_op;
+      committee_member_update_op.account = committee_member_account.uid;
+      committee_member_update_op.new_pledge = pledge;
+      committee_member_update_op.new_url = url;
+
+      signed_transaction tx;
+      tx.operations.push_back( committee_member_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(pledge_amount)(pledge_asset_symbol)(broadcast) ) }
+
+   signed_transaction update_witness_with_details(
+                                        string witness_account,
+                                        optional<public_key_type> block_signing_key,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
+                                        bool broadcast /* = false */)
+   { try {
+      FC_ASSERT( pledge_amount.valid() == pledge_asset_symbol.valid(),
+                 "Pledge amount and asset symbol should be both set or both not set" );
+      fc::optional<asset> pledge;
+      if( pledge_amount.valid() )
+      {
+         fc::optional<asset_object> asset_obj = get_asset( *pledge_asset_symbol );
+         FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", *pledge_asset_symbol) );
+         pledge = asset_obj->amount_from_string( *pledge_amount );
+      }
+
+      witness_object witness = get_witness( witness_account );
+      account_object witness_account = get_account( witness.account );
+
+      witness_update_operation witness_update_op;
+      witness_update_op.account = witness_account.uid;
+      witness_update_op.new_signing_key = block_signing_key;
+      witness_update_op.new_pledge = pledge;
+      witness_update_op.new_url = url;
+
+      signed_transaction tx;
+      tx.operations.push_back( witness_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (witness_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(broadcast) ) }
 
    signed_transaction update_witness(string witness_name,
                                      string url,
@@ -3480,10 +3586,13 @@ signed_transaction wallet_api::whitelist_account(string authorizing_account,
    return my->whitelist_account(authorizing_account, account_to_list, new_listing_status, broadcast);
 }
 
-signed_transaction wallet_api::create_committee_member(string owner_account, string url,
-                                               bool broadcast /* = false */)
+signed_transaction wallet_api::create_committee_member(string owner_account,
+                                              string pledge_amount,
+                                              string pledge_asset_symbol,
+                                              string url,
+                                              bool broadcast /* = false */)
 {
-   return my->create_committee_member(owner_account, url, broadcast);
+   return my->create_committee_member(owner_account, pledge_amount, pledge_asset_symbol, url, broadcast);
 }
 
 vector<witness_object> wallet_api::list_witnesses(const account_uid_type lowerbound, uint32_t limit,
@@ -3514,10 +3623,14 @@ committee_member_object wallet_api::get_committee_member(string owner_account)
 }
 
 signed_transaction wallet_api::create_witness(string owner_account,
+                                              public_key_type block_signing_key,
+                                              string pledge_amount,
+                                              string pledge_asset_symbol,
                                               string url,
                                               bool broadcast /* = false */)
 {
-   return my->create_witness(owner_account, url, broadcast);
+   return my->create_witness_with_details(owner_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, broadcast);
+   //return my->create_witness(owner_account, url, broadcast);
 }
 
 signed_transaction wallet_api::create_worker(
@@ -3542,13 +3655,26 @@ signed_transaction wallet_api::update_worker_votes(
    return my->update_worker_votes( owner_account, delta, broadcast );
 }
 
-signed_transaction wallet_api::update_witness(
-   string witness_name,
-   string url,
-   string block_signing_key,
-   bool broadcast /* = false */)
+signed_transaction wallet_api::update_committee_member(
+                                        string committee_member_account,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
+                                        bool broadcast /* = false */)
 {
-   return my->update_witness(witness_name, url, block_signing_key, broadcast);
+   return my->update_committee_member(committee_member_account, pledge_amount, pledge_asset_symbol, url, broadcast);
+}
+
+signed_transaction wallet_api::update_witness(
+                                        string witness_account,
+                                        optional<public_key_type> block_signing_key,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
+                                        bool broadcast /* = false */)
+{
+   return my->update_witness_with_details(witness_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, broadcast);
+   //return my->update_witness(witness_name, url, block_signing_key, broadcast);
 }
 
 vector< vesting_balance_object_with_info > wallet_api::get_vesting_balances( string account_name )

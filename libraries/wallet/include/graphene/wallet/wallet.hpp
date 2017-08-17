@@ -411,7 +411,7 @@ class wallet_api
 
       /** Returns information about the given account.
        *
-       * @param account_name_or_id the name or uid of the account to provide information about
+       * @param account_name_or_uid the name or uid of the account to provide information about
        * @returns the public account data stored in the blockchain
        */
       full_account                      get_full_account(string account_name_or_uid) const;
@@ -1218,15 +1218,35 @@ class wallet_api
        *
        * An account can have at most one committee_member object.
        *
-       * @param owner_account the name or id of the account which is creating the committee_member
+       * @param owner_account the name or uid of the account which is creating the committee_member
+       * @param pledge_amount The amount to set as pledge.
+       * @param pledge_asset_symbol The symbol of the asset to set as pledge.
        * @param url a URL to include in the committee_member record in the blockchain.  Clients may
        *            display this when showing a list of committee_members.  May be blank.
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a committee_member
        */
       signed_transaction create_committee_member(string owner_account,
+                                         string pledge_amount,
+                                         string pledge_asset_symbol,
                                          string url, 
                                          bool broadcast = false);
+
+      /**
+       * Update a committee_member object owned by the given account.
+       *
+       * @param committee_member_account The UID or name of the committee member's owner account.
+       * @param pledge_amount The amount to set as pledge. Do not set if want to remain the same.
+       * @param pledge_asset_symbol The symbol of the asset to set as pledge. Do not set if want to remain the same.
+       * @param url a URL to include in the committee member record in the blockchain.  Clients may
+       *            display this when showing a list of committee members.  May be blank. Do not set if want to remain the same.
+       * @param broadcast true if you wish to broadcast the transaction.
+       */
+      signed_transaction update_committee_member(string committee_member_account,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
+                                        bool broadcast = false);
 
       /** Lists all witnesses registered in the blockchain. This returns a list of all witness objects,
        * sorted by specified order.  This lists witnesses whether they are currently voted in or not.
@@ -1281,27 +1301,38 @@ class wallet_api
        *
        * An account can have at most one witness object.
        *
-       * @param owner_account the name or id of the account which is creating the witness
+       * @param owner_account the name or uid of the account which is creating the witness
+       * @param block_signing_key The block signing public key.
+       * @param pledge_amount The amount to set as pledge.
+       * @param pledge_asset_symbol The symbol of the asset to set as pledge.
        * @param url a URL to include in the witness record in the blockchain.  Clients may
        *            display this when showing a list of witnesses.  May be blank.
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a witness
        */
       signed_transaction create_witness(string owner_account,
+                                        public_key_type block_signing_key,
+                                        string pledge_amount,
+                                        string pledge_asset_symbol,
                                         string url,
                                         bool broadcast = false);
 
       /**
        * Update a witness object owned by the given account.
        *
-       * @param witness The name of the witness's owner account.  Also accepts the ID of the owner account or the ID of the witness.
-       * @param url Same as for create_witness.  The empty string makes it remain the same.
-       * @param block_signing_key The new block signing public key.  The empty string makes it remain the same.
+       * @param witness_account The UID or name of the witness's owner account.
+       * @param block_signing_key The new block signing public key.  Do not set if want to remain the same.
+       * @param pledge_amount The amount to set as pledge. Do not set if want to remain the same.
+       * @param pledge_asset_symbol The symbol of the asset to set as pledge. Do not set if want to remain the same.
+       * @param url a URL to include in the witness record in the blockchain.  Clients may
+       *            display this when showing a list of witnesses.  May be blank. Do not set if want to remain the same.
        * @param broadcast true if you wish to broadcast the transaction.
        */
-      signed_transaction update_witness(string witness_name,
-                                        string url,
-                                        string block_signing_key,
+      signed_transaction update_witness(string witness_account,
+                                        optional<public_key_type> block_signing_key,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
                                         bool broadcast = false);
 
 
@@ -1689,6 +1720,7 @@ FC_API( graphene::wallet::wallet_api,
         (settle_asset)
         (whitelist_account)
         (create_committee_member)
+        (update_committee_member)
         (get_witness)
         (get_committee_member)
         (list_witnesses)
