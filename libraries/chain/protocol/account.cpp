@@ -90,21 +90,21 @@ void validate_account_name( const string& name, const string& object_name = "" )
       }
    }
 
+   FC_ASSERT( name_is_utf8, "${o}account name should be in UTF-8", ("o", object_name) );
+
+   FC_ASSERT( !name_start_with_number, "${o}account name should not start with a number", ("o", object_name) );
+   FC_ASSERT( !name_start_with_underline, "${o}account name should not start with an underline", ("o", object_name) );
+
+   FC_ASSERT( !name_contains_invalid_char, "${o}account name contains invalid character", ("o", object_name) );
+
    if( len > 0 && itr == name.end() && name_is_utf8 && last_char == '_' )
       name_end_with_underline = true;
-
-   FC_ASSERT( name_is_utf8, "${o}account name should be in UTF8", ("o", object_name) );
+   FC_ASSERT( !name_end_with_underline, "${o}account name should not end with an underline", ("o", object_name) );
 
    if( len < GRAPHENE_MIN_ACCOUNT_NAME_LENGTH )
       name_too_short = true;
    FC_ASSERT( !name_too_short, "${o}account name is too short", ("o", object_name)("length", len) );
    FC_ASSERT( !name_too_long, "${o}account name is too long", ("o", object_name)("length", len) );
-
-   FC_ASSERT( !name_contains_invalid_char, "${o}account name contains invalid character", ("o", object_name) );
-
-   FC_ASSERT( !name_start_with_number, "${o}account name should not start with a number", ("o", object_name) );
-   FC_ASSERT( !name_start_with_underline, "${o}account name should not start with an underline", ("o", object_name) );
-   FC_ASSERT( !name_end_with_underline, "${o}account name should not end with an underline", ("o", object_name) );
 }
 
 void validate_new_authority( const authority& au, const string& object_name = "" )
