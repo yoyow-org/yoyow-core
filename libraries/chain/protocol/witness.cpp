@@ -48,7 +48,7 @@ share_type witness_vote_update_operation::calculate_fee( const fee_parameters_ty
 {
    auto core_fee_required = k.basic_fee;
 
-   auto total_size = witnesses_to_add.size() + witnesses_to_remove.size();
+   auto total_size = witnesses_to_add.size();// + witnesses_to_remove.size();
    core_fee_required += ( k.price_per_witness * total_size );
 
    return core_fee_required;
