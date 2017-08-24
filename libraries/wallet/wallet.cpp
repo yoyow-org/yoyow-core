@@ -1638,6 +1638,28 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (witness_name)(url)(block_signing_key)(broadcast) ) }
 
+   signed_transaction collect_witness_pay(string witness_account,
+                                        string pay_amount,
+                                        string pay_asset_symbol,
+                                        bool broadcast /* = false */)
+   { try {
+      witness_object witness = get_witness(witness_account);
+
+      fc::optional<asset_object> asset_obj = get_asset( pay_asset_symbol );
+      FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", pay_asset_symbol) );
+
+      witness_collect_pay_operation witness_collect_pay_op;
+      witness_collect_pay_op.account = witness.account;
+      witness_collect_pay_op.pay = asset_obj->amount_from_string( pay_amount );
+
+      signed_transaction tx;
+      tx.operations.push_back( witness_collect_pay_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (witness_account)(pay_amount)(pay_asset_symbol)(broadcast) ) }
+
    template<typename WorkerInit>
    static WorkerInit _create_worker_initializer( const variant& worker_settings )
    {
@@ -3734,6 +3756,14 @@ signed_transaction wallet_api::update_witness(
 {
    return my->update_witness_with_details(witness_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, broadcast);
    //return my->update_witness(witness_name, url, block_signing_key, broadcast);
+}
+
+signed_transaction wallet_api::collect_witness_pay(string witness_account,
+                                        string pay_amount,
+                                        string pay_asset_symbol,
+                                        bool broadcast /* = false */)
+{
+   return my->collect_witness_pay(witness_account, pay_amount, pay_asset_symbol, broadcast);
 }
 
 vector< vesting_balance_object_with_info > wallet_api::get_vesting_balances( string account_name )

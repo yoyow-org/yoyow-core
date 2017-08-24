@@ -1337,6 +1337,20 @@ class wallet_api
 
 
       /**
+       * Collect witness pay.
+       *
+       * @param witness_account The UID or name of the witness's owner account.
+       * @param pay_amount The amount to collect.
+       * @param pay_asset_symbol The symbol of the asset to collect.
+       * @param broadcast true if you wish to broadcast the transaction.
+       */
+      signed_transaction collect_witness_pay(string witness_account,
+                                        string pay_amount,
+                                        string pay_asset_symbol,
+                                        bool broadcast = false);
+
+
+      /**
        * Create a worker object.
        *
        * @param owner_account The account which owns the worker and will be paid
@@ -1786,6 +1800,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_witness)
         (list_witnesses)
         (update_witness_votes)
+        (collect_witness_pay)
         //(create_worker)
         //(update_worker_votes)
         //(get_vesting_balances)
