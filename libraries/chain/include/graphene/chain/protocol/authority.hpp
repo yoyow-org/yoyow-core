@@ -172,7 +172,13 @@ void add_authority_account_uids(
 
 } } // namespace graphene::chain
 
-FC_REFLECT( graphene::chain::authority, (weight_threshold)(account_auths)(account_uid_auths)(key_auths)(address_auths) )
+FC_REFLECT( graphene::chain::authority,
+            (weight_threshold)
+            (account_auths)
+            (account_uid_auths)
+            (key_auths)
+            (address_auths)
+          )
 FC_REFLECT( graphene::chain::authority::account_uid_auth_type, (uid)(auth_type) )
 FC_REFLECT_ENUM( graphene::chain::authority::classification, (owner)(active)(key) )
 FC_REFLECT_ENUM( graphene::chain::authority::account_auth_type, (owner_auth)(active_auth)(secondary_auth) )

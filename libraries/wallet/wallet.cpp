@@ -3143,9 +3143,9 @@ vector<account_object> wallet_api::list_my_accounts()
    return vector<account_object>(my->_wallet.my_accounts.begin(), my->_wallet.my_accounts.end());
 }
 
-map<string,account_id_type> wallet_api::list_accounts(const string& lowerbound, uint32_t limit)
+map<string,account_uid_type> wallet_api::list_accounts_by_name(const string& lowerbound, uint32_t limit)
 {
-   return my->_remote_db->lookup_accounts(lowerbound, limit);
+   return my->_remote_db->lookup_accounts_by_name(lowerbound, limit);
 }
 
 vector<asset> wallet_api::list_account_balances(const string& account)

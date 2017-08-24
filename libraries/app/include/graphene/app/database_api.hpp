@@ -326,12 +326,12 @@ class database_api
       vector<optional<account_object>> lookup_account_names(const vector<string>& account_names)const;
 
       /**
-       * @brief Get names and IDs for registered accounts
+       * @brief Get names and UIDs for registered accounts
        * @param lower_bound_name Lower bound of the first name to return
-       * @param limit Maximum number of results to return -- must not exceed 1000
+       * @param limit Maximum number of results to return -- must not exceed 1001
        * @return Map of account names to corresponding IDs
        */
-      map<string,account_id_type> lookup_accounts(const string& lower_bound_name, uint32_t limit)const;
+      map<string,account_uid_type> lookup_accounts_by_name(const string& lower_bound_name, uint32_t limit)const;
 
       //////////////
       // Balances //
@@ -786,7 +786,7 @@ FC_API(graphene::app::database_api,
    (get_account_by_name)
    (get_account_references)
    (lookup_account_names)
-   (lookup_accounts)
+   (lookup_accounts_by_name)
    (get_account_count)
 
    // CSAF
