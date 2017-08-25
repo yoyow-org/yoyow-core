@@ -111,6 +111,7 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
    const auto& global_params = d.get_global_properties().parameters;
    if( op.new_signing_key.valid() )
       FC_ASSERT( *op.new_signing_key != witness_obj->signing_key, "new_signing_key specified but did not change" );
+
    if( op.new_pledge.valid() )
    {
       if( op.new_pledge->amount > 0 ) // change pledge
@@ -138,6 +139,14 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
                     "Active witness can not resign" );
       }
    }
+   else // when updating witness, always check pledge
+   {
+      FC_ASSERT( witness_obj->pledge >= global_params.min_witness_pledge,
+                 "Insufficient pledge: has ${p}, need ${r}",
+                 ("p",d.to_pretty_core_string(witness_obj->pledge))
+                 ("r",d.to_pretty_core_string(global_params.min_witness_pledge)) );
+   }
+
    if( op.new_url.valid() )
       FC_ASSERT( *op.new_url != witness_obj->url, "new_url specified but did not change" );
 
