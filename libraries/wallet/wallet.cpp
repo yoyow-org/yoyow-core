@@ -3159,7 +3159,7 @@ uint64_t wallet_api::get_account_count() const
    return my->_remote_db->get_account_count();
 }
 
-vector<account_object> wallet_api::list_my_accounts()
+vector<account_object> wallet_api::list_my_accounts_cached()
 {
    // TODO this implementation has caching issue. To get latest data, check the steps in `load_wallet_file()`
    return vector<account_object>(my->_wallet.my_accounts.begin(), my->_wallet.my_accounts.end());
@@ -3496,7 +3496,7 @@ bool wallet_api::import_account_keys( string filename, string password, string s
    FC_ASSERT( fc::exists( filename ) );
 
    bool is_my_account = false;
-   const auto accounts = list_my_accounts();
+   const auto accounts = list_my_accounts_cached();
    for( const auto& account : accounts )
    {
        if( account.name == dest_account_name )

@@ -326,7 +326,7 @@ class wallet_api
        *       To get latest data, a workaround is to reopen the wallet file.
        * @returns a list of account objects
        */
-      vector<account_object>            list_my_accounts();
+      vector<account_object>            list_my_accounts_cached();
       /** Lists all accounts registered in the blockchain.
        * This returns a list of all account names and their account uids, sorted by account name.
        *
@@ -1753,7 +1753,7 @@ FC_API( graphene::wallet::wallet_api,
         (is_locked)
         (lock)(unlock)(set_password)
         (dump_private_keys)
-        (list_my_accounts)
+        (list_my_accounts_cached)
         (list_accounts_by_name)
         (list_account_balances)
         //(list_assets)
