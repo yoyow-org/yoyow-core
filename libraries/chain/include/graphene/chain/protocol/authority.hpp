@@ -174,10 +174,10 @@ void add_authority_account_uids(
 
 FC_REFLECT( graphene::chain::authority,
             (weight_threshold)
-            (account_auths)
+            //(account_auths)
             (account_uid_auths)
             (key_auths)
-            (address_auths)
+            //(address_auths)
           )
 FC_REFLECT( graphene::chain::authority::account_uid_auth_type, (uid)(auth_type) )
 FC_REFLECT_ENUM( graphene::chain::authority::classification, (owner)(active)(key) )
