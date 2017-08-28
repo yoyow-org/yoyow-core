@@ -38,6 +38,7 @@ void_result committee_member_create_evaluator::do_evaluate( const committee_memb
    database& d = db();
    //FC_ASSERT(db().get(op.account).is_lifetime_member());
    account_stats = &d.get_account_statistics_by_uid( op.account );
+   account_obj = &d.get_account_by_uid( op.account );
 
    const auto& global_params = d.get_global_properties().parameters;
    // don't enforce pledge check for initial committee members
@@ -68,6 +69,7 @@ object_id_type committee_member_create_evaluator::do_apply( const committee_memb
 
    const auto& new_committee_member_object = d.create<committee_member_object>( [&]( committee_member_object& com ){
       com.account             = op.account;
+      com.name                = account_obj->name;
       com.sequence            = account_stats->last_committee_member_sequence + 1;
       //com.is_valid            = true; // default
       com.pledge              = op.pledge.amount.value;

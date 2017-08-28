@@ -53,6 +53,7 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = committee_member_object_type;
 
          account_uid_type    account;
+         string              name;
          uint32_t            sequence;
          bool                is_valid = true;
          uint64_t            pledge;
@@ -260,6 +261,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::committee_member_object, (graphene::db::object),
                     (account)
+                    (name)
                     (sequence)
                     (is_valid)
                     (pledge)

@@ -36,6 +36,7 @@ namespace graphene { namespace chain {
          object_id_type do_apply( const committee_member_create_operation& o );
 
          const account_statistics_object* account_stats = nullptr;
+         const account_object* account_obj = nullptr;
    };
 
    class committee_member_update_evaluator : public evaluator<committee_member_update_evaluator>
