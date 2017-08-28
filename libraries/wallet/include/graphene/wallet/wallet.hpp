@@ -320,7 +320,7 @@ class wallet_api
        */
       uint64_t                          get_account_count()const;
       /** Lists all accounts controlled by this wallet.
-       * This returns a list of the full account objects for all accounts whose private keys 
+       * This returns a list of the account objects for all accounts whose private keys
        * we possess.
        * Note: current implementation only returns data from local cache, so it may be stale.
        *       To get latest data, a workaround is to reopen the wallet file.
@@ -663,14 +663,14 @@ class wallet_api
 
       /** Imports the private key for an existing account.
        *
-       * The private key must match either an owner key or an active key for the
-       * named account.  
+       * The private key may match either an owner key or an active key
+       * or a secondary key or the memo key for the named account.  
        *
        * @see dump_private_keys()
        *
        * @param account_name_or_id the account owning the key
        * @param wif_key the private key in WIF format
-       * @returns true if the key was imported
+       * @returns true if the key imported matches one of the key(s) for the account
        */
       bool import_key(string account_name_or_id, string wif_key);
 

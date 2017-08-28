@@ -716,8 +716,10 @@ public:
 
       // make a list of all current public keys for the named account
       flat_set<public_key_type> all_keys_for_account;
+      std::vector<public_key_type> secondary_keys = account.secondary.get_keys();
       std::vector<public_key_type> active_keys = account.active.get_keys();
       std::vector<public_key_type> owner_keys = account.owner.get_keys();
+      std::copy(secondary_keys.begin(), secondary_keys.end(), std::inserter(all_keys_for_account, all_keys_for_account.end()));
       std::copy(active_keys.begin(), active_keys.end(), std::inserter(all_keys_for_account, all_keys_for_account.end()));
       std::copy(owner_keys.begin(), owner_keys.end(), std::inserter(all_keys_for_account, all_keys_for_account.end()));
       all_keys_for_account.insert(account.memo_key);
@@ -3408,16 +3410,13 @@ bool wallet_api::import_key(string account_name_or_id, string wif_key)
    fc::optional<fc::ecc::private_key> optional_private_key = wif_to_key(wif_key);
    if (!optional_private_key)
       FC_THROW("Invalid private key");
-   string shorthash = detail::address_to_shorthash(optional_private_key->get_public_key());
-   copy_wallet_file( "before-import-key-" + shorthash );
+   //string shorthash = detail::address_to_shorthash(optional_private_key->get_public_key());
+   //copy_wallet_file( "before-import-key-" + shorthash );
 
-   if( my->import_key(account_name_or_id, wif_key) )
-   {
-      save_wallet_file();
-      copy_wallet_file( "after-import-key-" + shorthash );
-      return true;
-   }
-   return false;
+   bool result = my->import_key(account_name_or_id, wif_key);
+   save_wallet_file();
+   //copy_wallet_file( "after-import-key-" + shorthash );
+   return result;
 }
 
 map<string, bool> wallet_api::import_accounts( string filename, string password )
