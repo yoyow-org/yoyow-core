@@ -35,6 +35,7 @@ void_result witness_create_evaluator::do_evaluate( const witness_create_operatio
    database& d = db();
    //FC_ASSERT(db().get(op.account).is_lifetime_member());
    account_stats = &d.get_account_statistics_by_uid( op.account );
+   account_obj = &d.get_account_by_uid( op.account );
 
    const auto& global_params = d.get_global_properties().parameters;
    // don't enforce pledge check for initial witnesses
@@ -67,6 +68,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
    const auto& new_witness_object = d.create<witness_object>( [&]( witness_object& wit ){
       wit.account             = op.account;
+      wit.name                = account_obj->name;
       wit.sequence            = account_stats->last_witness_sequence + 1;
       //wit.is_valid            = true; // default
       wit.signing_key         = op.block_signing_key;

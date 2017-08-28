@@ -155,6 +155,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    modify( signing_witness, [&]( witness_object& _wit )
    {
       _wit.last_aslot = new_block_aslot;
+      _wit.total_produced += 1;
       _wit.last_confirmed_block_num = new_block.block_num();
    } );
 }

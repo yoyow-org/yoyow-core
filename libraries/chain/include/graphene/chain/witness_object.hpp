@@ -44,6 +44,7 @@ namespace graphene { namespace chain {
          static const uint8_t type_id = witness_object_type;
 
          account_uid_type    account;
+         string              name;
          uint32_t            sequence;
          bool                is_valid = true;
 
@@ -70,6 +71,7 @@ namespace graphene { namespace chain {
          uint32_t            last_confirmed_block_num = 0;
 
          uint64_t            last_aslot = 0;
+         uint64_t            total_produced = 0;
          uint64_t            total_missed = 0;
          string              url;
 
@@ -229,6 +231,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (account)
+                    (name)
                     (sequence)
                     (is_valid)
                     (signing_key)
@@ -247,6 +250,7 @@ FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (by_vote_scheduled_time)
                     (last_confirmed_block_num)
                     (last_aslot)
+                    (total_produced)
                     (total_missed)
                     (url)
                   )
