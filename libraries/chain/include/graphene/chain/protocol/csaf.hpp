@@ -49,6 +49,7 @@ namespace graphene { namespace chain {
       account_uid_type             from = 0;
       account_uid_type             to = 0;
       asset                        amount;
+      time_point_sec               time;
 
       extensions_type              extensions;
 
@@ -110,7 +111,7 @@ FC_REFLECT( graphene::chain::csaf_lease_operation::fee_parameters_type, (fee)(mi
 
 FC_REFLECT( graphene::chain::csaf_collect_operation,
             (fee)
-            (from)(to)(amount)
+            (from)(to)(amount)(time)
             (extensions) )
 FC_REFLECT( graphene::chain::csaf_lease_operation,
             (fee)

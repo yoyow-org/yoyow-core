@@ -31,6 +31,7 @@ void csaf_collect_operation::validate()const
    validate_account_uid( from, "from " );
    validate_account_uid( to, "to " );
    validate_positive_asset( amount, "csaf collect amount" );
+   FC_ASSERT( time.sec_since_epoch() % 60 == 0, "time should be rounded down to nearest minute" );
 }
 
 void csaf_lease_operation::validate()const

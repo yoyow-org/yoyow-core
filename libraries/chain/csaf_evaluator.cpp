@@ -41,9 +41,14 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
    FC_ASSERT( op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
               "Maximum CSAF per account exceeded" );
 
+   const auto head_time = d.head_block_time();
    const uint64_t csaf_window = global_params.csaf_accumulate_window;
 
-   available_coin_seconds = from_stats->compute_coin_seconds_earned( csaf_window, d.head_block_time() ).first;
+   FC_ASSERT( op.time <= head_time, "Time should not be later than head block time" );
+   FC_ASSERT( op.time + GRAPHENE_MAX_CSAF_COLLECTING_TIME_OFFSET >= head_time,
+              "Time should not be earlier than 5 minutes before head block time" );
+
+   available_coin_seconds = from_stats->compute_coin_seconds_earned( csaf_window, op.time ).first;
 
    collecting_coin_seconds = fc::uint128_t(op.amount.amount.value) * global_params.csaf_rate;
 
@@ -62,7 +67,7 @@ void_result csaf_collect_evaluator::do_apply( const csaf_collect_operation& o )
    database& d = db();
 
    d.modify( *from_stats, [&](account_statistics_object& s) {
-      s.set_coin_seconds_earned( available_coin_seconds - collecting_coin_seconds, d.head_block_time() );
+      s.set_coin_seconds_earned( available_coin_seconds - collecting_coin_seconds, o.time );
    });
 
    d.modify( *to_stats, [&](account_statistics_object& s) {
@@ -84,7 +89,7 @@ void_result csaf_lease_evaluator::do_evaluate( const csaf_lease_operation& op )
    auto  itr = idx.find( boost::make_tuple( op.from, op.to ) );
    if( itr == idx.end() )
    {
-      FC_ASSERT( op.amount.amount != 0, "Should lease something" );
+      FC_ASSERT( op.amount.amount > 0, "Should lease something" );
       delta = op.amount.amount;
    }
    else
@@ -142,15 +147,19 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
       d.remove( *current_lease );
    }
 
-   const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
-   d.modify( *from_stats, [&](account_statistics_object& s) {
-      s.update_coin_seconds_earned( csaf_window, d.head_block_time() );
-      s.core_leased_out += delta;
-   });
-   d.modify( *to_stats, [&](account_statistics_object& s) {
-      s.update_coin_seconds_earned( csaf_window, d.head_block_time() );
-      s.core_leased_in += delta;
-   });
+   if( delta != 0 )
+   {
+      const auto head_time = d.head_block_time();
+      const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
+      d.modify( *from_stats, [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned( csaf_window, head_time );
+         s.core_leased_out += delta;
+      });
+      d.modify( *to_stats, [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned( csaf_window, head_time );
+         s.core_leased_in += delta;
+      });
+   }
 
    return return_result;
 
