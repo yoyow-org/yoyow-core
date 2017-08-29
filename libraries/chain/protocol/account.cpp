@@ -281,15 +281,18 @@ void account_reg_info::validate() const
 
 share_type account_create_operation::calculate_fee( const fee_parameters_type& k )const
 {
-   auto core_fee_required = k.basic_fee;
+   share_type core_fee_required = k.basic_fee;
 
    //if( !is_cheap_name(name) )
    //   core_fee_required = k.premium_fee;
 
    // Authorities and vote lists can be arbitrarily large, so charge a data fee for big ones
-   auto data_size = fc::raw::pack_size(owner) + fc::raw::pack_size(active) + fc::raw::pack_size(secondary);
-   auto data_fee =  calculate_data_fee( data_size, k.price_per_kbyte );
-   core_fee_required += data_fee;
+   //auto data_size = fc::raw::pack_size(owner) + fc::raw::pack_size(active) + fc::raw::pack_size(secondary);
+   //auto data_fee =  calculate_data_fee( data_size, k.price_per_kbyte );
+   //core_fee_required += data_fee;
+
+   uint32_t total_auths = owner.num_auths() + active.num_auths() + secondary.num_auths();
+   core_fee_required += ( share_type( k.price_per_auth ) * total_auths );
 
    return core_fee_required;
 }
@@ -328,18 +331,18 @@ void account_update_key_operation::validate()const
 
 share_type account_update_auth_operation::calculate_fee( const fee_parameters_type& k )const
 {
-   auto core_fee_required = k.fee;
+   share_type core_fee_required = k.fee;
 
    // Authorities can be arbitrarily large, so charge a data fee for big ones
-   size_t data_size = 0;
+   uint32_t total_auths = 0;
    if( owner.valid() )
-      data_size += fc::raw::pack_size(owner);
+      total_auths += owner->num_auths();
    if( active.valid() )
-      data_size += fc::raw::pack_size(active);
+      total_auths += active->num_auths();
    if( secondary.valid() )
-      data_size += fc::raw::pack_size(secondary);
-   auto data_fee =  calculate_data_fee( data_size, k.price_per_kbyte );
-   core_fee_required += data_fee;
+      total_auths += secondary->num_auths();
+   if( total_auths > 0 )
+      core_fee_required += ( share_type( k.price_per_auth ) * total_auths );
 
    return core_fee_required;
 }
