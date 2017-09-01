@@ -615,7 +615,7 @@ public:
          }
          */
          auto rec = _remote_db->lookup_account_names({account_name_or_id}).front();
-         FC_ASSERT( rec && rec->name == account_name_or_id );
+         FC_ASSERT( rec && rec->name == account_name_or_id, "Can not find account ${a}.", ("a",account_name_or_id) );
          return *rec;
       }
    }
@@ -658,13 +658,13 @@ public:
    asset_object get_asset(asset_id_type id)const
    {
       auto opt = find_asset(id);
-      FC_ASSERT(opt);
+      FC_ASSERT( opt, "Can not find asset ${a}", ("a", id) );
       return *opt;
    }
    asset_object get_asset(string asset_symbol_or_id)const
    {
       auto opt = find_asset(asset_symbol_or_id);
-      FC_ASSERT(opt);
+      FC_ASSERT( opt, "Can not find asset ${a}", ("a", asset_symbol_or_id) );
       return *opt;
    }
 
@@ -675,7 +675,7 @@ public:
       if( std::isdigit( asset_symbol_or_id.front() ) )
          return fc::variant(asset_symbol_or_id).as<asset_id_type>();
       opt_asset = _remote_db->lookup_asset_symbols( {asset_symbol_or_id} );
-      FC_ASSERT( (opt_asset.size() > 0) && (opt_asset[0].valid()) );
+      FC_ASSERT( (opt_asset.size() > 0) && (opt_asset[0].valid()), "Can not find asset ${a}", ("a", asset_symbol_or_id) );
       return opt_asset[0]->id;
    }
 
@@ -686,11 +686,12 @@ public:
 
    fc::ecc::private_key              get_private_key(const public_key_type& id)const
    {
+      FC_ASSERT( !self.is_locked(), "The wallet must be unlocked to get the private key" );
       auto it = _keys.find(id);
-      FC_ASSERT( it != _keys.end() );
+      FC_ASSERT( it != _keys.end(), "Can not find private key of ${pub} in the wallet", ("pub",id) );
 
       fc::optional< fc::ecc::private_key > privkey = wif_to_key( it->second );
-      FC_ASSERT( privkey );
+      FC_ASSERT( privkey, "Can not find private key of ${pub} in the wallet", ("pub",id) );
       return *privkey;
    }
 
@@ -738,6 +739,9 @@ public:
 
    bool load_wallet_file(string wallet_filename = "")
    {
+      if( !self.is_locked() )
+         self.lock();
+
       // TODO:  Merge imported wallet with existing wallet,
       //        instead of replacing it
       if( wallet_filename == "" )
@@ -773,7 +777,7 @@ public:
          }
          std::vector< optional< account_object > > accounts = _remote_db->get_accounts_by_uid(account_uids_to_send);
          // server response should be same length as request
-         FC_ASSERT( accounts.size() == account_uids_to_send.size() );
+         FC_ASSERT( accounts.size() == account_uids_to_send.size(), "remote server error" );
          size_t i = 0;
          for( const optional< account_object >& acct : accounts )
          {
@@ -786,7 +790,7 @@ public:
             }
             // this check makes sure the server didn't send results
             // in a different order, or accounts we didn't request
-            FC_ASSERT( acct->uid == old_acct.uid );
+            FC_ASSERT( acct->uid == old_acct.uid, "remote server error" );
             if( fc::json::to_string(*acct) != fc::json::to_string(old_acct) )
             {
                wlog( "Account ${uid} : \"${name}\" updated on chain", ("uid", acct->uid)("name", acct->name) );
@@ -2345,7 +2349,7 @@ public:
    signed_transaction transfer(string from, string to, string amount,
                                string asset_symbol, string memo, bool broadcast = false)
    { try {
-      FC_ASSERT( !self.is_locked() );
+      FC_ASSERT( !self.is_locked(), "Should unlock first" );
       fc::optional<asset_object> asset_obj = get_asset(asset_symbol);
       FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
 
@@ -3388,7 +3392,7 @@ full_account wallet_api::get_full_account(string account_name_or_uid) const
 asset_object wallet_api::get_asset(string asset_name_or_id) const
 {
    auto a = my->find_asset(asset_name_or_id);
-   FC_ASSERT(a);
+   FC_ASSERT( a, "Can not find asset ${a}", ("a", asset_name_or_id) );
    return *a;
 }
 
@@ -3406,7 +3410,7 @@ asset_id_type wallet_api::get_asset_id(string asset_symbol_or_id) const
 
 bool wallet_api::import_key(string account_name_or_id, string wif_key)
 {
-   FC_ASSERT(!is_locked());
+   FC_ASSERT(!is_locked(), "Should unlock first");
    // backup wallet
    fc::optional<fc::ecc::private_key> optional_private_key = wif_to_key(wif_key);
    if (!optional_private_key)
@@ -4054,7 +4058,8 @@ void wallet_api::encrypt_keys()
 
 void wallet_api::lock()
 { try {
-   FC_ASSERT( !is_locked() );
+   if ( is_locked() )
+      return;
    encrypt_keys();
    for( auto key : my->_keys )
       key.second = key_to_wif(fc::ecc::private_key());
@@ -4065,6 +4070,8 @@ void wallet_api::lock()
 
 void wallet_api::unlock(string password)
 { try {
+   FC_ASSERT( !is_new(), "Please use the set_password method to initialize a new wallet before continuing" );
+   FC_ASSERT( is_locked(), "The wallet is already unlocked" );
    FC_ASSERT(password.size() > 0);
    auto pw = fc::sha512::hash(password.c_str(), password.size());
    vector<char> decrypted = fc::aes_decrypt(pw, my->_wallet.cipher_keys);
@@ -4206,7 +4213,7 @@ vector< signed_transaction > wallet_api_impl::import_balance( string name_or_id,
 
 map<public_key_type, string> wallet_api::dump_private_keys()
 {
-   FC_ASSERT(!is_locked());
+   FC_ASSERT( !is_locked(), "Should unlock first" );
    return my->_keys;
 }
 
