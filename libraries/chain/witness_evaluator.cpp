@@ -488,12 +488,12 @@ void_result witness_report_evaluator::do_evaluate( const witness_report_operatio
    if( !global_params.witness_report_allow_pre_last_block )
    {
       FC_ASSERT( reporting_block_num >= account_stats->witness_last_confirmed_block_num,
-                 "Can not report a block that is older than this witness's last confirmed block: #{n}",
+                 "Can not report a block that is older than this witness's last confirmed block: #${n}",
                  ("n", account_stats->witness_last_confirmed_block_num) );
    }
 
    FC_ASSERT( reporting_block_num > account_stats->witness_last_reported_block_num,
-              "Can only report blocks newer than this witness's last reported block: #{n}",
+              "Can only report blocks newer than this witness's last reported block: #${n}",
               ("n", account_stats->witness_last_reported_block_num) );
 
    block_id_type block_id_on_chain = d.fetch_block_id_for_num( reporting_block_num );
