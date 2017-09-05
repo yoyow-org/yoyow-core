@@ -181,7 +181,7 @@ namespace detail {
          {
             // https://bitsharestalk.org/index.php/topic,23715.0.html
             vector<string> seeds = {
-               "54.224.246.177:2017"//,               // aws test
+               "54.224.246.177:3017"//,               // aws test round 2
                //"47.90.105.247:2017"               // aliyun test
 /*
                "104.236.144.84:1777",               // puppies      (USA)
