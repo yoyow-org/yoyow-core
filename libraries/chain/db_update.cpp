@@ -63,6 +63,9 @@ void database::update_global_dynamic_data( const signed_block& b )
            if( w.last_confirmed_block_num + gpo.parameters.max_witness_inactive_blocks < b.block_num() )
               w.signing_key = public_key_type();
          });
+         modify( get_account_statistics_by_uid( witness_missed.account ), [&]( account_statistics_object& s ) {
+           s.witness_total_missed++;
+         });
       } 
    }
 
@@ -157,6 +160,13 @@ void database::update_signing_witness(const witness_object& signing_witness, con
       _wit.last_aslot = new_block_aslot;
       _wit.total_produced += 1;
       _wit.last_confirmed_block_num = new_block.block_num();
+   } );
+
+   modify( get_account_statistics_by_uid( signing_witness.account ), [&]( account_statistics_object& _stat )
+   {
+      _stat.witness_last_aslot = new_block_aslot;
+      _stat.witness_total_produced += 1;
+      _stat.witness_last_confirmed_block_num = new_block.block_num();
    } );
 }
 
@@ -1049,6 +1059,12 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                o.min_committee_member_pledge = *pv.min_committee_member_pledge;
             if( pv.committee_member_pledge_release_delay.valid() )
                o.committee_member_pledge_release_delay = *pv.committee_member_pledge_release_delay;
+            if( pv.witness_report_prosecution_period.valid() )
+               o.witness_report_prosecution_period = *pv.witness_report_prosecution_period;
+            if( pv.witness_report_allow_pre_last_block.valid() )
+               o.witness_report_allow_pre_last_block = *pv.witness_report_allow_pre_last_block;
+            if( pv.witness_report_pledge_deduction_amount.valid() )
+               o.witness_report_pledge_deduction_amount = *pv.witness_report_pledge_deduction_amount;
          });
       }
 

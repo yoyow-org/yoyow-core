@@ -151,6 +151,36 @@ namespace graphene { namespace chain {
          share_type uncollected_witness_pay;
 
          /**
+          * last produced block number
+          */
+         uint64_t witness_last_confirmed_block_num = 0;
+
+         /**
+          * last witness aslot
+          */
+         uint64_t witness_last_aslot = 0;
+
+         /**
+          * total blocks produced
+          */
+         uint64_t witness_total_produced = 0;
+
+         /**
+          * total blocks missed
+          */
+         uint64_t witness_total_missed = 0;
+
+         /**
+          * last reported block number
+          */
+         uint64_t witness_last_reported_block_num = 0;
+
+         /**
+          * total blocks reported
+          */
+         uint64_t witness_total_reported = 0;
+
+         /**
           * coins locked as committee member pledge.
           */
          share_type total_committee_member_pledge;
@@ -760,6 +790,12 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                     (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
                     (last_witness_sequence)(uncollected_witness_pay)
+                    (witness_last_confirmed_block_num)
+                    (witness_last_aslot)
+                    (witness_total_produced)
+                    (witness_total_missed)
+                    (witness_last_reported_block_num)
+                    (witness_total_reported)
                     (total_committee_member_pledge)(releasing_committee_member_pledge)(committee_member_pledge_release_block_number)
                     (last_committee_member_sequence)
                     (can_vote)(is_voter)(last_voter_sequence)

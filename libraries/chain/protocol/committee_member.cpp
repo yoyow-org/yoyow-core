@@ -156,7 +156,7 @@ void committee_updatable_parameters::validate()const
                  "Witness pay per block should not be negative" );
    if( by_vote_top_witness_count.valid() )
       FC_ASSERT( *by_vote_top_witness_count > 0,
-                 "Witness pay per block should be positive" );
+                 "Top witness count should be positive" );
    // by_vote_rest_witness_count: no limitation so far
    // by_pledge_witness_count: no limitation so far
    if( budget_adjust_interval.valid() )
@@ -168,6 +168,11 @@ void committee_updatable_parameters::validate()const
    // min_committee_member_pledge: no limitation so far
    // committee_member_pledge_release_delay: no limitation so far
    // max_committee_members_voted_per_account: unable to update so far
+   // witness_report_prosecution_period: no limitation so far
+   // witness_report_allow_pre_last_block: no limitation so far
+   if( witness_report_pledge_deduction_amount.valid() )
+      FC_ASSERT( *witness_report_pledge_deduction_amount >= 0,
+                 "Witness pledge deduction amount should not be negative" );
 }
 
 void committee_proposal_create_operation::validate()const

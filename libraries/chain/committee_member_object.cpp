@@ -135,6 +135,12 @@ uint16_t committee_proposal_object::get_approve_threshold()const
             threshold = std::max( threshold, GRAPHENE_CPPT_PARAM_MIN_COMMITTEE_MEMBER_PLEDGE           );
          if( pv.committee_member_pledge_release_delay.valid() )
             threshold = std::max( threshold, GRAPHENE_CPPT_PARAM_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY );
+         if( pv.witness_report_prosecution_period.valid() )
+            threshold = std::max( threshold, GRAPHENE_CPPT_PARAM_WITNESS_REPORT_PROSECUTION_PERIOD     );
+         if( pv.witness_report_allow_pre_last_block.valid() )
+            threshold = std::max( threshold, GRAPHENE_CPPT_PARAM_WITNESS_REPORT_ALLOW_PRE_LAST_BLOCK   );
+         if( pv.witness_report_pledge_deduction_amount.valid() )
+            threshold = std::max( threshold, GRAPHENE_CPPT_PARAM_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT );
 
       }
    }

@@ -129,6 +129,12 @@ struct get_impacted_account_uid_visitor
       //_impacted.insert( op.account ); // fee payer
    }
 
+   void operator()( const witness_report_operation& op )
+   {
+      //_impacted.insert( op.reporter ); // fee payer
+      _impacted.insert( op.first_block.witness );
+   }
+
    void operator()( const committee_member_create_operation& op )
    {
       //_impacted.insert( op.account ); // fee payer
@@ -427,6 +433,10 @@ struct get_impacted_account_visitor
       // TODO review
    }
    void operator()( const witness_collect_pay_operation& op )
+   {
+      // TODO review
+   }
+   void operator()( const witness_report_operation& op )
    {
       // TODO review
    }

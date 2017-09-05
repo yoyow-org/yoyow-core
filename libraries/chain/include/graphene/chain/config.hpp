@@ -164,6 +164,10 @@
 #define GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY   (28800) // blocks, 1 day if 3 seconds per block
 #define GRAPHENE_DEFAULT_MAX_COMMITTEE_MEMBERS_VOTED_PER_ACCOUNT (1)
 
+#define GRAPHENE_DEFAULT_WITNESS_REPORT_PROSECUTION_PERIOD       (28800) // blocks, 1 day if 3 seconds per block
+#define GRAPHENE_DEFAULT_WITNESS_REPORT_ALLOW_PRE_LAST_BLOCK     (false) // don't allow reporting of blocks earlier than last block
+#define GRAPHENE_DEFAULT_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT  (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1000))
+
 // committee proposal pass thresholds
 #define GRAPHENE_CPPT_FEE_DEFAULT                                 (uint16_t(5001)) // 50.01%
 #define GRAPHENE_CPPT_FEE_COMMITTEE_MEMBER_CREATE_OP              (uint16_t(8500))
@@ -199,6 +203,9 @@
 #define GRAPHENE_CPPT_PARAM_BUDGET_ADJUST_TARGET                  (uint16_t(8500))
 #define GRAPHENE_CPPT_PARAM_MIN_COMMITTEE_MEMBER_PLEDGE           (uint16_t(8500))
 #define GRAPHENE_CPPT_PARAM_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY (uint16_t(8500))
+#define GRAPHENE_CPPT_PARAM_WITNESS_REPORT_PROSECUTION_PERIOD     (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_WITNESS_REPORT_ALLOW_PRE_LAST_BLOCK   (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT (uint16_t(6500))
 
 
 // counter initialization values used to derive near and far future seeds for shuffling witnesses

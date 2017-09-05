@@ -96,6 +96,9 @@ namespace graphene { namespace chain {
       uint64_t                min_committee_member_pledge         = GRAPHENE_DEFAULT_MIN_COMMITTEE_MEMBER_PLEDGE;
       uint32_t                committee_member_pledge_release_delay   = GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY;
       uint16_t                max_committee_members_voted_per_account = GRAPHENE_DEFAULT_MAX_COMMITTEE_MEMBERS_VOTED_PER_ACCOUNT;
+      uint32_t                witness_report_prosecution_period       = GRAPHENE_DEFAULT_WITNESS_REPORT_PROSECUTION_PERIOD;
+      bool                    witness_report_allow_pre_last_block     = GRAPHENE_DEFAULT_WITNESS_REPORT_ALLOW_PRE_LAST_BLOCK;
+      share_type              witness_report_pledge_deduction_amount  = GRAPHENE_DEFAULT_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT;
       extensions_type         extensions;
 
       /** defined in fee_schedule.cpp */
@@ -160,5 +163,8 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (min_committee_member_pledge)
             (committee_member_pledge_release_delay)
             (max_committee_members_voted_per_account)
+            (witness_report_prosecution_period)
+            (witness_report_allow_pre_last_block)
+            (witness_report_pledge_deduction_amount)
             (extensions)
           )

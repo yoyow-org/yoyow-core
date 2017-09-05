@@ -201,6 +201,7 @@ void database::initialize_evaluators()
    register_evaluator<witness_update_evaluator>();
    register_evaluator<witness_vote_update_evaluator>();
    register_evaluator<witness_collect_pay_evaluator>();
+   register_evaluator<witness_report_evaluator>();
    register_evaluator<withdraw_permission_create_evaluator>();
    register_evaluator<withdraw_permission_claim_evaluator>();
    register_evaluator<withdraw_permission_update_evaluator>();

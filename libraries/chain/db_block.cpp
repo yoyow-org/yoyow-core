@@ -61,6 +61,15 @@ block_id_type  database::get_block_id_for_num( uint32_t block_num )const
    return _block_id_to_block.fetch_block_id( block_num );
 } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
+block_id_type  database::fetch_block_id_for_num( uint32_t block_num )const
+{ try {
+   auto results = _fork_db.fetch_block_by_number( block_num );
+   if( results.size() == 1 )
+      return results[0]->data.id();
+   else
+      return _block_id_to_block.fetch_block_id( block_num );
+} FC_CAPTURE_AND_RETHROW( (block_num) ) }
+
 optional<signed_block> database::fetch_block_by_id( const block_id_type& id )const
 {
    auto b = _fork_db.fetch_block( id );
@@ -76,7 +85,6 @@ optional<signed_block> database::fetch_block_by_number( uint32_t num )const
       return results[0]->data;
    else
       return _block_id_to_block.fetch_by_number(num);
-   return optional<signed_block>();
 }
 
 const signed_transaction& database::get_recent_transaction(const transaction_id_type& trx_id) const

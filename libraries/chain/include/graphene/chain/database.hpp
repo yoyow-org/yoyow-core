@@ -122,7 +122,8 @@ namespace graphene { namespace chain {
           */
          bool                       is_known_block( const block_id_type& id )const;
          bool                       is_known_transaction( const transaction_id_type& id )const;
-         block_id_type              get_block_id_for_num( uint32_t block_num )const;
+         block_id_type              get_block_id_for_num( uint32_t block_num )const; // get from disk directly
+         block_id_type              fetch_block_id_for_num( uint32_t block_num )const; // check fork db first
          optional<signed_block>     fetch_block_by_id( const block_id_type& id )const;
          optional<signed_block>     fetch_block_by_number( uint32_t num )const;
          const signed_transaction&  get_recent_transaction( const transaction_id_type& trx_id )const;

@@ -22,17 +22,35 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/protocol/block_header.hpp>
-#include <graphene/chain/protocol/transaction.hpp>
+#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/protocol/base.hpp>
 
 namespace graphene { namespace chain {
 
-   struct signed_block : public signed_block_header
+   struct block_header
    {
-      checksum_type calculate_merkle_root()const;
-      vector<processed_transaction> transactions;
+      digest_type                   digest()const;
+      block_id_type                 previous;
+      uint32_t                      block_num()const { return num_from_id(previous) + 1; }
+      fc::time_point_sec            timestamp;
+      account_uid_type              witness;
+      checksum_type                 transaction_merkle_root;
+      extensions_type               extensions;
+
+      static uint32_t num_from_id(const block_id_type& id);
+   };
+
+   struct signed_block_header : public block_header
+   {
+      block_id_type              id()const;
+      fc::ecc::public_key        signee()const;
+      void                       sign( const fc::ecc::private_key& signer );
+      bool                       validate_signee( const fc::ecc::public_key& expected_signee )const;
+
+      signature_type             witness_signature;
    };
 
 } } // graphene::chain
 
-FC_REFLECT_DERIVED( graphene::chain::signed_block, (graphene::chain::signed_block_header), (transactions) )
+FC_REFLECT( graphene::chain::block_header, (previous)(timestamp)(witness)(transaction_merkle_root)(extensions) )
+FC_REFLECT_DERIVED( graphene::chain::signed_block_header, (graphene::chain::block_header), (witness_signature) )

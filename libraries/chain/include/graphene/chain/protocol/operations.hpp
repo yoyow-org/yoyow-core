@@ -66,6 +66,7 @@ namespace graphene { namespace chain {
             witness_update_operation,
             witness_vote_update_operation,
             witness_collect_pay_operation,
+            witness_report_operation,
             post_operation,
             // the operations below are not supported
             balance_claim_operation,

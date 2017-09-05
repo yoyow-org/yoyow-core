@@ -80,4 +80,16 @@ namespace graphene { namespace chain {
          const account_statistics_object* account_stats = nullptr;
    };
 
+   class witness_report_evaluator : public evaluator<witness_report_evaluator>
+   {
+      public:
+         typedef witness_report_operation operation_type;
+
+         void_result do_evaluate( const witness_report_operation& o );
+         void_result do_apply( const witness_report_operation& o );
+
+         const account_statistics_object* account_stats = nullptr;
+         uint32_t reporting_block_num = 0;
+   };
+
 } } // graphene::chain

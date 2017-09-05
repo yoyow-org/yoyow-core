@@ -136,6 +136,10 @@ struct get_impacted_account_visitor
    {
       // TODO review
    }
+   void operator()( const witness_report_operation& op )
+   {
+      // TODO review
+   }
 
 
    void operator()( const proposal_create_operation& op )

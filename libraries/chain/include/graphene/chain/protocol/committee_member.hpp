@@ -200,6 +200,9 @@ namespace graphene { namespace chain {
       optional< uint32_t              >  committee_member_pledge_release_delay   ;
       // Don't update this parameter so far
       //optional< uint16_t              >  max_committee_members_voted_per_account ;
+      optional< uint32_t              > witness_report_prosecution_period        ;
+      optional< bool                  > witness_report_allow_pre_last_block      ;
+      optional< share_type            > witness_report_pledge_deduction_amount   ;
 
       void validate()const;
    };
@@ -382,6 +385,9 @@ FC_REFLECT( graphene::chain::committee_updatable_parameters,
             (min_committee_member_pledge)
             (committee_member_pledge_release_delay)
             //(max_committee_members_voted_per_account)
+            (witness_report_prosecution_period)
+            (witness_report_allow_pre_last_block)
+            (witness_report_pledge_deduction_amount)
           )
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )

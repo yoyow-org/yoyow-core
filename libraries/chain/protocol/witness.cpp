@@ -82,4 +82,17 @@ void witness_collect_pay_operation::validate() const
    validate_positive_asset( pay, "pay" );
 }
 
+void witness_report_operation::validate() const
+{
+   validate_op_fee( fee, "witness report " );
+   validate_account_uid( reporter, "reporting " );
+   validate_account_uid( first_block.witness, "reported witness " );
+   FC_ASSERT( first_block.timestamp == second_block.timestamp, "first block and second block should have same timestamp" );
+   FC_ASSERT( first_block.witness == second_block.witness, "first block and second block should be produced by same witness" );
+   FC_ASSERT( first_block.id() != second_block.id(), "first block and second block should be different" );
+   FC_ASSERT( first_block.block_num() > 0, "reporting block number should be positive" );
+   FC_ASSERT( first_block.block_num() == second_block.block_num(), "first block and second block should have same block number" );
+   FC_ASSERT( first_block.signee() == second_block.signee(), "first block and second block should be signed by same key" );
+}
+
 } } // graphene::chain

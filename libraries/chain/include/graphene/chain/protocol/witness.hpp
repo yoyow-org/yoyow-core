@@ -23,6 +23,7 @@
  */
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
+#include <graphene/chain/protocol/block_header.hpp>
 
 namespace graphene { namespace chain { 
 
@@ -164,6 +165,37 @@ namespace graphene { namespace chain {
       }
    };
 
+  /**
+    * @brief report a witness that produced two different blocks with same block number
+    * @ingroup operations
+    */
+   struct witness_report_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 0;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type            fee;
+      account_uid_type    reporter;
+      signed_block_header first_block;
+      signed_block_header second_block;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return reporter; }
+      void              validate()const;
+      //share_type      calculate_fee(const fee_parameters_type& k)const;
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need secondary authority
+         a.insert( reporter );
+      }
+   };
+
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::witness_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
@@ -178,3 +210,6 @@ FC_REFLECT( graphene::chain::witness_vote_update_operation, (fee)(voter)(witness
 
 FC_REFLECT( graphene::chain::witness_collect_pay_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::witness_collect_pay_operation, (fee)(account)(pay)(extensions) )
+
+FC_REFLECT( graphene::chain::witness_report_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::witness_report_operation, (fee)(reporter)(first_block)(second_block)(extensions) )

@@ -465,4 +465,110 @@ void_result witness_collect_pay_evaluator::do_apply( const witness_collect_pay_o
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
+void_result witness_report_evaluator::do_evaluate( const witness_report_operation& op )
+{ try {
+   database& d = db();
+   d.get_account_by_uid( op.reporter ); // check if the reporter account exists
+   account_stats = &d.get_account_statistics_by_uid( op.first_block.witness );
+
+   const auto head_block_time = d.head_block_time();
+   const auto reporting_block_time = op.first_block.timestamp;
+   FC_ASSERT( reporting_block_time <= head_block_time, "Can not report a block which has a timestamp in the future" );
+
+   const auto head_block_num = d.head_block_num();
+   reporting_block_num = op.first_block.block_num();
+   FC_ASSERT( reporting_block_num <= head_block_num,
+              "Can not report a block that has a block number larger than current head block number" );
+
+   const auto& global_params = d.get_global_properties().parameters;
+   FC_ASSERT( reporting_block_num + global_params.witness_report_prosecution_period >= head_block_num,
+              "Can not report a block that is more than ${n} blocks old",
+              ("n", global_params.witness_report_prosecution_period) );
+
+   if( !global_params.witness_report_allow_pre_last_block )
+   {
+      FC_ASSERT( reporting_block_num >= account_stats->witness_last_confirmed_block_num,
+                 "Can not report a block that is older than this witness's last confirmed block: #{n}",
+                 ("n", account_stats->witness_last_confirmed_block_num) );
+   }
+
+   FC_ASSERT( reporting_block_num > account_stats->witness_last_reported_block_num,
+              "Can only report blocks newer than this witness's last reported block: #{n}",
+              ("n", account_stats->witness_last_reported_block_num) );
+
+   block_id_type block_id_on_chain = d.fetch_block_id_for_num( reporting_block_num );
+   FC_ASSERT( block_id_on_chain == op.first_block.id() || block_id_on_chain == op.second_block.id(),
+              "Either first block or second block should be on current chain" );
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result witness_report_evaluator::do_apply( const witness_report_operation& op )
+{ try {
+   database& d = db();
+   const auto& global_params = d.get_global_properties().parameters;
+
+   // deactivate witness
+   const witness_object* witness_obj = d.find_witness_by_uid( op.first_block.witness );
+   if( witness_obj != nullptr )
+   {
+      d.modify( *witness_obj, [&]( witness_object& w ) {
+         w.signing_key = public_key_type();
+      });
+   }
+
+   // check if need to deduct from pledge
+   share_type total = std::min( global_params.witness_report_pledge_deduction_amount, account_stats->total_witness_pledge );
+   if( total > 0 )
+   {
+      // something to deduct
+      share_type from_releasing = std::min( account_stats->releasing_witness_pledge, total );
+      share_type from_pledge = total - from_releasing;
+      // update account stats object
+      d.modify( *account_stats, [&]( account_statistics_object& s ) {
+         if( from_releasing > 0 )
+         {
+            s.releasing_witness_pledge -= from_releasing;
+            if( s.releasing_witness_pledge <= 0 )
+               s.witness_pledge_release_block_number = -1;
+         }
+         s.total_witness_pledge -= total;
+         s.witness_last_reported_block_num = reporting_block_num;
+         s.witness_total_reported += 1;
+      });
+      // update witness object
+      if( from_pledge > 0 && witness_obj != nullptr )
+      {
+         // update position
+         d.update_witness_avg_pledge( *witness_obj );
+
+         // update witness data
+         d.modify( *witness_obj, [&]( witness_object& wit ) {
+            wit.pledge              -= from_pledge.value;
+            wit.pledge_last_update  =  d.head_block_time();
+         });
+
+         // update schedule
+         d.update_witness_avg_pledge( *witness_obj );
+      }
+      // adjust balance, should be ok, and will take care of votes
+      d.adjust_balance( op.first_block.witness, -total );
+      // adjust total supply
+      d.modify( asset_id_type()(d).dynamic_data(d), [&]( asset_dynamic_data_object& o )
+      {
+         o.current_supply -= total;
+      });
+   }
+   else
+   {
+      // nothing to deduct
+      d.modify( *account_stats, [&]( account_statistics_object& s ) {
+         s.witness_last_reported_block_num = reporting_block_num;
+         s.witness_total_reported += 1;
+      });
+   }
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
 } } // graphene::chain
