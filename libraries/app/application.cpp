@@ -571,8 +571,9 @@ namespace detail {
                  ("u",witness_account.uid)
                  ("w",witness_account.name)
                  ("i",last_irr)("d",blk_msg.block.block_num()-last_irr) );
+            dlog( "${b}", ("b",blk_msg.block) );
          }
-         FC_ASSERT( (latency.count()/1000) > -5000, "Rejecting block with timestamp in the future" );
+         FC_ASSERT( (latency.count()/1000) > -2500, "Rejecting block with timestamp in the future" );
 
          try {
             // TODO: in the case where this block is valid but on a fork that's too old for us to switch to,
