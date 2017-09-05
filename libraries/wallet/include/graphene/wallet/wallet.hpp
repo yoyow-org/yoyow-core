@@ -1841,7 +1841,7 @@ FC_API( graphene::wallet::wallet_api,
         //(dbg_generate_blocks)
         //(dbg_stream_json_objects)
         //(dbg_update_object)
-        (flood_network)
+        //(flood_network)
         (network_add_nodes)
         (network_get_connected_peers)
         //(set_key_label)
