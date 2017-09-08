@@ -141,6 +141,51 @@ namespace graphene { namespace chain {
       }
    };
 
+   struct set_fee_with_csaf_visitor
+   {
+      typedef void result_type;
+      std::pair<share_type,share_type> _fee_pair;
+
+      set_fee_with_csaf_visitor( const std::pair<share_type,share_type>& fp ):_fee_pair(fp){}
+
+      template<typename OpType>
+      void set_fee_with_csaf( OpType& op, std::true_type )const
+      {
+         op.fee = asset( _fee_pair.first, GRAPHENE_CORE_ASSET_AID );
+      }
+
+      template<typename OpType>
+      void set_fee_with_csaf( OpType& op, std::false_type )const
+      {
+         fee_type f( asset( _fee_pair.first, GRAPHENE_CORE_ASSET_AID ) );
+
+         share_type max_csaf = _fee_pair.first - _fee_pair.second;
+         if( max_csaf > 0 )
+         {
+            extension<fee_extension_type> fex;
+            fex.value.from_csaf = asset( max_csaf, GRAPHENE_CORE_ASSET_AID );
+            if( max_csaf < _fee_pair.first )
+               fex.value.from_balance = asset( _fee_pair.first - max_csaf.value, GRAPHENE_CORE_ASSET_AID );
+            f.options = fex;
+         }
+
+         op.fee = f;
+      }
+
+      template<typename OpType>
+      void set_fee_with_csaf( OpType& op )const
+      {
+         const bool b = has_member_data_fee<OpType,asset>::value;
+         set_fee_with_csaf( op, std::integral_constant<bool, b>() );
+      }
+
+      template<typename OpType>
+      void operator()( OpType& op )const
+      {
+         set_fee_with_csaf( op );
+      }
+   };
+
    struct zero_fee_visitor
    {
       typedef void result_type;
@@ -187,6 +232,12 @@ namespace graphene { namespace chain {
       auto itr = parameters.find(params);
       if( itr != parameters.end() ) params = *itr;
       return op.visit( calc_fee_pair_visitor( params ) );
+   }
+
+   void fee_schedule::set_fee_with_csaf( operation& op )const
+   {
+      auto fp = calculate_fee_pair( op );
+      op.visit( set_fee_with_csaf_visitor( fp ) );
    }
 
    asset fee_schedule::set_fee( operation& op, const price& core_exchange_rate )const

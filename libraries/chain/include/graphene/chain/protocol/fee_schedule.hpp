@@ -50,6 +50,7 @@ namespace graphene { namespace chain {
       asset calculate_fee( const operation& op, const price& core_exchange_rate = price::unit_price() )const;
       std::pair<share_type,share_type> calculate_fee_pair( const operation& op )const;
       asset set_fee( operation& op, const price& core_exchange_rate = price::unit_price() )const;
+      void set_fee_with_csaf( operation& op )const;
 
       void zero_all_fees();
 

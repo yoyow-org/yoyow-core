@@ -496,7 +496,7 @@ public:
    void set_operation_fees( signed_transaction& tx, const fee_schedule& s  )
    {
       for( auto& op : tx.operations )
-         s.set_fee(op);
+         s.set_fee_with_csaf(op);
    }
 
    variant info() const
@@ -512,6 +512,7 @@ public:
                                                                           time_point_sec(time_point::now()),
                                                                           " old");
       //result["next_maintenance_time"] = fc::get_approximate_relative_time_string(dynamic_props.next_maintenance_time);
+      result["last_irreversible_block_num"] = dynamic_props.last_irreversible_block_num;
       result["chain_id"] = chain_props.chain_id;
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
       result["active_witnesses"] = global_props.active_witnesses;
@@ -1666,6 +1667,35 @@ public:
 
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (witness_account)(pay_amount)(pay_asset_symbol)(broadcast) ) }
+
+   signed_transaction collect_csaf(string from,
+                                   string to,
+                                   string amount,
+                                   string asset_symbol,
+                                   time_point_sec time,
+                                   bool broadcast /* = false */)
+   { try {
+      FC_ASSERT( !self.is_locked(), "Should unlock first" );
+      fc::optional<asset_object> asset_obj = get_asset(asset_symbol);
+      FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+
+      account_object from_account = get_account(from);
+      account_object to_account = get_account(to);
+
+      csaf_collect_operation cc_op;
+
+      cc_op.from = from_account.uid;
+      cc_op.to = to_account.uid;
+      cc_op.amount = asset_obj->amount_from_string(amount);
+      cc_op.time = time;
+
+      signed_transaction tx;
+      tx.operations.push_back(cc_op);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction(tx, broadcast);
+   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(time)(broadcast) ) }
 
    template<typename WorkerInit>
    static WorkerInit _create_worker_initializer( const variant& worker_settings )
@@ -3768,6 +3798,26 @@ signed_transaction wallet_api::collect_witness_pay(string witness_account,
                                         bool broadcast /* = false */)
 {
    return my->collect_witness_pay(witness_account, pay_amount, pay_asset_symbol, broadcast);
+}
+
+signed_transaction wallet_api::collect_csaf(string from,
+                                        string to,
+                                        string amount,
+                                        string asset_symbol,
+                                        bool broadcast /* = false */)
+{
+   time_point_sec time( time_point::now().sec_since_epoch() / 60 * 60 );
+   return my->collect_csaf(from, to, amount, asset_symbol, time, broadcast);
+}
+
+signed_transaction wallet_api::collect_csaf_with_time(string from,
+                                        string to,
+                                        string amount,
+                                        string asset_symbol,
+                                        time_point_sec time,
+                                        bool broadcast /* = false */)
+{
+   return my->collect_csaf(from, to, amount, asset_symbol, time, broadcast);
 }
 
 vector< vesting_balance_object_with_info > wallet_api::get_vesting_balances( string account_name )

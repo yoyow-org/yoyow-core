@@ -1349,6 +1349,38 @@ class wallet_api
                                         string pay_asset_symbol,
                                         bool broadcast = false);
 
+      /**
+       * Collect CSAF with current time.
+       *
+       * @param from The UID or name of the account that will collect CSAF from.
+       * @param to The UID or name of the account that will collect CSAF to.
+       * @param amount The amount to collect.
+       * @param asset_symbol The symbol of the asset to collect.
+       * @param time The time that will be used to calculate available CSAF.
+       * @param broadcast true if you wish to broadcast the transaction.
+       */
+      signed_transaction collect_csaf(string from,
+                                      string to,
+                                      string amount,
+                                      string asset_symbol,
+                                      bool broadcast = false);
+
+      /**
+       * Collect CSAF with specified time.
+       *
+       * @param from The UID or name of the account that will collect CSAF from.
+       * @param to The UID or name of the account that will collect CSAF to.
+       * @param amount The amount to collect.
+       * @param asset_symbol The symbol of the asset to collect.
+       * @param time The time that will be used to calculate available CSAF.
+       * @param broadcast true if you wish to broadcast the transaction.
+       */
+      signed_transaction collect_csaf_with_time(string from,
+                                      string to,
+                                      string amount,
+                                      string asset_symbol,
+                                      fc::time_point_sec time,
+                                      bool broadcast = false);
 
       /**
        * Create a worker object.
@@ -1801,6 +1833,8 @@ FC_API( graphene::wallet::wallet_api,
         (list_witnesses)
         (update_witness_votes)
         (collect_witness_pay)
+        (collect_csaf)
+        (collect_csaf_with_time)
         //(create_worker)
         //(update_worker_votes)
         //(get_vesting_balances)
