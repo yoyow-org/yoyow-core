@@ -355,6 +355,12 @@ signed_block database::_generate_block(
    _pending_tx_session.reset();
    _pending_tx_session = _undo_db.start_undo_session();
 
+   pending_block.previous = head_block_id();
+   pending_block.timestamp = when;
+   pending_block.witness = witness_uid;
+
+   update_global_dynamic_data(pending_block);
+
    uint64_t postponed_tx_count = 0;
    // pop pending state (reset to head block state)
    for( const processed_transaction& tx : _pending_tx )
@@ -400,10 +406,7 @@ signed_block database::_generate_block(
    // However, the push_block() call below will re-create the
    // _pending_tx_session.
 
-   pending_block.previous = head_block_id();
-   pending_block.timestamp = when;
    pending_block.transaction_merkle_root = pending_block.calculate_merkle_root();
-   pending_block.witness = witness_uid;
 
    if( !(skip & skip_witness_signature) )
       pending_block.sign( block_signing_private_key );
@@ -570,7 +573,9 @@ void database::_apply_block( const signed_block& next_block )
       apply_debug_updates();
 
    dlog("before check invariants");
-   check_invariants();
+   //if( next_block_num > 860000 && ( next_block_num % 5 == 0 ) )
+   if( next_block_num > 1150000 )
+     check_invariants();
 
    dlog("before notify applied block");
    // notify observers that the block has been applied
