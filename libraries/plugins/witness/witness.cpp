@@ -275,16 +275,32 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
       capture("scheduled_time", scheduled_time)("now", now);
       return block_production_condition::lag;
    }
-
-   auto block = db.generate_block(
-      scheduled_time,
-      scheduled_witness,
-      private_key_itr->second,
-      _production_skip_flags
-      );
    const auto& witness_name = db.get_account_by_uid( scheduled_witness ).name;
-   capture("n", block.block_num())("t", block.timestamp)("c", now)("w",scheduled_witness)("wname",witness_name)("bid",block.id());
-   fc::async( [this,block](){ p2p_node().broadcast(net::block_message(block)); } );
 
-   return block_production_condition::produced;
+   int retry = 0;
+   do
+   {
+      try
+      {
+         auto block = db.generate_block(
+            scheduled_time,
+            scheduled_witness,
+            private_key_itr->second,
+            _production_skip_flags
+            );
+         capture("n", block.block_num())("t", block.timestamp)("c", now)("w",scheduled_witness)("wname",witness_name)("bid",block.id());
+         fc::async( [this,block](){ p2p_node().broadcast(net::block_message(block)); } );
+
+         return block_production_condition::produced;
+      }
+      catch( fc::exception& e )
+      {
+         elog( "${e}", ("e",e.to_detail_string()) );
+         elog( "Clearing pending transactions and attempting again" );
+         db.clear_pending();
+         retry++;
+      }
+   } while( retry < 2 );
+
+   return block_production_condition::exception_producing_block;
 }
