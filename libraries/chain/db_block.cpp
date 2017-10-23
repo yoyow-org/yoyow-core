@@ -573,7 +573,7 @@ void database::_apply_block( const signed_block& next_block )
 
    dlog("before check invariants");
    //if( next_block_num > 860000 && ( next_block_num % 5 == 0 ) )
-   if( next_block_num > 1150000 )
+   if( next_block_num > 1350000 )
      check_invariants();
 
    dlog("before notify applied block");
