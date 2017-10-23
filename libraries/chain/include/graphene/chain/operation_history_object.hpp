@@ -142,4 +142,4 @@ FC_REFLECT_DERIVED( graphene::chain::operation_history_object, (graphene::chain:
                     (op)(result)(block_timestamp)(block_num)(trx_in_block)(op_in_trx)(virtual_op) )
 
 FC_REFLECT_DERIVED( graphene::chain::account_transaction_history_object, (graphene::chain::object),
-                    (account)(operation_type)(sequence)(next) ) // don't reflect operation_id
+                    (account)(operation_id)(operation_type)(sequence)(next) )
