@@ -105,6 +105,7 @@ void database::reindex( fc::path data_dir )
                              skip_transaction_dupe_check |
                              skip_tapos_check |
                              skip_witness_schedule_check |
+                             skip_invariants_check |
                              skip_authority_check);
       else
       {
@@ -114,6 +115,7 @@ void database::reindex( fc::path data_dir )
                             skip_transaction_dupe_check |
                             skip_tapos_check |
                             skip_witness_schedule_check |
+                            skip_invariants_check |
                             skip_authority_check);
       }
    }

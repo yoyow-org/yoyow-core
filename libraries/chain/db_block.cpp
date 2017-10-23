@@ -572,9 +572,12 @@ void database::_apply_block( const signed_block& next_block )
       apply_debug_updates();
 
    dlog("before check invariants");
-   //if( next_block_num > 860000 && ( next_block_num % 5 == 0 ) )
-   if( next_block_num > 1350000 )
-     check_invariants();
+   if( !( skip & skip_invariants_check ) )
+   {
+      //if( next_block_num > 860000 && ( next_block_num % 5 == 0 ) )
+      if( next_block_num > 1350000 )
+         check_invariants();
+   }
 
    dlog("before notify applied block");
    // notify observers that the block has been applied
