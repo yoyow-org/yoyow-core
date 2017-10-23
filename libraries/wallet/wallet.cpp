@@ -2110,7 +2110,7 @@ public:
                // since transactions include the head block id, we just need the index for keeping transactions unique
                // when there are multiple transactions in the same block.  choose a time period that should be at
                // least one block long, even in the worst case.  2 minutes ought to be plenty.
-               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(2));
+               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
                auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
                auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
                _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
@@ -2122,11 +2122,12 @@ public:
             {
                if( no_sig )
                {
-                  tx.set_expiration( dyn_props.time + fc::seconds(30 + expiration_time_offset) );
+                  tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
                   tx.signatures.clear();
                }
 
                idump((required_keys_subset)(available_keys_map));
+               // TODO: for better performance, sign after dupe check
                for( const auto& key : required_keys_subset )
                {
                   tx.sign( available_keys_map[key], _chain_id );
@@ -2253,7 +2254,7 @@ public:
       // since transactions include the head block id, we just need the index for keeping transactions unique
       // when there are multiple transactions in the same block.  choose a time period that should be at
       // least one block long, even in the worst case.  2 minutes ought to be plenty.
-      fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(2));
+      fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
       auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
       auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
       _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
@@ -2261,7 +2262,7 @@ public:
       uint32_t expiration_time_offset = 0;
       for (;;)
       {
-         tx.set_expiration( dyn_props.time + fc::seconds(30 + expiration_time_offset) );
+         tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
          tx.signatures.clear();
 
          for( public_key_type& key : approving_key_set )
