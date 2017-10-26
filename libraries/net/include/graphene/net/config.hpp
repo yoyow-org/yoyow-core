@@ -66,7 +66,7 @@
  * Recently lowered from 30 to match the default expiration time
  * the web wallet imposes on transactions.
  */
-#define GRAPHENE_NET_MESSAGE_CACHE_DURATION_IN_BLOCKS        5
+#define GRAPHENE_NET_MESSAGE_CACHE_DURATION_IN_BLOCKS        40
 
 /**
  * We prevent a peer from offering us a list of blocks which, if we fetched them
