@@ -1356,7 +1356,6 @@ class wallet_api
        * @param to The UID or name of the account that will collect CSAF to.
        * @param amount The amount to collect.
        * @param asset_symbol The symbol of the asset to collect.
-       * @param time The time that will be used to calculate available CSAF.
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction collect_csaf(string from,
