@@ -2126,7 +2126,7 @@ public:
                   tx.signatures.clear();
                }
 
-               idump((required_keys_subset)(available_keys_map));
+               idump((required_keys_subset)(available_keys));
                // TODO: for better performance, sign after dupe check
                for( const auto& key : required_keys_subset )
                {
