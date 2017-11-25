@@ -181,7 +181,7 @@ namespace detail {
          {
             // https://bitsharestalk.org/index.php/topic,23715.0.html
             vector<string> seeds = {
-               "52.90.14.81:2018"//,               // aws ubuntu mainnet
+               "seed01.yoyow.org:2018"//,               // aws ubuntu mainnet
                //"54.224.246.177:2018"//,               // aws win mainnet
                //"47.90.105.247:2017"               // aliyun test
 /*
