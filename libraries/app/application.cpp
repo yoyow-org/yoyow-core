@@ -181,8 +181,7 @@ namespace detail {
          {
             // https://bitsharestalk.org/index.php/topic,23715.0.html
             vector<string> seeds = {
-               "107.22.39.62:3017"//,               // test round 2 - aws new seed
-               //"47.90.105.247:2017"               // aliyun test
+               "testseed01.yoyow.org:3017"//,               // testnet
 /*
                "104.236.144.84:1777",               // puppies      (USA)
                "128.199.143.47:2015",               // Harvey       (Singapore)
