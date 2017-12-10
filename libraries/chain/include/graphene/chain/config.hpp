@@ -116,12 +116,11 @@
 #define GRAPHENE_CORE_ASSET_AID                               (uint64_t(0))
 
 #define GRAPHENE_DEFAULT_CSAF_RATE                            (uint64_t(86400) * 10000)
-#define GRAPHENE_DEFAULT_MAX_CSAF_PER_ACCOUNT                 (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(1000))
+#define GRAPHENE_DEFAULT_MAX_CSAF_PER_ACCOUNT                 (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(100))
 #define GRAPHENE_DEFAULT_CSAF_ACCUMULATE_WINDOW               (60*60*24*7) // One week
 
 #define GRAPHENE_DEFAULT_MIN_WITNESS_PLEDGE                   (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000))
-/*
-//for test. change back when use new genesis
+//TODO changed for test. change back when use new genesis
 #define GRAPHENE_DEFAULT_MAX_WITNESS_PLEDGE_SECONDS           (60*30) // 30 minutes
 #define GRAPHENE_DEFAULT_WITNESS_AVG_PLEDGE_UPDATE_INTERVAL   100  // blocks,  5 minutes if 3 seconds per block
 #define GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY         300  // blocks, 15 minutes if 3 seconds per block
@@ -129,30 +128,38 @@
 #define GRAPHENE_DEFAULT_GOVERNANCE_VOTING_EXPIRATION_BLOCKS  (28800*5) // blocks, 5 days if 3 seconds per block
 #define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS         (60*60*24*4) // 4 days
 #define GRAPHENE_DEFAULT_COMMITTEE_UPDATE_INTERVAL               (1200) // blocks, 1 hour if 3 seconds per block
-*/
+/*
 #define GRAPHENE_DEFAULT_MAX_WITNESS_PLEDGE_SECONDS           (60*60*24*7) // One week
 #define GRAPHENE_DEFAULT_WITNESS_AVG_PLEDGE_UPDATE_INTERVAL   1200  // blocks, one hour if 3 seconds per block
 #define GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY         28800 // blocks, one day if 3 seconds per block
+*/
 #define GRAPHENE_DEFAULT_MIN_GOVERNANCE_VOTING_BALANCE        (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000))
 #define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTING_RPOXY_LEVEL    (4)
-#define GRAPHENE_DEFAULT_GOVERNANCE_VOTING_EXPIRATION_BLOCKS  (28800*90) // blocks, 90 days if 3 seconds per block
+//#define GRAPHENE_DEFAULT_GOVERNANCE_VOTING_EXPIRATION_BLOCKS  (28800*90) // blocks, 90 days if 3 seconds per block
+#define GRAPHENE_MIN_GOVERNANCE_VOTING_EXPIRATION_BLOCKS      (28800) // blocks, 1 day if 3 seconds per block
 #define GRAPHENE_DEFAULT_GOVERNANCE_VOTES_UPDATE_INTERVAL     (28800) // blocks, 1 day if 3 seconds per block
-#define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS         (60*60*24*60) // 60 days
+//#define GRAPHENE_DEFAULT_MAX_GOVERNANCE_VOTES_SECONDS         (60*60*24*60) // 60 days
 #define GRAPHENE_DEFAULT_MAX_WITNESSES_VOTED_PER_ACCOUNT      (101)
 #define GRAPHENE_DEFAULT_MAX_WITNESS_INACTIVE_BLOCKS          (28800) // blocks, 1 day if 3 seconds per block
 
+#define GRAPHENE_VIRTUAL_LAP_LENGTH                           (fc::uint128_t::max_value())
+#define GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK      (10000)
+#define GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK         (10000)
+#define GRAPHENE_MAX_RESIGNED_COMMITTEE_VOTES_PER_BLOCK       (10000)
+#define GRAPHENE_MAX_CSAF_COLLECTING_TIME_OFFSET              (300) // 5 minutes
+
 #define GRAPHENE_DEFAULT_BY_VOTE_TOP_WITNESS_PAY_PER_BLOCK    (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1))
 #define GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESS_PAY_PER_BLOCK   (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1))
-#define GRAPHENE_DEFAULT_BY_PLEDGE_WITNESS_PAY_PER_BLOCK      (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1) / 2)
+#define GRAPHENE_DEFAULT_BY_PLEDGE_WITNESS_PAY_PER_BLOCK      (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1))
 #define GRAPHENE_DEFAULT_BY_VOTE_TOP_WITNESSES                (9)
 #define GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESSES               (1)
 #define GRAPHENE_DEFAULT_BY_PLEDGE_WITNESSES                  (1)
 
-#define GRAPHENE_DEFAULT_BUDGET_ADJUST_INTERVAL               (28800*365) // blocks, 1 year if 3 seconds per block
+//#define GRAPHENE_DEFAULT_BUDGET_ADJUST_INTERVAL               (28800*365) // blocks, 1 year if 3 seconds per block
 #define GRAPHENE_DEFAULT_BUDGET_ADJUST_TARGET                 (10 * GRAPHENE_1_PERCENT) // (max_supply - current_supply) * x%
 
 #define GRAPHENE_DEFAULT_COMMITTEE_SIZE                          (5) // number of active committee members
-#define GRAPHENE_DEFAULT_COMMITTEE_UPDATE_INTERVAL               (28800*30) // blocks, 30 days if 3 seconds per block
+//#define GRAPHENE_DEFAULT_COMMITTEE_UPDATE_INTERVAL               (28800*30) // blocks, 30 days if 3 seconds per block
 #define GRAPHENE_DEFAULT_MIN_COMMITTEE_MEMBER_PLEDGE             (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1000))
 #define GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY   (28800) // blocks, 1 day if 3 seconds per block
 #define GRAPHENE_DEFAULT_MAX_COMMITTEE_MEMBERS_VOTED_PER_ACCOUNT (1)
@@ -160,14 +167,6 @@
 #define GRAPHENE_DEFAULT_WITNESS_REPORT_PROSECUTION_PERIOD       (28800) // blocks, 1 day if 3 seconds per block
 #define GRAPHENE_DEFAULT_WITNESS_REPORT_ALLOW_PRE_LAST_BLOCK     (false) // don't allow reporting of blocks earlier than last block
 #define GRAPHENE_DEFAULT_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT  (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1000))
-
-//Constants
-#define GRAPHENE_VIRTUAL_LAP_LENGTH                           (fc::uint128_t::max_value())
-#define GRAPHENE_MIN_GOVERNANCE_VOTING_EXPIRATION_BLOCKS      (28800) // blocks, 1 day if 3 seconds per block
-#define GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK      (10000)
-#define GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK         (10000)
-#define GRAPHENE_MAX_RESIGNED_COMMITTEE_VOTES_PER_BLOCK       (10000)
-#define GRAPHENE_MAX_CSAF_COLLECTING_TIME_OFFSET              (300) // 5 minutes
 
 // committee proposal pass thresholds
 #define GRAPHENE_CPPT_FEE_DEFAULT                                 (uint16_t(5001)) // 50.01%
