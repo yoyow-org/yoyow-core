@@ -564,7 +564,7 @@ void database::pay_order( const account_object& receiver, const asset& receives,
 
 asset database::calculate_market_fee( const asset_object& trade_asset, const asset& trade_amount )
 {
-   assert( trade_asset.id == trade_amount.asset_id );
+   //assert( trade_asset.id == trade_amount.asset_id );
 
    if( !trade_asset.charges_market_fees() )
       return trade_asset.amount(0);

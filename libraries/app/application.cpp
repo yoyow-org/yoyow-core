@@ -58,6 +58,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 
+
 namespace graphene { namespace app {
 using net::item_hash_t;
 using net::item_id;

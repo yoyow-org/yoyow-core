@@ -509,7 +509,7 @@ void update_top_n_authorities( database& db )
          const auto range = bal_idx.equal_range( boost::make_tuple( object_id_type(tha.asset).instance() ) );
          for( const account_balance_object& bal : boost::make_iterator_range( range.first, range.second ) )
          {
-             assert( bal.asset_type == tha.asset );
+             //assert( bal.asset_type == tha.asset );
              if( bal.owner == acct.uid )
                 continue;
              // TODO review

@@ -750,7 +750,7 @@ FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_pledge)
                );
 
-FC_API(graphene::app::database_api,
+FC_API( graphene::app::database_api,
    // Objects
    (get_objects)
 
@@ -836,7 +836,7 @@ FC_API(graphene::app::database_api,
    (list_committee_proposals)
 
    // workers
-   (get_workers_by_account)
+   //(get_workers_by_account)
    // Votes
    (lookup_vote_ids)
 

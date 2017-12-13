@@ -75,7 +75,6 @@ if( WIN32 )
     set( DB_VERSION 60 )
     set( BDB_STATIC_LIBS 1 )
 
-    set( ZLIB_LIBRARIES "" )
     SET( DEFAULT_EXECUTABLE_INSTALL_DIR bin/ )
 
     set(CRYPTO_LIB)
