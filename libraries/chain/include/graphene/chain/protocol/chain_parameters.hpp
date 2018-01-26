@@ -101,7 +101,7 @@ namespace graphene { namespace chain {
       share_type              witness_report_pledge_deduction_amount  = GRAPHENE_DEFAULT_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT;
       uint64_t                platform_min_pledge                     = GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE;
       uint32_t                platform_pledge_release_delay           = GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY;
-      uint8_t                 platform_max_vote_per_account           = GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT;
+      uint16_t                platform_max_vote_per_account           = GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT;
       extensions_type         extensions;
 
       /** defined in fee_schedule.cpp */
@@ -170,5 +170,7 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (witness_report_allow_pre_last_block)
             (witness_report_pledge_deduction_amount)
             (platform_min_pledge)
-            (platform_pledge_release_delay)(platform_max_vote_per_account)(extensions)
+            (platform_pledge_release_delay)
+            (platform_max_vote_per_account)
+            (extensions)
           )

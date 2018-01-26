@@ -261,6 +261,7 @@ void database::initialize_indexes()
    add_index< primary_index<voter_index                                   > >();
    add_index< primary_index<registrar_takeover_index                      > >();
    add_index< primary_index<witness_vote_index                            > >();
+   add_index< primary_index<platform_vote_index                           > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();

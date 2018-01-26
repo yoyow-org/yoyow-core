@@ -43,7 +43,9 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
                  ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
 
    auto available_balance = account_stats->core_balance
-                          - account_stats->core_leased_out;
+                          - account_stats->core_leased_out
+                          - account_stats->total_committee_member_pledge
+                          - account_stats->total_witness_pledge;
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
               ("a",op.account)
@@ -107,7 +109,9 @@ void_result platform_update_evaluator::do_evaluate( const platform_update_operat
                     ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
 
          auto available_balance = account_stats->core_balance
-                                - account_stats->core_leased_out;
+                                - account_stats->core_leased_out
+                                - account_stats->total_committee_member_pledge
+                                - account_stats->total_witness_pledge;
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",op.account)
@@ -351,7 +355,7 @@ void_result platform_vote_update_evaluator::do_apply( const platform_vote_update
       const size_t total_remove = platform_to_remove.size();
       for( uint16_t i = 0; i < total_remove; ++i )
       {
-         //d.adjust_platform_votes( *platform_to_remove[i], -total_votes );
+         d.adjust_platform_votes( *platform_to_remove[i], -total_votes );
          d.remove( *platform_votes_to_remove[i] );
       }
 
@@ -410,8 +414,8 @@ void_result platform_vote_update_evaluator::do_apply( const platform_vote_update
          o.platform_uid      = platform_to_add[i]->owner;
          o.platform_sequence = platform_to_add[i]->sequence;
       });
-      //if( total_votes > 0 )
-         //d.adjust_platform_votes( *platform_to_add[i], total_votes );
+      if( total_votes > 0 )
+         d.adjust_platform_votes( *platform_to_add[i], total_votes );
    }
 
    return void_result();

@@ -79,7 +79,13 @@ namespace graphene { namespace chain {
       platform_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_owner>, member<platform_object, account_uid_type, &platform_object::owner> >,
+         ordered_unique< tag<by_owner>,
+            composite_key<
+               platform_object,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+            >
+         >,
          ordered_unique< tag<by_valid>,
             composite_key<
                platform_object,

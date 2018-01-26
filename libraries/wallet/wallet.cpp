@@ -3416,8 +3416,8 @@ full_account wallet_api::get_full_account(string account_name_or_uid) const
    account_uid_type uid = my->get_account_uid( account_name_or_uid );
    vector<account_uid_type> uids( 1, uid );
    full_account_query_options opt= { true, true, true, true, true, true, true, true, true };
-   const auto& results = my->_remote_db->get_full_accounts_by_uid(uids, opt);
-   return results.at(uid);
+   const auto& results = my->_remote_db->get_full_accounts_by_uid( uids, opt );
+   return results.at( uid );
 }
 
 asset_object wallet_api::get_asset(string asset_name_or_id) const

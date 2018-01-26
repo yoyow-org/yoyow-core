@@ -261,6 +261,7 @@ namespace graphene { namespace chain {
          void reset_witness_by_vote_schedule();
 
          void adjust_witness_votes( const witness_object& witness, share_type delta );
+         void adjust_platform_votes( const platform_object& platform, share_type delta ){};
 
          //////////////////// db_voter.cpp ////////////////////
          void update_voter_effective_votes( const voter_object& voter );
