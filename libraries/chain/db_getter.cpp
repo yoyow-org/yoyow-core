@@ -231,15 +231,38 @@ const registrar_takeover_object* database::find_registrar_takeover_object( accou
       return nullptr;
 }
 
-const platform_object& database::get_platform_by_pid( platform_pid_type pid )const
+const platform_object& database::get_platform_by_uid( account_uid_type pid )const
 {
-   const auto& platforms_by_pid = get_index_type<platform_index>().indices().get<by_pid>();
+   const auto& platforms_by_pid = get_index_type<platform_index>().indices().get<by_owner>();
    auto itr = platforms_by_pid.find(pid);
    FC_ASSERT( itr != platforms_by_pid.end(), "platform ${pid} not found.", ("pid",pid) );
    return *itr;
 }
 
-const post_object& database::get_post_by_pid( platform_pid_type platform,
+const platform_object* database::find_platform_by_uid( account_uid_type uid )const
+{
+   const auto& idx = get_index_type<platform_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, uid ) );
+   if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
+const platform_vote_object* database::find_platform_vote( account_uid_type voter_uid,
+                                                        uint32_t         voter_sequence,
+                                                        account_uid_type platform_uid,
+                                                        uint32_t         platform_sequence )const
+{
+   const auto& idx = get_index_type<platform_vote_index>().indices().get<by_platform_voter_seq>();
+   auto itr = idx.find( std::make_tuple( voter_uid, voter_sequence, platform_uid, platform_sequence ) );
+   if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
+const post_object& database::get_post_by_pid( account_uid_type platform,
                                               account_uid_type poster,
                                               post_pid_type post_pid )const
 {
@@ -251,7 +274,7 @@ const post_object& database::get_post_by_pid( platform_pid_type platform,
    return *itr;
 }
 
-const post_object* database::find_post_by_pid( platform_pid_type platform,
+const post_object* database::find_post_by_pid( account_uid_type platform,
                                                account_uid_type poster,
                                                post_pid_type post_pid )const
 {
@@ -262,6 +285,8 @@ const post_object* database::find_post_by_pid( platform_pid_type platform,
    else
       return nullptr;
 }
+
+
 
 
 } }

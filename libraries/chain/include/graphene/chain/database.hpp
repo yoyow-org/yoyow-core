@@ -329,12 +329,17 @@ namespace graphene { namespace chain {
          const registrar_takeover_object& get_registrar_takeover_object( account_uid_type uid )const;
          const registrar_takeover_object* find_registrar_takeover_object( account_uid_type uid )const;
 
-         const platform_object& get_platform_by_pid( platform_pid_type pid )const;
+         const platform_object& get_platform_by_uid( account_uid_type pid )const;
+         const platform_object* find_platform_by_uid( account_uid_type pid )const;
+         const platform_vote_object* find_platform_vote( account_uid_type voter_uid,
+                                                        uint32_t         voter_sequence,
+                                                        account_uid_type platform_uid,
+                                                        uint32_t         platform_sequence )const;
 
-         const post_object& get_post_by_pid( platform_pid_type platform,
+         const post_object& get_post_by_pid( account_uid_type platform,
                                              account_uid_type poster,
                                              post_pid_type post_pid )const;
-         const post_object* find_post_by_pid( platform_pid_type platform,
+         const post_object* find_post_by_pid( account_uid_type platform,
                                               account_uid_type poster,
                                               post_pid_type post_pid )const;
 
@@ -533,6 +538,8 @@ namespace graphene { namespace chain {
          void execute_committee_proposals();
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true );
          void check_invariants();
+         void release_platform_pledges();
+         void clear_resigned_platform_votes();
 
          ///Steps performed only at maintenance intervals
          ///@{

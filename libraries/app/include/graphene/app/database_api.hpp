@@ -398,7 +398,7 @@ class database_api
        * @param post_pid pid of the post
        * @return The post corresponding to the provided parameters.
        */
-      optional<post_object> get_post( const platform_pid_type platform_pid,
+      optional<post_object> get_post( const account_uid_type platform_uid,
                                       const account_uid_type poster_uid,
                                       const post_pid_type post_pid )const;
 
@@ -412,7 +412,7 @@ class database_api
        */
       // TODO may need a flag to fetch root posts only, or non-root posts only, or both
       // FIXME if limit is 100, will be buggy when too many posts in same second
-      vector<post_object> get_posts_by_platform_poster( const platform_pid_type platform_pid,
+      vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_uid,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;
@@ -426,7 +426,7 @@ class database_api
        * @return posts corresponding to the provided parameters, ordered by create time, newest first
        */
        // FIXME if limit is 100, will be buggy when too many posts in same second
-       vector<post_object> get_posts_by_parent( const platform_pid_type platform_pid,
+       vector<post_object> get_posts_by_parent( const account_uid_type platform_uid,
                                       const optional<std::pair<account_uid_type, post_pid_type>> parent,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;

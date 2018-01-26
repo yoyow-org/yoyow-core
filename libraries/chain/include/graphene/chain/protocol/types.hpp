@@ -168,6 +168,7 @@ namespace graphene { namespace chain {
       impl_account_statistics_object_type,
       impl_voter_object_type,
       impl_witness_vote_object_type,
+      impl_platform_vote_object_type,
       impl_committee_member_vote_object_type,
       impl_registrar_takeover_object_type,
       impl_csaf_lease_object_type,
@@ -231,6 +232,7 @@ namespace graphene { namespace chain {
    class account_statistics_object;
    class voter_object;
    class witness_vote_object;
+   class platform_vote_object;
    class committee_member_vote_object;
    class registrar_takeover_object;
    class csaf_lease_object;
@@ -252,6 +254,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_account_statistics_object_type,account_statistics_object>                account_statistics_id_type;
    typedef object_id< implementation_ids, impl_voter_object_type,            voter_object>                              voter_id_type;
    typedef object_id< implementation_ids, impl_witness_vote_object_type,     witness_vote_object>                       witness_vote_id_type;
+   typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
    typedef object_id< implementation_ids, impl_committee_member_vote_object_type,     committee_member_vote_object>     committee_member_vote_id_type;
    typedef object_id< implementation_ids, impl_registrar_takeover_object_type, registrar_takeover_object>               registrar_takeover_id_type;
    typedef object_id< implementation_ids, impl_csaf_lease_object_type,       csaf_lease_object>                         csaf_lease_id_type;
@@ -396,6 +399,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_account_statistics_object_type)
                  (impl_voter_object_type)
                  (impl_witness_vote_object_type)
+                 (impl_platform_vote_object_type)
                  (impl_committee_member_vote_object_type)
                  (impl_registrar_takeover_object_type)
                  (impl_csaf_lease_object_type)
@@ -438,6 +442,7 @@ FC_REFLECT_TYPENAME( graphene::chain::account_balance_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::account_statistics_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::voter_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::witness_vote_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::platform_vote_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::registrar_takeover_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::csaf_lease_id_type )

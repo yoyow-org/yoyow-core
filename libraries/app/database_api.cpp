@@ -102,14 +102,14 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
 
       // Platforms and posts
-      optional<post_object> get_post( const platform_pid_type platform_pid,
+      optional<post_object> get_post( const account_uid_type platform_uid,
                                       const account_uid_type poster_uid,
                                       const post_pid_type post_pid )const;
-      vector<post_object> get_posts_by_platform_poster( const platform_pid_type platform_pid,
+      vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_uid,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;
-      vector<post_object> get_posts_by_parent( const platform_pid_type platform_pid,
+      vector<post_object> get_posts_by_parent( const account_uid_type platform_uid,
                                       const optional<std::pair<account_uid_type, post_pid_type>> parent,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;
@@ -991,33 +991,33 @@ vector<csaf_lease_object> database_api_impl::get_csaf_leases_by_to( const accoun
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-optional<post_object> database_api::get_post( const platform_pid_type platform_pid,
+optional<post_object> database_api::get_post( const account_uid_type platform_uid,
                                               const account_uid_type poster_uid,
                                               const post_pid_type post_pid )const
 {
-   return my->get_post( platform_pid, poster_uid, post_pid );
+   return my->get_post( platform_uid, poster_uid, post_pid );
 }
 
-optional<post_object> database_api_impl::get_post( const platform_pid_type platform_pid,
+optional<post_object> database_api_impl::get_post( const account_uid_type platform_uid,
                                                    const account_uid_type poster_uid,
                                                    const post_pid_type post_pid )const
 {
-   if( auto o = _db.find_post_by_pid( platform_pid, poster_uid, post_pid ) )
+   if( auto o = _db.find_post_by_pid( platform_uid, poster_uid, post_pid ) )
    {
       return *o;
    }
    return {};
 }
 
-vector<post_object> database_api::get_posts_by_platform_poster( const platform_pid_type platform_pid,
+vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_uid,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const
 {
-   return my->get_posts_by_platform_poster( platform_pid, poster, create_time_range, limit );
+   return my->get_posts_by_platform_poster( platform_uid, poster, create_time_range, limit );
 }
 
-vector<post_object> database_api_impl::get_posts_by_platform_poster( const platform_pid_type platform_pid,
+vector<post_object> database_api_impl::get_posts_by_platform_poster( const account_uid_type platform_uid,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const
@@ -1036,8 +1036,8 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const platf
       const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_poster_create_time>();
 
       // index is latest first, query range is ( earliest, latest ]
-      auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, *poster, max_time ) );
-      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, *poster, min_time ) );
+      auto itr = post_idx.lower_bound( std::make_tuple( platform_uid, *poster, max_time ) );
+      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_uid, *poster, min_time ) );
 
       while( itr != itr_end && count < limit )
       {
@@ -1051,8 +1051,8 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const platf
       const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_create_time>();
 
       // index is latest first, query range is ( earliest, latest ]
-      auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, max_time ) );
-      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, min_time ) );
+      auto itr = post_idx.lower_bound( std::make_tuple( platform_uid, max_time ) );
+      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_uid, min_time ) );
 
       while( itr != itr_end && count < limit )
       {
@@ -1065,15 +1065,15 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const platf
    return result;
 }
 
-vector<post_object> database_api::get_posts_by_parent( const platform_pid_type platform_pid,
+vector<post_object> database_api::get_posts_by_parent( const account_uid_type platform_uid,
                                       const optional<std::pair<account_uid_type, post_pid_type>> parent,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const
 {
-   return my->get_posts_by_parent( platform_pid, parent, create_time_range, limit );
+   return my->get_posts_by_parent( platform_uid, parent, create_time_range, limit );
 }
 
-vector<post_object> database_api_impl::get_posts_by_parent( const platform_pid_type platform_pid,
+vector<post_object> database_api_impl::get_posts_by_parent( const account_uid_type platform_uid,
                                       const optional<std::pair<account_uid_type, post_pid_type>> parent,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const
@@ -1097,8 +1097,8 @@ vector<post_object> database_api_impl::get_posts_by_parent( const platform_pid_t
 
    uint32_t count = 0;
    // index is latest first, query range is ( earliest, latest ]
-   auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, parent_poster, parent_post_pid, max_time ) );
-   auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, parent_poster, parent_post_pid, min_time ) );
+   auto itr = post_idx.lower_bound( std::make_tuple( platform_uid, parent_poster, parent_post_pid, max_time ) );
+   auto itr_end = post_idx.lower_bound( std::make_tuple( platform_uid, parent_poster, parent_post_pid, min_time ) );
 
    while( itr != itr_end && count < limit )
    {

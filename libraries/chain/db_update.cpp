@@ -1065,6 +1065,13 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                o.witness_report_allow_pre_last_block = *pv.witness_report_allow_pre_last_block;
             if( pv.witness_report_pledge_deduction_amount.valid() )
                o.witness_report_pledge_deduction_amount = *pv.witness_report_pledge_deduction_amount;
+            
+            if( pv.platform_min_pledge.valid() )
+               o.platform_min_pledge = *pv.platform_min_pledge;
+            if( pv.platform_pledge_release_delay.valid() )
+               o.platform_pledge_release_delay = *pv.platform_pledge_release_delay;
+            if( pv.platform_max_vote_per_account.valid() )
+               o.platform_max_vote_per_account = *pv.platform_max_vote_per_account;
          });
       }
 
@@ -1293,6 +1300,60 @@ void database::check_invariants()
       }
    }
    FC_ASSERT( total_committee_members_voted == total_committee_members_voted );
+}
+
+void database::release_platform_pledges()
+{
+   const auto head_num = head_block_num();
+   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_platform_pledge_release>();
+   auto itr = idx.begin();
+   while( itr != idx.end() && itr->platform_pledge_release_block_number <= head_num )
+   {
+      modify( *itr, [&](account_statistics_object& s) {
+         s.total_platform_pledge -= s.releasing_platform_pledge;
+         s.releasing_platform_pledge = 0;
+         s.platform_pledge_release_block_number = -1;
+      });
+      itr = idx.begin();
+   }
+}
+
+void database::clear_resigned_platform_votes()
+{
+   const uint32_t max_votes_to_process = GRAPHENE_MAX_RESIGNED_PLATFORM_VOTES_PER_BLOCK;
+   uint32_t votes_processed = 0;
+   const auto& pla_idx = get_index_type<platform_index>().indices().get<by_valid>();
+   const auto& vote_idx = get_index_type<platform_vote_index>().indices().get<by_platform_owner_seq>();
+   auto pla_itr = pla_idx.begin(); // assume that false < true
+   while( pla_itr != pla_idx.end() && pla_itr->is_valid == false )
+   {
+      auto vote_itr = vote_idx.lower_bound( std::make_tuple( pla_itr->owner, pla_itr->sequence ) );
+      while( vote_itr != vote_idx.end()
+            && vote_itr->platform_uid == pla_itr->owner
+            && vote_itr->platform_sequence == pla_itr->sequence )
+      {
+         const voter_object* voter = find_voter( vote_itr->voter_uid, vote_itr->voter_sequence );
+         modify( *voter, [&]( voter_object& v )
+         {
+            v.number_of_platform_voted -= 1;
+         } );
+
+         auto tmp_itr = vote_itr;
+         ++vote_itr;
+         remove( *tmp_itr );
+
+         votes_processed += 1;
+         if( votes_processed >= max_votes_to_process )
+         {
+            ilog( "On block ${n}, reached threshold while removing votes for resigned platforms", ("n",head_block_num()) );
+            return;
+         }
+      }
+
+      remove( *pla_itr );
+
+      pla_itr = pla_idx.begin();
+   }
 }
 
 } }
