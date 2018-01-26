@@ -37,7 +37,8 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
 
    const auto& global_params = d.get_global_properties().parameters;
    
-   FC_ASSERT( op.pledge.amount >= global_params.platform_min_pledge,
+   if( d.head_block_num() > 0 )
+      FC_ASSERT( op.pledge.amount >= global_params.platform_min_pledge,
                  "Insufficient pledge: provided ${p}, need ${r}",
                  ("p",d.to_pretty_string(op.pledge))
                  ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
