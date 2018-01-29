@@ -269,8 +269,8 @@ const post_object& database::get_post_by_platform( account_uid_type platform,
    const auto& posts_by_pid = get_index_type<post_index>().indices().get<by_post_pid>();
    auto itr = posts_by_pid.find(std::make_tuple(platform,poster,post_pid));
    FC_ASSERT( itr != posts_by_pid.end(),
-              "post ${pid}_${uid}_${post_pid} not found.",
-              ("pid",platform)("uid",poster)("post_pid",post_pid) );
+              "post ${platform}_${uid}_${post_pid} not found.",
+              ("platform",platform)("uid",poster)("post_pid",post_pid) );
    return *itr;
 }
 

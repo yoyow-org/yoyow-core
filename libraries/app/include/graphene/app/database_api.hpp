@@ -393,7 +393,7 @@ class database_api
 
       /**
        * @brief Get a post
-       * @param platform_owner pid of the platform
+       * @param platform_owner uid of the platform
        * @param poster_uid UID of the poster
        * @param post_pid pid of the post
        * @return The post corresponding to the provided parameters.
@@ -404,7 +404,7 @@ class database_api
 
       /**
        * @brief Get posts by platform plus poster
-       * @param platform_owner pid of a platform
+       * @param platform_owner uid of a platform
        * @param poster UID of a poster, will query for all posters if omitted
        * @param create_time_range a time range (earliest, latest] to query
        * @param limit Maximum number of posts to fetch (must not exceed 100)
@@ -419,7 +419,7 @@ class database_api
 
       /**
        * @brief Get posts by parent
-       * @param platform_owner pid of a platform
+       * @param platform_owner uid of a platform
        * @param parent a pair of poster UID and post pid of the parent post, will fetch root posts if omitted
        * @param create_time_range a time range (earliest, latest] to query
        * @param limit Maximum number of posts to fetch (must not exceed 100)
