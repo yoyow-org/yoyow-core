@@ -330,17 +330,17 @@ namespace graphene { namespace chain {
          const registrar_takeover_object& get_registrar_takeover_object( account_uid_type uid )const;
          const registrar_takeover_object* find_registrar_takeover_object( account_uid_type uid )const;
 
-         const platform_object& get_platform_by_uid( account_uid_type pid )const;
-         const platform_object* find_platform_by_uid( account_uid_type pid )const;
+         const platform_object& get_platform_by_owner( account_uid_type owner )const;
+         const platform_object* find_platform_by_owner( account_uid_type owner )const;
          const platform_vote_object* find_platform_vote( account_uid_type voter_uid,
                                                         uint32_t         voter_sequence,
-                                                        account_uid_type platform_uid,
+                                                        account_uid_type platform_owner,
                                                         uint32_t         platform_sequence )const;
 
-         const post_object& get_post_by_pid( account_uid_type platform,
+         const post_object& get_post_by_platform( account_uid_type platform,
                                              account_uid_type poster,
                                              post_pid_type post_pid )const;
-         const post_object* find_post_by_pid( account_uid_type platform,
+         const post_object* find_post_by_platform( account_uid_type platform,
                                               account_uid_type poster,
                                               post_pid_type post_pid )const;
 

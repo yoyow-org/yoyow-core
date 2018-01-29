@@ -119,7 +119,7 @@ namespace detail {
       //                                          GRAPHENE_SYMBOL,
       //                                          GRAPHENE_MAX_SHARE_SUPPLY});
 
-      initial_state.initial_platforms.push_back({0,calc_account_uid(90),"YoYoW", "https://yoyow.org/"});
+      initial_state.initial_platforms.push_back({calc_account_uid(90),"YoYoW", "https://yoyow.org/"});
       initial_state.initial_chain_id = fc::sha256::hash( "YOYOW" );
 
       return initial_state;

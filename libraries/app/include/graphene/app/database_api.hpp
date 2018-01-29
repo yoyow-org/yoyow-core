@@ -393,18 +393,18 @@ class database_api
 
       /**
        * @brief Get a post
-       * @param platform_pid pid of the platform
+       * @param platform_owner pid of the platform
        * @param poster_uid UID of the poster
        * @param post_pid pid of the post
        * @return The post corresponding to the provided parameters.
        */
-      optional<post_object> get_post( const account_uid_type platform_uid,
+      optional<post_object> get_post( const account_uid_type platform_owner,
                                       const account_uid_type poster_uid,
                                       const post_pid_type post_pid )const;
 
       /**
        * @brief Get posts by platform plus poster
-       * @param platform_pid pid of a platform
+       * @param platform_owner pid of a platform
        * @param poster UID of a poster, will query for all posters if omitted
        * @param create_time_range a time range (earliest, latest] to query
        * @param limit Maximum number of posts to fetch (must not exceed 100)
@@ -412,21 +412,21 @@ class database_api
        */
       // TODO may need a flag to fetch root posts only, or non-root posts only, or both
       // FIXME if limit is 100, will be buggy when too many posts in same second
-      vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_uid,
+      vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;
 
       /**
        * @brief Get posts by parent
-       * @param platform_pid pid of a platform
+       * @param platform_owner pid of a platform
        * @param parent a pair of poster UID and post pid of the parent post, will fetch root posts if omitted
        * @param create_time_range a time range (earliest, latest] to query
        * @param limit Maximum number of posts to fetch (must not exceed 100)
        * @return posts corresponding to the provided parameters, ordered by create time, newest first
        */
        // FIXME if limit is 100, will be buggy when too many posts in same second
-       vector<post_object> get_posts_by_parent( const account_uid_type platform_uid,
+       vector<post_object> get_posts_by_parent( const account_uid_type platform_owner,
                                       const optional<std::pair<account_uid_type, post_pid_type>> parent,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;

@@ -115,7 +115,7 @@ namespace graphene { namespace chain {
 
          account_uid_type    voter_uid = 0;
          uint32_t            voter_sequence;
-         account_uid_type    platform_uid = 0;
+         account_uid_type    platform_owner = 0;
          uint32_t            platform_sequence;
    };
 
@@ -134,14 +134,14 @@ namespace graphene { namespace chain {
                platform_vote_object,
                member< platform_vote_object, account_uid_type, &platform_vote_object::voter_uid>,
                member< platform_vote_object, uint32_t, &platform_vote_object::voter_sequence>,
-               member< platform_vote_object, account_uid_type, &platform_vote_object::platform_uid>,
+               member< platform_vote_object, account_uid_type, &platform_vote_object::platform_owner>,
                member< platform_vote_object, uint32_t, &platform_vote_object::platform_sequence>
             >
          >,
          ordered_unique< tag<by_platform_owner_seq>,
             composite_key<
                platform_vote_object,
-               member< platform_vote_object, account_uid_type, &platform_vote_object::platform_uid>,
+               member< platform_vote_object, account_uid_type, &platform_vote_object::platform_owner>,
                member< platform_vote_object, uint32_t, &platform_vote_object::platform_sequence>,
                member< platform_vote_object, account_uid_type, &platform_vote_object::voter_uid>,
                member< platform_vote_object, uint32_t, &platform_vote_object::voter_sequence>
@@ -274,7 +274,7 @@ FC_REFLECT_DERIVED( graphene::chain::platform_object,
 FC_REFLECT_DERIVED( graphene::chain::platform_vote_object, (graphene::db::object),
                     (voter_uid)
                     (voter_sequence)
-                    (platform_uid)
+                    (platform_owner)
                     (platform_sequence)
                   )
 

@@ -1329,7 +1329,7 @@ void database::clear_resigned_platform_votes()
    {
       auto vote_itr = vote_idx.lower_bound( std::make_tuple( pla_itr->owner, pla_itr->sequence ) );
       while( vote_itr != vote_idx.end()
-            && vote_itr->platform_uid == pla_itr->owner
+            && vote_itr->platform_owner == pla_itr->owner
             && vote_itr->platform_sequence == pla_itr->sequence )
       {
          const voter_object* voter = find_voter( vote_itr->voter_uid, vote_itr->voter_sequence );

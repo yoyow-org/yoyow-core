@@ -122,7 +122,6 @@ struct genesis_state_type {
       share_type daily_pay;
    };
    struct initial_platform_type {
-      platform_pid_type pid;
       /// Must correspond to one of the initial accounts
       account_uid_type owner;
       string name;

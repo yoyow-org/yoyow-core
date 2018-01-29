@@ -53,7 +53,7 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
               ("b",d.to_pretty_core_string(available_balance))
               ("r",d.to_pretty_string(op.pledge)) );
 
-   const platform_object* maybe_found = d.find_platform_by_uid( op.account );
+   const platform_object* maybe_found = d.find_platform_by_owner( op.account );
    FC_ASSERT( maybe_found == nullptr, "This account already has a platform" );
 
    return void_result();
@@ -96,7 +96,7 @@ void_result platform_update_evaluator::do_evaluate( const platform_update_operat
 { try {
    database& d = db();
    account_stats = &d.get_account_statistics_by_uid( op.account );
-   platform_obj   = &d.get_platform_by_uid( op.account );
+   platform_obj   = &d.get_platform_by_owner( op.account );
 
    const auto& global_params = d.get_global_properties().parameters;
 
@@ -237,12 +237,12 @@ void_result platform_vote_update_evaluator::do_evaluate( const platform_vote_upd
 
    for( const auto uid : op.platform_to_remove )
    {
-      const platform_object& po = d.get_platform_by_uid( uid );
+      const platform_object& po = d.get_platform_by_owner( uid );
       platform_to_remove.push_back( &po );
    }
    for( const auto uid : op.platform_to_add )
    {
-      const platform_object& po = d.get_platform_by_uid( uid );
+      const platform_object& po = d.get_platform_by_owner( uid );
       platform_to_add.push_back( &po );
    }
 
@@ -287,7 +287,7 @@ void_result platform_vote_update_evaluator::do_evaluate( const platform_vote_upd
       auto itr = idx.lower_bound( std::make_tuple( op.voter, voter_obj->sequence ) );
       while( itr != idx.end() && itr->voter_uid == op.voter && itr->voter_sequence == voter_obj->sequence )
       {
-         const platform_object* platform = d.find_platform_by_uid( itr->platform_uid );
+         const platform_object* platform = d.find_platform_by_owner( itr->platform_owner );
          if( platform == nullptr || platform->sequence != itr->platform_sequence )
          {
             invalid_platform_votes_to_remove.push_back( &(*itr) );
@@ -412,7 +412,7 @@ void_result platform_vote_update_evaluator::do_apply( const platform_vote_update
       d.create<platform_vote_object>( [&]( platform_vote_object& o ){
          o.voter_uid        = op.voter;
          o.voter_sequence   = voter_obj->sequence;
-         o.platform_uid      = platform_to_add[i]->owner;
+         o.platform_owner      = platform_to_add[i]->owner;
          o.platform_sequence = platform_to_add[i]->sequence;
       });
       if( total_votes > 0 )
@@ -429,7 +429,7 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 
    const database& d = db();
 
-   d.get_platform_by_uid( op.platform ); // make sure pid exists
+   d.get_platform_by_owner( op.platform ); // make sure pid exists
    poster_account = &d.get_account_by_uid( op.poster );
 
    if( op.parent_post_pid.valid() )
@@ -437,12 +437,12 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
    else
       FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
 
-   post = d.find_post_by_pid( op.platform, op.poster, op.post_pid );
+   post = d.find_post_by_platform( op.platform, op.poster, op.post_pid );
 
    if( post == nullptr ) // new post
    {
       if( op.parent_post_pid.valid() ) // is reply
-         parent_post = &d.get_post_by_pid( op.platform, *op.parent_poster, *op.parent_post_pid );
+         parent_post = &d.get_post_by_platform( op.platform, *op.parent_poster, *op.parent_post_pid );
       else
          parent_post = nullptr;
    }
