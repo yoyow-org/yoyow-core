@@ -102,6 +102,12 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
 
       // Platforms and posts
+      vector<optional<platform_object>> get_platforms( const vector<account_uid_type>& platform_uids )const;
+      fc::optional<platform_object> get_platform_by_account( account_uid_type account )const;
+      vector<platform_object> lookup_platforms( const account_uid_type lower_bound_uid,
+                                               uint32_t limit,
+                                               data_sorting_type order_by )const;
+      uint64_t get_platform_count()const;
       optional<post_object> get_post( const account_uid_type platform_owner,
                                       const account_uid_type poster_uid,
                                       const post_pid_type post_pid )const;
@@ -991,6 +997,115 @@ vector<csaf_lease_object> database_api_impl::get_csaf_leases_by_to( const accoun
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
+vector<optional<platform_object>> database_api::get_platforms( const vector<account_uid_type>& account_uids )const
+{
+    return my->get_platforms( account_uids );
+}
+
+vector<optional<platform_object>> database_api_impl::get_platforms(const vector<account_uid_type>& platform_uids)const
+{
+   vector<optional<platform_object>> result; result.reserve(platform_uids.size());
+   std::transform(platform_uids.begin(), platform_uids.end(), std::back_inserter(result),
+                  [this](account_uid_type uid) -> optional<platform_object> {
+                    if( auto o = _db.find_platform_by_owner( uid ) )
+                        return *o;
+                    return {};
+                });
+   return result;
+}
+
+      
+fc::optional<platform_object> database_api::get_platform_by_account( account_uid_type account )const
+{
+    return my->get_platform_by_account( account );
+}
+
+fc::optional<platform_object> database_api_impl::get_platform_by_account(account_uid_type account) const
+{
+   const auto& idx = _db.get_index_type<platform_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, account ) );
+   if( itr != idx.end() )
+      return *itr;
+   return {};
+}
+
+      
+vector<platform_object> database_api::lookup_platforms( const account_uid_type lower_bound_uid,
+                                              uint32_t limit, data_sorting_type order_by )const
+{
+    return my->lookup_platforms( lower_bound_uid, limit, order_by );
+}
+
+vector<platform_object> database_api_impl::lookup_platforms( const account_uid_type lower_bound_uid, 
+                                                            uint32_t limit,
+                                                            data_sorting_type order_by )const
+{
+   FC_ASSERT( limit <= 100 );
+   vector<platform_object> result;
+
+   if( order_by == order_by_uid )
+   {
+      const auto& idx = _db.get_index_type<platform_index>().indices().get<by_valid>();
+      auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_uid ) );
+      while( itr != idx.end() && limit > 0 ) // assume false < true
+      {
+         result.push_back( *itr );
+         ++itr;
+         --limit;
+      }
+   }
+   else
+   {
+      account_uid_type new_lower_bound_uid = lower_bound_uid;
+      const platform_object* lower_bound_obj = _db.find_platform_by_owner( lower_bound_uid );
+      uint64_t lower_bound_shares = -1;
+      if( lower_bound_obj == nullptr )
+         new_lower_bound_uid = 0;
+      else
+      {
+         if( order_by == order_by_votes )
+            lower_bound_shares = lower_bound_obj->total_votes;
+         else // by pledge
+            lower_bound_shares = lower_bound_obj->pledge;
+      }
+
+      if( order_by == order_by_votes )
+      {
+         const auto& idx = _db.get_index_type<platform_index>().indices().get<by_platform_votes>();
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
+         while( itr != idx.end() && limit > 0 ) // assume false < true
+         {
+            result.push_back( *itr );
+            ++itr;
+            --limit;
+         }
+      }
+      else // by pledge
+      {
+         const auto& idx = _db.get_index_type<platform_index>().indices().get<by_platform_pledge>();
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
+         while( itr != idx.end() && limit > 0 ) // assume false < true
+         {
+            result.push_back( *itr );
+            ++itr;
+            --limit;
+         }
+      }
+   }
+
+   return result;
+}
+
+uint64_t database_api::get_platform_count()const
+{
+    return my->get_platform_count();
+}
+
+uint64_t database_api_impl::get_platform_count()const
+{
+   return _db.get_index_type< platform_index >().indices().get< by_valid >().count( true );
+}
+
 optional<post_object> database_api::get_post( const account_uid_type platform_owner,
                                               const account_uid_type poster_uid,
                                               const post_pid_type post_pid )const
@@ -1623,6 +1738,8 @@ vector<market_trade> database_api_impl::get_trade_history( const string& base,
 
    return result;
 }
+
+
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //

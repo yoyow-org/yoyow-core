@@ -1456,6 +1456,46 @@ public:
       FC_CAPTURE_AND_RETHROW( (owner_account) )
    }
 
+   platform_object get_platform(string owner_account)
+   {
+      try
+      {
+         fc::optional<platform_id_type> platform_id = maybe_id<platform_id_type>(owner_account);
+         if (platform_id)
+         {
+            std::vector<object_id_type> ids_to_get;
+            ids_to_get.push_back(*platform_id);
+            fc::variants objects = _remote_db->get_objects( ids_to_get );
+            for( const variant& obj : objects )
+            {
+               optional<platform_object> wo;
+               from_variant( obj, wo );
+               if( wo )
+                  return *wo;
+            }
+            FC_THROW("No platform is registered for id ${id}", ("id", owner_account));
+         }
+         else
+         {
+            // then maybe it's the owner account
+            try
+            {
+               account_uid_type owner_account_uid = get_account_uid(owner_account);
+               fc::optional<platform_object> platform = _remote_db->get_platform_by_account(owner_account_uid);
+               if (platform)
+                  return *platform;
+               else
+                  FC_THROW("No platform is registered for account ${account}", ("account", owner_account));
+            }
+            catch (const fc::exception&)
+            {
+               FC_THROW("No account or platform named ${account}", ("account", owner_account));
+            }
+         }
+      }
+      FC_CAPTURE_AND_RETHROW( (owner_account) )
+   }
+
    committee_member_object get_committee_member(string owner_account)
    {
       try
@@ -1552,6 +1592,78 @@ public:
 
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
+
+   signed_transaction create_platform(string owner_account,
+                                        string name,
+                                        string pledge_amount,
+                                        string pledge_asset_symbol,
+                                        string url,
+                                        string extra_data,
+                                        bool broadcast )
+{
+   try {
+      account_object platform_account = get_account( owner_account );
+
+      if( _remote_db->get_platform_by_account( platform_account.uid ) )
+         FC_THROW( "Account ${owner_account} is already a platform", ( "owner_account", owner_account ) );
+
+      fc::optional<asset_object> asset_obj = get_asset( pledge_asset_symbol );
+      FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ( "asset", pledge_asset_symbol ) );
+
+      platform_create_operation platform_create_op;
+      platform_create_op.account = platform_account.uid;
+      platform_create_op.name = name;
+      platform_create_op.pledge = asset_obj->amount_from_string( pledge_amount );
+      platform_create_op.extra_data = extra_data;
+      platform_create_op.url = url;
+
+      signed_transaction tx;
+      tx.operations.push_back( platform_create_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(name)(pledge_amount)(pledge_asset_symbol)(url)(extra_data)(broadcast) )
+}
+
+signed_transaction update_platform(string platform_account,
+                                        optional<string> name,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
+                                        optional<string> extra_data,
+                                        bool broadcast )
+
+{
+   try {
+      FC_ASSERT( pledge_amount.valid() == pledge_asset_symbol.valid(),
+                 "Pledge amount and asset symbol should be both set or both not set" );
+      fc::optional<asset> pledge;
+      if( pledge_amount.valid() )
+      {
+         fc::optional<asset_object> asset_obj = get_asset( *pledge_asset_symbol );
+         FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ( "asset", *pledge_asset_symbol ) );
+         pledge = asset_obj->amount_from_string( *pledge_amount );
+      }
+
+      platform_object platform = get_platform( platform_account );
+      account_object platform_owner = get_account( platform.owner );
+
+      platform_update_operation platform_update_op;
+      platform_update_op.account = platform_owner.uid;
+      platform_update_op.new_name = name;
+      platform_update_op.new_pledge = pledge;
+      platform_update_op.new_url = url;
+      platform_update_op.new_extra_data = extra_data;
+
+      signed_transaction tx;
+      tx.operations.push_back( platform_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (platform_account)(name)(pledge_amount)(pledge_asset_symbol)(url)(extra_data)(broadcast) )
+}
 
    signed_transaction update_committee_member(
                                         string committee_member_account,
@@ -1942,6 +2054,34 @@ public:
 
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (voting_account)(witnesses_to_add)(witnesses_to_remove)(broadcast) ) }
+
+   signed_transaction update_platform_votes(string voting_account,
+                                          flat_set<string> platforms_to_add,
+                                          flat_set<string> platforms_to_remove,
+                                          bool broadcast )
+   { try {
+      account_object voting_account_object = get_account( voting_account );
+      flat_set<account_uid_type> uids_to_add;
+      flat_set<account_uid_type> uids_to_remove;
+      uids_to_add.reserve( platforms_to_add.size() );
+      uids_to_remove.reserve( platforms_to_remove.size() );
+      for( string pla : platforms_to_add )
+         uids_to_add.insert( get_platform( pla ).owner );
+      for( string pla : platforms_to_remove )
+         uids_to_remove.insert( get_platform( pla ).owner );
+
+      platform_vote_update_operation platform_vote_update_op;
+      platform_vote_update_op.voter = voting_account_object.uid;
+      platform_vote_update_op.platform_to_add = uids_to_add;
+      platform_vote_update_op.platform_to_remove = uids_to_remove;
+
+      signed_transaction tx;
+      tx.operations.push_back( platform_vote_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (voting_account)(platforms_to_add)(platforms_to_remove)(broadcast) ) }
 
    signed_transaction update_committee_member_votes(string voting_account,
                                           flat_set<string> committee_members_to_add,
@@ -3733,6 +3873,11 @@ witness_object wallet_api::get_witness(string owner_account)
    return my->get_witness(owner_account);
 }
 
+platform_object wallet_api::get_platform(string owner_account)
+{
+   return my->get_platform(owner_account);
+}
+
 committee_member_object wallet_api::get_committee_member(string owner_account)
 {
    return my->get_committee_member(owner_account);
@@ -3747,6 +3892,37 @@ signed_transaction wallet_api::create_witness(string owner_account,
 {
    return my->create_witness_with_details(owner_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, broadcast);
    //return my->create_witness(owner_account, url, broadcast);
+}
+
+signed_transaction wallet_api::create_platform(string owner_account,
+                                        string name,
+                                        string pledge_amount,
+                                        string pledge_asset_symbol,
+                                        string url,
+                                        string extra_data,
+                                        bool broadcast )
+{
+   return my->create_platform( owner_account, name, pledge_amount, pledge_asset_symbol, url, extra_data, broadcast );
+}
+
+signed_transaction wallet_api::update_platform(string platform_account,
+                                        optional<string> name,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
+                                        optional<string> extra_data,
+                                        bool broadcast )
+
+{
+   return my->update_platform( platform_account, name, pledge_amount, pledge_asset_symbol, url, extra_data, broadcast );
+}
+
+signed_transaction wallet_api::update_platform_votes(string voting_account,
+                                          flat_set<string> platforms_to_add,
+                                          flat_set<string> platforms_to_remove,
+                                          bool broadcast )
+{
+   return my->update_platform_votes( voting_account, platforms_to_add, platforms_to_remove, broadcast );
 }
 
 signed_transaction wallet_api::create_worker(

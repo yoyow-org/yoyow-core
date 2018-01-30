@@ -392,6 +392,35 @@ class database_api
       /////////////////////////
 
       /**
+       * @brief Get a list of platforms by account UID
+       * @param account_uids account UIDs of the platforms to retrieve
+       * @return The platforms corresponding to the provided account UIDs
+       */
+      vector<optional<platform_object>> get_platforms(const vector<account_uid_type>& account_uids)const;
+
+      /**
+       * @brief Get the platform owned by a given account
+       * @param account The UID of the account whose platform should be retrieved
+       * @return The platform object, or null if the account does not have a platform
+       */
+      fc::optional<platform_object> get_platform_by_account(account_uid_type account)const;
+
+      /**
+       * @brief Query for registered platforms
+       * @param lower_bound_uid Lower bound of the first uid to return
+       * @param limit Maximum number of results to return -- must not exceed 100
+       * @param order_by how the returned list will be sorted
+       * @return A list of platform objects
+       */
+      vector<platform_object> lookup_platforms(const account_uid_type lower_bound_uid,
+                                              uint32_t limit, data_sorting_type order_by)const;
+
+      /**
+       * @brief Get the total number of platforms registered with the blockchain
+       */
+      uint64_t get_platform_count()const;
+
+      /**
        * @brief Get a post
        * @param platform_owner uid of the platform
        * @param poster_uid UID of the poster
@@ -586,6 +615,7 @@ class database_api
        * @brief Get the total number of witnesses registered with the blockchain
        */
       uint64_t get_witness_count()const;
+
 
       /////////////////////////////////////
       // Committee members and proposals //
@@ -794,6 +824,10 @@ FC_API( graphene::app::database_api,
    (get_csaf_leases_by_to)
 
    // Platforms and posts
+   (get_platforms)
+   (get_platform_by_account)
+   (lookup_platforms)
+   (get_platform_count)
    (get_post)
    (get_posts_by_platform_poster)
    (get_posts_by_parent)

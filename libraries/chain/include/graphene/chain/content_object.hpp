@@ -58,8 +58,8 @@ namespace graphene { namespace chain {
          string url;
 
          uint64_t pledge;
-         
-         //其他信息（API接口，其他URL，平台介绍等）
+
+         //其他信息（api接口地址，其他URL，平台介绍等）
          string extra_data = "{}";
 
          time_point_sec create_time;
@@ -71,6 +71,8 @@ namespace graphene { namespace chain {
 
    struct by_owner{};
    struct by_valid{};
+   struct by_platform_pledge;
+   struct by_platform_votes;
 
    /**
     * @ingroup object_index
@@ -92,6 +94,36 @@ namespace graphene { namespace chain {
                member<platform_object, bool, &platform_object::is_valid>,
                member<platform_object, account_uid_type, &platform_object::owner>,
                member<platform_object, uint32_t, &platform_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_platform_votes>, // for API
+            composite_key<
+               platform_object,
+               member<platform_object, bool, &platform_object::is_valid>,
+               member<platform_object, uint64_t, &platform_object::total_votes>,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+            >,
+            composite_key_compare<
+               std::less< bool >,
+               std::greater< uint64_t >,
+               std::less< account_uid_type >,
+               std::less< uint32_t >
+            >
+         >,
+         ordered_unique< tag<by_platform_pledge>, // for API
+            composite_key<
+               platform_object,
+               member<platform_object, bool, &platform_object::is_valid>,
+               member<platform_object, uint64_t, &platform_object::pledge>,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+            >,
+            composite_key_compare<
+               std::less< bool >,
+               std::greater< uint64_t >,
+               std::less< account_uid_type >,
+               std::less< uint32_t >
             >
          >
       >
