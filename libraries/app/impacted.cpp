@@ -60,8 +60,13 @@ struct get_impacted_account_uid_visitor
    void operator()( const post_operation& op )
    {
       //_impacted.insert( op.poster ); // fee payer
-      if( op.parent_poster.valid() )
-         _impacted.insert( *(op.parent_poster) );
+      //if( op.parent_poster.valid() )
+      //   _impacted.insert( *(op.parent_poster) );
+   }
+
+   void operator()( const post_update_operation& op )
+   {
+      // TODO review
    }
 
    void operator()( const account_manage_operation& op )

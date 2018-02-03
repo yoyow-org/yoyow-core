@@ -115,9 +115,28 @@ void post_operation::validate()const
 {
    validate_op_fee( fee, "post " );
    validate_account_uid( poster, "poster " );
-   FC_ASSERT( parent_poster.valid() == parent_post_pid.valid(), "parent poster and pid should be both presented or both not" );
-   if( parent_poster.valid() )
-      validate_account_uid( *parent_poster, "parent poster " );
+   validate_account_uid( platform, "platform" );
+   FC_ASSERT( (origin_poster.valid() == origin_post_pid.valid()) == origin_platform.valid(), "origin poster and origin post pid and origin platform should be both presented or both not" );
+   if( origin_poster.valid() )
+      validate_account_uid( *origin_poster, "origin poster " );
+   if( origin_platform.valid() )
+      validate_account_uid( *origin_platform, "origin platform " );
+}
+
+void post_update_operation::validate()const
+{
+   validate_op_fee( fee, "post " );
+   validate_account_uid( poster, "poster " );
+   validate_account_uid( platform, "platform" );
+}
+
+share_type post_update_operation::calculate_fee( const fee_parameters_type& schedule )const
+{
+    share_type core_fee_required = schedule.fee;
+    core_fee_required += calculate_data_fee( fc::raw::pack_size(extra_data), schedule.price_per_kbyte );
+    core_fee_required += calculate_data_fee( fc::raw::pack_size(title), schedule.price_per_kbyte );
+    core_fee_required += calculate_data_fee( fc::raw::pack_size(body), schedule.price_per_kbyte );
+    return core_fee_required;
 }
 
 

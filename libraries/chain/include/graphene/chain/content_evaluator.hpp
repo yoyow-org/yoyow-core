@@ -80,7 +80,20 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
          const account_object* poster_account;
          const post_object*    post;
-         const post_object*    parent_post;
+         const post_object*    origin_post;
+         const account_statistics_object* account_stats = nullptr;
+   };
+
+   class post_update_evaluator : public evaluator<post_update_evaluator>
+   {
+      public:
+         typedef post_update_operation operation_type;
+
+         void_result do_evaluate( const operation_type& o );
+         object_id_type do_apply( const operation_type& o );
+
+         const account_object* poster_account;
+         const post_object*    post;
    };
 
 } } // graphene::chain

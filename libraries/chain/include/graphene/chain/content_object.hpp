@@ -201,16 +201,19 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = post_object_type;
 
          /// The platform's pid.
-         account_uid_type            platform;
+         account_uid_type             platform;
          /// The poster's uid.
          account_uid_type             poster;
          /// The post's pid.
          post_pid_type                post_pid;
-         /// The post's parent poster uid if it's not root post.
-         optional<account_uid_type>   parent_poster;
-         /// The post's parent post pid if it's not root post.
-         optional<post_pid_type>      parent_post_pid;
+         /// 如果是转文，此值要求为源文作者uid
+         optional<account_uid_type>   origin_poster;
+         /// 如果是转文，此值要求为源文id
+         optional<post_pid_type>      origin_post_pid;
+         /// 如果是转文，此值要求为源文所在平台
+         optional<account_uid_type>   origin_platform;
 
+         /// 文章扩展信息：标签（TAG）、引用（链接、图片、视频、广告）、管理信息（置顶、高亮）等
          post_options                 options;
 
          string                       hash_value;
@@ -228,7 +231,6 @@ namespace graphene { namespace chain {
    struct by_post_pid{};
    struct by_platform_create_time{};
    struct by_platform_poster_create_time{};
-   struct by_parent_create_time{};
 
    /**
     * @ingroup object_index
@@ -271,21 +273,6 @@ namespace graphene { namespace chain {
                                    std::greater<time_point_sec>,
                                    std::greater<object_id_type> >
 
-         >,
-         ordered_unique< tag<by_parent_create_time>,
-            composite_key<
-               post_object,
-               member< post_object, account_uid_type,           &post_object::platform >,
-               member< post_object, optional<account_uid_type>,  &post_object::parent_poster >,
-               member< post_object, optional<post_pid_type>,     &post_object::parent_post_pid >,
-               member< post_object, time_point_sec,              &post_object::create_time >,
-               member< object,      object_id_type,              &post_object::id>
-            >,
-            composite_key_compare< std::less<account_uid_type>,
-                                   std::less<optional<account_uid_type>>,
-                                   std::less<optional<post_pid_type>>,
-                                   std::greater<time_point_sec>,
-                                   std::greater<object_id_type> >
          >
       >
    > post_multi_index_type;
@@ -312,7 +299,7 @@ FC_REFLECT_DERIVED( graphene::chain::platform_vote_object, (graphene::db::object
 
 FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
-                    (platform)(poster)(post_pid)(parent_poster)(parent_post_pid)
+                    (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
                     (options)
                     (hash_value)(extra_data)(title)(body)
                     (create_time)(last_update_time)

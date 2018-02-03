@@ -172,9 +172,9 @@ namespace graphene { namespace chain {
 
       account_uid_type             platform = 0;
       account_uid_type             poster = 0;
-      post_pid_type                post_pid = 0;
-      optional<account_uid_type>   parent_poster;
-      optional<post_pid_type>      parent_post_pid;
+      optional<account_uid_type>   origin_poster;
+      optional<post_pid_type>      origin_post_pid;
+      optional<account_uid_type>   origin_platform;
 
       post_options                 options;
 
@@ -186,11 +186,56 @@ namespace graphene { namespace chain {
       extensions_type              extensions;
 
       account_uid_type fee_payer_uid()const { return poster; }
+      void             validate()const;
+      share_type       calculate_fee(const fee_parameters_type& k)const;
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         a.insert( poster );    // 要求作者零钱权限
+         a.insert( platform );  // 要求平台零钱权限
+      }
+   };
+
+   /**
+    * @ingroup operations
+    *
+    * @brief update an article
+    *
+    *  Fees are paid by the "poster" account
+    *
+    *  @return n/a
+    */
+   struct post_update_operation : public base_operation
+   {
+      struct fee_parameters_type {
+         uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type                     fee;
+
+      account_uid_type             platform;
+      account_uid_type             poster;
+      post_pid_type                post_pid;
+
+      post_options                 options;
+
+      optional< string >           hash_value;
+      optional< string >           extra_data = "{}"; ///< category, tags and etc
+      optional< string >           title;
+      optional< string >           body;
+
+      extensions_type              extensions;
+
+      account_uid_type fee_payer_uid()const { return poster; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         a.insert( poster );
+         a.insert( poster );    // 要求作者零钱权限
+         a.insert( platform );  // 要求平台零钱权限
       }
    };
 
@@ -210,7 +255,13 @@ FC_REFLECT(graphene::chain::post_options, (extensions) )
 FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::post_operation,
             (fee)
-            (platform)(poster)(post_pid)(parent_poster)(parent_post_pid)
+            (platform)(poster)(origin_poster)(origin_post_pid)(origin_platform)
+            (options)
+            (hash_value)(extra_data)(title)(body)
+            (extensions) )
+FC_REFLECT( graphene::chain::post_update_operation,
+            (fee)
+            (platform)(poster)(post_pid)
             (options)
             (hash_value)(extra_data)(title)(body)
             (extensions) )

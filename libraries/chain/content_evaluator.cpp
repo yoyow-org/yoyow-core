@@ -428,27 +428,31 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 { try {
 
    const database& d = db();
+   account_stats = &d.get_account_statistics_by_uid( op.poster );
 
    d.get_platform_by_owner( op.platform ); // make sure pid exists
    poster_account = &d.get_account_by_uid( op.poster );
 
-   if( op.parent_post_pid.valid() )
-      FC_ASSERT( poster_account->can_reply, "poster ${uid} is not allowed to reply.", ("uid",op.poster) );
-   else
-      FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
+   FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
 
-   post = d.find_post_by_platform( op.platform, op.poster, op.post_pid );
+   post_pid_type pid = account_stats->last_post_sequence + 1;
+
+   post = d.find_post_by_platform( op.platform, op.poster, pid );
 
    if( post == nullptr ) // new post
    {
-      if( op.parent_post_pid.valid() ) // is reply
-         parent_post = &d.get_post_by_platform( op.platform, *op.parent_poster, *op.parent_post_pid );
+      if( op.origin_post_pid.valid() ) // is Reprint
+      {   
+         origin_post = &d.get_post_by_platform( *op.origin_platform, *op.origin_poster, *op.origin_post_pid );
+         if( origin_post == nullptr )
+             FC_THROW( "the origin post not exists." );
+      }
       else
-         parent_post = nullptr;
+         origin_post = nullptr;
    }
    else
    {
-      FC_ASSERT( !op.parent_post_pid.valid(), "should not specify parent when editing." );
+      FC_THROW( "the post already exists." );
    }
 
    return void_result();
@@ -457,41 +461,67 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 
 object_id_type post_evaluator::do_apply( const post_operation& o )
 { try {
-   database& d = db();
+      database& d = db();
 
-   if( post == nullptr ) // new post
-   {
+      post_pid_type pid = account_stats->last_post_sequence + 1;
+
+      d.modify( *account_stats, [&](account_statistics_object& s) {
+         s.last_post_sequence += 1;
+      });
+
       const auto& new_post_object = d.create<post_object>( [&]( post_object& obj )
       {
-         obj.platform         = o.platform;
-         obj.poster           = o.poster;
-         obj.post_pid         = o.post_pid;
-         obj.parent_poster    = o.parent_poster;
-         obj.parent_post_pid  = o.parent_post_pid;
-         obj.options          = o.options;
-         obj.hash_value       = o.hash_value;
-         obj.extra_data       = o.extra_data;
-         obj.title            = o.title;
-         obj.body             = o.body;
-         obj.create_time      = d.head_block_time();
-         obj.last_update_time = d.head_block_time();
+            obj.platform         = o.platform;
+            obj.poster           = o.poster;
+            obj.post_pid         = pid;
+            obj.origin_poster    = o.origin_poster;
+            obj.origin_post_pid  = o.origin_post_pid;
+            obj.origin_platform  = o.origin_platform;
+            obj.options          = o.options;
+            obj.hash_value       = o.hash_value;
+            obj.extra_data       = o.extra_data;
+            obj.title            = o.title;
+            obj.body             = o.body;
+            obj.create_time      = d.head_block_time();
+            obj.last_update_time = d.head_block_time();
       } );
       return new_post_object.id;
-   }
-   else // edit
-   {
-      d.modify<post_object>( *post, [&]( post_object& obj )
+   
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result post_update_evaluator::do_evaluate( const operation_type& op )
+{ try {
+   const database& d = db();
+
+   d.get_platform_by_owner( op.platform ); // make sure pid exists
+   poster_account = &d.get_account_by_uid( op.poster );
+
+   FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
+
+   post = d.find_post_by_platform( op.platform, op.poster, op.post_pid );
+
+   if( post == nullptr )
+      FC_THROW( "the post not exists." );
+
+   return void_result();
+
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+object_id_type post_update_evaluator::do_apply( const operation_type& o )
+{ try {
+   database& d = db();
+   
+   d.modify( *post, [&]( post_object& obj )
       {
          //obj.options          = o.options;
-         obj.hash_value       = o.hash_value;
-         obj.extra_data       = o.extra_data;
-         obj.title            = o.title;
-         obj.body             = o.body;
+         obj.hash_value       = *o.hash_value;
+         obj.extra_data       = *o.extra_data;
+         obj.title            = *o.title;
+         obj.body             = *o.body;
          obj.last_update_time = d.head_block_time();
       } );
       return post->id;
-   }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
 
+} FC_CAPTURE_AND_RETHROW( (o) ) }
 
 } } // graphene::chain

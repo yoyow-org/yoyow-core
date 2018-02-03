@@ -235,6 +235,11 @@ namespace graphene { namespace chain {
           */
          uint32_t platform_pledge_release_block_number = -1;
 
+         /**
+          * 记录最后发布的文章编号
+          */
+         post_pid_type last_post_sequence = 0;
+
          /// @brief Split up and pay out @ref pending_fees and @ref pending_vested_fees
          void process_fees(const account_object& a, database& d) const;
 
