@@ -223,12 +223,12 @@ namespace graphene { namespace chain {
          /**
           * 平台总押金
           */
-         uint64_t total_platform_pledge;
+         share_type total_platform_pledge;
 
          /**
           * 待退平台押金
           */
-         uint64_t releasing_platform_pledge;
+         share_type releasing_platform_pledge;
 
          /**
           * block number that releasing platform pledge will be finally unlocked.
