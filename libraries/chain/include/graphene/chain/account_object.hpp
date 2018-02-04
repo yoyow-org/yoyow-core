@@ -355,7 +355,7 @@ namespace graphene { namespace chain {
 
          account_reg_info reg_info;
 
-         bool can_post = false;
+         bool can_post = true;      //默认给用户发帖权限
          bool can_reply = false;
          bool can_rate = false;
 
