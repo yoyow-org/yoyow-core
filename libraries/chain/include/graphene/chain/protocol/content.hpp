@@ -259,6 +259,8 @@ FC_REFLECT( graphene::chain::post_operation,
             (options)
             (hash_value)(extra_data)(title)(body)
             (extensions) )
+
+FC_REFLECT( graphene::chain::post_update_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::post_update_operation,
             (fee)
             (platform)(poster)(post_pid)

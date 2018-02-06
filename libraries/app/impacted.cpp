@@ -352,6 +352,11 @@ struct get_impacted_account_visitor
       // TODO review
    }
 
+   void operator()( const post_update_operation& op )
+   {
+      // TODO review
+   }
+
    void operator()( const csaf_collect_operation& op )
    {
       // TODO review
