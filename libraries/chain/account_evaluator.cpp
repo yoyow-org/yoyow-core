@@ -110,8 +110,11 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
    //const auto& referrer = d.get_account_by_uid( op.reg_info.referrer );
    //FC_ASSERT( referrer.is_full_member, "The referrer must be a full member." );
 
-   const auto& platform = d.get_platform_by_owner( op.reg_info.referrer );
-   FC_ASSERT( platform.is_valid, "The referrer must be a valid platform." );
+   if( d.head_block_num() > 0 )
+   {
+      const auto& platform = d.get_platform_by_owner( op.reg_info.referrer );
+      FC_ASSERT( platform.is_valid, "The referrer must be a valid platform." );
+   }
 
    //TODO: check the parameters in reg_info against global parameters
 
