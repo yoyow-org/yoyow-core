@@ -116,7 +116,9 @@ void post_operation::validate()const
    validate_op_fee( fee, "post " );
    validate_account_uid( poster, "poster " );
    validate_account_uid( platform, "platform" );
-   FC_ASSERT( (origin_poster.valid() == origin_post_pid.valid()) == origin_platform.valid(), "origin poster and origin post pid and origin platform should be both presented or both not" );
+   bool flag = origin_poster.valid() == origin_post_pid.valid();
+   bool flag2 = origin_poster.valid() == origin_platform.valid();
+   FC_ASSERT( flag == flag2, "origin poster and origin post pid and origin platform should be both presented or both not" );
    if( origin_poster.valid() )
       validate_account_uid( *origin_poster, "origin poster " );
    if( origin_platform.valid() )
