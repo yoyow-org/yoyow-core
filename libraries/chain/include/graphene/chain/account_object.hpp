@@ -359,7 +359,7 @@ namespace graphene { namespace chain {
          bool can_reply = false;
          bool can_rate = false;
 
-         bool is_full_member = false;
+         bool is_full_member = false;     //目前主要用于引荐标记，即 =true才能引荐他人；目前只有平台
          bool is_registrar = false;
          bool is_admin = false;
 
@@ -799,6 +799,7 @@ FC_REFLECT_DERIVED( graphene::chain::voter_object,
                     (proxied_voters)(proxied_votes)(proxy_last_vote_block)
                     (effective_last_vote_block)
                     (number_of_witnesses_voted)
+                    (number_of_platform_voted)
                     (number_of_committee_members_voted)
                   )
 

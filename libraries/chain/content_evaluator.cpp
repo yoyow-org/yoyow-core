@@ -74,6 +74,10 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
 
    });
 
+   d.modify( *account_obj, [&]( account_object& a) {
+         a.is_full_member = true;
+   });
+
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.last_platform_sequence += 1;
       if( s.releasing_platform_pledge > op.pledge.amount.value )
