@@ -1128,6 +1128,7 @@ void database::check_invariants()
    share_type total_core_leased_out = 0;
    share_type total_core_witness_pledge = 0;
    share_type total_core_committee_member_pledge = 0;
+   share_type total_core_platform_pledge = 0;
 
    uint64_t total_voting_accounts = 0;
    share_type total_voting_core_balance = 0;
@@ -1149,6 +1150,9 @@ void database::check_invariants()
       FC_ASSERT( s.uncollected_witness_pay >= 0 );
       FC_ASSERT( s.witness_pledge_release_block_number > head_num );
       FC_ASSERT( s.committee_member_pledge_release_block_number > head_num );
+      FC_ASSERT( s.total_platform_pledge >= s.releasing_platform_pledge );
+      FC_ASSERT( s.releasing_platform_pledge >= 0 );
+      FC_ASSERT( s.platform_pledge_release_block_number > head_num );
 
       total_core_balance += s.core_balance;
       total_core_non_bal += ( s.prepaid + s.uncollected_witness_pay );
@@ -1156,7 +1160,8 @@ void database::check_invariants()
       total_core_leased_out += s.core_leased_out;
       total_core_witness_pledge += ( s.total_witness_pledge - s.releasing_witness_pledge );
       total_core_committee_member_pledge += ( s.total_committee_member_pledge - s.releasing_committee_member_pledge );
-      FC_ASSERT( s.core_balance >= s.core_leased_out + s.total_witness_pledge + s.total_committee_member_pledge );
+      total_core_platform_pledge += (s.total_platform_pledge - s.releasing_platform_pledge );
+      FC_ASSERT( s.core_balance >= s.core_leased_out + s.total_witness_pledge + s.total_committee_member_pledge + s.total_platform_pledge );
 
       if( s.is_voter )
       {
@@ -1193,9 +1198,11 @@ void database::check_invariants()
    uint64_t total_voters = 0;
    uint64_t total_witnesses_voted = 0;
    uint64_t total_committee_members_voted = 0;
+   uint64_t total_platform_voted = 0;
    uint64_t total_voter_votes = 0;
    fc::uint128_t total_voter_witness_votes;
    fc::uint128_t total_voter_committee_member_votes;
+   fc::uint128_t total_voter_platform_votes;
    vector<share_type> total_got_proxied_votes;
    vector<share_type> total_proxied_votes;
    total_got_proxied_votes.resize( gpo.parameters.max_governance_voting_proxy_level );
@@ -1213,15 +1220,18 @@ void database::check_invariants()
          total_voter_votes += s.votes;
          total_witnesses_voted += s.number_of_witnesses_voted;
          total_committee_members_voted += s.number_of_committee_members_voted;
+         total_platform_voted += s.number_of_platform_voted;
          if( s.proxy_uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
          {
             total_voter_witness_votes += fc::uint128_t( s.total_votes() ) * s.number_of_witnesses_voted;
             total_voter_committee_member_votes += fc::uint128_t( s.total_votes() ) * s.number_of_committee_members_voted;
+            total_voter_platform_votes += fc::uint128_t( s.total_votes() ) * s.number_of_platform_voted;
          }
          else
          {
             FC_ASSERT( s.number_of_witnesses_voted == 0 );
             FC_ASSERT( s.number_of_committee_members_voted == 0 );
+            FC_ASSERT( s.number_of_platform_voted == 0 );
             total_proxied_votes[0] += s.effective_votes;
             for( size_t i = 1; i < gpo.parameters.max_governance_voting_proxy_level; ++i )
                total_proxied_votes[i] += s.proxied_votes[i-1];
@@ -1274,8 +1284,26 @@ void database::check_invariants()
    FC_ASSERT( total_committee_member_pledges == total_core_committee_member_pledge );
    FC_ASSERT( total_committee_member_received_votes == total_voter_committee_member_votes );
 
+   /// platform
+   share_type total_platform_pledges;
+   fc::uint128_t total_platform_received_votes;
+   const auto& pla_idx = get_index_type<platform_index>().indices();
+   for( const auto& s: pla_idx )
+   {
+      if( s.is_valid )
+      {
+         const auto& stats = get_account_statistics_by_uid( s.owner );
+         FC_ASSERT( stats.last_platform_sequence == s.sequence );
+         FC_ASSERT( stats.total_platform_pledge - stats.releasing_platform_pledge == s.pledge );
+         total_platform_pledges += s.pledge;
+         total_platform_received_votes += s.total_votes;
+      }
+   }
+   FC_ASSERT( total_platform_pledges == total_core_platform_pledge );
+   FC_ASSERT( total_platform_received_votes == total_voter_platform_votes );
 
-   fc::uint128_t total_witness_vote_objects;
+
+   uint64_t total_witness_vote_objects = 0;
    const auto& wit_vote_idx = get_index_type<witness_vote_index>().indices();
    for( const auto& s: wit_vote_idx )
    {
@@ -1286,9 +1314,9 @@ void database::check_invariants()
          ++total_witness_vote_objects;
       }
    }
-   FC_ASSERT( total_witnesses_voted == total_witnesses_voted );
+   FC_ASSERT( total_witnesses_voted == total_witness_vote_objects );
 
-   fc::uint128_t total_committee_member_vote_objects;
+   uint64_t total_committee_member_vote_objects = 0;
    const auto& com_vote_idx = get_index_type<committee_member_vote_index>().indices();
    for( const auto& s: com_vote_idx )
    {
@@ -1299,7 +1327,21 @@ void database::check_invariants()
          ++total_committee_member_vote_objects;
       }
    }
-   FC_ASSERT( total_committee_members_voted == total_committee_members_voted );
+   FC_ASSERT( total_committee_members_voted == total_committee_member_vote_objects );
+
+   /// platform
+   uint64_t total_platform_vote_objects = 0;
+   const auto& pla_vote_idx = get_index_type<platform_vote_index>().indices();
+   for( const auto& s: pla_vote_idx )
+   {
+      const auto pla = find_platform_by_owner( s.platform_owner );
+      const auto voter = find_voter( s.voter_uid, s.voter_sequence );
+      if( pla != nullptr && voter != nullptr && voter->is_valid )
+      {
+         ++total_platform_vote_objects;
+      }
+   }
+   FC_ASSERT( total_platform_voted == total_platform_vote_objects );
 }
 
 void database::release_platform_pledges()
