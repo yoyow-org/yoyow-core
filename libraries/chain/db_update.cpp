@@ -1360,6 +1360,81 @@ void database::release_platform_pledges()
    }
 }
 
+void database::adjust_platform_votes( const platform_object& platform, share_type delta ){
+   if( delta == 0 || !platform.is_valid )
+      return;
+   modify( platform, [&]( platform_object& pla )
+   {
+      pla.total_votes += delta.value;
+   } );
+}
+
+void database::update_platform_avg_pledge( const account_uid_type uid )
+{
+   update_platform_avg_pledge( get_platform_by_owner( uid ) );
+}
+
+void database::update_platform_avg_pledge( const platform_object& pla )
+{
+   if( !pla.is_valid )
+      return;
+
+   const auto& global_params = get_global_properties().parameters;
+   const auto window = global_params.platform_max_pledge_seconds;
+   const auto now = head_block_time();
+
+   // update avg pledge
+   const auto old_avg_pledge = pla.average_pledge;
+   if( pla.average_pledge == pla.pledge )
+   {
+      modify( pla, [&]( platform_object& p )
+      {
+         p.average_pledge_last_update = now;
+         p.average_pledge_next_update_block = -1;
+      } );
+   }
+   else if( pla.average_pledge > pla.pledge || now >= pla.pledge_last_update + window )
+   {
+      modify( pla, [&]( platform_object& p )
+      {
+         p.average_pledge = p.pledge;
+         p.average_pledge_last_update = now;
+         p.average_pledge_next_update_block = -1;
+      } );
+   }
+   else if( now > pla.average_pledge_last_update )
+   {
+      // need to schedule next update because average_pledge < pledge, and need to update average_pledge
+      uint64_t delta_seconds = ( now - pla.average_pledge_last_update ).to_seconds();
+      uint64_t old_seconds = window - delta_seconds;
+
+      fc::uint128_t old_coin_seconds = fc::uint128_t( pla.average_pledge ) * old_seconds;
+      fc::uint128_t new_coin_seconds = fc::uint128_t( pla.pledge ) * delta_seconds;
+
+      uint64_t new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+
+      modify( pla, [&]( platform_object& p )
+      {
+         p.average_pledge = new_average_coins;
+         p.average_pledge_last_update = now;
+         p.average_pledge_next_update_block = head_block_num() + global_params.platform_avg_pledge_update_interval;
+      } );
+   }
+   else
+   {
+      // need to schedule next update because average_pledge < pledge, but no need to update average_pledge
+      modify( pla, [&]( platform_object& p )
+      {
+         p.average_pledge_next_update_block = head_block_num() + global_params.platform_avg_pledge_update_interval;
+      } );
+   }
+
+   if( old_avg_pledge != pla.average_pledge )
+   {
+      // do nothing
+   }
+}
+
 void database::clear_resigned_platform_votes()
 {
    const uint32_t max_votes_to_process = GRAPHENE_MAX_RESIGNED_PLATFORM_VOTES_PER_BLOCK;

@@ -100,6 +100,8 @@ namespace graphene { namespace chain {
       bool                    witness_report_allow_pre_last_block     = GRAPHENE_DEFAULT_WITNESS_REPORT_ALLOW_PRE_LAST_BLOCK;
       share_type              witness_report_pledge_deduction_amount  = GRAPHENE_DEFAULT_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT;
       uint64_t                platform_min_pledge                     = GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE;
+      uint64_t                platform_max_pledge_seconds             = GRAPHENE_DEFAULT_PLATFORM_MAX_PLEDGE_SECONDS;
+      uint32_t                platform_avg_pledge_update_interval     = GRAPHENE_DEFAULT_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL;
       uint32_t                platform_pledge_release_delay           = GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY;
       uint16_t                platform_max_vote_per_account           = GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT;
       extensions_type         extensions;
@@ -170,6 +172,8 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (witness_report_allow_pre_last_block)
             (witness_report_pledge_deduction_amount)
             (platform_min_pledge)
+            (platform_max_pledge_seconds)
+            (platform_avg_pledge_update_interval)
             (platform_pledge_release_delay)
             (platform_max_vote_per_account)
             (extensions)

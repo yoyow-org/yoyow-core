@@ -58,6 +58,10 @@ namespace graphene { namespace chain {
          string url;
 
          uint64_t pledge;
+         fc::time_point_sec  pledge_last_update;
+         uint64_t            average_pledge = 0;
+         fc::time_point_sec  average_pledge_last_update;
+         uint32_t            average_pledge_next_update_block;
 
          //其他信息（api接口地址，其他URL，平台介绍等）
          string extra_data = "{}";

@@ -292,6 +292,10 @@
 ///@{
 /// 最小平台押金
 #define GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000)) 
+/// 平台计算平均押金时长。初始值 1 周
+#define GRAPHENE_DEFAULT_PLATFORM_MAX_PLEDGE_SECONDS (uint16_t(6500))
+/// 平台平均押金更新间隔。初始值 1 小时，即每小时自动更新一次平均押金；另外，如果押金数量发生变化，平均押金会实时更新。
+#define GRAPHENE_DEFAULT_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL (uint16_t(5001))
 /// 平台押金退还时间(块)
 #define GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY 28800
 /// 每账户最多可以投票的平台数

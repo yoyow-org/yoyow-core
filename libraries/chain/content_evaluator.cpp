@@ -62,6 +62,7 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
 object_id_type platform_create_evaluator::do_apply( const platform_create_operation& op )
 { try {
    database& d = db();
+   const auto& global_params = d.get_global_properties().parameters;
 
    const auto& new_platform_object = d.create<platform_object>( [&]( platform_object& pf ){
       pf.owner                = op.account;
@@ -71,6 +72,14 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
       pf.url                 = op.url;
       pf.extra_data          = op.extra_data;
       pf.create_time         = d.head_block_time();
+
+      pf.pledge_last_update  = d.head_block_time();
+
+      pf.average_pledge_last_update       = d.head_block_time();
+      if( pf.pledge > 0 )
+         pf.average_pledge_next_update_block = d.head_block_num() + global_params.platform_avg_pledge_update_interval;
+      else 
+         pf.average_pledge_next_update_block = -1;
 
    });
 
@@ -216,6 +225,7 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
          pfo.last_update_time  = d.head_block_time();
 
       });
+      d.update_platform_avg_pledge( *platform_obj );
    }
 
    return void_result();
