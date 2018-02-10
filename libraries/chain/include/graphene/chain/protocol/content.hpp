@@ -27,10 +27,10 @@
 namespace graphene { namespace chain {
 
    /**
-    * @brief 在网络上创建一个平台，并以所有人支付其费用
+    * @brief Create a platform on the web and pay everyone for it
     * @ingroup operations
     *
-    * 任何人可以用此操作创建一个平台对象
+    * Anyone can use this operation to create a platform object
     */
    struct platform_create_operation : public base_operation
    {
@@ -43,17 +43,17 @@ namespace graphene { namespace chain {
          extensions_type   extensions;
       };
 
-      // 手续费
+      // Fee
       fee_type          fee;
-      /// 拥有平台的帐户。 此帐户支付此操作的费用。
+      /// Account with platform. This account pays for this operation.
       account_uid_type  account;
-      // 抵押金额
+      // Mortgage amount
       asset             pledge;
-      //名称
+      // name
       string            name;
-      //平台主域名
+      // Platform main domain name
       string            url;
-      //其他信息（ json 格式字符串，API接口，其他URL，平台介绍等）
+      // Other information (json format string, API interface, other URL, platform introduction, etc.)
       string            extra_data = "{}";
       extensions_type   extensions;
 
@@ -62,13 +62,13 @@ namespace graphene { namespace chain {
       share_type        calculate_fee(const fee_parameters_type& k)const;
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         // 需要余额权限
+         // Necessary balance of authority
          a.insert( account );
       }
    };
 
    /**
-    * @brief 更新平台相关信息
+    * @brief Update platform related information
     * @ingroup operations
     */
    struct platform_update_operation : public base_operation
@@ -83,15 +83,15 @@ namespace graphene { namespace chain {
       };
 
       fee_type          fee;
-      /// 平台所有者账号
+      /// Platform owner account
       account_uid_type  account;
-      /// 新的抵押金额
+      /// New mortgage amount
       optional<asset>   new_pledge;
-      // 新的名称
+      // New name
       optional<string>  new_name;
-      /// 新的域名
+      /// New domain name
       optional<string>  new_url;
-      // 新的其他信息
+      // New additional information
       optional<string>  new_extra_data;
 
       extensions_type   extensions;
@@ -101,13 +101,13 @@ namespace graphene { namespace chain {
       share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         // 需要余额权限
+         // Necessary balance of authority
          a.insert( account );
       }
    };
 
    /**
-    * @brief 更改或刷新平台投票状态。
+    * @brief Change or refresh platform voting status.
     * @ingroup operations
     */
    struct platform_vote_update_operation : public base_operation
@@ -121,13 +121,13 @@ namespace graphene { namespace chain {
          extensions_type   extensions;
       };
       
-      // 手续费
+      // fee
       fee_type                   fee;
-      /// 投票人,以此账号支付投票操作费用
+      /// Voter, as the account to pay the cost of voting operations
       account_uid_type           voter;
-      //新增投票平台清单
+      // Add a voting platform list
       flat_set<account_uid_type> platform_to_add;
-      //移除投票平台清单
+      // Remove the voting platform list
       flat_set<account_uid_type> platform_to_remove;
 
       extensions_type   extensions;
@@ -137,7 +137,7 @@ namespace graphene { namespace chain {
       share_type        calculate_fee(const fee_parameters_type& k)const;
       void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         // 需要余额权限
+         // Necessary balance of authority
          a.insert( voter );
       }
    };
@@ -190,8 +190,8 @@ namespace graphene { namespace chain {
       share_type       calculate_fee(const fee_parameters_type& k)const;
       void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         a.insert( poster );    // 要求作者零钱权限
-         a.insert( platform );  // 要求平台零钱权限
+         a.insert( poster );    // Requires authors to change the permissions
+         a.insert( platform );  // Requires platform to change the permissions
       }
    };
 
@@ -234,8 +234,8 @@ namespace graphene { namespace chain {
       share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         a.insert( poster );    // 要求作者零钱权限
-         a.insert( platform );  // 要求平台零钱权限
+         a.insert( poster );    // Requires authors to change the permissions
+         a.insert( platform );  // Requires platform to change the permissions
       }
    };
 

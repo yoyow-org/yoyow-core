@@ -137,7 +137,7 @@ void_result platform_update_evaluator::do_evaluate( const platform_update_operat
          
       }
    }
-   else // 更新平台时，必需检查抵押
+   else // When updating the platform, you have to check the mortgage
    {
       FC_ASSERT( platform_obj->pledge >= global_params.platform_min_pledge,
                  "Insufficient pledge: has ${p}, need ${r}",
@@ -181,14 +181,14 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
          s.platform_pledge_release_block_number = d.head_block_num() + global_params.platform_pledge_release_delay;
       });
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
-         pfo.is_valid = false; // 将延迟处理
+         pfo.is_valid = false; // Processing will be delayed
       });
    }
    else // change pledge
    {
       // update account stats
       share_type delta = op.new_pledge->amount.value - platform_obj->pledge;
-      if( delta > 0 ) // 增加抵押
+      if( delta > 0 ) // Increase the mortgage
       {
          d.modify( *account_stats, [&](account_statistics_object& s) {
             if( s.releasing_platform_pledge > delta )
@@ -204,7 +204,7 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
             }
          });
       }
-      else // 减少抵押
+      else // Increase the mortgage
       {
          d.modify( *account_stats, [&](account_statistics_object& s) {
             s.releasing_platform_pledge -= delta.value;
