@@ -1309,7 +1309,7 @@ void database::check_invariants()
    {
       const auto wit = find_witness_by_uid( s.witness_uid );
       const auto voter = find_voter( s.voter_uid, s.voter_sequence );
-      if( wit != nullptr && voter != nullptr && voter->is_valid )
+      if( wit != nullptr && voter != nullptr && voter->is_valid && wit->sequence == s.witness_sequence )
       {
          ++total_witness_vote_objects;
       }
@@ -1322,7 +1322,7 @@ void database::check_invariants()
    {
       const auto com = find_committee_member_by_uid( s.committee_member_uid );
       const auto voter = find_voter( s.voter_uid, s.voter_sequence );
-      if( com != nullptr && voter != nullptr && voter->is_valid )
+      if( com != nullptr && voter != nullptr && voter->is_valid && com->sequence == s.committee_member_sequence )
       {
          ++total_committee_member_vote_objects;
       }
@@ -1336,7 +1336,7 @@ void database::check_invariants()
    {
       const auto pla = find_platform_by_owner( s.platform_owner );
       const auto voter = find_voter( s.voter_uid, s.voter_sequence );
-      if( pla != nullptr && voter != nullptr && voter->is_valid )
+      if( pla != nullptr && voter != nullptr && voter->is_valid && pla->sequence == s.platform_sequence )
       {
          ++total_platform_vote_objects;
       }
@@ -1431,7 +1431,7 @@ void database::update_platform_avg_pledge( const platform_object& pla )
 
    if( old_avg_pledge != pla.average_pledge )
    {
-      // do nothing
+      // TODO: Adjust distribution logic
    }
 }
 

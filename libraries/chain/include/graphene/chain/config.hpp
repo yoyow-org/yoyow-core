@@ -293,11 +293,11 @@
 /// Minimum platform deposit
 #define GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000)) 
 /// The platform calculates the average deposit duration. The initial value of 1 week
-#define GRAPHENE_DEFAULT_PLATFORM_MAX_PLEDGE_SECONDS (uint16_t(6500))
+#define GRAPHENE_DEFAULT_PLATFORM_MAX_PLEDGE_SECONDS (60*60*24*7)
 /// Platform average deposit update interval. The initial value is 1 hour, that is, the average deposit is automatically updated once an hour, and if the deposit amount changes, the average deposit is updated in real time.
-#define GRAPHENE_DEFAULT_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL (uint16_t(5001))
+#define GRAPHENE_DEFAULT_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL 1200 // blocks, one hour if 3 seconds per block
 /// Platform deposit refund time (block)
-#define GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY 28800
+#define GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY 28800 // blocks, one day if 3 seconds per block
 /// The maximum number of voting platforms per account
 #define GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT (uint16_t(10))
 

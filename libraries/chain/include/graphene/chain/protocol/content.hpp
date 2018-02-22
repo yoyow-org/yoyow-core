@@ -142,13 +142,6 @@ namespace graphene { namespace chain {
       }
    };
 
-   struct post_options
-   {
-      extensions_type        extensions;
-
-      void validate()const;
-   };
-
    /**
     * @ingroup operations
     *
@@ -170,13 +163,13 @@ namespace graphene { namespace chain {
 
       fee_type                     fee;
 
+      /// The post's pid.
+      post_pid_type                post_pid;
       account_uid_type             platform = 0;
       account_uid_type             poster = 0;
       optional<account_uid_type>   origin_poster;
       optional<post_pid_type>      origin_post_pid;
       optional<account_uid_type>   origin_platform;
-
-      post_options                 options;
 
       string                       hash_value;
       string                       extra_data = "{}"; ///< category, tags and etc
@@ -220,10 +213,8 @@ namespace graphene { namespace chain {
       account_uid_type             poster;
       post_pid_type                post_pid;
 
-      post_options                 options;
-
       optional< string >           hash_value;
-      optional< string >           extra_data = "{}"; ///< category, tags and etc
+      optional< string >           extra_data; ///< category, tags and etc
       optional< string >           title;
       optional< string >           body;
 
@@ -250,13 +241,10 @@ FC_REFLECT(graphene::chain::platform_update_operation, (fee)(account)(new_pledge
 FC_REFLECT( graphene::chain::platform_vote_update_operation::fee_parameters_type, (basic_fee)(price_per_platform)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT(graphene::chain::platform_vote_update_operation, (fee)(voter)(platform_to_add)(platform_to_remove)(extensions) )
 
-FC_REFLECT(graphene::chain::post_options, (extensions) )
-
 FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::post_operation,
             (fee)
             (platform)(poster)(origin_poster)(origin_post_pid)(origin_platform)
-            (options)
             (hash_value)(extra_data)(title)(body)
             (extensions) )
 
@@ -264,7 +252,6 @@ FC_REFLECT( graphene::chain::post_update_operation::fee_parameters_type, (fee)(p
 FC_REFLECT( graphene::chain::post_update_operation,
             (fee)
             (platform)(poster)(post_pid)
-            (options)
             (hash_value)(extra_data)(title)(body)
             (extensions) )
 

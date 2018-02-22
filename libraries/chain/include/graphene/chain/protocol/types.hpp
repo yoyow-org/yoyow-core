@@ -167,7 +167,6 @@ namespace graphene { namespace chain {
       impl_account_statistics_object_type,
       impl_voter_object_type,
       impl_witness_vote_object_type,
-      impl_platform_vote_object_type,
       impl_committee_member_vote_object_type,
       impl_registrar_takeover_object_type,
       impl_csaf_lease_object_type,
@@ -177,6 +176,7 @@ namespace graphene { namespace chain {
       impl_blinded_balance_object_type,
       impl_chain_property_object_type,
       impl_witness_schedule_object_type,
+      impl_platform_vote_object_type,
       impl_budget_record_object_type,
       impl_special_authority_object_type,
       impl_buyback_object_type,
@@ -253,7 +253,6 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_account_statistics_object_type,account_statistics_object>                account_statistics_id_type;
    typedef object_id< implementation_ids, impl_voter_object_type,            voter_object>                              voter_id_type;
    typedef object_id< implementation_ids, impl_witness_vote_object_type,     witness_vote_object>                       witness_vote_id_type;
-   typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
    typedef object_id< implementation_ids, impl_committee_member_vote_object_type,     committee_member_vote_object>     committee_member_vote_id_type;
    typedef object_id< implementation_ids, impl_registrar_takeover_object_type, registrar_takeover_object>               registrar_takeover_id_type;
    typedef object_id< implementation_ids, impl_csaf_lease_object_type,       csaf_lease_object>                         csaf_lease_id_type;
@@ -265,6 +264,7 @@ namespace graphene { namespace chain {
                       account_transaction_history_object>       account_transaction_history_id_type;
    typedef object_id< implementation_ids, impl_chain_property_object_type,   chain_property_object>                     chain_property_id_type;
    typedef object_id< implementation_ids, impl_witness_schedule_object_type, witness_schedule_object>                   witness_schedule_id_type;
+   typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
    typedef object_id< implementation_ids, impl_budget_record_object_type, budget_record_object >                        budget_record_id_type;
    typedef object_id< implementation_ids, impl_blinded_balance_object_type, blinded_balance_object >                    blinded_balance_id_type;
    typedef object_id< implementation_ids, impl_special_authority_object_type, special_authority_object >                special_authority_id_type;

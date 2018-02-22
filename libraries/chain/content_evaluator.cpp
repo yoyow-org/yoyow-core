@@ -162,6 +162,7 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    database& d = db();
 
    const auto& global_params = d.get_global_properties().parameters;
+   const account_object* account_obj = &d.get_account_by_uid( op.account );
 
    if( !op.new_pledge.valid() ) // change url or name or extra_data
    {
@@ -182,6 +183,9 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
       });
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
          pfo.is_valid = false; // Processing will be delayed
+      });
+      d.modify( *account_obj, [&]( account_object& acc ){
+         acc.is_full_member = false;
       });
    }
    else // change pledge
@@ -204,7 +208,7 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
             }
          });
       }
-      else // Increase the mortgage
+      else // Reduce the mortgage
       {
          d.modify( *account_stats, [&](account_statistics_object& s) {
             s.releasing_platform_pledge -= delta.value;
@@ -445,28 +449,19 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
    account_stats = &d.get_account_statistics_by_uid( op.poster );
 
    d.get_platform_by_owner( op.platform ); // make sure pid exists
-   poster_account = &d.get_account_by_uid( op.poster );
+   const account_object* poster_account = &d.get_account_by_uid( op.poster );
 
-   FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
+   FC_ASSERT( ( poster_account != nullptr && poster_account->can_post ), "poster ${uid} is not allowed to post.", ("uid",op.poster) );
 
-   post_pid_type pid = account_stats->last_post_sequence + 1;
+   FC_ASSERT( ( account_stats->last_post_sequence + 1 ) == op.post_pid ), "post_pid ${pid} is invalid.", ("pid", op.post_pid) );
 
-   post = d.find_post_by_platform( op.platform, op.poster, pid );
-
-   if( post == nullptr ) // new post
+   if( op.origin_post_pid.valid() ) // is Reprint
    {
-      if( op.origin_post_pid.valid() ) // is Reprint
-      {   
-         origin_post = &d.get_post_by_platform( *op.origin_platform, *op.origin_poster, *op.origin_post_pid );
-         if( origin_post == nullptr )
-             FC_THROW( "the origin post not exists." );
-      }
-      else
-         origin_post = nullptr;
-   }
-   else
-   {
-      FC_THROW( "the post already exists." );
+      const account_statistics_object* origin_account_stats = &d.get_account_statistics_by_uid( *op.origin_poster );
+
+      FC_ASSERT( origin_account_stats != nullptr, "the ${uid} origin poster not exists.", ("uid", op.origin_poster) );
+
+      FC_ASSERT( origin_account_stats->last_post_sequence >= *op.origin_post_pid ), "the ${pid} origin post not exists.", ("pid", op.origin_post_pid) );
    }
 
    return void_result();
@@ -477,8 +472,6 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 { try {
       database& d = db();
 
-      post_pid_type pid = account_stats->last_post_sequence + 1;
-
       d.modify( *account_stats, [&](account_statistics_object& s) {
          s.last_post_sequence += 1;
       });
@@ -487,7 +480,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
       {
             obj.platform         = o.platform;
             obj.poster           = o.poster;
-            obj.post_pid         = pid;
+            obj.post_pid         = o.post_pid;
             obj.origin_poster    = o.origin_poster;
             obj.origin_post_pid  = o.origin_post_pid;
             obj.origin_platform  = o.origin_platform;
@@ -508,14 +501,16 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
    const database& d = db();
 
    d.get_platform_by_owner( op.platform ); // make sure pid exists
-   poster_account = &d.get_account_by_uid( op.poster );
+   const account_object* poster_account = &d.get_account_by_uid( op.poster );
+   const account_statistics_object* account_stats = &d.get_account_statistics_by_uid( op.poster );
 
-   FC_ASSERT( poster_account->can_post, "poster ${uid} is not allowed to post.", ("uid",op.poster) );
+   FC_ASSERT( ( poster_account != nullptr && poster_account->can_post ), "poster ${uid} is not allowed to post.", ("uid",op.poster) );
 
-   post = d.find_post_by_platform( op.platform, op.poster, op.post_pid );
+   FC_ASSERT( ( account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid ), "post_pid ${pid} is invalid.", ("pid", op.post_pid) );
 
-   if( post == nullptr )
-      FC_THROW( "the post not exists." );
+   post = &d.find_post_by_platform( op.platform, op.poster, op.post_pid );
+
+   FC_ASSERT( post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid) );
 
    return void_result();
 
@@ -527,11 +522,14 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
    
    d.modify( *post, [&]( post_object& obj )
       {
-         //obj.options          = o.options;
-         obj.hash_value       = *o.hash_value;
-         obj.extra_data       = *o.extra_data;
-         obj.title            = *o.title;
-         obj.body             = *o.body;
+         if( o.hash_value.valid() )
+            obj.hash_value       = *o.hash_value;
+         if( o.extra_data.valid() )
+            obj.extra_data       = *o.extra_data;
+         if( o.title.valid() )
+            obj.title            = *o.title;
+         if( o.body.valid() )
+            obj.body             = *o.body;
          obj.last_update_time = d.head_block_time();
       } );
       return post->id;

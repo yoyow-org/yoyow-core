@@ -59,14 +59,20 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const post_operation& op )
    {
-      //_impacted.insert( op.poster ); // fee payer
-      //if( op.parent_poster.valid() )
-      //   _impacted.insert( *(op.parent_poster) );
+      _impacted.insert( op.poster ); // fee payer
+      
+      _impacted.insert( op.platform );
+      if( op.origin_platform.valid() )
+          _impacted.insert( *(op.origin_platform) );
+      if( op.origin_poster.valid() )
+          _impacted.insert( *(op.origin_poster) );
+      
    }
 
    void operator()( const post_update_operation& op )
    {
-      // TODO review
+      _impacted.insert( op.poster ); // fee payer
+      _impacted.insert( op.platform );
    }
 
    void operator()( const account_manage_operation& op )
@@ -142,12 +148,12 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const platform_create_operation& op )
    {
-      //_impacted.insert( op.owner ); // fee payer
+      _impacted.insert( op.owner ); // fee payer
    }
 
    void operator()( const platform_update_operation& op )
    {
-      //_impacted.insert( op.owner ); // fee payer
+      _impacted.insert( op.owner ); // fee payer
    }
 
    void operator()( const platform_vote_update_operation& op )

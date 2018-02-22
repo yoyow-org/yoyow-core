@@ -763,12 +763,14 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    // Create initial platforms
    std::for_each(genesis_state.initial_platforms.begin(), genesis_state.initial_platforms.end(),
                  [&](const genesis_state_type::initial_platform_type& platform) {
+      /* TODO review
       const auto owner = get_account_by_uid(platform.owner);
       platform_create_operation op;
       op.account = platform.owner;
       op.name = platform.name;
       op.url = platform.url;
       apply_operation(genesis_eval_state, op);
+      */
    });
 
    // Set active witnesses
