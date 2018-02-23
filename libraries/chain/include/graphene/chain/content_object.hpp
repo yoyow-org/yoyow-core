@@ -217,9 +217,6 @@ namespace graphene { namespace chain {
          /// If it is a transcript, this value is required for the source platform
          optional<account_uid_type>   origin_platform;
 
-         /// Article Extensions: TAGs, References (Links, Images, Videos, Ads), Management Information (Top, Highlight), etc.
-         post_options                 options;
-
          string                       hash_value;
          string                       extra_data; ///< category, tags and etc
          string                       title;
@@ -304,7 +301,6 @@ FC_REFLECT_DERIVED( graphene::chain::platform_vote_object, (graphene::db::object
 FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
                     (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
-                    (options)
                     (hash_value)(extra_data)(title)(body)
                     (create_time)(last_update_time)
                   )

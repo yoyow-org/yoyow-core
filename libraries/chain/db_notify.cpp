@@ -28,19 +28,22 @@ struct get_impacted_account_visitor
 
    void operator()( const post_operation& op )
    {
-      _impacted.insert( op.poster ); // fee payer
-      
+      // TODO review
+      //_impacted.insert( op.poster ); // fee payer
+      /*
       _impacted.insert( op.platform );
       if( op.origin_platform.valid() )
           _impacted.insert( *(op.origin_platform) );
       if( op.origin_poster.valid() )
           _impacted.insert( *(op.origin_poster) );
+      */
    }
 
    void operator()( const post_update_operation& op )
    {
-      _impacted.insert( op.poster ); // fee payer
-      _impacted.insert( op.platform );
+      // TODO review
+      //_impacted.insert( op.poster ); // fee payer
+      //_impacted.insert( op.platform );
    }
 
    void operator()( const csaf_collect_operation& op )

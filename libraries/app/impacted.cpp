@@ -148,12 +148,12 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const platform_create_operation& op )
    {
-      _impacted.insert( op.owner ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const platform_update_operation& op )
    {
-      _impacted.insert( op.owner ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const platform_vote_update_operation& op )
