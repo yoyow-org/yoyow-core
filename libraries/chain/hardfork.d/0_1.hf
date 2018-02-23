@@ -1,0 +1,4 @@
+// add create platform op
+#ifndef HARDFORK_0_1_TIME
+#define HARDFORK_0_1_TIME (fc::time_point_sec( 1519956000 ))  //2018-03-02 02:00:00
+#endif

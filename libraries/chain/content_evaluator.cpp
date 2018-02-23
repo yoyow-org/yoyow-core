@@ -31,6 +31,8 @@ namespace graphene { namespace chain {
 void_result platform_create_evaluator::do_evaluate( const platform_create_operation& op )
 { try {
    database& d = db();
+
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_1_TIME, "Can only be create platform after HARDFORK_0_1_TIME" );
    
    account_stats = &d.get_account_statistics_by_uid( op.account );
    account_obj = &d.get_account_by_uid( op.account );
@@ -108,6 +110,9 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
 void_result platform_update_evaluator::do_evaluate( const platform_update_operation& op )
 { try {
    database& d = db();
+
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_1_TIME, "Can only be update platform after HARDFORK_0_1_TIME" );
+
    account_stats = &d.get_account_statistics_by_uid( op.account );
    platform_obj   = &d.get_platform_by_owner( op.account );
 

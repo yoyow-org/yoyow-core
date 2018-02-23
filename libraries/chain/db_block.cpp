@@ -282,18 +282,7 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
       remove(proposal);
       session.merge();
    } catch ( const fc::exception& e ) {
-      if( head_block_time() <= HARDFORK_483_TIME )
-      {
-         for( size_t i=old_applied_ops_size,n=_applied_ops.size(); i<n; i++ )
-         {
-            ilog( "removing failed operation from applied_ops: ${op}", ("op", *(_applied_ops[i])) );
-            _applied_ops[i].reset();
-         }
-      }
-      else
-      {
-         _applied_ops.resize( old_applied_ops_size );
-      }
+      _applied_ops.resize( old_applied_ops_size );
       elog( "e", ("e",e.to_detail_string() ) );
       throw;
    }
