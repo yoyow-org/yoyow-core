@@ -244,7 +244,7 @@ FC_REFLECT(graphene::chain::platform_vote_update_operation, (fee)(voter)(platfor
 FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::post_operation,
             (fee)
-            (platform)(poster)(origin_poster)(origin_post_pid)(origin_platform)
+            (post_pid)(platform)(poster)(origin_poster)(origin_post_pid)(origin_platform)
             (hash_value)(extra_data)(title)(body)
             (extensions) )
 

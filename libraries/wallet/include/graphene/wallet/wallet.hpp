@@ -1388,6 +1388,24 @@ class wallet_api
        */
       platform_object get_platform(string owner_account);
 
+
+      /** Lists all platforms registered in the blockchain. This returns a list of all platform objects,
+       * sorted by specified order.  This lists platforms whether they are currently voted in or not.
+       *
+       * Use the \c lowerbound and limit parameters to page through the list.  To retrieve all platform,
+       * start by setting \c lowerbound to zero, and then each iteration, pass
+       * the last platform's UID returned as the \c lowerbound for the next \c list_platforms() call.
+       *
+       * @param lowerbound the UID of the first platform to return.  If the platform does not exist,
+       *                   the list will start at the platform that comes after \c lowerbound
+       * @param limit the maximum number of platform to return (max: 100)
+       * @param order_by how the returned list will be sorted
+       * @returns a list of platforms
+       */
+      vector<platform_object> list_platforms(const account_uid_type lowerbound, uint32_t limit, data_sorting_type order_by);
+
+      uint64_t get_platform_count();
+
       /** Creates a platform object owned by the given account.
        *
        * An account can have at most one platform object.
@@ -1905,6 +1923,8 @@ FC_API( graphene::wallet::wallet_api,
         (collect_csaf)
         (collect_csaf_with_time)
         (get_platform)
+        (list_platforms)
+        (get_platform_count)
         (create_platform)
         (update_platform)
         (update_platform_votes)
