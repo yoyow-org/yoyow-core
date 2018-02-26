@@ -59,7 +59,7 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const post_operation& op )
    {
-      _impacted.insert( op.poster ); // fee payer
+      //_impacted.insert( op.poster ); // fee payer
       
       _impacted.insert( op.platform );
       if( op.origin_platform.valid() )
@@ -71,7 +71,7 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const post_update_operation& op )
    {
-      _impacted.insert( op.poster ); // fee payer
+      //_impacted.insert( op.poster ); // fee payer
       _impacted.insert( op.platform );
    }
 
@@ -148,12 +148,12 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const platform_create_operation& op )
    {
-      _impacted.insert( op.account ); // fee payer
+      //_impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const platform_update_operation& op )
    {
-      _impacted.insert( op.account ); // fee payer
+      //_impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const platform_vote_update_operation& op )

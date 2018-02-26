@@ -27,7 +27,7 @@
 
 namespace graphene { namespace chain {
 
-void validate_platform_string( const string& str, const string& object_name = "", const int& maxlen = GRAPHENE_MAX_PLATFORM_NAME_LENGTH )
+void validate_platform_string( const string& str, const string& object_name = "", const int maxlen = GRAPHENE_MAX_PLATFORM_NAME_LENGTH )
 {
    bool str_is_utf8 = true;
    bool str_too_long = false;
@@ -151,11 +151,13 @@ void post_operation::validate()const
    validate_account_uid( platform, "platform" );
    bool flag = origin_poster.valid() == origin_post_pid.valid();
    bool flag2 = origin_poster.valid() == origin_platform.valid();
-   FC_ASSERT( flag && flag2, "origin poster and origin post pid and origin platform should be both presented or both not" );
+   FC_ASSERT( flag && flag2, "origin poster and origin post pid and origin platform should be all presented or all not " );
    if( origin_poster.valid() )
       validate_account_uid( *origin_poster, "origin poster " );
    if( origin_platform.valid() )
       validate_account_uid( *origin_platform, "origin platform " );
+   if( origin_post_pid.valid() )
+      FC_ASSERT( *origin_post_pid > uint64_t( 0 ), "origin_post_pid must be greater than 0 ");
 }
 
 void post_update_operation::validate()const
@@ -163,6 +165,7 @@ void post_update_operation::validate()const
    validate_op_fee( fee, "post update " );
    validate_account_uid( poster, "poster " );
    validate_account_uid( platform, "platform " );
+   FC_ASSERT( post_pid > uint64_t( 0 ), "post_pid must be greater than 0 ");
 }
 
 share_type post_update_operation::calculate_fee( const fee_parameters_type& schedule )const

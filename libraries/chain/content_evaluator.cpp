@@ -32,7 +32,7 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
 { try {
    database& d = db();
 
-   FC_ASSERT( ( d.head_block_time() >= HARDFORK_0_1_TIME ) || ( d.head_block_num() <= 4570000 ), "Can only be create platform after HARDFORK_0_1_TIME" );
+   FC_ASSERT( ( d.head_block_time() >= HARDFORK_0_2_TIME ) || ( d.head_block_num() <= 4570000 ), "Can only be create platform after HARDFORK_0_2_TIME" );
    
    account_stats = &d.get_account_statistics_by_uid( op.account );
    account_obj = &d.get_account_by_uid( op.account );
@@ -111,7 +111,7 @@ void_result platform_update_evaluator::do_evaluate( const platform_update_operat
 { try {
    database& d = db();
 
-   FC_ASSERT( ( d.head_block_time() >= HARDFORK_0_1_TIME ) || ( d.head_block_num() <= 4570000 ), "Can only be update platform after HARDFORK_0_1_TIME" );
+   FC_ASSERT( ( d.head_block_time() >= HARDFORK_0_2_TIME ) || ( d.head_block_num() <= 4570000 ), "Can only be update platform after HARDFORK_0_2_TIME" );
 
    account_stats = &d.get_account_statistics_by_uid( op.account );
    platform_obj   = &d.get_platform_by_owner( op.account );

@@ -825,7 +825,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
 
    const dynamic_global_property_object& dgpo = get_dynamic_global_properties();
 
-   deprecate_annual_members(*this);
+   //deprecate_annual_members(*this);
 
    modify(dgpo, [next_maintenance_time](dynamic_global_property_object& d) {
       d.next_maintenance_time = next_maintenance_time;
