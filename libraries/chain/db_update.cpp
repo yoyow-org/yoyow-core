@@ -1069,6 +1069,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                o.platform_pledge_release_delay = *pv.platform_pledge_release_delay;
             if( pv.platform_max_vote_per_account.valid() )
                o.platform_max_vote_per_account = *pv.platform_max_vote_per_account;
+            if( pv.platform_max_pledge_seconds.valid() )
+               o.platform_max_pledge_seconds = *pv.platform_max_pledge_seconds;
+            if( pv.platform_avg_pledge_update_interval.valid() )
+               o.platform_avg_pledge_update_interval = *pv.platform_avg_pledge_update_interval;
          });
       }
 
