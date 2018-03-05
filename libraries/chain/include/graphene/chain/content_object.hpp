@@ -57,7 +57,7 @@ namespace graphene { namespace chain {
          /// The platform's main url.
          string url;
 
-         uint64_t pledge;
+         uint64_t pledge = 0;
          fc::time_point_sec  pledge_last_update;
          uint64_t            average_pledge = 0;
          fc::time_point_sec  average_pledge_last_update;
