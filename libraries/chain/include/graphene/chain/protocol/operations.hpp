@@ -72,6 +72,8 @@ namespace graphene { namespace chain {
             platform_create_operation,
             platform_update_operation,
             platform_vote_update_operation,
+            account_auth_platform_operation,
+            account_cancel_auth_platform_operation,
             // the operations below are not supported
             balance_claim_operation,
             limit_order_create_operation,

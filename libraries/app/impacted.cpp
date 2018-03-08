@@ -110,6 +110,18 @@ struct get_impacted_account_uid_visitor
          add_authority_account_uids( _impacted, *op.secondary );
    }
 
+   void operator()( const account_auth_platform_operation& op )
+   {
+      //_impacted.insert( op.uid ); // fee payer
+      _impacted.insert( op.platform );
+   }
+
+   void operator()( const account_cancel_auth_platform_operation& op )
+   {
+      //_impacted.insert( op.uid ); // fee payer
+      _impacted.insert( op.platform );
+   }
+
    void operator()( const account_update_proxy_operation& op )
    {
       //_impacted.insert( op.voter ); // fee payer
@@ -379,6 +391,16 @@ struct get_impacted_account_visitor
    }
 
    void operator()( const account_update_auth_operation& op )
+   {
+      // TODO review
+   }
+
+   void operator()( const account_auth_platform_operation& op )
+   {
+      // TODO review
+   }
+
+   void operator()( const account_cancel_auth_platform_operation& op )
    {
       // TODO review
    }

@@ -256,6 +256,66 @@ namespace graphene { namespace chain {
       }
    };
 
+   /**
+    * @brief account grant of authorities to platform 
+    * @ingroup operations
+    */
+   struct account_auth_platform_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type                   fee;
+      account_uid_type           uid;
+      account_uid_type           platform;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return uid; }
+      void              validate()const;
+      //share_type      calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority
+         a.insert( uid );
+      }
+   };
+
+   /**
+    * @brief account ungrant of authorities to platform 
+    * @ingroup operations
+    */
+   struct account_cancel_auth_platform_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type                   fee;
+      account_uid_type           uid;
+      account_uid_type           platform;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return uid; }
+      void              validate()const;
+      //share_type      calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority
+         a.insert( uid );
+      }
+   };
+
   /**
     * @brief Change witness voting proxy.
     * @ingroup operations
@@ -475,6 +535,12 @@ FC_REFLECT( graphene::chain::account_update_auth_operation,
           )
 
 FC_REFLECT( graphene::chain::account_update_proxy_operation, (fee)(voter)(proxy)(extensions) )
+
+FC_REFLECT( graphene::chain::account_auth_platform_operation, (fee)(uid)(platform)(extensions) )
+FC_REFLECT( graphene::chain::account_auth_platform_operation::fee_parameters_type,(fee)(min_real_fee)(min_rf_percent)(extensions) )
+
+FC_REFLECT( graphene::chain::account_cancel_auth_platform_operation, (fee)(uid)(platform)(extensions) )
+FC_REFLECT( graphene::chain::account_cancel_auth_platform_operation::fee_parameters_type,(fee)(min_real_fee)(min_rf_percent)(extensions) )
 
 FC_REFLECT( graphene::chain::account_update_operation,
             (fee)(account)(owner)(active)(new_options)(extensions)
