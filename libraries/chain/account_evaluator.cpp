@@ -342,7 +342,7 @@ void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_c
    auto& ka = acnt->secondary.account_uid_auths;
    auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
    bool found = ( itr != ka.end() );
-   FC_ASSERT( !found, "platform ${p} is not in secondary authority", ("p", o.platform) );
+   FC_ASSERT( found, "platform ${p} is not in secondary authority", ("p", o.platform) );
    
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
