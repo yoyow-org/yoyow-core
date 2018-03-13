@@ -310,7 +310,7 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
    //auat.uid = o.platform;
    //auat.auth_type = authority::secondary_auth;
-   auth.add_authority( auat, 1 );
+   auth.add_authority( auat, acnt->secondary.weight_threshold );
 
    try
    {
@@ -327,7 +327,7 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
    database& d = db();
    authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
    d.modify( *acnt, [&](account_object& a){
-      a.secondary.add_authority( auat, 1 );
+      a.secondary.add_authority( auat, acnt->secondary.weight_threshold );
       a.last_update_time = d.head_block_time();
    });
 
