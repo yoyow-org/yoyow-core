@@ -37,6 +37,24 @@ const asset_object& database::get_core_asset() const
    return get(asset_id_type());
 }
 
+const asset_object& get_asset_by_aid( asset_aid_type aid )const;
+{
+   const auto& assets_by_aid = get_index_type<asset_index>().indices().get<by_aid>();
+   auto itr = assets_by_aid.find(aid);
+   FC_ASSERT( itr != assets_by_aid.end(), "asset ${aid} not found.", ("aid",aid) );
+   return *itr;
+}
+
+const asset_object* find_asset_by_aid( asset_aid_type aid )const
+{
+   const auto& assets_by_aid = get_index_type<asset_index>().indices().get<by_aid>();
+   auto itr = assets_by_aid.find(aid);
+   if( itr != assets_by_aid.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
 const global_property_object& database::get_global_properties()const
 {
    return get( global_property_id_type() );
