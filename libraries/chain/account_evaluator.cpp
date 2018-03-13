@@ -301,6 +301,8 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 { try {
    database& d = db();
 
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
+
    acnt = &d.get_account_by_uid( o.uid );
    for( const auto& uid_auth : acnt->secondary.account_uid_auths )
    {
@@ -337,6 +339,8 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
 void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_cancel_auth_platform_operation& o )
 { try {
    database& d = db();
+
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_cancel_auth_platform after HARDFORK_0_2_1_TIME" );
 
    acnt = &d.get_account_by_uid( o.uid );
    auto& ka = acnt->secondary.account_uid_auths;
