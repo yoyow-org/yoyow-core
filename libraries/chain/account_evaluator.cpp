@@ -304,10 +304,12 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
 
    acnt = &d.get_account_by_uid( o.uid );
-   for( const auto& uid_auth : acnt->secondary.account_uid_auths )
-   {
-      FC_ASSERT( uid_auth.first.uid != o.platform, "platform ${p} is already in secondary authority", ("p", o.platform) );
-   }
+
+   auto& ka = acnt->secondary.account_uid_auths;
+   auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
+   bool found = ( itr != ka.end() );
+   FC_ASSERT( !found, "platform ${p} is already in secondary authority", ("p", o.platform) );
+
    authority auth = acnt->secondary;
    authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
    //auat.uid = o.platform;
