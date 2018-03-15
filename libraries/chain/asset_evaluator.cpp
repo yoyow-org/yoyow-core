@@ -61,7 +61,7 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
             FC_ASSERT( asset_symbol_itr != asset_indx.end(), "Asset ${s} may only be created by issuer of ${p}, but ${p} has not been registered",
                         ("s",op.symbol)("p",prefix) );
             FC_ASSERT( asset_symbol_itr->issuer == op.issuer, "Asset ${s} may only be created by issuer of ${p}, ${i}",
-                        ("s",op.symbol)("p",prefix)("i", op.issuer(d).name) );
+                        ("s",op.symbol)("p",prefix)("i", d.get_account_by_uid( op.issuer ).name) );
       }
 
    return void_result();
@@ -93,7 +93,7 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
 { try {
    const database& d = db();
 
-   const asset_object& a = d.get_asset_by_aid( o.asset_to_issue );
+   const asset_object& a = d.get_asset_by_aid( o.asset_to_issue.asset_id );
    FC_ASSERT( o.issuer == a.issuer );
 
    to_account = &d.get_account_by_uid( o.issue_to_account );

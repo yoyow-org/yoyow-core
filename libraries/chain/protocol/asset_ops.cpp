@@ -99,8 +99,6 @@ void  asset_create_operation::validate()const
    FC_ASSERT( is_valid_symbol(symbol) );
    common_options.validate();
 
-   asset dummy = asset(1) * common_options.core_exchange_rate;
-   FC_ASSERT(dummy.asset_id == 1);
    FC_ASSERT(precision <= 12);
 }
 
@@ -110,9 +108,6 @@ void asset_update_operation::validate()const
    if( new_issuer )
       FC_ASSERT(issuer != *new_issuer);
    new_options.validate();
-
-   asset dummy = asset(1, asset_to_update) * new_options.core_exchange_rate;
-   FC_ASSERT(dummy.asset_id == asset_to_update);
 }
 
 share_type asset_update_operation::calculate_fee(const asset_update_operation::fee_parameters_type& k)const
@@ -142,7 +137,7 @@ void asset_options::validate()const
    FC_ASSERT( market_fee_percent <= GRAPHENE_100_PERCENT );
    FC_ASSERT( max_market_fee >= 0 && max_market_fee <= GRAPHENE_MAX_SHARE_SUPPLY );
    // There must be no high bits in permissions whose meaning is not known.
-   FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
+   FC_ASSERT( !(issuer_permissions & ~UIA_ASSET_ISSUER_PERMISSION_MASK) );
    // The global_settle flag may never be set (this is a permission only)
    //FC_ASSERT( !(flags & global_settle) );
    // the witness_fed and committee_fed flags cannot be set simultaneously

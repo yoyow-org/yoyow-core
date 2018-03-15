@@ -635,6 +635,13 @@ public:
          _asset_cache[id] = *rec;
       return rec;
    }
+   optional<asset_object> find_asset(asset_aid_type aid)const
+   {
+      auto rec = _remote_db->get_assets({aid}).front();
+      if( rec )
+         _asset_cache[id] = *rec;
+      return rec;
+   }
    optional<asset_object> find_asset(string asset_symbol_or_id)const
    {
       FC_ASSERT( asset_symbol_or_id.size() > 0 );
@@ -662,6 +669,14 @@ public:
       FC_ASSERT( opt, "Can not find asset ${a}", ("a", id) );
       return *opt;
    }
+
+   asset_object get_asset(asset_aid_type aid)const
+   {
+      auto opt = find_asset(aid);
+      FC_ASSERT( opt, "Can not find asset ${a}", ("a", id) );
+      return *opt;
+   }
+
    asset_object get_asset(string asset_symbol_or_id)const
    {
       auto opt = find_asset(asset_symbol_or_id);
@@ -871,7 +886,7 @@ public:
       asset total_fee = fee_asset_obj.amount(0);
 
       auto gprops = _remote_db->get_global_properties().parameters;
-      if( fee_asset_obj.get_id() != asset_id_type() )
+      if( fee_asset_obj.asset_id != GRAPHENE_CORE_ASSET_AID )
       {
          for( auto& op : _builder_transactions[handle].operations )
             total_fee += gprops.current_fees->set_fee( op, fee_asset_obj.options.core_exchange_rate );
@@ -1292,7 +1307,7 @@ public:
       optional<asset_object> asset_to_fund = find_asset(symbol);
       if (!asset_to_fund)
         FC_THROW("No asset with that symbol exists!");
-      asset_object core_asset = get_asset(asset_id_type());
+      asset_object core_asset = get_asset(GRAPHENE_CORE_ASSET_AID);
 
       asset_fund_fee_pool_operation fund_op;
       fund_op.from_account = from_account.id;
@@ -2663,7 +2678,7 @@ signed_transaction account_cancel_auth_platform(string account,
          auto r = result.as<vector<asset>>();
          vector<asset_object> asset_recs;
          std::transform(r.begin(), r.end(), std::back_inserter(asset_recs), [this](const asset& a) {
-            return get_asset(asset_id_type(a.asset_id));
+            return get_asset(a.asset_id);
          });
 
          std::stringstream ss;
@@ -2678,7 +2693,7 @@ signed_transaction account_cancel_auth_platform(string account,
          auto r = result.as<vector<asset>>();
          vector<asset_object> asset_recs;
          std::transform(r.begin(), r.end(), std::back_inserter(asset_recs), [this](const asset& a) {
-            return get_asset(asset_id_type(a.asset_id));
+            return get_asset(a.asset_id);
          });
 
          std::stringstream ss;
@@ -2695,7 +2710,7 @@ signed_transaction account_cancel_auth_platform(string account,
          ss << "\n";
          for( const auto& out : r.outputs )
          {
-            asset_object a = get_asset( asset_id_type(out.decrypted_memo.amount.asset_id) );
+            asset_object a = get_asset( out.decrypted_memo.amount.asset_id );
             ss << a.amount_to_pretty_string( out.decrypted_memo.amount ) << " to  " << out.label << "\n\t  receipt: " << out.confirmation_receipt <<"\n\n";
          }
          return ss.str();
@@ -2708,7 +2723,7 @@ signed_transaction account_cancel_auth_platform(string account,
          ss << "\n";
          for( const auto& out : r.outputs )
          {
-            asset_object a = get_asset( asset_id_type(out.decrypted_memo.amount.asset_id) );
+            asset_object a = get_asset( out.decrypted_memo.amount.asset_id );
             ss << a.amount_to_pretty_string( out.decrypted_memo.amount ) << " to  " << out.label << "\n\t  receipt: " << out.confirmation_receipt <<"\n\n";
          }
          return ss.str();
@@ -2717,7 +2732,7 @@ signed_transaction account_cancel_auth_platform(string account,
       {
          auto r = result.as<blind_receipt>();
          std::stringstream ss;
-         asset_object as = get_asset( asset_id_type(r.amount.asset_id) );
+         asset_object as = get_asset( r.amount.asset_id );
          ss << as.amount_to_pretty_string( r.amount ) << "  " << r.from_label << "  =>  " << r.to_label  << "  " << r.memo <<"\n";
          return ss.str();
       };
@@ -2730,7 +2745,7 @@ signed_transaction account_cancel_auth_platform(string account,
          ss << "====================================================================================\n";
          for( auto& r : records )
          {
-            asset_object as = get_asset( asset_id_type(r.amount.asset_id) );
+            asset_object as = get_asset( r.amount.asset_id );
             ss << fc::get_approximate_relative_time_string( r.date )
                << "  " << as.amount_to_pretty_string( r.amount ) << "  " << r.from_label << "  =>  " << r.to_label  << "  " << r.memo <<"\n";
          }
@@ -2998,7 +3013,6 @@ signed_transaction account_cancel_auth_platform(string account,
       asset_options opts;
       opts.flags &= ~(white_list | disable_force_settle | global_settle);
       opts.issuer_permissions = opts.flags;
-      opts.core_exchange_rate = price(asset(1), asset(1,asset_id_type(1)));
       create_asset(get_account(creator).name, symbol, 2, opts, {}, true);
    }
 
@@ -3007,7 +3021,6 @@ signed_transaction account_cancel_auth_platform(string account,
       asset_options opts;
       opts.flags &= ~white_list;
       opts.issuer_permissions = opts.flags;
-      opts.core_exchange_rate = price(asset(1), asset(1,asset_id_type(1)));
       bitasset_options bopts;
       create_asset(get_account(creator).name, symbol, 2, opts, bopts, true);
    }
@@ -3186,7 +3199,7 @@ signed_transaction account_cancel_auth_platform(string account,
 };
 
 std::string operation_printer::fee(const asset& a)const {
-   out << "   (Fee: " << wallet.get_asset(asset_id_type(a.asset_id)).amount_to_pretty_string(a) << ")";
+   out << "   (Fee: " << wallet.get_asset(a.asset_id).amount_to_pretty_string(a) << ")";
    return "";
 }
 
@@ -3215,7 +3228,7 @@ std::string operation_printer::operator()(const T& op)const
    //balance_accumulator acc;
    //op.get_balance_delta( acc, result );
    asset op_fee = get_operation_total_fee(op);
-   auto a = wallet.get_asset( asset_id_type(op_fee.asset_id) );
+   auto a = wallet.get_asset( op_fee.asset_id );
    // TODO: review
    //auto payer = wallet.get_account( op.fee_payer() );
    auto payer_uid = op.fee_payer_uid();
@@ -3237,7 +3250,7 @@ std::string operation_printer::operator()(const T& op)const
 }
 std::string operation_printer::operator()(const transfer_from_blind_operation& op)const
 {
-   auto a = wallet.get_asset( asset_id_type(op.fee.asset_id) );
+   auto a = wallet.get_asset( op.fee.asset_id );
    auto receiver = wallet.get_account( op.to );
 
    out <<  receiver.name
@@ -3246,8 +3259,8 @@ std::string operation_printer::operator()(const transfer_from_blind_operation& o
 }
 std::string operation_printer::operator()(const transfer_to_blind_operation& op)const
 {
-   auto fa = wallet.get_asset( asset_id_type(op.fee.asset_id) );
-   auto a = wallet.get_asset( asset_id_type(op.amount.asset_id) );
+   auto fa = wallet.get_asset( op.fee.asset_id );
+   auto a = wallet.get_asset( op.amount.asset_id );
    auto sender = wallet.get_account( op.from );
 
    out <<  sender.name
@@ -3257,7 +3270,7 @@ std::string operation_printer::operator()(const transfer_to_blind_operation& op)
 }
 string operation_printer::operator()(const transfer_operation& op) const
 {
-   out << "Transfer " << wallet.get_asset(asset_id_type(op.amount.asset_id)).amount_to_pretty_string(op.amount)
+   out << "Transfer " << wallet.get_asset(op.amount.asset_id).amount_to_pretty_string(op.amount)
        << " from " << op.from << " to " << op.to;
    std::string memo;
    if( op.memo )
@@ -3324,7 +3337,7 @@ std::string operation_result_printer::operator()(const object_id_type& oid)
 
 std::string operation_result_printer::operator()(const asset& a)
 {
-   return _wallet.get_asset(asset_id_type(a.asset_id)).amount_to_pretty_string(a);
+   return _wallet.get_asset(a.asset_id).amount_to_pretty_string(a);
 }
 
 }}}
@@ -3460,16 +3473,6 @@ vector<bucket_object> wallet_api::get_market_history( string symbol1, string sym
 vector<limit_order_object> wallet_api::get_limit_orders(string a, string b, uint32_t limit)const
 {
    return my->_remote_db->get_limit_orders(get_asset(a).id, get_asset(b).id, limit);
-}
-
-vector<call_order_object> wallet_api::get_call_orders(string a, uint32_t limit)const
-{
-   return my->_remote_db->get_call_orders(get_asset(a).id, limit);
-}
-
-vector<force_settlement_object> wallet_api::get_settle_orders(string a, uint32_t limit)const
-{
-   return my->_remote_db->get_settle_orders(get_asset(a).id, limit);
 }
 
 uint64_t wallet_api::calculate_account_uid(uint64_t n)const
@@ -4444,8 +4447,8 @@ vector< signed_transaction > wallet_api_impl::import_balance( string name_or_id,
    wdump((balances));
    addrs.clear();
 
-   set<asset_id_type> bal_types;
-   for( auto b : balances ) bal_types.insert( asset_id_type(b.balance.asset_id) );
+   set<asset_aid_type> bal_types;
+   for( auto b : balances ) bal_types.insert( b.balance.asset_id );
 
    struct claim_tx
    {
@@ -4454,13 +4457,13 @@ vector< signed_transaction > wallet_api_impl::import_balance( string name_or_id,
    };
    vector< claim_tx > claim_txs;
 
-   for( const asset_id_type& a : bal_types )
+   for( const asset_aid_type& a : bal_types )
    {
       balance_claim_operation op;
       op.deposit_to_account = claimer.uid;
       for( const balance_object& b : balances )
       {
-         if( asset_id_type(b.balance.asset_id) == a )
+         if( b.balance.asset_id == a )
          {
             op.total_claimed = b.available( dpo.time );
             if( op.total_claimed.amount == 0 )
@@ -4639,21 +4642,21 @@ public_key_type    wallet_api::create_blind_account( string label, string brain_
 vector<asset>   wallet_api::get_blind_balances( string key_or_label )
 {
    vector<asset> result;
-   map<asset_id_type, share_type> balances;
+   map<asset_aid_type, share_type> balances;
 
    vector<commitment_type> used;
 
    auto pub_key = get_public_key( key_or_label );
    auto& to_asset_used_idx = my->_wallet.blind_receipts.get<by_to_asset_used>();
-   auto start = to_asset_used_idx.lower_bound( std::make_tuple(pub_key,asset_id_type(0),false)  );
-   auto end = to_asset_used_idx.lower_bound( std::make_tuple(pub_key,asset_id_type(uint32_t(0xffffffff)),true)  );
+   auto start = to_asset_used_idx.lower_bound( std::make_tuple(pub_key,GRAPHENE_CORE_ASSET_AID,false)  );
+   auto end = to_asset_used_idx.lower_bound( std::make_tuple(pub_key,uint64_t(0xffffffffffffffff),true)  );
    while( start != end )
    {
       if( !start->used  )
       {
          auto answer = my->_remote_db->get_blinded_balances( {start->commitment()} );
          if( answer.size() )
-            balances[asset_id_type(start->amount.asset_id)] += start->amount.amount;
+            balances[start->amount.asset_id] += start->amount.amount;
          else
             used.push_back( start->commitment() );
       }
@@ -4771,8 +4774,8 @@ blind_confirmation wallet_api::blind_transfer_help( string from_key_or_label,
    vector<commitment_type> used;
 
    auto& to_asset_used_idx = my->_wallet.blind_receipts.get<by_to_asset_used>();
-   auto start = to_asset_used_idx.lower_bound( std::make_tuple(from_key,asset_id_type(amount.asset_id),false)  );
-   auto end = to_asset_used_idx.lower_bound( std::make_tuple(from_key,asset_id_type(amount.asset_id),true)  );
+   auto start = to_asset_used_idx.lower_bound( std::make_tuple(from_key,amount.asset_id,false)  );
+   auto end = to_asset_used_idx.lower_bound( std::make_tuple(from_key,amount.asset_id,true)  );
    while( start != end )
    {
       auto result = my->_remote_db->get_blinded_balances( {start->commitment() } );

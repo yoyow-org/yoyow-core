@@ -587,9 +587,9 @@ void_result account_whitelist_evaluator::do_evaluate(const account_whitelist_ope
 { try {
    database& d = db();
 
-   listed_account = &o.account_to_list(d);
+   listed_account = d.find_account_by_uid( o.account_to_list );
    if( !d.get_global_properties().parameters.allow_non_member_whitelists )
-      FC_ASSERT(o.authorizing_account(d).is_lifetime_member());
+      FC_ASSERT(d.get_account_by_uid( o.authorizing_account ).is_lifetime_member());
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -611,7 +611,7 @@ void_result account_whitelist_evaluator::do_apply(const account_whitelist_operat
    });
 
    /** for tracking purposes only, this state is not needed to evaluate */
-   d.modify( o.authorizing_account(d), [&]( account_object& a ) {
+   d.modify( d.get_account_by_uid( o.authorizing_account ), [&]( account_object& a ) {
      if( o.new_listing & o.white_listed )
         a.whitelisted_accounts.insert( o.account_to_list );
      else

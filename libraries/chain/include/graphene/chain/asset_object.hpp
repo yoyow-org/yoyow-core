@@ -100,7 +100,7 @@ namespace graphene { namespace chain {
          bool allow_confidential()const { return !(options.flags & asset_issuer_permission_flags::disable_confidential); }
 
          /// Helper function to get an asset object with the given amount in this asset's type
-         asset amount(share_type a)const { return asset(a, id); }
+         asset amount(share_type a)const { return asset(a, asset_id); }
          /// Convert a string amount (i.e. "123.45") to an asset object with this asset's type
          /// The string may have a decimal and/or a negative sign.
          asset amount_from_string(string amount_string)const;
@@ -140,8 +140,6 @@ namespace graphene { namespace chain {
 
          void validate()const
          {
-            FC_ASSERT(!(options.flags & disable_force_settle || options.flags & global_settle));
-            FC_ASSERT(!(options.issuer_permissions & disable_force_settle || options.issuer_permissions & global_settle));
          }
 
          template<class DB>
@@ -163,7 +161,7 @@ namespace graphene { namespace chain {
       asset_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_aid>, member< object, asset_aid_type, &asset_object::asset_id > >,
+         ordered_unique< tag<by_aid>, member< asset_object, asset_aid_type, &asset_object::asset_id > >,
          ordered_unique< tag<by_symbol>, member<asset_object, string, &asset_object::symbol> >,
          ordered_non_unique< tag<by_issuer>, member<asset_object, account_uid_type, &asset_object::issuer > >
       >

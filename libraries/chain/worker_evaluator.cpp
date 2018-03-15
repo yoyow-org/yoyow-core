@@ -36,7 +36,7 @@ void_result worker_create_evaluator::do_evaluate(const worker_create_evaluator::
 { try {
    database& d = db();
 
-   FC_ASSERT(d.get(o.owner).is_lifetime_member());
+   FC_ASSERT(d.get_account_by_uid( o.owner ).is_lifetime_member());
    FC_ASSERT(o.work_begin_date >= d.head_block_time());
 
    return void_result();
@@ -106,7 +106,7 @@ object_id_type worker_create_evaluator::do_apply(const worker_create_evaluator::
 void refund_worker_type::pay_worker(share_type pay, database& db)
 {
    total_burned += pay;
-   db.modify(db.get(asset_id_type()).dynamic_data(db), [pay](asset_dynamic_data_object& d) {
+   db.modify(db.get_core_asset().dynamic_data(db), [pay](asset_dynamic_data_object& d) {
       d.current_supply -= pay;
    });
 }

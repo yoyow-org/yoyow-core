@@ -134,7 +134,7 @@ namespace graphene { namespace chain {
          static const uint8_t type_id = vesting_balance_object_type;
 
          /// Account which owns and may withdraw from this vesting balance
-         account_id_type owner;
+         account_uid_type owner;
          /// Total amount remaining in this vesting balance
          /// Includes the unvested funds, and the vested funds which have not yet been withdrawn
          asset balance;
@@ -176,7 +176,7 @@ namespace graphene { namespace chain {
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
          ordered_non_unique< tag<by_account>,
-            member<vesting_balance_object, account_id_type, &vesting_balance_object::owner>
+            member<vesting_balance_object, account_uid_type, &vesting_balance_object::owner>
          >
       >
    > vesting_balance_multi_index_type;

@@ -52,9 +52,9 @@ namespace graphene { namespace chain {
 
       asset             fee;
       /// The account authorizing withdrawals from its balances
-      account_id_type   withdraw_from_account;
+      account_uid_type   withdraw_from_account;
       /// The account authorized to make withdrawals from withdraw_from_account
-      account_id_type   authorized_account;
+      account_uid_type   authorized_account;
       /// The maximum amount authorized_account is allowed to withdraw in a given withdrawal period
       asset             withdrawal_limit;
       /// Length of the withdrawal period in seconds
@@ -64,7 +64,7 @@ namespace graphene { namespace chain {
       /// Time at which the first withdrawal period begins; must be in the future
       time_point_sec    period_start_time;
 
-      account_id_type fee_payer()const { return withdraw_from_account; }
+      account_uid_type fee_payer_uid()const { return withdraw_from_account; }
       void            validate()const;
    };
 
@@ -85,9 +85,9 @@ namespace graphene { namespace chain {
 
       asset                         fee;
       /// This account pays the fee. Must match permission_to_update->withdraw_from_account
-      account_id_type               withdraw_from_account;
+      account_uid_type               withdraw_from_account;
       /// The account authorized to make withdrawals. Must match permission_to_update->authorized_account
-      account_id_type               authorized_account;
+      account_uid_type               authorized_account;
       /// ID of the permission which is being updated
       withdraw_permission_id_type   permission_to_update;
       /// New maximum amount the withdrawer is allowed to charge per withdrawal period
@@ -99,7 +99,7 @@ namespace graphene { namespace chain {
       /// The new number of withdrawal periods for which this permission will be valid
       uint32_t                      periods_until_expiration = 0;
 
-      account_id_type fee_payer()const { return withdraw_from_account; }
+      account_uid_type fee_payer_uid()const { return withdraw_from_account; }
       void            validate()const;
    };
 
@@ -128,15 +128,15 @@ namespace graphene { namespace chain {
       /// ID of the permission authorizing this withdrawal
       withdraw_permission_id_type withdraw_permission;
       /// Must match withdraw_permission->withdraw_from_account
-      account_id_type             withdraw_from_account;
+      account_uid_type             withdraw_from_account;
       /// Must match withdraw_permision->authorized_account
-      account_id_type             withdraw_to_account;
+      account_uid_type             withdraw_to_account;
       /// Amount to withdraw. Must not exceed withdraw_permission->withdrawal_limit
       asset                       amount_to_withdraw;
       /// Memo for withdraw_from_account. Should generally be encrypted with withdraw_from_account->memo_key
       optional<memo_data>         memo;
 
-      account_id_type fee_payer()const { return withdraw_to_account; }
+      account_uid_type fee_payer_uid()const { return withdraw_to_account; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
    };
@@ -155,13 +155,13 @@ namespace graphene { namespace chain {
 
       asset                         fee;
       /// Must match withdrawal_permission->withdraw_from_account. This account pays the fee.
-      account_id_type               withdraw_from_account;
+      account_uid_type               withdraw_from_account;
       /// The account previously authorized to make withdrawals. Must match withdrawal_permission->authorized_account
-      account_id_type               authorized_account;
+      account_uid_type               authorized_account;
       /// ID of the permission to be revoked.
       withdraw_permission_id_type   withdrawal_permission;
 
-      account_id_type fee_payer()const { return withdraw_from_account; }
+      account_uid_type fee_payer_uid()const { return withdraw_from_account; }
       void            validate()const;
    };
 

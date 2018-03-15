@@ -402,7 +402,7 @@ namespace graphene { namespace chain {
             const optional< vesting_balance_id_type >& ovbid,
             share_type amount,
             uint32_t req_vesting_seconds,
-            account_id_type req_owner,
+            account_uid_type req_owner,
             bool require_vesting );
 
          // helper to handle cashback rewards
@@ -419,8 +419,6 @@ namespace graphene { namespace chain {
          //////////////////// db_market.cpp ////////////////////
 
          /// @{ @group Market Helpers
-         void globally_settle_asset( const asset_object& bitasset, const price& settle_price );
-         void cancel_order(const force_settlement_object& order, bool create_virtual_op = true);
          void cancel_order(const limit_order_object& order, bool create_virtual_op = true);
 
          /**
@@ -447,21 +445,12 @@ namespace graphene { namespace chain {
          template<typename OrderType>
          int match( const limit_order_object& bid, const OrderType& ask, const price& match_price );
          int match( const limit_order_object& bid, const limit_order_object& ask, const price& trade_price );
-         /// @return the amount of asset settled
-         asset match(const call_order_object& call,
-                   const force_settlement_object& settle,
-                   const price& match_price,
-                   asset max_settlement);
          ///@}
 
          /**
           * @return true if the order was completely filled and thus freed.
           */
          bool fill_order( const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small );
-         bool fill_order( const call_order_object& order, const asset& pays, const asset& receives );
-         bool fill_order( const force_settlement_object& settle, const asset& pays, const asset& receives );
-
-         bool check_call_orders( const asset_object& mia, bool enable_black_swan = true );
 
          // helpers to fill_order
          void pay_order( const account_object& receiver, const asset& receives, const asset& pays );
@@ -526,7 +515,6 @@ namespace graphene { namespace chain {
          void clear_expired_transactions();
          void clear_expired_proposals();
          void clear_expired_orders();
-         void update_expired_feeds();
          void update_maintenance_flag( bool new_maintenance_flag );
          void update_withdraw_permissions();
          void clear_expired_csaf_leases();
@@ -542,7 +530,6 @@ namespace graphene { namespace chain {
          void update_committee();
          void clear_unapproved_committee_proposals();
          void execute_committee_proposals();
-         bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true );
          void check_invariants();
          void release_platform_pledges();
          void clear_resigned_platform_votes();

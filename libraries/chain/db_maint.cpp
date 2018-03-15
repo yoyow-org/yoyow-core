@@ -37,7 +37,6 @@
 #include <graphene/chain/buyback_object.hpp>
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
-#include <graphene/chain/fba_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/chain/special_authority_object.hpp>
@@ -266,7 +265,7 @@ void database::update_active_committee_members()
 void database::initialize_budget_record( fc::time_point_sec now, budget_record& rec )const
 {
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   const asset_object& core = asset_id_type(0)(*this);
+   const asset_object& core = (*this).get_core_asset();
    const asset_dynamic_data_object& core_dd = core.dynamic_asset_data_id(*this);
 
    rec.from_initial_reserve = core.reserved(*this);
@@ -321,7 +320,7 @@ void database::process_budget()
       const global_property_object& gpo = get_global_properties();
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
       const asset_dynamic_data_object& core =
-         asset_id_type(0)(*this).dynamic_asset_data_id(*this);
+         this->get_core_asset().dynamic_asset_data_id(*this);
       fc::time_point_sec now = head_block_time();
 
       int64_t time_to_maint = (dpo.next_maintenance_time - now).to_seconds();
@@ -469,95 +468,6 @@ void update_top_n_authorities( database& db )
    } );
 }
 
-void split_fba_balance(
-   database& db,
-   uint64_t fba_id,
-   uint16_t network_pct,
-   uint16_t designated_asset_buyback_pct,
-   uint16_t designated_asset_issuer_pct
-)
-{
-   FC_ASSERT( uint32_t(network_pct) + uint32_t(designated_asset_buyback_pct) + uint32_t(designated_asset_issuer_pct) == GRAPHENE_100_PERCENT );
-   const fba_accumulator_object& fba = fba_accumulator_id_type( fba_id )(db);
-   if( fba.accumulated_fba_fees == 0 )
-      return;
-
-   const asset_object& core = asset_id_type(0)(db);
-   const asset_dynamic_data_object& core_dd = core.dynamic_asset_data_id(db);
-
-   if( !fba.is_configured(db) )
-   {
-      ilog( "${n} core given to network at block ${b} due to non-configured FBA", ("n", fba.accumulated_fba_fees)("b", db.head_block_time()) );
-      db.modify( core_dd, [&]( asset_dynamic_data_object& _core_dd )
-      {
-         _core_dd.current_supply -= fba.accumulated_fba_fees;
-      } );
-      db.modify( fba, [&]( fba_accumulator_object& _fba )
-      {
-         _fba.accumulated_fba_fees = 0;
-      } );
-      return;
-   }
-
-   fc::uint128_t buyback_amount_128 = fba.accumulated_fba_fees.value;
-   buyback_amount_128 *= designated_asset_buyback_pct;
-   buyback_amount_128 /= GRAPHENE_100_PERCENT;
-   share_type buyback_amount = buyback_amount_128.to_uint64();
-
-   fc::uint128_t issuer_amount_128 = fba.accumulated_fba_fees.value;
-   issuer_amount_128 *= designated_asset_issuer_pct;
-   issuer_amount_128 /= GRAPHENE_100_PERCENT;
-   share_type issuer_amount = issuer_amount_128.to_uint64();
-
-   // this assert should never fail
-   FC_ASSERT( buyback_amount + issuer_amount <= fba.accumulated_fba_fees );
-
-   share_type network_amount = fba.accumulated_fba_fees - (buyback_amount + issuer_amount);
-
-   const asset_object& designated_asset = (*fba.designated_asset)(db);
-
-   if( network_amount != 0 )
-   {
-      db.modify( core_dd, [&]( asset_dynamic_data_object& _core_dd )
-      {
-         _core_dd.current_supply -= network_amount;
-      } );
-   }
-
-   fba_distribute_operation vop;
-   vop.account_id = *designated_asset.buyback_account;
-   vop.fba_id = fba.id;
-   vop.amount = buyback_amount;
-   if( vop.amount != 0 )
-   {
-      // TODO review
-      //db.adjust_balance( *designated_asset.buyback_account, asset(buyback_amount) );
-      db.push_applied_operation(vop);
-   }
-
-   vop.account_id = designated_asset.issuer;
-   vop.fba_id = fba.id;
-   vop.amount = issuer_amount;
-   if( vop.amount != 0 )
-   {
-      // TODO review
-      //db.adjust_balance( designated_asset.issuer, asset(issuer_amount) );
-      db.push_applied_operation(vop);
-   }
-
-   db.modify( fba, [&]( fba_accumulator_object& _fba )
-   {
-      _fba.accumulated_fba_fees = 0;
-   } );
-}
-
-void distribute_fba_balances( database& db )
-{
-   split_fba_balance( db, fba_accumulator_id_transfer_to_blind  , 20*GRAPHENE_1_PERCENT, 60*GRAPHENE_1_PERCENT, 20*GRAPHENE_1_PERCENT );
-   split_fba_balance( db, fba_accumulator_id_blind_transfer     , 20*GRAPHENE_1_PERCENT, 60*GRAPHENE_1_PERCENT, 20*GRAPHENE_1_PERCENT );
-   split_fba_balance( db, fba_accumulator_id_transfer_from_blind, 20*GRAPHENE_1_PERCENT, 60*GRAPHENE_1_PERCENT, 20*GRAPHENE_1_PERCENT );
-}
-
 void create_buyback_orders( database& db )
 {
    const auto& bbo_idx = db.get_index_type< buyback_index >().indices().get<by_id>();
@@ -565,11 +475,11 @@ void create_buyback_orders( database& db )
 
    for( const buyback_object& bbo : bbo_idx )
    {
-      const asset_object& asset_to_buy = bbo.asset_to_buy(db);
+      const asset_object& asset_to_buy = db.get_asset_by_aid( bbo.asset_to_buy );
       assert( asset_to_buy.buyback_account.valid() );
 
-      const account_object& buyback_account = (*(asset_to_buy.buyback_account))(db);
-      asset_id_type next_asset = asset_id_type();
+      const account_object& buyback_account = db.get_account_by_uid( *(asset_to_buy.buyback_account) );
+      asset_aid_type next_asset = GRAPHENE_CORE_ASSET_AID;
 
       if( !buyback_account.allowed_assets.valid() )
       {
@@ -579,15 +489,15 @@ void create_buyback_orders( database& db )
 
       while( true )
       {
-         auto it = bal_idx.lower_bound( boost::make_tuple( buyback_account.uid, object_id_type(next_asset).instance() ) );
+         auto it = bal_idx.lower_bound( boost::make_tuple( buyback_account.uid, next_asset ) );
          if( it == bal_idx.end() )
             break;
          if( it->owner != buyback_account.uid )
             break;
-         asset_id_type asset_to_sell = asset_id_type( it->asset_type );
+         asset_aid_type asset_to_sell = it->asset_type;
          share_type amount_to_sell = it->balance;
          next_asset = asset_to_sell + 1;
-         if( asset_to_sell == asset_to_buy.id )
+         if( asset_to_sell == asset_to_buy.asset_id )
             continue;
          if( amount_to_sell == 0 )
             continue;
@@ -603,10 +513,10 @@ void create_buyback_orders( database& db )
             buyback_context.skip_fee_schedule_check = true;
 
             limit_order_create_operation create_vop;
-            create_vop.fee = asset( 0, asset_id_type() );
-            create_vop.seller = buyback_account.id;
+            create_vop.fee = asset( 0, GRAPHENE_CORE_ASSET_AID );
+            create_vop.seller = buyback_account.uid;
             create_vop.amount_to_sell = asset( amount_to_sell, asset_to_sell );
-            create_vop.min_to_receive = asset( 1, asset_to_buy.id );
+            create_vop.min_to_receive = asset( 1, asset_to_buy.asset_id );
             create_vop.expiration = time_point_sec::maximum();
             create_vop.fill_or_kill = false;
 
@@ -615,9 +525,9 @@ void create_buyback_orders( database& db )
             if( db.find( order_id ) != nullptr )
             {
                limit_order_cancel_operation cancel_vop;
-               cancel_vop.fee = asset( 0, asset_id_type() );
+               cancel_vop.fee = asset( 0, GRAPHENE_CORE_ASSET_AID );
                cancel_vop.order = order_id;
-               cancel_vop.fee_paying_account = buyback_account.id;
+               cancel_vop.fee_paying_account = buyback_account.uid;
 
                db.apply_operation( buyback_context, cancel_vop );
             }
@@ -648,7 +558,7 @@ void deprecate_annual_members( database& db )
          if( acct.is_annual_member( now ) )
          {
             account_upgrade_operation upgrade_vop;
-            upgrade_vop.fee = asset( 0, asset_id_type() );
+            upgrade_vop.fee = asset( 0, GRAPHENE_CORE_ASSET_AID );
             upgrade_vop.account_to_upgrade = acct.id;
             upgrade_vop.upgrade_to_lifetime_member = true;
             db.apply_operation( upgrade_context, upgrade_vop );
@@ -831,10 +741,6 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
       d.next_maintenance_time = next_maintenance_time;
       d.accounts_registered_this_interval = 0;
    });
-
-   // Reset all BitAsset force settlement volumes to zero
-   for( const asset_bitasset_data_object* d : get_index_type<asset_bitasset_data_index>() )
-      modify(*d, [](asset_bitasset_data_object& d) { d.force_settled_volume = 0; });
 
    /* removed for yy. no longer needed.
    // process_budget needs to run at the bottom because

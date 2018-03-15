@@ -34,9 +34,9 @@ namespace graphene { namespace chain {
 void_result withdraw_permission_create_evaluator::do_evaluate(const operation_type& op)
 { try {
    database& d = db();
-   FC_ASSERT(d.find_object(op.withdraw_from_account));
-   FC_ASSERT(d.find_object(op.authorized_account));
-   FC_ASSERT(d.find_object(asset_id_type(op.withdrawal_limit.asset_id)));
+   d.get_account_by_uid( op.withdraw_from_account );
+   d.get_account_by_uid( op.authorized_account );
+   d.get_asset_by_aid( op.withdrawal_limit.asset_id );
    FC_ASSERT(op.period_start_time > d.head_block_time());
    FC_ASSERT(op.period_start_time + op.periods_until_expiration * op.withdrawal_period_sec > d.head_block_time());
    FC_ASSERT(op.withdrawal_period_sec >= d.get_global_properties().parameters.block_interval);
@@ -65,14 +65,14 @@ void_result withdraw_permission_claim_evaluator::do_evaluate(const withdraw_perm
    FC_ASSERT(permit.authorized_account == op.withdraw_to_account);
    FC_ASSERT(permit.withdraw_from_account == op.withdraw_from_account);
    FC_ASSERT(op.amount_to_withdraw <= permit.available_this_period( d.head_block_time() ) );
-   // TODO review
-   //FC_ASSERT(d.get_balance(op.withdraw_from_account, asset_id_type(op.amount_to_withdraw.asset_id)) >= op.amount_to_withdraw);
+   
+   FC_ASSERT(d.get_balance(op.withdraw_from_account, op.amount_to_withdraw.asset_id) >= op.amount_to_withdraw);
 
-   const asset_object& _asset = asset_id_type(op.amount_to_withdraw.asset_id)(d);
+   const asset_object& _asset = d.get_asset_by_aid( op.amount_to_withdraw.asset_id );
    if( _asset.is_transfer_restricted() ) FC_ASSERT( _asset.issuer == permit.authorized_account || _asset.issuer == permit.withdraw_from_account );
 
-   const account_object& from  = op.withdraw_to_account(d);
-   const account_object& to    = permit.authorized_account(d);
+   const account_object& from  = d.get_account_by_uid( op.withdraw_to_account );
+   const account_object& to    = d.get_account_by_uid( permit.authorized_account );
    FC_ASSERT( is_authorized_asset( d, to, _asset ) );
    FC_ASSERT( is_authorized_asset( d, from, _asset ) );
 
@@ -107,7 +107,7 @@ void_result withdraw_permission_update_evaluator::do_evaluate(const withdraw_per
    const withdraw_permission_object& permit = op.permission_to_update(d);
    FC_ASSERT(permit.authorized_account == op.authorized_account);
    FC_ASSERT(permit.withdraw_from_account == op.withdraw_from_account);
-   FC_ASSERT(d.find_object(asset_id_type(op.withdrawal_limit.asset_id)));
+   d.get_asset_by_aid( op.withdrawal_limit.asset_id );
    FC_ASSERT(op.period_start_time >= d.head_block_time());
    FC_ASSERT(op.period_start_time + op.periods_until_expiration * op.withdrawal_period_sec > d.head_block_time());
    FC_ASSERT(op.withdrawal_period_sec >= d.get_global_properties().parameters.block_interval);

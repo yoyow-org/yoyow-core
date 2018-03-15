@@ -37,7 +37,7 @@ const asset_object& database::get_core_asset() const
    return get(asset_id_type());
 }
 
-const asset_object& get_asset_by_aid( asset_aid_type aid )const;
+const asset_object& database::get_asset_by_aid( asset_aid_type aid )const
 {
    const auto& assets_by_aid = get_index_type<asset_index>().indices().get<by_aid>();
    auto itr = assets_by_aid.find(aid);
@@ -45,7 +45,7 @@ const asset_object& get_asset_by_aid( asset_aid_type aid )const;
    return *itr;
 }
 
-const asset_object* find_asset_by_aid( asset_aid_type aid )const
+const asset_object* database::find_asset_by_aid( asset_aid_type aid )const
 {
    const auto& assets_by_aid = get_index_type<asset_index>().indices().get<by_aid>();
    auto itr = assets_by_aid.find(aid);

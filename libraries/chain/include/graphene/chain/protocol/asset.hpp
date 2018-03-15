@@ -127,7 +127,7 @@ namespace graphene { namespace chain {
       static price call_price(const asset& debt, const asset& collateral, uint16_t collateral_ratio);
 
       /// The unit price for an asset type A is defined to be a price such that for any asset m, m*A=m
-      static price unit_price(asset_id_type a = asset_id_type()) { return price(asset(1, a), asset(1, a)); }
+      static price unit_price(asset_aid_type a = GRAPHENE_CORE_ASSET_AID) { return price(asset(1, a), asset(1, a)); }
 
       price max()const { return price::max( base.asset_id, quote.asset_id ); }
       price min()const { return price::min( base.asset_id, quote.asset_id ); }
@@ -155,8 +155,3 @@ namespace graphene { namespace chain {
 
 FC_REFLECT( graphene::chain::asset, (amount)(asset_id) )
 FC_REFLECT( graphene::chain::price, (base)(quote) )
-
-#define GRAPHENE_PRICE_FEED_FIELDS (settlement_price)(maintenance_collateral_ratio)(maximum_short_squeeze_ratio) \
-   (core_exchange_rate)
-
-FC_REFLECT( graphene::chain::price_feed, GRAPHENE_PRICE_FEED_FIELDS )

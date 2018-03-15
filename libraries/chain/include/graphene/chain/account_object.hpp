@@ -293,6 +293,7 @@ namespace graphene { namespace chain {
 
          asset get_balance()const { return asset(balance, asset_type); }
          void  adjust_balance(const asset& delta);
+         asset_id_type get_id()const { return id; }
    };
 
 
@@ -382,7 +383,7 @@ namespace graphene { namespace chain {
           * account cannot update this set, except by transferring ownership of the account, which will clear it. Other
           * accounts may add or remove their IDs from this set.
           */
-         flat_set<account_id_type> whitelisting_accounts;
+         flat_set<account_uid_type> whitelisting_accounts;
 
          /**
           * Optionally track all of the accounts this account has whitelisted or blacklisted, these should
@@ -394,8 +395,8 @@ namespace graphene { namespace chain {
           * then every time someone fetches this account object they will get the full list of 2000 accounts.
           */
          ///@{
-         set<account_id_type> whitelisted_accounts;
-         set<account_id_type> blacklisted_accounts;
+         set<account_uid_type> whitelisted_accounts;
+         set<account_uid_type> blacklisted_accounts;
          ///@}
 
 
@@ -405,7 +406,7 @@ namespace graphene { namespace chain {
           * account cannot update this set, and it will be preserved even if the account is transferred. Other accounts
           * may add or remove their IDs from this set.
           */
-         flat_set<account_id_type> blacklisting_accounts;
+         flat_set<account_uid_type> blacklisting_accounts;
 
          /**
           * Vesting balance which receives cashback_reward deposits.

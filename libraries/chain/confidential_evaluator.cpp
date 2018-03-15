@@ -37,7 +37,7 @@ void_result transfer_to_blind_evaluator::do_evaluate( const transfer_to_blind_op
 { try {
    const auto& d = db();
 
-   const auto& atype = asset_id_type(o.amount.asset_id)(db()); 
+   const auto& atype = d.get_asset_by_aid( o.amount.asset_id ); 
    FC_ASSERT( atype.allow_confidential() );
    FC_ASSERT( !atype.is_transfer_restricted() );
    FC_ASSERT( !(atype.options.flags & white_list) );
@@ -53,10 +53,10 @@ void_result transfer_to_blind_evaluator::do_evaluate( const transfer_to_blind_op
 
 void_result transfer_to_blind_evaluator::do_apply( const transfer_to_blind_operation& o ) 
 { try {
-   // TODO review
-   //db().adjust_balance( o.from, -o.amount );
+   const auto& d = db();
+   db().adjust_balance( o.from, -o.amount );
 
-   const auto& add = asset_id_type(o.amount.asset_id)(db()).dynamic_asset_data_id(db());  // verify fee is a legit asset 
+   const auto& add = d.get_asset_by_aid( o.amount.asset_id ).dynamic_asset_data_id(d);  // verify fee is a legit asset 
    db().modify( add, [&]( asset_dynamic_data_object& obj ){
       obj.confidential_supply += o.amount.amount;
       FC_ASSERT( obj.confidential_supply >= 0 );
@@ -64,7 +64,7 @@ void_result transfer_to_blind_evaluator::do_apply( const transfer_to_blind_opera
    for( const auto& out : o.outputs )
    {
       db().create<blinded_balance_object>( [&]( blinded_balance_object& obj ){
-          obj.asset_id   = asset_id_type(o.amount.asset_id);
+          obj.asset_id   = o.amount.asset_id;
           obj.owner      = out.owner;
           obj.commitment = out.commitment;
       });
@@ -72,22 +72,17 @@ void_result transfer_to_blind_evaluator::do_apply( const transfer_to_blind_opera
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
-void transfer_to_blind_evaluator::pay_fee()
-{
-   pay_fba_fee( fba_accumulator_id_transfer_to_blind );
-}
-
 void_result transfer_from_blind_evaluator::do_evaluate( const transfer_from_blind_operation& o )
 { try {
    const auto& d = db();
-   asset_id_type(o.fee.asset_id)(d);  // verify fee is a legit asset 
+   d.get_asset_by_aid( o.fee.asset_id );  // verify fee is a legit asset 
    const auto& bbi = d.get_index_type<blinded_balance_index>();
    const auto& cidx = bbi.indices().get<by_commitment>();
    for( const auto& in : o.inputs )
    {
       auto itr = cidx.find( in.commitment );
       FC_ASSERT( itr != cidx.end() );
-      FC_ASSERT( itr->asset_id == asset_id_type(o.fee.asset_id) );
+      FC_ASSERT( itr->asset_id == o.fee.asset_id );
       FC_ASSERT( itr->owner == in.owner );
    }
    return void_result();
@@ -95,9 +90,9 @@ void_result transfer_from_blind_evaluator::do_evaluate( const transfer_from_blin
 
 void_result transfer_from_blind_evaluator::do_apply( const transfer_from_blind_operation& o ) 
 { try {
-   // TODO review
-   //db().adjust_balance( o.fee_payer(), o.fee );
-   //db().adjust_balance( o.to, o.amount );
+   const auto& d = db();
+   db().adjust_balance( o.fee_payer_uid(), o.fee );
+   db().adjust_balance( o.to, o.amount );
    const auto& bbi = db().get_index_type<blinded_balance_index>();
    const auto& cidx = bbi.indices().get<by_commitment>();
    for( const auto& in : o.inputs )
@@ -106,7 +101,7 @@ void_result transfer_from_blind_evaluator::do_apply( const transfer_from_blind_o
       FC_ASSERT( itr != cidx.end() );
       db().remove( *itr );
    }
-   const auto& add = asset_id_type(o.amount.asset_id)(db()).dynamic_asset_data_id(db());  // verify fee is a legit asset 
+   const auto& add = d.get_asset_by_aid( o.amount.asset_id ).dynamic_asset_data_id(d);
    db().modify( add, [&]( asset_dynamic_data_object& obj ){
       obj.confidential_supply -= o.amount.amount + o.fee.amount;
       FC_ASSERT( obj.confidential_supply >= 0 );
@@ -114,16 +109,11 @@ void_result transfer_from_blind_evaluator::do_apply( const transfer_from_blind_o
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
-void transfer_from_blind_evaluator::pay_fee()
-{
-   pay_fba_fee( fba_accumulator_id_transfer_from_blind );
-}
-
 void_result blind_transfer_evaluator::do_evaluate( const blind_transfer_operation& o )
 { try {
    const auto& d = db();
-   asset_id_type(o.fee.asset_id)(db());  // verify fee is a legit asset 
-   const auto& bbi = db().get_index_type<blinded_balance_index>();
+   d.get_asset_by_aid( o.fee.asset_id );  // verify fee is a legit asset 
+   const auto& bbi = d.get_index_type<blinded_balance_index>();
    const auto& cidx = bbi.indices().get<by_commitment>();
    for( const auto& out : o.outputs )
    {
@@ -134,7 +124,7 @@ void_result blind_transfer_evaluator::do_evaluate( const blind_transfer_operatio
    {
       auto itr = cidx.find( in.commitment );
       GRAPHENE_ASSERT( itr != cidx.end(), blind_transfer_unknown_commitment, "", ("commitment",in.commitment) );
-      FC_ASSERT( itr->asset_id == asset_id_type(o.fee.asset_id) );
+      FC_ASSERT( itr->asset_id == o.fee.asset_id );
       FC_ASSERT( itr->owner == in.owner );
    }
    return void_result();
@@ -142,9 +132,9 @@ void_result blind_transfer_evaluator::do_evaluate( const blind_transfer_operatio
 
 void_result blind_transfer_evaluator::do_apply( const blind_transfer_operation& o ) 
 { try {
-   // TODO review
-   //db().adjust_balance( o.fee_payer(), o.fee ); // deposit the fee to the temp account
-   const auto& bbi = db().get_index_type<blinded_balance_index>();
+   const auto& d = db();
+   db().adjust_balance( o.fee_payer_uid(), o.fee ); // deposit the fee to the temp account
+   const auto& bbi = d.get_index_type<blinded_balance_index>();
    const auto& cidx = bbi.indices().get<by_commitment>();
    for( const auto& in : o.inputs )
    {
@@ -155,12 +145,12 @@ void_result blind_transfer_evaluator::do_apply( const blind_transfer_operation& 
    for( const auto& out : o.outputs )
    {
       db().create<blinded_balance_object>( [&]( blinded_balance_object& obj ){
-          obj.asset_id   = asset_id_type(o.fee.asset_id);
+          obj.asset_id   = o.fee.asset_id;
           obj.owner      = out.owner;
           obj.commitment = out.commitment;
       });
    }
-   const auto& add = asset_id_type(o.fee.asset_id)(db()).dynamic_asset_data_id(db());  
+   const auto& add = d.get_asset_by_aid( o.fee.asset_id ).dynamic_asset_data_id(d);  
    db().modify( add, [&]( asset_dynamic_data_object& obj ){
       obj.confidential_supply -= o.fee.amount;
       FC_ASSERT( obj.confidential_supply >= 0 );
@@ -168,10 +158,5 @@ void_result blind_transfer_evaluator::do_apply( const blind_transfer_operation& 
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
-
-void blind_transfer_evaluator::pay_fee()
-{
-   pay_fba_fee( fba_accumulator_id_blind_transfer );
-}
 
 } } // graphene::chain

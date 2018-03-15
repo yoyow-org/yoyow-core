@@ -272,9 +272,10 @@ namespace graphene { namespace app {
                result.push_back( obj->id );
                break;
             } case asset_object_type:{
-               const auto& aobj = dynamic_cast<const asset_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->issuer );
+               // TODO review
+               //const auto& aobj = dynamic_cast<const asset_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->issuer );
                break;
              } case platform_object_type:{
                // TODO review
@@ -289,11 +290,6 @@ namespace graphene { namespace app {
                //result.push_back( aobj->poster );
                //if( aobj->parent_poster.valid() )
                //   result.push_back( *(aobj->parent_poster) );
-               break;
-            } case force_settlement_object_type:{
-               const auto& aobj = dynamic_cast<const force_settlement_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->owner );
                break;
             } case committee_member_object_type:{
                // TODO review
@@ -314,14 +310,9 @@ namespace graphene { namespace app {
                //result.push_back( aobj->committee_member_uid );
                break;
             } case limit_order_object_type:{
-               const auto& aobj = dynamic_cast<const limit_order_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->seller );
-               break;
-            } case call_order_object_type:{
-               const auto& aobj = dynamic_cast<const call_order_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->borrower );
+               //const auto& aobj = dynamic_cast<const limit_order_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->seller );
                break;
             } case custom_object_type:{
               break;
@@ -342,20 +333,20 @@ namespace graphene { namespace app {
                for( auto& item : impacted ) result.emplace_back(item);
                break;
             } case withdraw_permission_object_type:{
-               const auto& aobj = dynamic_cast<const withdraw_permission_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->withdraw_from_account );
-               result.push_back( aobj->authorized_account );
+               //const auto& aobj = dynamic_cast<const withdraw_permission_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->withdraw_from_account );
+               //result.push_back( aobj->authorized_account );
                break;
             } case vesting_balance_object_type:{
-               const auto& aobj = dynamic_cast<const vesting_balance_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->owner );
+               //const auto& aobj = dynamic_cast<const vesting_balance_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->owner );
                break;
             } case worker_object_type:{
-               const auto& aobj = dynamic_cast<const worker_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->worker_account );
+               //const auto& aobj = dynamic_cast<const worker_object*>(obj);
+               //assert( aobj != nullptr );
+               //result.push_back( aobj->worker_account );
                break;
             } case balance_object_type:{
                /** these are free from any accounts */
@@ -374,8 +365,6 @@ namespace graphene { namespace app {
                  case impl_reserved0_object_type:
                   break;
                  case impl_asset_dynamic_data_type:
-                  break;
-                 case impl_asset_bitasset_data_type:
                   break;
                  case impl_account_balance_object_type:{
                   // TODO review
@@ -454,14 +443,12 @@ namespace graphene { namespace app {
                   break;
                  case impl_buyback_object_type:
                   break;
-                 case impl_fba_accumulator_object_type:
-                  break;
           }
        }
        return result;
     } // end get_relevant_accounts( obj )
 
-    vector<order_history_object> history_api::get_fill_order_history( asset_id_type a, asset_id_type b, uint32_t limit  )const
+    vector<order_history_object> history_api::get_fill_order_history( asset_aid_type a, asset_aid_type b, uint32_t limit  )const
     {
        FC_ASSERT(_app.chain_database());
        const auto& db = *_app.chain_database();
@@ -607,7 +594,7 @@ namespace graphene { namespace app {
        return hist->tracked_buckets();
     }
 
-    vector<bucket_object> history_api::get_market_history( asset_id_type a, asset_id_type b,
+    vector<bucket_object> history_api::get_market_history( asset_aid_type a, asset_aid_type b,
                                                            uint32_t bucket_seconds, fc::time_point_sec start, fc::time_point_sec end )const
     { try {
        FC_ASSERT(_app.chain_database());

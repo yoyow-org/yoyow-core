@@ -101,7 +101,7 @@ struct blind_receipt
 {
    std::pair<public_key_type,fc::time_point>        from_date()const { return std::make_pair(from_key,date); }
    std::pair<public_key_type,fc::time_point>        to_date()const   { return std::make_pair(to_key,date);   }
-   std::tuple<public_key_type,asset_id_type,bool>   to_asset_used()const   { return std::make_tuple(to_key,asset_id_type(amount.asset_id),used);   }
+   std::tuple<public_key_type,asset_aid_type,bool>   to_asset_used()const   { return std::make_tuple(to_key,amount.asset_id,used);   }
    const commitment_type& commitment()const        { return data.commitment; }
 
    fc::time_point                  date;
@@ -126,7 +126,7 @@ typedef multi_index_container< blind_receipt,
    indexed_by<
       ordered_unique< tag<by_commitment>, const_mem_fun< blind_receipt, const commitment_type&, &blind_receipt::commitment > >,
       ordered_unique< tag<by_to>, const_mem_fun< blind_receipt, std::pair<public_key_type,fc::time_point>, &blind_receipt::to_date > >,
-      ordered_non_unique< tag<by_to_asset_used>, const_mem_fun< blind_receipt, std::tuple<public_key_type,asset_id_type,bool>, &blind_receipt::to_asset_used > >,
+      ordered_non_unique< tag<by_to_asset_used>, const_mem_fun< blind_receipt, std::tuple<public_key_type,asset_aid_type,bool>, &blind_receipt::to_asset_used > >,
       ordered_unique< tag<by_from>, const_mem_fun< blind_receipt, std::pair<public_key_type,fc::time_point>, &blind_receipt::from_date > >
    >
 > blind_receipt_index_type;
@@ -382,8 +382,6 @@ class wallet_api
 
       vector<bucket_object>             get_market_history(string symbol, string symbol2, uint32_t bucket, fc::time_point_sec start, fc::time_point_sec end)const;
       vector<limit_order_object>        get_limit_orders(string a, string b, uint32_t limit)const;
-      vector<call_order_object>         get_call_orders(string a, uint32_t limit)const;
-      vector<force_settlement_object>   get_settle_orders(string a, uint32_t limit)const;
       
       /** Returns the block chain's slowly-changing settings.
        * This object contains all of the properties of the blockchain that are fixed
@@ -1972,8 +1970,6 @@ FC_API( graphene::wallet::wallet_api,
         (get_private_key)
         (normalize_brain_key)
         //(get_limit_orders)
-        //(get_call_orders)
-        //(get_settle_orders)
         //(set_wallet_filename)
         //(load_wallet_file)
         (save_wallet_file)
