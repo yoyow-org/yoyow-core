@@ -31,7 +31,7 @@ namespace graphene { namespace chain {
 
    struct asset
    {
-      asset( share_type a = 0, asset_aid_type id = 1 )
+      asset( share_type a = 0, asset_aid_type id = GRAPHENE_CORE_ASSET_AID )
       :amount(a),asset_id(id){}
 
       share_type    amount;

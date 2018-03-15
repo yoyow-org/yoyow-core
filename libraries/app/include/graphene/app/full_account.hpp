@@ -46,8 +46,6 @@ namespace graphene { namespace app {
       vector<account_balance_object>   balances;
       vector<vesting_balance_object>   vesting_balances;
       vector<limit_order_object>       limit_orders;
-      vector<call_order_object>        call_orders;
-      vector<force_settlement_object>  settle_orders;
       vector<proposal_object>          proposals;
       vector<asset_id_type>            assets;
       vector<withdraw_permission_object> withdraws;

@@ -1999,9 +1999,9 @@ signed_transaction account_cancel_auth_platform(string account,
       }
 
       // try casting to avoid a round-trip if we were given an account ID
-      fc::optional<account_id_type> acct_id = maybe_id<account_id_type>( account_name );
+      fc::optional<account_uid_type> acct_id = fc::variant( account_name ).as_uint64();// maybe_id<account_id_type>( account_name );
       if( !acct_id )
-         acct_id = get_account( account_name ).id;
+         acct_id = get_account( account_name ).uid;
 
       vector< vesting_balance_object > vbos = _remote_db->get_vesting_balances( *acct_id );
       if( vbos.size() == 0 )

@@ -310,7 +310,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT;
+       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = 0;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
@@ -338,7 +338,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_WITNESS_ACCOUNT;
+       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_WITNESS_ACCOUNT_UID;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
@@ -350,7 +350,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT;
+       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
@@ -364,7 +364,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.secondary.weight_threshold = 1;
        a.is_registrar = true;
        a.is_full_member = true;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT;
+       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = 0;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
@@ -376,7 +376,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.owner.weight_threshold = 0;
        a.active.weight_threshold = 0;
        a.secondary.weight_threshold = 0;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_TEMP_ACCOUNT;
+       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_TEMP_ACCOUNT_UID;
        a.membership_expiration_date = time_point_sec::maximum();
        a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
@@ -393,7 +393,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
           a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
           a.owner.weight_threshold = 1;
           a.active.weight_threshold = 1;
-          a.registrar = a.lifetime_referrer = a.referrer = account_id_type(id);
+          a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
           a.membership_expiration_date = time_point_sec::maximum();
           a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
           a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;

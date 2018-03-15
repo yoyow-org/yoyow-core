@@ -188,9 +188,7 @@ namespace graphene { namespace chain {
    class witness_object;
    class asset_object;
    class committee_proposal_object;
-   class force_settlement_object;
    class limit_order_object;
-   class call_order_object;
    class custom_object;
    class proposal_object;
    class operation_history_object;

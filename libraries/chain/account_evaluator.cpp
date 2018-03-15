@@ -647,7 +647,7 @@ void_result account_upgrade_evaluator::do_apply(const account_upgrade_evaluator:
          // Upgrade to lifetime member. I don't care what the account was before.
          a.statistics(d).process_fees(a, d);
          a.membership_expiration_date = time_point_sec::maximum();
-         a.referrer = a.registrar = a.lifetime_referrer = a.get_id();
+         a.referrer = a.registrar = a.lifetime_referrer = a.uid;
          a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - a.network_fee_percentage;
       }
    });

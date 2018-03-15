@@ -121,7 +121,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const;
       vector<balance_object> get_balance_objects( const vector<address>& addrs )const;
       vector<asset> get_vested_balances( const vector<balance_id_type>& objs )const;
-      vector<vesting_balance_object> get_vesting_balances( account_id_type account_id )const;
+      vector<vesting_balance_object> get_vesting_balances( account_uid_type account_id )const;
 
       // Assets
       vector<optional<asset_object>> get_assets(const vector<asset_aid_type>& asset_ids)const;
@@ -683,10 +683,11 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       full_account acnt;
       acnt.account = *account;
       acnt.statistics = account->statistics(_db);
-      acnt.registrar_name = account->registrar(_db).name;
-      acnt.referrer_name = account->referrer(_db).name;
-      acnt.lifetime_referrer_name = account->lifetime_referrer(_db).name;
-      //TODO review
+      acnt.registrar_name = _db.get_account_by_uid( account->registrar ).name;
+      acnt.referrer_name = _db.get_account_by_uid( account->referrer ).name;
+      acnt.lifetime_referrer_name = _db.get_account_by_uid( account->lifetime_referrer ).name;
+      
+      // TODO review Performance issues
       //acnt.votes = lookup_vote_ids( vector<vote_id_type>(account->options.votes.begin(),account->options.votes.end()) );
 
       // Add the account itself, its statistics object, cashback balance, and referral account names
@@ -721,28 +722,28 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
                     });
 
       // Add the account's vesting balances
-      auto vesting_range = _db.get_index_type<vesting_balance_index>().indices().get<by_account>().equal_range(account->id);
+      auto vesting_range = _db.get_index_type<vesting_balance_index>().indices().get<by_account>().equal_range(account->uid);
       std::for_each(vesting_range.first, vesting_range.second,
                     [&acnt](const vesting_balance_object& balance) {
                        acnt.vesting_balances.emplace_back(balance);
                     });
 
       // Add the account's orders
-      auto order_range = _db.get_index_type<limit_order_index>().indices().get<by_account>().equal_range(account->id);
+      auto order_range = _db.get_index_type<limit_order_index>().indices().get<by_account>().equal_range(account->uid);
       std::for_each(order_range.first, order_range.second,
                     [&acnt] (const limit_order_object& order) {
                        acnt.limit_orders.emplace_back(order);
                     });
 
       // get assets issued by user
-      auto asset_range = _db.get_index_type<asset_index>().indices().get<by_issuer>().equal_range(account->id);
+      auto asset_range = _db.get_index_type<asset_index>().indices().get<by_issuer>().equal_range(account->uid);
       std::for_each(asset_range.first, asset_range.second,
                     [&acnt] (const asset_object& asset) {
                        acnt.assets.emplace_back(asset.id);
                     });
 
       // get withdraws permissions
-      auto withdraw_range = _db.get_index_type<withdraw_permission_index>().indices().get<by_from>().equal_range(account->id);
+      auto withdraw_range = _db.get_index_type<withdraw_permission_index>().indices().get<by_from>().equal_range(account->uid);
       std::for_each(withdraw_range.first, withdraw_range.second,
                     [&acnt] (const withdraw_permission_object& withdraw) {
                        acnt.withdraws.emplace_back(withdraw);
@@ -1225,7 +1226,7 @@ vector<balance_object> database_api_impl::get_balance_objects( const vector<addr
       for( const auto& owner : addrs )
       {
          subscribe_to_item( owner );
-         auto itr = by_owner_idx.lower_bound( boost::make_tuple( owner, asset_id_type(0) ) );
+         auto itr = by_owner_idx.lower_bound( boost::make_tuple( owner, GRAPHENE_CORE_ASSET_AID ) );
          while( itr != by_owner_idx.end() && itr->owner == owner )
          {
             result.push_back( *itr );
@@ -1255,12 +1256,12 @@ vector<asset> database_api_impl::get_vested_balances( const vector<balance_id_ty
    } FC_CAPTURE_AND_RETHROW( (objs) )
 }
 
-vector<vesting_balance_object> database_api::get_vesting_balances( account_id_type account_id )const
+vector<vesting_balance_object> database_api::get_vesting_balances( account_uid_type account_id )const
 {
    return my->get_vesting_balances( account_id );
 }
 
-vector<vesting_balance_object> database_api_impl::get_vesting_balances( account_id_type account_id )const
+vector<vesting_balance_object> database_api_impl::get_vesting_balances( account_uid_type account_id )const
 {
    try
    {
@@ -1916,7 +1917,6 @@ vector<variant> database_api_impl::lookup_vote_ids( const vector<vote_id_type>& 
       {
          case vote_id_type::committee:
          {
-            // TODO review
             //auto itr = committee_idx.find( id );
             //if( itr != committee_idx.end() )
             //   result.emplace_back( variant( *itr ) );
@@ -2205,10 +2205,11 @@ vector< fc::variant > database_api_impl::get_required_fees( const vector<operati
 
    vector< fc::variant > result;
    result.reserve(ops.size());
-   const asset_object& a = id(_db);
+   //const asset_object& a = id(_db);
+   const price cer( asset( 1, GRAPHENE_CORE_ASSET_AID ), asset( 1, GRAPHENE_CORE_ASSET_AID ) );
    get_required_fees_helper helper(
       _db.current_fee_schedule(),
-      a.options.core_exchange_rate,
+      cer,
       GET_REQUIRED_FEES_MAX_RECURSION );
    for( operation& op : _ops )
    {
@@ -2408,11 +2409,7 @@ void database_api_impl::handle_object_changed(bool force_notify, bool full_objec
 
       for(auto id : ids)
       {
-         if( id.is<call_order_object>() )
-         {
-            enqueue_if_subscribed_to_market<call_order_object>( find_object(id), broadcast_queue, full_object );
-         }
-         else if( id.is<limit_order_object>() )
+         if( id.is<limit_order_object>() )
          {
             enqueue_if_subscribed_to_market<limit_order_object>( find_object(id), broadcast_queue, full_object );
          }

@@ -353,7 +353,7 @@ class database_api
 
       vector<asset> get_vested_balances( const vector<balance_id_type>& objs )const;
 
-      vector<vesting_balance_object> get_vesting_balances( account_id_type account_id )const;
+      vector<vesting_balance_object> get_vesting_balances( account_uid_type account_id )const;
 
       /**
        * @brief Get the total number of accounts registered with the blockchain
