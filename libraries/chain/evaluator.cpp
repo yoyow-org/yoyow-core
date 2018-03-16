@@ -66,8 +66,7 @@ database& generic_evaluator::db()const { return trx_state->db(); }
       const database& d = db();
       fee_from_account = fee;
       FC_ASSERT( fee.amount >= 0 );
-      if( d.head_block_num() > 10000 )
-         FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID, "Must use core assets as a fee" );
+      FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID, "Must use core assets as a fee" );
 
       fee_paying_account_statistics = &fee_paying_account->statistics(d);
 
@@ -89,8 +88,7 @@ database& generic_evaluator::db()const { return trx_state->db(); }
    void generic_evaluator::prepare_fee(const fee_type& fee)
    {
       const database& d = db();
-      if( d.head_block_num() > 1000 )
-         FC_ASSERT( fee_from_account.asset_id == GRAPHENE_CORE_ASSET_AID, "Must use core assets as a fee" );
+      FC_ASSERT( fee_from_account.asset_id == GRAPHENE_CORE_ASSET_AID, "Must use core assets as a fee" );
 
       fee_paying_account_statistics = &fee_paying_account->statistics(d);
 
