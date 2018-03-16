@@ -425,7 +425,7 @@ class wallet_api
        * @param asset_name_or_id the symbol of an asset to look up
        * @returns the id of the given asset
        */
-      asset_id_type                     get_asset_id(string asset_name_or_id) const;
+      asset_aid_type                     get_asset_aid(string asset_name_or_id) const;
 
       /**
        * Returns the blockchain object corresponding to the given id.

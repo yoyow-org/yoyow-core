@@ -672,15 +672,15 @@ public:
       return *opt;
    }
 
-   asset_id_type get_asset_id(string asset_symbol_or_id) const
+   asset_aid_type get_asset_aid(string asset_symbol_or_id) const
    {
       FC_ASSERT( asset_symbol_or_id.size() > 0 );
       vector<optional<asset_object>> opt_asset;
       if( std::isdigit( asset_symbol_or_id.front() ) )
-         return fc::variant(asset_symbol_or_id).as<asset_id_type>();
+         return fc::variant(asset_symbol_or_id).as<uint64_t>();
       opt_asset = _remote_db->lookup_asset_symbols( {asset_symbol_or_id} );
       FC_ASSERT( (opt_asset.size() > 0) && (opt_asset[0].valid()), "Can not find asset ${a}", ("a", asset_symbol_or_id) );
-      return opt_asset[0]->id;
+      return opt_asset[0]->asset_id;
    }
 
    string                            get_wallet_filename() const
@@ -1179,6 +1179,35 @@ public:
 
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (issuer)(symbol)(precision)(common)(broadcast) ) }
+
+   signed_transaction update_asset(string symbol,
+                                   optional<string> new_issuer,
+                                   asset_options new_options,
+                                   bool broadcast /* = false */)
+   { try {
+      optional<asset_object> asset_to_update = find_asset(symbol);
+      if (!asset_to_update)
+        FC_THROW("No asset with that symbol exists!");
+      optional<account_uid_type> new_issuer_account_id;
+      if (new_issuer)
+      {
+        account_object new_issuer_account = get_account(*new_issuer);
+        new_issuer_account_id = new_issuer_account.uid;
+      }
+
+      asset_update_operation update_op;
+      update_op.issuer = asset_to_update->issuer;
+      update_op.asset_to_update = asset_to_update->asset_id;
+      update_op.new_issuer = new_issuer_account_id;
+      update_op.new_options = new_options;
+
+      signed_transaction tx;
+      tx.operations.push_back( update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (symbol)(new_issuer)(new_options)(broadcast) ) }
 
    signed_transaction reserve_asset(string from,
                                  string amount,
@@ -2807,7 +2836,7 @@ signed_transaction account_cancel_auth_platform(string account,
       asset_options opts;
       opts.flags &= ~(white_list);
       opts.issuer_permissions = opts.flags;
-      create_asset(get_account(creator).name, symbol, 2, opts, {}, true);
+      create_asset(get_account(creator).name, symbol, 2, opts, true);
    }
 
    void dbg_push_blocks( const std::string& src_filename, uint32_t count )
@@ -3249,7 +3278,7 @@ vector<operation_detail> wallet_api::get_relative_account_history(string account
 
 vector<bucket_object> wallet_api::get_market_history( string symbol1, string symbol2, uint32_t bucket , fc::time_point_sec start, fc::time_point_sec end )const
 {
-   return my->_remote_hist->get_market_history( get_asset_id(symbol1), get_asset_id(symbol2), bucket, start, end );
+   return my->_remote_hist->get_market_history( get_asset_aid(symbol1), get_asset_aid(symbol2), bucket, start, end );
 }
 
 vector<limit_order_object> wallet_api::get_limit_orders(string a, string b, uint32_t limit)const
@@ -3394,9 +3423,9 @@ asset_object wallet_api::get_asset(string asset_name_or_id) const
    return *a;
 }
 
-asset_id_type wallet_api::get_asset_id(string asset_symbol_or_id) const
+asset_aid_type wallet_api::get_asset_aid(string asset_symbol_or_id) const
 {
-   return my->get_asset_id(asset_symbol_or_id);
+   return my->get_asset_aid(asset_symbol_or_id);
 }
 
 bool wallet_api::import_key(string account_name_or_id, string wif_key)
