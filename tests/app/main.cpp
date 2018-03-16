@@ -83,8 +83,8 @@ BOOST_AUTO_TEST_CASE( two_node_network )
       std::shared_ptr<chain::database> db1 = app1.chain_database();
       std::shared_ptr<chain::database> db2 = app2.chain_database();
 
-      BOOST_CHECK_EQUAL( db1->get_balance( GRAPHENE_NULL_ACCOUNT, GRAPHENE_CORE_ASSET_AID ).amount.value, 0 );
-      BOOST_CHECK_EQUAL( db2->get_balance( GRAPHENE_NULL_ACCOUNT, GRAPHENE_CORE_ASSET_AID ).amount.value, 0 );
+      BOOST_CHECK_EQUAL( db1->get_balance( GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID ).amount.value, 0 );
+      BOOST_CHECK_EQUAL( db2->get_balance( GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID ).amount.value, 0 );
 
       BOOST_TEST_MESSAGE( "Creating transfer tx" );
       graphene::chain::signed_transaction trx;
@@ -116,16 +116,16 @@ BOOST_AUTO_TEST_CASE( two_node_network )
       BOOST_TEST_MESSAGE( "Pushing tx locally on db1" );
       processed_transaction ptrx = db1->push_transaction(trx);
 
-      BOOST_CHECK_EQUAL( db1->get_balance( GRAPHENE_NULL_ACCOUNT, GRAPHENE_CORE_ASSET_AID ).amount.value, 1000000 );
-      BOOST_CHECK_EQUAL( db2->get_balance( GRAPHENE_NULL_ACCOUNT, GRAPHENE_CORE_ASSET_AID ).amount.value, 0 );
+      BOOST_CHECK_EQUAL( db1->get_balance( GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID ).amount.value, 1000000 );
+      BOOST_CHECK_EQUAL( db2->get_balance( GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID ).amount.value, 0 );
 
       BOOST_TEST_MESSAGE( "Broadcasting tx" );
       app1.p2p_node()->broadcast(graphene::net::trx_message(trx));
 
       fc::usleep(fc::milliseconds(500));
 
-      BOOST_CHECK_EQUAL( db1->get_balance( GRAPHENE_NULL_ACCOUNT, GRAPHENE_CORE_ASSET_AID ).amount.value, 1000000 );
-      BOOST_CHECK_EQUAL( db2->get_balance( GRAPHENE_NULL_ACCOUNT, GRAPHENE_CORE_ASSET_AID ).amount.value, 1000000 );
+      BOOST_CHECK_EQUAL( db1->get_balance( GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID ).amount.value, 1000000 );
+      BOOST_CHECK_EQUAL( db2->get_balance( GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID ).amount.value, 1000000 );
 
       BOOST_TEST_MESSAGE( "Generating block on db2" );
       fc::ecc::private_key committee_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("nathan")));

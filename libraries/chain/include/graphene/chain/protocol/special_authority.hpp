@@ -32,7 +32,7 @@ struct no_special_authority {};
 
 struct top_holders_special_authority
 {
-   asset_id_type asset;
+   asset_aid_type asset;
    uint8_t       num_top_holders = 1;
 };
 
