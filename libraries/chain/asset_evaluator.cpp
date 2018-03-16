@@ -36,8 +36,8 @@ namespace graphene { namespace chain {
 
 void_result asset_create_evaluator::do_evaluate( const asset_create_operation& op )
 { try {
-
    database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_create after HARDFORK_0_3_TIME" );
 
    const auto& chain_parameters = d.get_global_properties().parameters;
    FC_ASSERT( op.common_options.whitelist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities );
@@ -92,6 +92,7 @@ object_id_type asset_create_evaluator::do_apply( const asset_create_operation& o
 void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
 { try {
    const database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_issue after HARDFORK_0_3_TIME" );
 
    const asset_object& a = d.get_asset_by_aid( o.asset_to_issue.asset_id );
    FC_ASSERT( o.issuer == a.issuer );
@@ -120,6 +121,7 @@ void_result asset_issue_evaluator::do_apply( const asset_issue_operation& o )
 void_result asset_reserve_evaluator::do_evaluate( const asset_reserve_operation& o )
 { try {
    const database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_reserve after HARDFORK_0_3_TIME" );
 
    const asset_object& a = d.get_asset_by_aid( o.amount_to_reserve.asset_id );
 
@@ -146,7 +148,9 @@ void_result asset_reserve_evaluator::do_apply( const asset_reserve_operation& o 
 
 void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
 { try {
+
    database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_update after HARDFORK_0_3_TIME" );
 
    const asset_object& a = d.get_asset_by_aid( o.asset_to_update );
    auto a_copy = a;
@@ -200,6 +204,8 @@ void_result asset_update_evaluator::do_apply(const asset_update_operation& o)
 void_result asset_claim_fees_evaluator::do_evaluate( const asset_claim_fees_operation& o )
 { try {
    database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_claim after HARDFORK_0_3_TIME" );
+   
    const asset_object& asset = d.get_asset_by_aid( o.amount_to_claim.asset_id );
    FC_ASSERT( asset.issuer == o.issuer, "Asset fees may only be claimed by the issuer" );
    return void_result();
