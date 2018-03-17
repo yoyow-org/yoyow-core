@@ -48,12 +48,12 @@ BOOST_AUTO_TEST_CASE( simple_single_signature )
    try {
       fc::ecc::private_key nathan_key = fc::ecc::private_key::generate();
       const account_object& nathan = create_account("nathan", nathan_key.get_public_key());
-      const asset_object& core = asset_id_type()(db);
+      const asset_object& core = db.get_core_asset();
       auto old_balance = fund(nathan);
 
       transfer_operation op;
-      op.from = nathan.id;
-      op.to = account_id_type();
+      op.from = nathan.uid;
+      op.to = GRAPHENE_TEMP_ACCOUNT_UID;
       op.amount = core.amount(500);
       trx.operations.push_back(op);
       sign(trx, nathan_key);
@@ -73,12 +73,12 @@ BOOST_AUTO_TEST_CASE( any_two_of_three )
       fc::ecc::private_key nathan_key2 = fc::ecc::private_key::regenerate(fc::digest("key2"));
       fc::ecc::private_key nathan_key3 = fc::ecc::private_key::regenerate(fc::digest("key3"));
       const account_object& nathan = create_account("nathan", nathan_key1.get_public_key() );
-      const asset_object& core = asset_id_type()(db);
+      const asset_object& core = db.get_core_asset();
       auto old_balance = fund(nathan);
 
       try {
          account_update_operation op;
-         op.account = nathan.id;
+         op.account = nathan.uid;
          op.active = authority(2, public_key_type(nathan_key1.get_public_key()), 1, public_key_type(nathan_key2.get_public_key()), 1, public_key_type(nathan_key3.get_public_key()), 1);
          op.owner = *op.active;
          trx.operations.push_back(op);
@@ -89,8 +89,8 @@ BOOST_AUTO_TEST_CASE( any_two_of_three )
       } FC_CAPTURE_AND_RETHROW ((nathan.active))
 
       transfer_operation op;
-      op.from = nathan.id;
-      op.to = account_id_type();
+      op.from = nathan.uid;
+      op.to = GRAPHENE_TEMP_ACCOUNT_UID;
       op.amount = core.amount(500);
       trx.operations.push_back(op);
       sign(trx, nathan_key1);
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE( recursive_accounts )
    try {
       fc::ecc::private_key parent1_key = fc::ecc::private_key::generate();
       fc::ecc::private_key parent2_key = fc::ecc::private_key::generate();
-      const auto& core = asset_id_type()(db);
+      const auto& core = db.get_core_asset();
 
       BOOST_TEST_MESSAGE( "Creating parent1 and parent2 accounts" );
       const account_object& parent1 = create_account("parent1", parent1_key.get_public_key());
@@ -305,22 +305,22 @@ BOOST_AUTO_TEST_CASE( proposed_single_account )
       fc::ecc::private_key nathan_key2 = fc::ecc::private_key::regenerate(fc::digest("key2"));
       fc::ecc::private_key nathan_key3 = fc::ecc::private_key::regenerate(fc::digest("key3"));
 
-      const account_object& moneyman = create_account("moneyman", init_account_pub_key);
+      const account_object& moneyman = create_account(2018005, "moneyman", init_account_pub_key);
       const account_object& nathan = get_account("nathan");
-      const asset_object& core = asset_id_type()(db);
+      const asset_object& core = db.get_core_asset();
 
-      transfer(account_id_type()(db), moneyman, core.amount(1000000));
+      transfer(anathan.uid, moneyman.uid, core.amount(1000000));
 
       //Following any_two_of_three, nathan's active authority is satisfied by any two of {key1,key2,key3}
       BOOST_TEST_MESSAGE( "moneyman is creating proposal for nathan to transfer 100 CORE to moneyman" );
 
       transfer_operation transfer_op;
-      transfer_op.from = nathan.id;
-      transfer_op.to  = moneyman.get_id();
+      transfer_op.from = nathan.uid;
+      transfer_op.to  = moneyman.uid;
       transfer_op.amount = core.amount(100); 
 
       proposal_create_operation op;
-      op.fee_paying_account = moneyman.id;
+      op.fee_paying_account = moneyman.uid;
       op.proposed_ops.emplace_back( transfer_op );
       op.expiration_time =  db.head_block_time() + fc::days(1);
                                      
@@ -394,7 +394,7 @@ BOOST_AUTO_TEST_CASE( committee_authority )
 { try {
    fc::ecc::private_key nathan_key = fc::ecc::private_key::generate();
    fc::ecc::private_key committee_key = init_account_priv_key;
-   const account_object nathan = create_account("nathan", nathan_key.get_public_key());
+   const account_object nathan = create_account(2018001"nathan", nathan_key.get_public_key());
    const auto& global_params = db.get_global_properties().parameters;
 
    generate_block();
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE( committee_authority )
 
    BOOST_TEST_MESSAGE( "transfering 100000 CORE to nathan, signing with committee key should fail because this requires it to be part of a proposal" );
    transfer_operation top;
-   top.to = nathan.id;
+   top.to = nathan.uid;
    top.amount = asset(100000);
    trx.operations.push_back(top);
    sign(trx, committee_key);
@@ -438,12 +438,12 @@ BOOST_AUTO_TEST_CASE( committee_authority )
    BOOST_CHECK(prop.expiration_time == pop.expiration_time);
    BOOST_CHECK(prop.review_period_time && *prop.review_period_time == pop.expiration_time - *pop.review_period_seconds);
    BOOST_CHECK(prop.proposed_transaction.operations.size() == 1);
-   BOOST_CHECK_EQUAL(get_balance(nathan, asset_id_type()(db)), 0);
+   BOOST_CHECK_EQUAL(get_balance(nathan, db.get_core_asset()), 0);
    BOOST_CHECK(!db.get<proposal_object>(prop.id).is_authorized_to_execute(db));
 
    generate_block();
    BOOST_REQUIRE(db.find_object(prop.id));
-   BOOST_CHECK_EQUAL(get_balance(nathan, asset_id_type()(db)), 0);
+   BOOST_CHECK_EQUAL(get_balance(nathan, db.get_core_asset()), 0);
 
    BOOST_TEST_MESSAGE( "Checking that the proposal is not authorized to execute" );
    BOOST_REQUIRE(!db.get<proposal_object>(prop.id).is_authorized_to_execute(db));
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE( committee_authority )
    trx.operations.push_back(uop);
    sign( trx, committee_key );
    db.push_transaction(trx);
-   BOOST_CHECK_EQUAL(get_balance(nathan, asset_id_type()(db)), 0);
+   BOOST_CHECK_EQUAL(get_balance(nathan, db.get_core_asset()), 0);
    BOOST_CHECK(db.get<proposal_object>(prop.id).is_authorized_to_execute(db));
 
    trx.signatures.clear();
@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_CASE( committee_authority )
    GRAPHENE_CHECK_THROW(PUSH_TX( db, trx ), fc::exception);
 
    generate_blocks(prop.expiration_time);
-   BOOST_CHECK_EQUAL(get_balance(nathan, asset_id_type()(db)), 100000);
+   BOOST_CHECK_EQUAL(get_balance(nathan, db.get_core_asset()), 100000);
 } FC_LOG_AND_RETHROW() }
 
 BOOST_FIXTURE_TEST_CASE( fired_committee_members, database_fixture )
@@ -488,7 +488,7 @@ BOOST_FIXTURE_TEST_CASE( fired_committee_members, database_fixture )
    fc::ecc::private_key committee_member_key = fc::ecc::private_key::generate();
 
    //Meet nathan. He has a little money.
-   const account_object* nathan = &create_account("nathan");
+   const account_object* nathan = &create_account(2018001, "nathan");
    transfer(account_id_type()(db), *nathan, asset(5000));
    generate_block();
    nathan = &get_account("nathan");
@@ -503,7 +503,7 @@ BOOST_FIXTURE_TEST_CASE( fired_committee_members, database_fixture )
 
    for( int i = 0; i < 15; ++i )
    {
-      const auto& account = create_account("committee-member" + fc::to_string(i+1), committee_member_key.get_public_key());
+      const auto& account = create_account(2018001+(i+1),"committee-member" + fc::to_string(i+1), committee_member_key.get_public_key());
       upgrade_to_lifetime_member(account);
       committee_members.insert(create_committee_member(account).vote_id);
    }
@@ -517,7 +517,7 @@ BOOST_FIXTURE_TEST_CASE( fired_committee_members, database_fixture )
    ilog( "The proposal has a review period of: ${r} sec", ("r",*pop.review_period_seconds) );
 
    transfer_operation top;
-   top.to = nathan->id;
+   top.to = nathan->uid;
    top.amount = asset(100000);
    pop.proposed_ops.emplace_back(top);
    trx.operations.push_back(pop);
@@ -538,9 +538,9 @@ BOOST_FIXTURE_TEST_CASE( fired_committee_members, database_fixture )
 
    ilog( "Generating blocks for 2 days" );
    generate_block();
-   BOOST_REQUIRE_EQUAL(get_balance(*nathan, asset_id_type()(db)), 5000);
+   BOOST_REQUIRE_EQUAL(get_balance(*nathan, GRAPHENE_CORE_ASSET_AID), 5000);
    generate_block();
-   BOOST_REQUIRE_EQUAL(get_balance(*nathan, asset_id_type()(db)), 5000);
+   BOOST_REQUIRE_EQUAL(get_balance(*nathan, GRAPHENE_CORE_ASSET_AID), 5000);
    //Time passes... the proposal is now in its review period.
    //generate_blocks(*pid(db).review_period_time);
    generate_blocks(db.head_block_time() + fc::days(2) );
@@ -553,7 +553,7 @@ BOOST_FIXTURE_TEST_CASE( fired_committee_members, database_fixture )
 
    nathan = &get_account("nathan");
    // no money yet
-   BOOST_REQUIRE_EQUAL(get_balance(*nathan, asset_id_type()(db)), 5000);
+   BOOST_REQUIRE_EQUAL(get_balance(*nathan, GRAPHENE_CORE_ASSET_AID), 5000);
 
    {
       //Oh noes! Nathan votes for a whole new slate of committee_members!
@@ -566,23 +566,23 @@ BOOST_FIXTURE_TEST_CASE( fired_committee_members, database_fixture )
       PUSH_TX( db, trx, ~0 );
       trx.operations.clear();
    }
-   idump((get_balance(*nathan, asset_id_type()(db))));
+   idump((get_balance(*nathan, GRAPHENE_CORE_ASSET_AID)));
    // still no money
-   BOOST_CHECK_EQUAL(get_balance(*nathan, asset_id_type()(db)), 5000);
+   BOOST_CHECK_EQUAL(get_balance(*nathan, GRAPHENE_CORE_ASSET_AID), 5000);
 
    //Time passes... the set of active committee_members gets updated.
    generate_blocks(maintenance_time);
    //The proposal is no longer authorized, because the active committee_members got changed.
    BOOST_CHECK(!pid(db).is_authorized_to_execute(db));
    // still no money
-   BOOST_CHECK_EQUAL(get_balance(*nathan, asset_id_type()(db)), 5000);
+   BOOST_CHECK_EQUAL(get_balance(*nathan, GRAPHENE_CORE_ASSET_AID), 5000);
 
    //Time passes... the proposal has now expired.
    generate_blocks(pid(db).expiration_time);
    BOOST_CHECK(db.find(pid) == nullptr);
 
    //Nathan never got any more money because the proposal was rejected.
-   BOOST_CHECK_EQUAL(get_balance(*nathan, asset_id_type()(db)), 5000);
+   BOOST_CHECK_EQUAL(get_balance(*nathan, GRAPHENE_CORE_ASSET_AID), 5000);
 } FC_LOG_AND_RETHROW() }
 
 BOOST_FIXTURE_TEST_CASE( proposal_two_accounts, database_fixture )
@@ -591,16 +591,16 @@ BOOST_FIXTURE_TEST_CASE( proposal_two_accounts, database_fixture )
 
    auto nathan_key = generate_private_key("nathan");
    auto dan_key = generate_private_key("dan");
-   const account_object& nathan = create_account("nathan", nathan_key.get_public_key() );
-   const account_object& dan = create_account("dan", dan_key.get_public_key() );
+   const account_object& nathan = create_account(2018001, "nathan", nathan_key.get_public_key() );
+   const account_object& dan = create_account(2018002, "dan", dan_key.get_public_key() );
 
-   transfer(account_id_type()(db), nathan, asset(100000));
-   transfer(account_id_type()(db), dan, asset(100000));
+   transfer(GRAPHENE_NULL_ACCOUNT_UID, nathan, asset(100000));
+   transfer(GRAPHENE_NULL_ACCOUNT_UID, dan, asset(100000));
 
    {
       transfer_operation top;
-      top.from = dan.get_id();
-      top.to = nathan.get_id();
+      top.from = dan.uid;
+      top.to = nathan.uid;
       top.amount = asset(500);
 
       proposal_create_operation pop;
@@ -652,16 +652,16 @@ BOOST_FIXTURE_TEST_CASE( proposal_delete, database_fixture )
 
    auto nathan_key = generate_private_key("nathan");
    auto dan_key = generate_private_key("dan");
-   const account_object& nathan = create_account("nathan", nathan_key.get_public_key() );
-   const account_object& dan = create_account("dan", dan_key.get_public_key() );
+   const account_object& nathan = create_account(2018001, "nathan", nathan_key.get_public_key() );
+   const account_object& dan = create_account(2018002, "dan", dan_key.get_public_key() );
 
-   transfer(account_id_type()(db), nathan, asset(100000));
-   transfer(account_id_type()(db), dan, asset(100000));
+   transfer(GRAPHENE_NULL_ACCOUNT_UID, nathan, asset(100000));
+   transfer(GRAPHENE_NULL_ACCOUNT_UID, dan, asset(100000));
 
    {
       transfer_operation top;
-      top.from = dan.get_id();
-      top.to = nathan.get_id();
+      top.from = dan.uid;
+      top.to = nathan.uid;
       top.amount = asset(500);
 
       proposal_create_operation pop;
@@ -723,20 +723,20 @@ BOOST_FIXTURE_TEST_CASE( proposal_owner_authority_delete, database_fixture )
 
    auto nathan_key = generate_private_key("nathan");
    auto dan_key = generate_private_key("dan");
-   const account_object& nathan = create_account("nathan", nathan_key.get_public_key() );
-   const account_object& dan = create_account("dan", dan_key.get_public_key() );
+   const account_object& nathan = create_account(2018001, "nathan", nathan_key.get_public_key() );
+   const account_object& dan = create_account(2018002, "dan", dan_key.get_public_key() );
 
-   transfer(account_id_type()(db), nathan, asset(100000));
-   transfer(account_id_type()(db), dan, asset(100000));
+   transfer(GRAPHENE_NULL_ACCOUNT_UID, nathan, asset(100000));
+   transfer(GRAPHENE_NULL_ACCOUNT_UID, dan, asset(100000));
 
    {
       transfer_operation top;
-      top.from = dan.get_id();
-      top.to = nathan.get_id();
+      top.from = dan.uid;
+      top.to = nathan.uid;
       top.amount = asset(500);
 
       account_update_operation uop;
-      uop.account = nathan.get_id();
+      uop.account = nathan.uid;
       uop.owner = authority(1, public_key_type(generate_private_key("nathan2").get_public_key()), 1);
 
       proposal_create_operation pop;
@@ -790,7 +790,7 @@ BOOST_FIXTURE_TEST_CASE( proposal_owner_authority_delete, database_fixture )
       sign( trx, nathan_key );
       PUSH_TX( db, trx );
       BOOST_CHECK(db.find_object(pid) == nullptr);
-      BOOST_CHECK_EQUAL(get_balance(nathan, asset_id_type()(db)), 100000);
+      BOOST_CHECK_EQUAL(get_balance(nathan, GRAPHENE_CORE_ASSET_AID, 100000);
    }
 } FC_LOG_AND_RETHROW() }
 
@@ -800,16 +800,16 @@ BOOST_FIXTURE_TEST_CASE( proposal_owner_authority_complete, database_fixture )
 
    auto nathan_key = generate_private_key("nathan");
    auto dan_key = generate_private_key("dan");
-   const account_object& nathan = create_account("nathan", nathan_key.get_public_key() );
-   const account_object& dan = create_account("dan", dan_key.get_public_key() );
+   const account_object& nathan = create_account(2018001, "nathan", nathan_key.get_public_key() );
+   const account_object& dan = create_account(2018002, "dan", dan_key.get_public_key() );
 
-   transfer(account_id_type()(db), nathan, asset(100000));
-   transfer(account_id_type()(db), dan, asset(100000));
+   transfer(GRAPHENE_NULL_ACCOUNT_UID, nathan.uid, asset(100000));
+   transfer(GRAPHENE_NULL_ACCOUNT_UID, dan.uid, asset(100000));
 
    {
       transfer_operation top;
-      top.from = dan.get_id();
-      top.to = nathan.get_id();
+      top.from = dan.uid;
+      top.to = nathan.uid;
       top.amount = asset(500);
 
       account_update_operation uop;
