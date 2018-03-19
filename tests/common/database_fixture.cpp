@@ -315,7 +315,7 @@ void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_i
       generate_block(skip);
 }
 
-account_create_operation database_fixture::make_account(
+account_create_operation database_fixture::make_account_seed(
    uint32_t seed,
    const std::string& name /* = "nathan" */,
    public_key_type key /* = key_id_type() */
@@ -405,7 +405,7 @@ const account_object& database_fixture::get_account( const string& name )const
 const asset_object& database_fixture::create_user_issued_asset( const string& name )
 {
    asset_create_operation creator;
-   creator.issuer = GRAPHENE_NULL_ACCOUNT_UID;
+   creator.issuer = GRAPHENE_COMMITTEE_ACCOUNT_UID;
    creator.fee = asset();
    creator.symbol = name;
    creator.common_options.max_supply = 0;
@@ -488,7 +488,7 @@ void database_fixture::change_fees(
 }
 
 const account_object& database_fixture::create_account(
-   const uint64_t seed,
+   const uint32_t seed,
    const string& name,
    const public_key_type& key /* = public_key_type() */
    )

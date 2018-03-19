@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE( merge_test )
       });
       ses.merge();
 
-      auto balance = db.get_balance( account_id_type(), asset_id_type() );
+      auto balance = db.get_balance( GRAPHENE_COMMITTEE_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID );
       BOOST_CHECK_EQUAL( 42, balance.amount.value );
    } catch ( const fc::exception& e )
    {

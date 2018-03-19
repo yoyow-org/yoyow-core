@@ -130,15 +130,13 @@ extern uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP;
 
 #define ACTOR(seed) \
    PREP_ACTOR(seed) \
-   account_uid_type u_ ## seed = graphene::chain::calc_account_uid(seed); \
-   const auto& uobj = create_account(u_ ## seed,BOOST_PP_STRINGIZE(seed), u_ ## seed ## _public_key); \
-   (void)uobj;
+   account_uid_type u_ ## seed ## _id = graphene::chain::calc_account_uid(seed); \
+   const auto& u_ ## seed = create_account(u_ ## seed ## _id, BOOST_PP_STRINGIZE(seed), u_ ## seed ## _public_key); \
 
 #define GET_ACTOR(seed) \
    fc::ecc::private_key u_ ## seed ## _private_key = generate_private_key(BOOST_PP_STRINGIZE(seed)); \
    const account_object& u_ ## seed = get_account(BOOST_PP_STRINGIZE(seed)); \
    account_uid_type u_ ## seed ## _id = u_ ## seed.uid; \
-   (void)u_ ##seed
 
 #define ACTORS_IMPL(r, data, elem) ACTOR(elem)
 #define ACTORS(seeds) BOOST_PP_SEQ_FOR_EACH(ACTORS_IMPL, ~, seeds)
@@ -186,7 +184,7 @@ struct database_fixture {
     */
    void generate_blocks(fc::time_point_sec timestamp, bool miss_intermediate_blocks = true, uint32_t skip = ~0);
 
-   account_create_operation make_account(
+   account_create_operation make_account_seed(
       uint32_t seed = 100,
       const std::string& name = "nathan",
       public_key_type = public_key_type()

@@ -49,10 +49,14 @@ genesis_state_type make_genesis() {
 
    auto init_account_priv_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")));
    genesis_state.initial_active_witnesses = 10;
-   for( int i = 0; i < genesis_state.initial_active_witnesses; ++i )
+   for( int i = 11; i < genesis_state.initial_active_witnesses; ++i )
    {
       auto name = "init"+fc::to_string(i);
-      genesis_state.initial_accounts.emplace_back(name,
+      genesis_state.initial_accounts.emplace_back(graphene::chain::calc_account_uid(i),
+                                                  name,
+                                                  0,
+                                                  init_account_priv_key.get_public_key(),
+                                                  init_account_priv_key.get_public_key(),
                                                   init_account_priv_key.get_public_key(),
                                                   init_account_priv_key.get_public_key(),
                                                   true);
@@ -64,66 +68,6 @@ genesis_state_type make_genesis() {
 }
 
 BOOST_AUTO_TEST_SUITE(block_tests)
-
-BOOST_AUTO_TEST_CASE( block_database_test )
-{
-   try {
-      fc::temp_directory data_dir( graphene::utilities::temp_directory_path() );
-
-      block_database bdb;
-      bdb.open( data_dir.path() );
-      FC_ASSERT( bdb.is_open() );
-      bdb.close();
-      FC_ASSERT( !bdb.is_open() );
-      bdb.open( data_dir.path() );
-
-      signed_block b;
-      for( uint32_t i = 0; i < 5; ++i )
-      {
-         if( i > 0 ) b.previous = b.id();
-         b.witness = witness_id_type(i+1);
-         bdb.store( b.id(), b );
-
-         auto fetch = bdb.fetch_by_number( b.block_num() );
-         FC_ASSERT( fetch.valid() );
-         FC_ASSERT( fetch->witness ==  b.witness );
-         fetch = bdb.fetch_by_number( i+1 );
-         FC_ASSERT( fetch.valid() );
-         FC_ASSERT( fetch->witness ==  b.witness );
-         fetch = bdb.fetch_optional( b.id() );
-         FC_ASSERT( fetch.valid() );
-         FC_ASSERT( fetch->witness ==  b.witness );
-      }
-
-      for( uint32_t i = 1; i < 5; ++i )
-      {
-         auto blk = bdb.fetch_by_number( i );
-         FC_ASSERT( blk.valid() );
-         FC_ASSERT( blk->witness == witness_id_type(blk->block_num()) );
-      }
-
-      auto last = bdb.last();
-      FC_ASSERT( last );
-      FC_ASSERT( last->id() == b.id() );
-
-      bdb.close();
-      bdb.open( data_dir.path() );
-      last = bdb.last();
-      FC_ASSERT( last );
-      FC_ASSERT( last->id() == b.id() );
-
-      for( uint32_t i = 0; i < 5; ++i )
-      {
-         auto blk = bdb.fetch_by_number( i+1 );
-         FC_ASSERT( blk.valid() );
-         FC_ASSERT( blk->witness == witness_id_type(blk->block_num()) );
-      }
-
-   } catch (fc::exception& e) {
-      edump((e.to_detail_string()));
-      throw;
-   }
-}
 
 BOOST_AUTO_TEST_CASE( generate_empty_blocks )
 {
@@ -147,7 +91,7 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          {
             BOOST_CHECK( db.head_block_id() == b.id() );
             //witness_id_type prev_witness = b.witness;
-            witness_id_type cur_witness = db.get_scheduled_witness(1);
+            account_uid_type cur_witness = db.get_scheduled_witness(1);
             //BOOST_CHECK( cur_witness != prev_witness );
             b = db.generate_block(db.get_slot_time(1), cur_witness, init_account_priv_key, database::skip_nothing);
             BOOST_CHECK( b.witness == cur_witness );
@@ -172,7 +116,7 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          {
             BOOST_CHECK( db.head_block_id() == b.id() );
             //witness_id_type prev_witness = b.witness;
-            witness_id_type cur_witness = db.get_scheduled_witness(1);
+            account_uid_type cur_witness = db.get_scheduled_witness(1);
             //BOOST_CHECK( cur_witness != prev_witness );
             b = db.generate_block(db.get_slot_time(1), cur_witness, init_account_priv_key, database::skip_nothing);
          }
@@ -378,129 +322,6 @@ BOOST_AUTO_TEST_CASE( out_of_order_blocks )
 }
  */
 
-BOOST_AUTO_TEST_CASE( undo_pending )
-{
-   try {
-      fc::temp_directory data_dir( graphene::utilities::temp_directory_path() );
-      {
-         database db;
-         db.open(data_dir.path(), make_genesis, "TEST");
-
-         auto init_account_priv_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")) );
-         public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
-         const graphene::db::index& account_idx = db.get_index(protocol_ids, account_object_type);
-
-         transfer_operation t;
-         t.to = account_id_type(1);
-         t.amount = asset( 10000000 );
-         {
-            signed_transaction trx;
-            set_expiration( db, trx );
-
-            trx.operations.push_back(t);
-            PUSH_TX( db, trx, ~0 );
-
-            auto b = db.generate_block(db.get_slot_time(1), db.get_scheduled_witness(1), init_account_priv_key, ~0);
-         }
-
-         signed_transaction trx;
-         set_expiration( db, trx );
-         account_id_type nathan_id = account_idx.get_next_id();
-         account_create_operation cop;
-         cop.registrar = GRAPHENE_TEMP_ACCOUNT;
-         cop.name = "nathan";
-         cop.owner = authority(1, init_account_pub_key, 1);
-         cop.active = cop.owner;
-         trx.operations.push_back(cop);
-         //sign( trx,  init_account_priv_key  );
-         PUSH_TX( db, trx );
-
-         auto b = db.generate_block(db.get_slot_time(1), db.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
-
-         BOOST_CHECK(nathan_id(db).name == "nathan");
-
-         trx.clear();
-         set_expiration( db, trx );
-         t.fee = asset(1);
-         t.from = account_id_type(1);
-         t.to = nathan_id;
-         t.amount = asset(5000);
-         trx.operations.push_back(t);
-         db.push_transaction(trx, ~0);
-         trx.clear();
-         set_expiration( db, trx );
-         trx.operations.push_back(t);
-         db.push_transaction(trx, ~0);
-
-         BOOST_CHECK(db.get_balance(nathan_id, asset_id_type()).amount == 10000);
-         db.clear_pending();
-         BOOST_CHECK(db.get_balance(nathan_id, asset_id_type()).amount == 0);
-      }
-   } catch (fc::exception& e) {
-      edump((e.to_detail_string()));
-      throw;
-   }
-}
-
-BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
-{
-   try {
-      fc::temp_directory dir1( graphene::utilities::temp_directory_path() ),
-                         dir2( graphene::utilities::temp_directory_path() );
-      database db1,
-               db2;
-      db1.open(dir1.path(), make_genesis, "TEST");
-      db2.open(dir2.path(), make_genesis, "TEST");
-      BOOST_CHECK( db1.get_chain_id() == db2.get_chain_id() );
-
-      auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")) );
-      public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
-      const graphene::db::index& account_idx = db1.get_index(protocol_ids, account_object_type);
-
-      signed_transaction trx;
-      set_expiration( db1, trx );
-      account_id_type nathan_id = account_idx.get_next_id();
-      account_create_operation cop;
-      cop.registrar = GRAPHENE_TEMP_ACCOUNT;
-      cop.name = "nathan";
-      cop.owner = authority(1, init_account_pub_key, 1);
-      cop.active = cop.owner;
-      trx.operations.push_back(cop);
-      PUSH_TX( db1, trx );
-
-      // generate blocks
-      // db1 : A
-      // db2 : B C D
-
-      auto aw = db1.get_global_properties().active_witnesses;
-      auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
-
-      BOOST_CHECK(nathan_id(db1).name == "nathan");
-
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
-      db1.push_block(b);
-      aw = db2.get_global_properties().active_witnesses;
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
-      db1.push_block(b);
-      GRAPHENE_REQUIRE_THROW(nathan_id(db2), fc::exception);
-      nathan_id(db1); /// it should be included in the pending state
-      db1.clear_pending(); // clear it so that we can verify it was properly removed from pending state.
-      GRAPHENE_REQUIRE_THROW(nathan_id(db1), fc::exception);
-
-      PUSH_TX( db2, trx );
-
-      aw = db2.get_global_properties().active_witnesses;
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
-      db1.push_block(b);
-
-      BOOST_CHECK(nathan_id(db1).name == "nathan");
-      BOOST_CHECK(nathan_id(db2).name == "nathan");
-   } catch (fc::exception& e) {
-      edump((e.to_detail_string()));
-      throw;
-   }
-}
-
 BOOST_AUTO_TEST_CASE( duplicate_transactions )
 {
    try {
@@ -520,11 +341,21 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       signed_transaction trx;
       set_expiration( db1, trx );
-      account_id_type nathan_id = account_idx.get_next_id();
+      account_uid_type nathan_id = graphene::chain::calc_account_uid( 100 );
+      account_reg_info reg;
+      reg.allowance_per_article = asset(10000);
+      reg.max_share_per_article = asset(5000);
+      reg.max_share_total = asset(1000);
+      reg.registrar = GRAPHENE_COMMITTEE_ACCOUNT_UID;
       account_create_operation cop;
+      cop.uid = nathan_id;
       cop.name = "nathan";
       cop.owner = authority(1, init_account_pub_key, 1);
-      cop.active = cop.owner;
+      cop.active = authority(1, init_account_pub_key, 1);
+      cop.secondary = authority(1, init_account_pub_key, 1);
+      cop.memo_key = init_account_pub_key;
+      cop.reg_info = reg;
+      
       trx.operations.push_back(cop);
       trx.sign( init_account_priv_key, db1.get_chain_id() );
       PUSH_TX( db1, trx, skip_sigs );
@@ -545,8 +376,8 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       GRAPHENE_CHECK_THROW(PUSH_TX( db1, trx, skip_sigs ), fc::exception);
       GRAPHENE_CHECK_THROW(PUSH_TX( db2, trx, skip_sigs ), fc::exception);
-      BOOST_CHECK_EQUAL(db1.get_balance(nathan_id, asset_id_type()).amount.value, 500);
-      BOOST_CHECK_EQUAL(db2.get_balance(nathan_id, asset_id_type()).amount.value, 500);
+      BOOST_CHECK_EQUAL(db1.get_balance(nathan_id, GRAPHENE_CORE_ASSET_AID).amount.value, 500);
+      BOOST_CHECK_EQUAL(db2.get_balance(nathan_id, GRAPHENE_CORE_ASSET_AID).amount.value, 500);
    } catch (fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
@@ -573,12 +404,21 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.set_expiration( db1.head_block_time() ); //db1.get_slot_time(1) );
       trx.set_reference_block( db1.head_block_id() );
 
-      account_id_type nathan_id = account_idx.get_next_id();
+      account_uid_type nathan_id = graphene::chain::calc_account_uid(100);
+      account_reg_info reg;
+      reg.allowance_per_article = asset(10000);
+      reg.max_share_per_article = asset(5000);
+      reg.max_share_total = asset(1000);
+      reg.registrar = GRAPHENE_COMMITTEE_ACCOUNT_UID;
       account_create_operation cop;
-      cop.registrar = init1.id;
+      cop.uid = nathan_id;
       cop.name = "nathan";
       cop.owner = authority(1, init_account_pub_key, 1);
-      cop.active = cop.owner;
+      cop.active = authority(1, init_account_pub_key, 1);
+      cop.secondary = authority(1, init_account_pub_key, 1);
+      cop.memo_key = init_account_pub_key;
+      cop.reg_info = reg;
+
       trx.operations.push_back(cop);
       trx.sign( init_account_priv_key, db1.get_chain_id() );
       db1.push_transaction(trx);
@@ -606,13 +446,16 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, database_fixture )
 {
    try
    {
-      ACTORS( (alice)(bob) );
+      //ACTORS( (alice)(bob) );
+      ACTORS( (1000)(1001) );
+      auto alice_id = u_1000.uid;
+      auto bob_id = u_1001.uid;
 
       generate_block();
 
       BOOST_TEST_MESSAGE( "Create transaction" );
 
-      transfer( account_id_type(), alice_id, asset( 1000000 ) );
+      transfer( GRAPHENE_COMMITTEE_ACCOUNT_UID, alice_id, asset( 1000000 ) );
       transfer_operation op;
       op.from = alice_id;
       op.to = bob_id;
@@ -626,14 +469,14 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, database_fixture )
       tx.ref_block_num = 0;
       tx.ref_block_prefix = 0;
       tx.signatures.clear();
-      sign( tx, alice_private_key );
+      sign( tx, u_1000_private_key );
       PUSH_TX( db, tx );
 
       BOOST_TEST_MESSAGE( "proper ref_block_num, ref_block_prefix" );
 
       set_expiration( db, tx );
       tx.signatures.clear();
-      sign( tx, alice_private_key );
+      sign( tx, u_1000_private_key );
       PUSH_TX( db, tx );
 
       BOOST_TEST_MESSAGE( "ref_block_num=0, ref_block_prefix=12345678" );
@@ -641,7 +484,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, database_fixture )
       tx.ref_block_num = 0;
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
-      sign( tx, alice_private_key );
+      sign( tx, u_1000_private_key );
       GRAPHENE_REQUIRE_THROW( PUSH_TX( db, tx ), fc::exception );
 
       BOOST_TEST_MESSAGE( "ref_block_num=1, ref_block_prefix=12345678" );
@@ -649,7 +492,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, database_fixture )
       tx.ref_block_num = 1;
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
-      sign( tx, alice_private_key );
+      sign( tx, u_1000_private_key );
       GRAPHENE_REQUIRE_THROW( PUSH_TX( db, tx ), fc::exception );
 
       BOOST_TEST_MESSAGE( "ref_block_num=9999, ref_block_prefix=12345678" );
@@ -657,7 +500,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, database_fixture )
       tx.ref_block_num = 9999;
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
-      sign( tx, alice_private_key );
+      sign( tx, u_1000_private_key );
       GRAPHENE_REQUIRE_THROW( PUSH_TX( db, tx ), fc::exception );
    }
    catch (fc::exception& e)
@@ -676,19 +519,17 @@ BOOST_FIXTURE_TEST_CASE( maintenance_interval, database_fixture )
       fc::time_point_sec maintenence_time = db.get_dynamic_global_properties().next_maintenance_time;
       BOOST_CHECK_GT(maintenence_time.sec_since_epoch(), db.head_block_time().sec_since_epoch());
       auto initial_properties = db.get_global_properties();
-      const account_object& nathan = create_account("nathan");
+      const account_object& nathan = create_account(uint32_t(100),"nathan");
       upgrade_to_lifetime_member(nathan);
       const committee_member_object nathans_committee_member = create_committee_member(nathan);
       {
          account_update_operation op;
-         op.account = nathan.id;
-         op.new_options = nathan.options;
-         op.new_options->votes.insert(nathans_committee_member.vote_id);
+         op.uid = nathan.uid;
          trx.operations.push_back(op);
          PUSH_TX( db, trx, ~0 );
          trx.operations.clear();
       }
-      transfer(account_id_type()(db), nathan, asset(5000));
+      transfer(GRAPHENE_COMMITTEE_ACCOUNT_UID, nathan.uid, asset(5000));
 
       generate_blocks(maintenence_time - initial_properties.parameters.block_interval);
       BOOST_CHECK_EQUAL(db.get_global_properties().parameters.maximum_transaction_size,
@@ -703,7 +544,7 @@ BOOST_FIXTURE_TEST_CASE( maintenance_interval, database_fixture )
       auto new_properties = db.get_global_properties();
       BOOST_CHECK(new_properties.active_committee_members != initial_properties.active_committee_members);
       BOOST_CHECK(std::find(new_properties.active_committee_members.begin(),
-                            new_properties.active_committee_members.end(), nathans_committee_member.id) !=
+                            new_properties.active_committee_members.end(), nathans_committee_member.account) !=
                   new_properties.active_committee_members.end());
       BOOST_CHECK_EQUAL(db.get_dynamic_global_properties().next_maintenance_time.sec_since_epoch(),
                         maintenence_time.sec_since_epoch() + new_properties.parameters.maintenance_interval);
@@ -717,60 +558,21 @@ BOOST_FIXTURE_TEST_CASE( maintenance_interval, database_fixture )
 }
 
 
-BOOST_FIXTURE_TEST_CASE( limit_order_expiration, database_fixture )
-{ try {
-   //Get a sane head block time
-   generate_block();
-
-   auto* test = &create_bitasset("TEST");
-   auto* core = &asset_id_type()(db);
-   auto* nathan = &create_account("nathan");
-   auto* committee = &account_id_type()(db);
-
-   transfer(*committee, *nathan, core->amount(50000));
-
-   BOOST_CHECK_EQUAL( get_balance(*nathan, *core), 50000 );
-
-   limit_order_create_operation op;
-   op.seller = nathan->id;
-   op.amount_to_sell = core->amount(500);
-   op.min_to_receive = test->amount(500);
-   op.expiration = db.head_block_time() + fc::seconds(10);
-   trx.operations.push_back(op);
-   auto ptrx = PUSH_TX( db, trx, ~0 );
-
-   BOOST_CHECK_EQUAL( get_balance(*nathan, *core), 49500 );
-
-   auto ptrx_id = ptrx.operation_results.back().get<object_id_type>();
-   auto limit_index = db.get_index_type<limit_order_index>().indices();
-   auto limit_itr = limit_index.begin();
-   BOOST_REQUIRE( limit_itr != limit_index.end() );
-   BOOST_REQUIRE( limit_itr->id == ptrx_id );
-   BOOST_REQUIRE( db.find_object(limit_itr->id) );
-   BOOST_CHECK_EQUAL( get_balance(*nathan, *core), 49500 );
-   auto id = limit_itr->id;
-
-   generate_blocks(op.expiration, false);
-   test = &get_asset("TEST");
-   core = &asset_id_type()(db);
-   nathan = &get_account("nathan");
-   committee = &account_id_type()(db);
-
-   BOOST_CHECK(db.find_object(id) == nullptr);
-   BOOST_CHECK_EQUAL( get_balance(*nathan, *core), 50000 );
-} FC_LOG_AND_RETHROW() }
-
 BOOST_FIXTURE_TEST_CASE( double_sign_check, database_fixture )
 { try {
    generate_block();
-   const auto& alice = account_id_type()(db);
-   ACTOR(bob);
+   const auto& alice = db.get_account_by_uid( GRAPHENE_COMMITTEE_ACCOUNT_UID );
+   //ACTOR(bob);
+   ACTOR(1000);
+   auto bob = u_1000;
+   //auto bob_id = bob.uid;
+
    asset amount(1000);
 
    set_expiration( db, trx );
    transfer_operation t;
-   t.from = alice.id;
-   t.to = bob.id;
+   t.from = alice.uid;
+   t.to = bob.uid;
    t.amount = amount;
    trx.operations.push_back(t);
    for( auto& op : trx.operations ) db.current_fee_schedule().set_fee(op);
@@ -779,8 +581,8 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, database_fixture )
    db.push_transaction(trx, ~0);
 
    trx.operations.clear();
-   t.from = bob.id;
-   t.to = alice.id;
+   t.from = bob.uid;
+   t.to = alice.uid;
    t.amount = amount;
    trx.operations.push_back(t);
    for( auto& op : trx.operations ) db.current_fee_schedule().set_fee(op);
@@ -790,8 +592,8 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, database_fixture )
    GRAPHENE_REQUIRE_THROW( db.push_transaction(trx, 0), fc::exception );
 
    BOOST_TEST_MESSAGE( "Verify that double-signing causes an exception" );
-   sign( trx, bob_private_key );
-   sign( trx, bob_private_key );
+   sign( trx, u_1000_private_key );
+   sign( trx, u_1000_private_key );
    GRAPHENE_REQUIRE_THROW( db.push_transaction(trx, 0), tx_duplicate_sig );
 
    BOOST_TEST_MESSAGE( "Verify that signing with an extra, unused key fails" );
@@ -802,7 +604,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, database_fixture )
    BOOST_TEST_MESSAGE( "Verify that signing once with the proper key passes" );
    trx.signatures.pop_back();
    db.push_transaction(trx, 0);
-   sign( trx, bob_private_key );
+   sign( trx, u_1000_private_key );
 
 } FC_LOG_AND_RETHROW() }
 
@@ -884,12 +686,12 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, database_fixture )
          | database::skip_authority_check
          );
 
-      const asset_object& core = asset_id_type()(db);
+      const asset_object& core = db.get_core_asset();
 
       // Sam is the creator of accounts
       private_key_type committee_key = init_account_priv_key;
       private_key_type sam_key = generate_private_key("sam");
-      account_object sam_account_object = create_account("sam", sam_key);
+      account_object sam_account_object = create_account(uint32_t(1000),"sam", sam_key);
 
       //Get a sane head block time
       generate_block( skip_flags );
@@ -901,15 +703,15 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, database_fixture )
       transaction tx;
       processed_transaction ptx;
 
-      account_object committee_account_object = committee_account(db);
+      account_object committee_account_object = db.get_account_by_uid( committee_account );
       // transfer from committee account to Sam account
       transfer(committee_account_object, sam_account_object, core.amount(100000));
 
       generate_block(skip_flags);
 
-      create_account("alice");
+      create_account(uint32_t(1001),"alice");
       generate_block(skip_flags);
-      create_account("bob");
+      create_account(uint32_t(1002), "bob");
       generate_block(skip_flags);
 
       db.pop_block();
@@ -1048,7 +850,15 @@ BOOST_FIXTURE_TEST_CASE( transaction_invalidated_in_cache, database_fixture )
 {
    try
    {
-      ACTORS( (alice)(bob) );
+      //ACTORS( (alice)(bob) );
+      ACTORS( (1000)(1001) );
+      auto alice = u_1000;
+      auto bob = u_1001;
+      auto alice_id = alice.uid;
+      auto bob_id = bob.uid;
+      auto alice_private_key = u_1000_private_key;
+      auto bob_private_key = u_1001_private_key;
+
 
       auto generate_block = [&]( database& d, uint32_t skip ) -> signed_block
       {
@@ -1070,19 +880,19 @@ BOOST_FIXTURE_TEST_CASE( transaction_invalidated_in_cache, database_fixture )
          optional< signed_block > b = db.fetch_block_by_number( db2.head_block_num()+1 );
          db2.push_block(*b, database::skip_witness_signature);
       }
-      BOOST_CHECK( db2.get( alice_id ).name == "alice" );
-      BOOST_CHECK( db2.get( bob_id ).name == "bob" );
+      BOOST_CHECK( db2.get_account_by_uid( alice_id ).name == "alice" );
+      BOOST_CHECK( db2.get_account_by_uid( bob_id ).name == "bob" );
 
       db2.push_block(generate_block(db, database::skip_nothing));
-      transfer( account_id_type(), alice_id, asset( 1000 ) );
-      transfer( account_id_type(),   bob_id, asset( 1000 ) );
+      transfer( GRAPHENE_COMMITTEE_ACCOUNT_UID, alice_id, asset( 1000 ) );
+      transfer( GRAPHENE_COMMITTEE_ACCOUNT_UID,   bob_id, asset( 1000 ) );
       // need to skip authority check here as well for same reason as above
       db2.push_block(generate_block(db, database::skip_authority_check), database::skip_authority_check);
 
-      BOOST_CHECK_EQUAL(db.get_balance(alice_id, asset_id_type()).amount.value, 1000);
-      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, asset_id_type()).amount.value, 1000);
-      BOOST_CHECK_EQUAL(db2.get_balance(alice_id, asset_id_type()).amount.value, 1000);
-      BOOST_CHECK_EQUAL(db2.get_balance(  bob_id, asset_id_type()).amount.value, 1000);
+      BOOST_CHECK_EQUAL(db.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1000);
+      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1000);
+      BOOST_CHECK_EQUAL(db2.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1000);
+      BOOST_CHECK_EQUAL(db2.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1000);
 
       auto generate_and_send = [&]( int n )
       {
@@ -1093,14 +903,14 @@ BOOST_FIXTURE_TEST_CASE( transaction_invalidated_in_cache, database_fixture )
          }
       };
 
-      auto generate_xfer_tx = [&]( account_id_type from, account_id_type to, share_type amount, int blocks_to_expire ) -> signed_transaction
+      auto generate_xfer_tx = [&]( account_uid_type from, account_uid_type to, share_type amount, int blocks_to_expire ) -> signed_transaction
       {
          signed_transaction tx;
          transfer_operation xfer_op;
          xfer_op.from = from;
          xfer_op.to = to;
-         xfer_op.amount = asset( amount, asset_id_type() );
-         xfer_op.fee = asset( 0, asset_id_type() );
+         xfer_op.amount = asset( amount );
+         xfer_op.fee = asset( 0 );
          tx.operations.push_back( xfer_op );
          tx.set_expiration( db.head_block_time() + blocks_to_expire * db.get_global_properties().parameters.block_interval );
          if( from == alice_id )
@@ -1117,19 +927,19 @@ BOOST_FIXTURE_TEST_CASE( transaction_invalidated_in_cache, database_fixture )
       // put the tx in db tx cache
       PUSH_TX( db, tx );
 
-      BOOST_CHECK_EQUAL(db.get_balance(alice_id, asset_id_type()).amount.value,    0);
-      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, asset_id_type()).amount.value, 2000);
+      BOOST_CHECK_EQUAL(db.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value,    0);
+      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 2000);
 
       // generate some blocks with db2, make tx expire in db's cache
       generate_and_send(3);
 
-      BOOST_CHECK_EQUAL(db.get_balance(alice_id, asset_id_type()).amount.value, 1000);
-      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, asset_id_type()).amount.value, 1000);
+      BOOST_CHECK_EQUAL(db.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1000);
+      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1000);
 
       // generate a block with db and ensure we don't somehow apply it
       PUSH_BLOCK(db2, generate_block(db, database::skip_nothing));
-      BOOST_CHECK_EQUAL(db.get_balance(alice_id, asset_id_type()).amount.value, 1000);
-      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, asset_id_type()).amount.value, 1000);
+      BOOST_CHECK_EQUAL(db.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1000);
+      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1000);
 
       // now the tricky part...
       // (A) Bob sends 1000 to Alice
@@ -1151,37 +961,37 @@ BOOST_FIXTURE_TEST_CASE( transaction_invalidated_in_cache, database_fixture )
       generate_block( db, database::skip_nothing );
 
       PUSH_TX( db, tx_a );
-      BOOST_CHECK_EQUAL(db.get_balance(alice_id, asset_id_type()).amount.value, 2000);
-      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, asset_id_type()).amount.value,    0);
+      BOOST_CHECK_EQUAL(db.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 2000);
+      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value,    0);
 
       PUSH_TX( db, tx_b );
       PUSH_TX( db2, tx_c );
 
-      BOOST_CHECK_EQUAL(db.get_balance(alice_id, asset_id_type()).amount.value, 0);
-      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, asset_id_type()).amount.value, 2000);
+      BOOST_CHECK_EQUAL(db.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 0);
+      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 2000);
 
-      BOOST_CHECK_EQUAL(db2.get_balance(alice_id, asset_id_type()).amount.value, 500);
-      BOOST_CHECK_EQUAL(db2.get_balance(  bob_id, asset_id_type()).amount.value, 1500);
+      BOOST_CHECK_EQUAL(db2.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 500);
+      BOOST_CHECK_EQUAL(db2.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1500);
 
       // generate enough blocks on db2 to cause db to switch forks
       generate_and_send(2);
 
       // db should invalidate B, but still be applying A, so the states don't agree
 
-      BOOST_CHECK_EQUAL(db.get_balance(alice_id, asset_id_type()).amount.value, 1500);
-      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, asset_id_type()).amount.value, 500);
+      BOOST_CHECK_EQUAL(db.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1500);
+      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 500);
 
-      BOOST_CHECK_EQUAL(db2.get_balance(alice_id, asset_id_type()).amount.value, 500);
-      BOOST_CHECK_EQUAL(db2.get_balance(  bob_id, asset_id_type()).amount.value, 1500);
+      BOOST_CHECK_EQUAL(db2.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 500);
+      BOOST_CHECK_EQUAL(db2.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1500);
 
       // This will cause A to expire in db
       generate_and_send(1);
 
-      BOOST_CHECK_EQUAL(db.get_balance(alice_id, asset_id_type()).amount.value, 500);
-      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, asset_id_type()).amount.value, 1500);
+      BOOST_CHECK_EQUAL(db.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 500);
+      BOOST_CHECK_EQUAL(db.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1500);
 
-      BOOST_CHECK_EQUAL(db2.get_balance(alice_id, asset_id_type()).amount.value, 500);
-      BOOST_CHECK_EQUAL(db2.get_balance(  bob_id, asset_id_type()).amount.value, 1500);
+      BOOST_CHECK_EQUAL(db2.get_balance(alice_id, GRAPHENE_CORE_ASSET_AID).amount.value, 500);
+      BOOST_CHECK_EQUAL(db2.get_balance(  bob_id, GRAPHENE_CORE_ASSET_AID).amount.value, 1500);
 
       // Make sure we can generate and accept a plain old empty block on top of all this!
       generate_and_send(1);

@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE( create_advanced_uia )
    try {
       asset_id_type test_asset_id = db.get_index<asset_object>().get_next_id();
       asset_create_operation creator;
-      creator.issuer = account_id_type();
+      creator.issuer = GRAPHENE_COMMITTEE_ACCOUNT_UID;
       creator.fee = asset();
       creator.symbol = "ADVANCED";
       creator.common_options.max_supply = 100000000;
@@ -54,23 +54,19 @@ BOOST_AUTO_TEST_CASE( create_advanced_uia )
       creator.common_options.market_fee_percent = GRAPHENE_MAX_MARKET_FEE_PERCENT/100; /*1%*/
       creator.common_options.issuer_permissions = charge_market_fee|white_list|override_authority|transfer_restricted|disable_confidential;
       creator.common_options.flags = charge_market_fee|white_list|override_authority|disable_confidential;
-      creator.common_options.core_exchange_rate = price({asset(2),asset(1,asset_id_type(1))});
-      creator.common_options.whitelist_authorities = creator.common_options.blacklist_authorities = {account_id_type()};
+      creator.common_options.whitelist_authorities = creator.common_options.blacklist_authorities = {GRAPHENE_COMMITTEE_ACCOUNT_UID};
       trx.operations.push_back(std::move(creator));
       PUSH_TX( db, trx, ~0 );
 
       const asset_object& test_asset = test_asset_id(db);
       BOOST_CHECK(test_asset.symbol == "ADVANCED");
-      BOOST_CHECK(asset(1, test_asset_id) * test_asset.options.core_exchange_rate == asset(2));
       BOOST_CHECK(test_asset.options.flags & white_list);
       BOOST_CHECK(test_asset.options.max_supply == 100000000);
-      BOOST_CHECK(!test_asset.bitasset_data_id.valid());
       BOOST_CHECK(test_asset.options.market_fee_percent == GRAPHENE_MAX_MARKET_FEE_PERCENT/100);
 
       const asset_dynamic_data_object& test_asset_dynamic_data = test_asset.dynamic_asset_data_id(db);
       BOOST_CHECK(test_asset_dynamic_data.current_supply == 0);
       BOOST_CHECK(test_asset_dynamic_data.accumulated_fees == 0);
-      BOOST_CHECK(test_asset_dynamic_data.fee_pool == 0);
    } catch(fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
@@ -79,83 +75,88 @@ BOOST_AUTO_TEST_CASE( create_advanced_uia )
 
 BOOST_AUTO_TEST_CASE( override_transfer_test )
 { try {
-   ACTORS( (dan)(eric)(sam) );
-   const asset_object& advanced = create_user_issued_asset( "ADVANCED", sam, override_authority );
+   //ACTORS( (dan)(eric)(sam) );
+   ACTORS( (1000)(1001)(1002) );
+   const asset_object& advanced = create_user_issued_asset( "ADVANCED", u_1002, override_authority );
    BOOST_TEST_MESSAGE( "Issuing 1000 ADVANCED to dan" );
-   issue_uia( dan, advanced.amount( 1000 ) );
+   issue_uia( u_1000, advanced.amount( 1000 ) );
    BOOST_TEST_MESSAGE( "Checking dan's balance" );
-   BOOST_REQUIRE_EQUAL( get_balance( dan, advanced ), 1000 );
+   BOOST_REQUIRE_EQUAL( get_balance( u_1000, advanced ), 1000 );
 
    override_transfer_operation otrans;
    otrans.issuer = advanced.issuer;
-   otrans.from = dan.id;
-   otrans.to   = eric.id;
+   otrans.from = u_1000.uid;
+   otrans.to   = u_1001.uid;
    otrans.amount = advanced.amount(100);
    trx.operations.push_back(otrans);
 
    BOOST_TEST_MESSAGE( "Require throwing without signature" );
    GRAPHENE_REQUIRE_THROW( PUSH_TX( db, trx, 0 ), tx_missing_active_auth );
    BOOST_TEST_MESSAGE( "Require throwing with dan's signature" );
-   sign( trx,  dan_private_key  );
+   sign( trx,  u_1000_private_key  );
    GRAPHENE_REQUIRE_THROW( PUSH_TX( db, trx, 0 ), tx_missing_active_auth );
    BOOST_TEST_MESSAGE( "Pass with issuer's signature" );
    trx.signatures.clear();
-   sign( trx,  sam_private_key  );
+   sign( trx,  u_1002_private_key  );
    PUSH_TX( db, trx, 0 );
 
-   BOOST_REQUIRE_EQUAL( get_balance( dan, advanced ), 900 );
-   BOOST_REQUIRE_EQUAL( get_balance( eric, advanced ), 100 );
+   BOOST_REQUIRE_EQUAL( get_balance( u_1000, advanced ), 900 );
+   BOOST_REQUIRE_EQUAL( get_balance( u_1001, advanced ), 100 );
 } FC_LOG_AND_RETHROW() }
 
 BOOST_AUTO_TEST_CASE( override_transfer_test2 )
 { try {
-   ACTORS( (dan)(eric)(sam) );
-   const asset_object& advanced = create_user_issued_asset( "ADVANCED", sam, 0 );
-   issue_uia( dan, advanced.amount( 1000 ) );
-   BOOST_REQUIRE_EQUAL( get_balance( dan, advanced ), 1000 );
+   //ACTORS( (dan)(eric)(sam) );
+   ACTORS( (1000)(1001)(1002) );
+   const asset_object& advanced = create_user_issued_asset( "ADVANCED", u_1002, 0 );
+   issue_uia( u_1000, advanced.amount( 1000 ) );
+   BOOST_REQUIRE_EQUAL( get_balance( u_1000, advanced ), 1000 );
 
    trx.operations.clear();
    override_transfer_operation otrans;
    otrans.issuer = advanced.issuer;
-   otrans.from = dan.id;
-   otrans.to   = eric.id;
+   otrans.from = u_1000.uid;
+   otrans.to   = u_1001.uid;
    otrans.amount = advanced.amount(100);
    trx.operations.push_back(otrans);
 
    BOOST_TEST_MESSAGE( "Require throwing without signature" );
    GRAPHENE_REQUIRE_THROW( PUSH_TX( db, trx, 0 ), fc::exception);
    BOOST_TEST_MESSAGE( "Require throwing with dan's signature" );
-   sign( trx,  dan_private_key  );
+   sign( trx,  u_1000_private_key  );
    GRAPHENE_REQUIRE_THROW( PUSH_TX( db, trx, 0 ), fc::exception);
    BOOST_TEST_MESSAGE( "Fail because overide_authority flag is not set" );
    trx.signatures.clear();
-   sign( trx,  sam_private_key  );
+   sign( trx,  u_1002_private_key  );
    GRAPHENE_REQUIRE_THROW( PUSH_TX( db, trx, 0 ), fc::exception );
 
-   BOOST_REQUIRE_EQUAL( get_balance( dan, advanced ), 1000 );
-   BOOST_REQUIRE_EQUAL( get_balance( eric, advanced ), 0 );
+   BOOST_REQUIRE_EQUAL( get_balance( u_1000, advanced ), 1000 );
+   BOOST_REQUIRE_EQUAL( get_balance( u_1001, advanced ), 0 );
 } FC_LOG_AND_RETHROW() }
 
 BOOST_AUTO_TEST_CASE( issue_whitelist_uia )
 {
    try {
-      account_id_type izzy_id = create_account("izzy").id;
-      const asset_id_type uia_id = create_user_issued_asset(
-         "ADVANCED", izzy_id(db), white_list ).id;
-      account_id_type nathan_id = create_account("nathan").id;
-      account_id_type vikram_id = create_account("vikram").id;
+      auto izzy = create_account(uint32_t(100), "izzy");
+      account_uid_type izzy_id = izzy.uid;
+      auto uia = create_user_issued_asset("ADVANCED", izzy, white_list );
+      const asset_aid_type uia_id = uia.asset_id;
+      auto nathan = create_account(uint32_t(101), "nathan");
+      auto vikram = create_account(uint32_t(102), "vikram");
+      account_uid_type nathan_id = nathan.uid;
+      account_uid_type vikram_id = vikram.uid;
       trx.clear();
 
       asset_issue_operation op;
-      op.issuer = uia_id(db).issuer;
-      op.asset_to_issue = asset(1000, uia_id);
+      op.issuer = uia.issuer;
+      op.asset_to_issue = asset(1000, uia.asset_id);
       op.issue_to_account = nathan_id;
       trx.operations.emplace_back(op);
       set_expiration( db, trx );
       
       PUSH_TX( db, trx, ~0 );
 
-      BOOST_CHECK(is_authorized_asset( db, nathan_id(db), uia_id(db) ));
+      BOOST_CHECK(is_authorized_asset( db, nathan, uia ));
       BOOST_CHECK_EQUAL(get_balance(nathan_id, uia_id), 1000);
 
       // Make a whitelist, now it should fail
@@ -164,11 +165,11 @@ BOOST_AUTO_TEST_CASE( issue_whitelist_uia )
          asset_update_operation uop;
          uop.issuer = izzy_id;
          uop.asset_to_update = uia_id;
-         uop.new_options = uia_id(db).options;
+         uop.new_options = uia.options;
          uop.new_options.whitelist_authorities.insert(izzy_id);
          trx.operations.back() = uop;
          PUSH_TX( db, trx, ~0 );
-         BOOST_CHECK( uia_id(db).options.whitelist_authorities.find(izzy_id) != uia_id(db).options.whitelist_authorities.end() );
+         BOOST_CHECK( db.get_asset_by_aid(uia_id).options.whitelist_authorities.find(izzy_id) != db.get_asset_by_aid(uia_id).options.whitelist_authorities.end() );
       }
 
       // Fail because there is a whitelist authority and I'm not whitelisted
@@ -213,16 +214,16 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
       INVOKE(issue_whitelist_uia);
       const asset_object& advanced = get_asset("ADVANCED");
       const account_object& nathan = get_account("nathan");
-      const account_object& dan = create_account("dan");
-      account_id_type izzy_id = get_account("izzy").id;
+      const account_object& dan = create_account(uint32_t(2000),"dan");
+      account_uid_type izzy_id = get_account("izzy").uid;
       upgrade_to_lifetime_member(dan);
       trx.clear();
 
       BOOST_TEST_MESSAGE( "Atempting to transfer asset ADVANCED from nathan to dan when dan is not whitelisted, should fail" );
       transfer_operation op;
       op.fee = advanced.amount(0);
-      op.from = nathan.id;
-      op.to = dan.id;
+      op.from = nathan.uid;
+      op.to = dan.uid;
       op.amount = advanced.amount(100); //({advanced.amount(0), nathan.id, dan.id, advanced.amount(100)});
       trx.operations.push_back(op);
       //Fail because dan is not whitelisted.
@@ -231,7 +232,7 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
       BOOST_TEST_MESSAGE( "Adding dan to whitelist for asset ADVANCED" );
       account_whitelist_operation wop;
       wop.authorizing_account = izzy_id;
-      wop.account_to_list = dan.id;
+      wop.account_to_list = dan.uid;
       wop.new_listing = account_whitelist_operation::white_listed;
       trx.operations.back() = wop;
       PUSH_TX( db, trx, ~0 );
@@ -247,7 +248,7 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
          BOOST_TEST_MESSAGE( "Changing the blacklist authority" );
          asset_update_operation uop;
          uop.issuer = izzy_id;
-         uop.asset_to_update = advanced.id;
+         uop.asset_to_update = advanced.asset_id;
          uop.new_options = advanced.options;
          uop.new_options.blacklist_authorities.insert(izzy_id);
          trx.operations.back() = uop;
@@ -256,7 +257,7 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
       }
 
       wop.new_listing |= account_whitelist_operation::black_listed;
-      wop.account_to_list = nathan.id;
+      wop.account_to_list = nathan.uid;
       trx.operations.back() = wop;
       PUSH_TX( db, trx, ~0 );
       BOOST_CHECK( !(is_authorized_asset( db, nathan, advanced )) );
@@ -270,7 +271,7 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
 
       BOOST_TEST_MESSAGE( "Attempting to burn from nathan after blacklisting, should fail" );
       asset_reserve_operation burn;
-      burn.payer = nathan.id;
+      burn.payer = nathan.uid;
       burn.amount_to_reserve = advanced.amount(10);
       trx.operations.back() = burn;
       //Fail because nathan is blacklisted
@@ -285,13 +286,13 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
          BOOST_TEST_MESSAGE( "Changing the blacklist authority to dan" );
          asset_update_operation op;
          op.issuer = izzy_id;
-         op.asset_to_update = advanced.id;
+         op.asset_to_update = advanced.asset_id;
          op.new_options = advanced.options;
          op.new_options.blacklist_authorities.clear();
-         op.new_options.blacklist_authorities.insert(dan.id);
+         op.new_options.blacklist_authorities.insert(dan.uid);
          trx.operations.back() = op;
          PUSH_TX( db, trx, ~0 );
-         BOOST_CHECK(advanced.options.blacklist_authorities.find(dan.id) != advanced.options.blacklist_authorities.end());
+         BOOST_CHECK(advanced.options.blacklist_authorities.find(dan.uid) != advanced.options.blacklist_authorities.end());
       }
 
       BOOST_TEST_MESSAGE( "Attempting to transfer from dan back to nathan" );
@@ -301,8 +302,8 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
       BOOST_CHECK_EQUAL(get_balance(dan, advanced), 50);
 
       BOOST_TEST_MESSAGE( "Blacklisting nathan by dan" );
-      wop.authorizing_account = dan.id;
-      wop.account_to_list = nathan.id;
+      wop.authorizing_account = dan.uid;
+      wop.account_to_list = nathan.uid;
       wop.new_listing = account_whitelist_operation::black_listed;
       trx.operations.back() = wop;
       PUSH_TX( db, trx, ~0 );
@@ -314,12 +315,12 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
 
       //Remove nathan from committee's whitelist, add him to dan's. This should not authorize him to hold ADVANCED.
       wop.authorizing_account = izzy_id;
-      wop.account_to_list = nathan.id;
+      wop.account_to_list = nathan.uid;
       wop.new_listing = account_whitelist_operation::no_listing;
       trx.operations.back() = wop;
       PUSH_TX( db, trx, ~0 );
-      wop.authorizing_account = dan.id;
-      wop.account_to_list = nathan.id;
+      wop.authorizing_account = dan.uid;
+      wop.account_to_list = nathan.uid;
       wop.new_listing = account_whitelist_operation::white_listed;
       trx.operations.back() = wop;
       PUSH_TX( db, trx, ~0 );
@@ -329,7 +330,7 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
       BOOST_CHECK(!is_authorized_asset( db, nathan, advanced ));
       GRAPHENE_REQUIRE_THROW(PUSH_TX( db, trx, ~0 ), fc::exception);
 
-      burn.payer = dan.id;
+      burn.payer = dan.uid;
       burn.amount_to_reserve = advanced.amount(10);
       trx.operations.back() = burn;
       PUSH_TX(db, trx, ~0);
@@ -347,30 +348,31 @@ BOOST_AUTO_TEST_CASE( transfer_restricted_test )
 {
    try
    {
-      ACTORS( (sam)(alice)(bob) );
+      //ACTORS( (sam)(alice)(bob) );
+      ACTORS( (1000)(1001)(1002) );
 
       BOOST_TEST_MESSAGE( "Issuing 1000 UIA to Alice" );
 
       auto _issue_uia = [&]( const account_object& recipient, asset amount )
       {
          asset_issue_operation op;
-         op.issuer = amount.asset_id(db).issuer;
+         op.issuer = db.get_asset_by_aid( amount.asset_id ).issuer;
          op.asset_to_issue = amount;
-         op.issue_to_account = recipient.id;
+         op.issue_to_account = recipient.uid;
          transaction tx;
          tx.operations.push_back( op );
          set_expiration( db, tx );
          PUSH_TX( db, tx, database::skip_authority_check | database::skip_tapos_check | database::skip_transaction_signatures );
       } ;
 
-      const asset_object& uia = create_user_issued_asset( "TXRX", sam, transfer_restricted );
-      _issue_uia( alice, uia.amount( 1000 ) );
+      const asset_object& uia = create_user_issued_asset( "TXRX", u_1000, transfer_restricted );
+      _issue_uia( u_1001, uia.amount( 1000 ) );
 
       auto _restrict_xfer = [&]( bool xfer_flag )
       {
          asset_update_operation op;
-         op.issuer = sam_id;
-         op.asset_to_update = uia.id;
+         op.issuer = u_1000_id;
+         op.asset_to_update = uia.asset_id;
          op.new_options = uia.options;
          if( xfer_flag )
             op.new_options.flags |= transfer_restricted;
@@ -385,13 +387,13 @@ BOOST_AUTO_TEST_CASE( transfer_restricted_test )
       BOOST_TEST_MESSAGE( "Enable transfer_restricted, send fails" );
 
       transfer_operation xfer_op;
-      xfer_op.from = alice_id;
-      xfer_op.to = bob_id;
+      xfer_op.from = u_1001_id;
+      xfer_op.to = u_1002_id;
       xfer_op.amount = uia.amount(100);
       signed_transaction xfer_tx;
       xfer_tx.operations.push_back( xfer_op );
       set_expiration( db, xfer_tx );
-      sign( xfer_tx, alice_private_key );
+      sign( xfer_tx, u_1001_private_key );
 
       _restrict_xfer( true );
       GRAPHENE_REQUIRE_THROW( PUSH_TX( db, xfer_tx ), transfer_restricted_transfer_asset );
@@ -415,7 +417,8 @@ BOOST_AUTO_TEST_CASE( asset_name_test )
 {
    try
    {
-      ACTORS( (alice)(bob) );
+      //ACTORS( (alice)(bob) );
+      ACTORS( (1000)(1001) );
 
       auto has_asset = [&]( std::string symbol ) -> bool
       {
@@ -425,21 +428,21 @@ BOOST_AUTO_TEST_CASE( asset_name_test )
 
       // Alice creates asset "ALPHA"
       BOOST_CHECK( !has_asset("ALPHA") );    BOOST_CHECK( !has_asset("ALPHA.ONE") );
-      create_user_issued_asset( "ALPHA", alice_id(db), 0 );
+      create_user_issued_asset( "ALPHA", u_1000, 0 );
       BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( !has_asset("ALPHA.ONE") );
 
       // Nobody can create another asset named ALPHA
-      GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA",   bob_id(db), 0 ), fc::exception );
+      GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA",   u_1001, 0 ), fc::exception );
       BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( !has_asset("ALPHA.ONE") );
-      GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA", alice_id(db), 0 ), fc::exception );
+      GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA", u_1000, 0 ), fc::exception );
       BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( !has_asset("ALPHA.ONE") );
 
       // Bob can't create ALPHA.ONE
-      GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA.ONE", bob_id(db), 0 ), fc::exception );
+      GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA.ONE", u_1001, 0 ), fc::exception );
       BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( !has_asset("ALPHA.ONE") );
       
       // Alice can create it
-      create_user_issued_asset( "ALPHA.ONE", alice_id(db), 0 );
+      create_user_issued_asset( "ALPHA.ONE", u_1000, 0 );
       BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( has_asset("ALPHA.ONE") );
    }
    catch(fc::exception& e)

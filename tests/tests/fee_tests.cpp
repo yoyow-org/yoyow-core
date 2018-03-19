@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE( nonzero_fee_test )
       xfer_op.fee = _core(0);
       tx.operations.push_back( xfer_op );
       set_expiration( db, tx );
-      sign( tx, alice_private_key );
+      sign( tx, u_1000_private_key );
       GRAPHENE_REQUIRE_THROW( PUSH_TX( db, tx ), insufficient_fee );
    }
    catch( const fc::exception& e )
@@ -81,15 +81,22 @@ BOOST_AUTO_TEST_CASE( fee_refund_test )
 {
    try
    {
-      ACTORS((alice)(bob)(izzy));
+      //ACTORS((alice)(bob)(izzy));
+      ACTORS((1000)(1001)(1002));
+      auto alice = u_1000;
+      auto bob = u_1001;
+      auto izzy = u_1002;
+      auto alice_id = u_1000_id;
+      auto bob_id = u_1001_id;
+      auto izzy_id = u_1002_id;
 
       int64_t alice_b0 = 1000000, bob_b0 = 1000000;
 
-      transfer( account_id_type(), alice_id, asset(alice_b0) );
-      transfer( account_id_type(), bob_id, asset(bob_b0) );
+      transfer( GRAPHENE_COMMITTEE_ACCOUNT_UID, alice_id, asset(alice_b0) );
+      transfer( GRAPHENE_COMMITTEE_ACCOUNT_UID, bob_id, asset(bob_b0) );
 
-      asset_id_type core_id = asset_id_type();
-      asset_id_type usd_id = create_user_issued_asset( "IZZYUSD", izzy_id(db), charge_market_fee ).id;
+      asset_aid_type core_id = 0;
+      asset_aid_type usd_id = create_user_issued_asset( "IZZYUSD", izzy, charge_market_fee ).asset_id;
       issue_uia( alice_id, asset( alice_b0, usd_id ) );
       issue_uia( bob_id, asset( bob_b0, usd_id ) );
 
