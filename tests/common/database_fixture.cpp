@@ -316,6 +316,16 @@ void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_i
 }
 
 account_create_operation database_fixture::make_account(
+   uint32_t seed,
+   const std::string& name /* = "nathan" */,
+   public_key_type key /* = key_id_type() */
+   )
+   {
+      auto uid = graphene::chain::calc_account_uid( seed );
+      return make_account( uid, name, key );
+   }
+
+account_create_operation database_fixture::make_account(
    account_uid_type uid,
    const std::string& name /* = "nathan" */,
    public_key_type key /* = key_id_type() */
@@ -475,6 +485,16 @@ void database_fixture::change_fees(
    db.modify(db.get_global_properties(), [&](global_property_object& p) {
       p.parameters = new_chain_params;
    });
+}
+
+const account_object& database_fixture::create_account(
+   const uint64_t seed,
+   const string& name,
+   const public_key_type& key /* = public_key_type() */
+   )
+{
+   auto uid = graphene::chain::calc_account_uid( seed );
+   return create_account( uid, name, key );
 }
 
 const account_object& database_fixture::create_account(

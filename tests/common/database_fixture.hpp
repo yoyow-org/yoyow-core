@@ -187,6 +187,12 @@ struct database_fixture {
    void generate_blocks(fc::time_point_sec timestamp, bool miss_intermediate_blocks = true, uint32_t skip = ~0);
 
    account_create_operation make_account(
+      uint32_t seed = 100,
+      const std::string& name = "nathan",
+      public_key_type = public_key_type()
+      );
+
+   account_create_operation make_account(
       account_uid_type uid,
       const std::string& name = "nathan",
       public_key_type = public_key_type()
@@ -211,6 +217,11 @@ struct database_fixture {
    void issue_uia( const account_object& recipient, asset amount );
    void issue_uia( account_uid_type recipient_id, asset amount );
 
+   const account_object& create_account(
+      const uint32_t seed,
+      const string& name,
+      const public_key_type& key = public_key_type()
+   );
    const account_object& create_account(
       const account_uid_type uid,
       const string& name,

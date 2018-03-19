@@ -43,14 +43,19 @@ using namespace graphene::chain;
 BOOST_FIXTURE_TEST_SUITE( confidential_tests, database_fixture )
 BOOST_AUTO_TEST_CASE( confidential_test )
 { try {
-   ACTORS( (dan)(nathan) )
-   const asset_object& core = asset_id_type()(db);
+   //ACTORS( (dan)(nathan) )
+   ACTORS( (1000)(1001) )
+   auto dan = u_1000;
+   auto nathan = u_1001;
+   auto dan_private_key = u_1000_private_key;
 
-   transfer(account_id_type()(db), dan, core.amount(1000000));
+   const asset_object& core = db.get_core_asset();
+
+   transfer(committee_account, dan.uid, core.amount(1000000));
 
    transfer_to_blind_operation to_blind;
    to_blind.amount = core.amount(1000);
-   to_blind.from   = dan.id;
+   to_blind.from   = dan.uid;
 
    auto owner1_key = fc::ecc::private_key::generate();
    auto owner1_pub = owner1_key.get_public_key();
