@@ -97,10 +97,10 @@ BOOST_AUTO_TEST_CASE( valid_name_test )
    BOOST_CHECK( is_valid_name( "aaa.bbb.ccc" ) );
 
    BOOST_CHECK(  is_valid_name( "aaa--bbb--ccc" ) );
-   BOOST_CHECK( !is_valid_name( "xn--sandmnnchen-p8a.de" ) );
-   BOOST_CHECK(  is_valid_name( "xn--sandmnnchen-p8a.dex" ) );
-   BOOST_CHECK( !is_valid_name( "xn-sandmnnchen-p8a.de" ) );
-   BOOST_CHECK(  is_valid_name( "xn-sandmnnchen-p8a.dex" ) );
+   BOOST_CHECK( !is_valid_name( "xn--sandmnnchen-p8a.d" ) );
+   BOOST_CHECK(  is_valid_name( "xn--sandmnnchen-p8a.de" ) );
+   BOOST_CHECK( !is_valid_name( "xn-sandmnnchen-p8a.d" ) );
+   BOOST_CHECK(  is_valid_name( "xn-sandmnnchen-p8a.de" ) );
 
    BOOST_CHECK(  is_valid_name( "this-label-has-less-than-64-char.acters-63-to-be-really-precise" ) );
    BOOST_CHECK( !is_valid_name( "this-label-has-more-than-63-char.act.ers-64-to-be-really-precise" ) );

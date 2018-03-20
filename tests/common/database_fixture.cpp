@@ -49,7 +49,7 @@
 
 using namespace graphene::chain::test;
 
-uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1520265600;
+uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1520611200;
 
 namespace graphene { namespace chain {
 
@@ -79,10 +79,11 @@ database_fixture::database_fixture()
    genesis_state.initial_timestamp = time_point_sec( GRAPHENE_TESTING_GENESIS_TIMESTAMP );
 
    genesis_state.initial_active_witnesses = 10;
+   const int reserved_accounts = 10;
    for( int i = 0; i < genesis_state.initial_active_witnesses; ++i )
    {
       auto name = "init"+fc::to_string(i);
-      genesis_state.initial_accounts.emplace_back(graphene::chain::calc_account_uid(i),
+      genesis_state.initial_accounts.emplace_back(graphene::chain::calc_account_uid(i+reserved_accounts),
                                                   name,
                                                   0,
                                                   init_account_priv_key.get_public_key(),
@@ -337,7 +338,7 @@ account_create_operation database_fixture::make_account(
    reg.allowance_per_article = asset(10000);
    reg.max_share_per_article = asset(5000);
    reg.max_share_total = asset(1000);
-   reg.registrar = committee_account;
+   reg.registrar = GRAPHENE_NULL_ACCOUNT_UID;
    
    create_account.uid = uid;
    create_account.name = name;

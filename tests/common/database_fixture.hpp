@@ -131,11 +131,11 @@ extern uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP;
 #define ACTOR(seed) \
    PREP_ACTOR(seed) \
    account_uid_type u_ ## seed ## _id = graphene::chain::calc_account_uid(seed); \
-   const auto& u_ ## seed = create_account(u_ ## seed ## _id, BOOST_PP_STRINGIZE(seed), u_ ## seed ## _public_key); \
+   const auto& u_ ## seed = create_account(u_ ## seed ## _id, BOOST_PP_STRINGIZE(u##seed), u_ ## seed ## _public_key); \
 
 #define GET_ACTOR(seed) \
    fc::ecc::private_key u_ ## seed ## _private_key = generate_private_key(BOOST_PP_STRINGIZE(seed)); \
-   const account_object& u_ ## seed = get_account(BOOST_PP_STRINGIZE(seed)); \
+   const account_object& u_ ## seed = get_account(BOOST_PP_STRINGIZE(u##seed)); \
    account_uid_type u_ ## seed ## _id = u_ ## seed.uid; \
 
 #define ACTORS_IMPL(r, data, elem) ACTOR(elem)
@@ -151,7 +151,7 @@ struct database_fixture {
    chain::database &db;
    signed_transaction trx;
    public_key_type committee_key;
-   account_uid_type committee_account = 25638;
+   account_uid_type committee_account = GRAPHENE_COMMITTEE_ACCOUNT_UID;
    fc::ecc::private_key private_key = fc::ecc::private_key::generate();
    fc::ecc::private_key init_account_priv_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")) );
    public_key_type init_account_pub_key;

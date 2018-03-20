@@ -97,9 +97,12 @@ share_type override_transfer_operation::calculate_fee( const fee_parameters_type
 
 void override_transfer_operation::validate()const
 {
-   FC_ASSERT( fee.amount >= 0 );
+   validate_op_fee( fee, "override_transfer " );
+   validate_account_uid( issuer, "issuer " );
+   validate_account_uid( from, "from " );
+   validate_account_uid( to, "to " );
+   validate_positive_asset( amount, "override_transfer amount" );
    FC_ASSERT( from != to );
-   FC_ASSERT( amount.amount > 0 );
    FC_ASSERT( issuer != from );
 }
 
