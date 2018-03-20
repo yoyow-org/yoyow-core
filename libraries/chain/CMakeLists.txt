@@ -59,7 +59,6 @@ add_library( graphene_chain
              protocol/transaction.cpp
              protocol/block.cpp
              protocol/fee_schedule.cpp
-             protocol/confidential.cpp
              protocol/vote.cpp
 
              genesis_state.cpp
@@ -82,7 +81,6 @@ add_library( graphene_chain
              vesting_balance_evaluator.cpp
              withdraw_permission_evaluator.cpp
              worker_evaluator.cpp
-             confidential_evaluator.cpp
              special_authority.cpp
              buyback.cpp
 

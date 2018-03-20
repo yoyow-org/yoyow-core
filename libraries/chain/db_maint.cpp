@@ -28,7 +28,6 @@
 #include <fc/uint128.hpp>
 
 #include <graphene/chain/database.hpp>
-#include <graphene/chain/fba_accumulator_id.hpp>
 #include <graphene/chain/hardfork.hpp>
 
 #include <graphene/chain/account_object.hpp>

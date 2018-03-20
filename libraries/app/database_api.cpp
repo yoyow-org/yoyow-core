@@ -171,9 +171,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // Proposed transactions
       vector<proposal_object> get_proposed_transactions( account_id_type id )const;
 
-      // Blinded balances
-      vector<blinded_balance_object> get_blinded_balances( const flat_set<commitment_type>& commitments )const;
-
    //private:
       template<typename T>
       void subscribe_to_item( const T& i )const
@@ -2284,31 +2281,6 @@ vector<proposal_object> database_api_impl::get_proposed_transactions( account_id
            else if ( p.available_active_approvals.find( id ) != p.available_active_approvals.end() )
               result.push_back(p);
    });
-   return result;
-}
-
-//////////////////////////////////////////////////////////////////////
-//                                                                  //
-// Blinded balances                                                 //
-//                                                                  //
-//////////////////////////////////////////////////////////////////////
-
-vector<blinded_balance_object> database_api::get_blinded_balances( const flat_set<commitment_type>& commitments )const
-{
-   return my->get_blinded_balances( commitments );
-}
-
-vector<blinded_balance_object> database_api_impl::get_blinded_balances( const flat_set<commitment_type>& commitments )const
-{
-   vector<blinded_balance_object> result; result.reserve(commitments.size());
-   const auto& bal_idx = _db.get_index_type<blinded_balance_index>();
-   const auto& by_commitment_idx = bal_idx.indices().get<by_commitment>();
-   for( const auto& c : commitments )
-   {
-      auto itr = by_commitment_idx.find( c );
-      if( itr != by_commitment_idx.end() )
-         result.push_back( *itr );
-   }
    return result;
 }
 

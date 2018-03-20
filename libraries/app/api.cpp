@@ -31,7 +31,6 @@
 #include <graphene/chain/get_config.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/confidential_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/chain/transaction_object.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
@@ -421,13 +420,6 @@ namespace graphene { namespace app {
                   transaction_get_impacted_accounts( aobj->trx, impacted );
                   result.reserve( impacted.size() );
                   for( auto& item : impacted ) result.emplace_back(item);
-                  break;
-               } case impl_blinded_balance_object_type:{
-                  const auto& aobj = dynamic_cast<const blinded_balance_object*>(obj);
-                  assert( aobj != nullptr );
-                  result.reserve( aobj->owner.account_auths.size() );
-                  for( const auto& a : aobj->owner.account_auths )
-                     result.push_back( a.first );
                   break;
                } case impl_block_summary_object_type:
                   break;

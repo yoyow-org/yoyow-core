@@ -6,7 +6,6 @@
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/worker_object.hpp>
-#include <graphene/chain/confidential_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 
@@ -248,29 +247,6 @@ struct get_impacted_account_visitor
       //_impacted.insert( op.from );
       //_impacted.insert( op.issuer );
    }
-
-   void operator()( const transfer_to_blind_operation& op )
-   {
-      //_impacted.insert( op.from );
-      for( const auto& out : op.outputs )
-         add_authority_accounts( _impacted, out.owner );
-   }
-
-   void operator()( const blind_transfer_operation& op )
-   {
-      for( const auto& in : op.inputs )
-         add_authority_accounts( _impacted, in.owner );
-      for( const auto& out : op.outputs )
-         add_authority_accounts( _impacted, out.owner );
-   }
-
-   void operator()( const transfer_from_blind_operation& op )
-   {
-      //_impacted.insert( op.to );
-      for( const auto& in : op.inputs )
-         add_authority_accounts( _impacted, in.owner );
-   }
-
 };
 
 void operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )
@@ -421,12 +397,6 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
               const auto& aobj = dynamic_cast<const transaction_object*>(obj);
               assert( aobj != nullptr );
               transaction_get_impacted_accounts( aobj->trx, accounts );
-              break;
-           } case impl_blinded_balance_object_type:{
-              const auto& aobj = dynamic_cast<const blinded_balance_object*>(obj);
-              assert( aobj != nullptr );
-              for( const auto& a : aobj->owner.account_auths )
-                accounts.insert( a.first );
               break;
            } case impl_block_summary_object_type:
               break;

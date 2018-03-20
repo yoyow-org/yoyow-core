@@ -28,7 +28,6 @@
 #include <graphene/chain/protocol/asset_ops.hpp>
 #include <graphene/chain/protocol/balance.hpp>
 #include <graphene/chain/protocol/committee_member.hpp>
-#include <graphene/chain/protocol/confidential.hpp>
 #include <graphene/chain/protocol/content.hpp>
 #include <graphene/chain/protocol/csaf.hpp>
 #include <graphene/chain/protocol/custom.hpp>
@@ -107,10 +106,7 @@ namespace graphene { namespace chain {
             vesting_balance_withdraw_operation,
             worker_create_operation,
             custom_operation,
-            assert_operation,
-            transfer_to_blind_operation,
-            blind_transfer_operation,
-            transfer_from_blind_operation
+            assert_operation
             //asset_settle_cancel_operation,  // VIRTUAL
             //fba_distribute_operation        // VIRTUAL
          > operation;

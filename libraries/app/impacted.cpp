@@ -211,10 +211,47 @@ struct get_impacted_account_uid_visitor
    {
       //_impacted.insert( op.account ); // fee payer
    }
+
+   void operator()( const asset_create_operation& op ) 
+   {
+      //_impacted.insert( op.issuer ); // fee payer
+   }
+   void operator()( const asset_update_operation& op )
+   {
+      //_impacted.insert( op.issuer ); // fee payer
+      if( op.new_issuer )
+         _impacted.insert( *(op.new_issuer) );
+   }
+
+   void operator()( const asset_issue_operation& op )
+   {
+      //_impacted.insert( op.issuer ); // fee payer
+      _impacted.insert( op.issue_to_account );
+   }
+
+   void operator()( const asset_reserve_operation& op ) 
+   {
+      //_impacted.insert( op.payer ); // fee payer
+   }
+
+   void operator()( const asset_claim_fees_operation& op )
+   {
+      //_impacted.insert( op.issuer ); // fee payer
+   }
+
+   void operator()( const override_transfer_operation& op )
+   {
+      _impacted.insert( op.to );
+      _impacted.insert( op.from );
+      //_impacted.insert( op.issuer ); // fee payer
+   }
+
+
+
    /*
    void operator()( const balance_claim_operation& op ) {}
 
-   void operator()( const asset_claim_fees_operation& op ){}
+   
    void operator()( const limit_order_create_operation& op ) {}
    void operator()( const limit_order_cancel_operation& op )
    {
@@ -245,19 +282,7 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.new_owner );
    }
 
-   void operator()( const asset_create_operation& op ) {}
-   void operator()( const asset_update_operation& op )
-   {
-      if( op.new_issuer )
-         _impacted.insert( *(op.new_issuer) );
-   }
-
-   void operator()( const asset_issue_operation& op )
-   {
-      _impacted.insert( op.issue_to_account );
-   }
-
-   void operator()( const asset_reserve_operation& op ) {}
+   
    void operator()( const proposal_create_operation& op )
    {
       vector<authority> other;
@@ -302,44 +327,10 @@ struct get_impacted_account_uid_visitor
    void operator()( const custom_operation& op ) {}
    void operator()( const assert_operation& op ) {}
 
-   void operator()( const override_transfer_operation& op )
-   {
-      _impacted.insert( op.to );
-      _impacted.insert( op.from );
-      _impacted.insert( op.issuer );
-   }
+   
 
-   void operator()( const transfer_to_blind_operation& op )
-   {
-      _impacted.insert( op.from );
-      for( const auto& out : op.outputs )
-         add_authority_accounts( _impacted, out.owner );
-   }
+   
 
-   void operator()( const blind_transfer_operation& op )
-   {
-      for( const auto& in : op.inputs )
-         add_authority_accounts( _impacted, in.owner );
-      for( const auto& out : op.outputs )
-         add_authority_accounts( _impacted, out.owner );
-   }
-
-   void operator()( const transfer_from_blind_operation& op )
-   {
-      _impacted.insert( op.to );
-      for( const auto& in : op.inputs )
-         add_authority_accounts( _impacted, in.owner );
-   }
-
-   void operator()( const asset_settle_cancel_operation& op )
-   {
-      _impacted.insert( op.account );
-   }
-
-   void operator()( const fba_distribute_operation& op )
-   {
-      _impacted.insert( op.account_id );
-   }
    */
 
 };
@@ -571,28 +562,6 @@ struct get_impacted_account_visitor
       //_impacted.insert( op.to );
       //_impacted.insert( op.from );
       //_impacted.insert( op.issuer );
-   }
-
-   void operator()( const transfer_to_blind_operation& op )
-   {
-      //_impacted.insert( op.from );
-      for( const auto& out : op.outputs )
-         add_authority_accounts( _impacted, out.owner );
-   }
-
-   void operator()( const blind_transfer_operation& op )
-   {
-      for( const auto& in : op.inputs )
-         add_authority_accounts( _impacted, in.owner );
-      for( const auto& out : op.outputs )
-         add_authority_accounts( _impacted, out.owner );
-   }
-
-   void operator()( const transfer_from_blind_operation& op )
-   {
-      //_impacted.insert( op.to );
-      for( const auto& in : op.inputs )
-         add_authority_accounts( _impacted, in.owner );
    }
 
 };
