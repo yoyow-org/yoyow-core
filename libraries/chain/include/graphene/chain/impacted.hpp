@@ -24,28 +24,30 @@
 #pragma once
 
 #include <fc/container/flat.hpp>
+
+#include <graphene/chain/database.hpp>
+#include <graphene/chain/protocol/authority.hpp>
 #include <graphene/chain/protocol/operations.hpp>
 #include <graphene/chain/protocol/transaction.hpp>
 #include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/withdraw_permission_object.hpp>
+#include <graphene/chain/worker_object.hpp>
+#include <graphene/chain/market_object.hpp>
+#include <graphene/chain/committee_member_object.hpp>
 
-namespace graphene { namespace app {
+namespace graphene { namespace chain {
 
-void operation_get_impacted_accounts(
-   const graphene::chain::operation& op,
-   fc::flat_set<graphene::chain::account_id_type>& result );
-
-void transaction_get_impacted_accounts(
-   const graphene::chain::transaction& tx,
-   fc::flat_set<graphene::chain::account_id_type>& result
-   );
+using namespace graphene::db;
 
 void operation_get_impacted_account_uids(
-   const graphene::chain::operation& op,
-   fc::flat_set<graphene::chain::account_uid_type>& result );
+   const operation& op,
+   flat_set<account_uid_type>& result );
 
 void transaction_get_impacted_account_uids(
-   const graphene::chain::transaction& tx,
-   fc::flat_set<graphene::chain::account_uid_type>& result
+   const transaction& tx,
+   flat_set<account_uid_type>& result
    );
+
+void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accounts );
 
 } } // graphene::app

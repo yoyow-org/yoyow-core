@@ -24,6 +24,7 @@
 
 #include <graphene/app/database_api.hpp>
 #include <graphene/chain/get_config.hpp>
+#include <graphene/utilities/string_escape.hpp>
 
 #include <fc/bloom_filter.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -181,7 +182,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
          if( !is_subscribed_to_item(i) )
          {
-            idump((i));
+            //idump((i));
             _subscribe_filter.insert( vec.data(), vec.size() );//(vecconst char*)&i, sizeof(i) );
          }
       }
@@ -195,12 +196,12 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
          return _subscribe_filter.contains( i );
       }
 
-      bool is_impacted_account( const flat_set<account_id_type>& accounts)
+      bool is_impacted_account( const flat_set<account_uid_type>& accounts)
       {
          if( !_subscribed_accounts.size() || !accounts.size() )
             return false;
 
-         return std::any_of(accounts.begin(), accounts.end(), [this](const account_id_type& account) {
+         return std::any_of(accounts.begin(), accounts.end(), [this](const account_uid_type& account) {
             return _subscribed_accounts.find(account) != _subscribed_accounts.end();
          });
       }
@@ -224,17 +225,17 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       void broadcast_updates( const vector<variant>& updates );
       void broadcast_market_updates( const market_queue_type& queue);
-      void handle_object_changed(bool force_notify, bool full_object, const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts, std::function<const object*(object_id_type id)> find_object);
+      void handle_object_changed(bool force_notify, bool full_object, const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts, std::function<const object*(object_id_type id)> find_object);
 
       /** called every time a block is applied to report the objects that were changed */
-      void on_objects_new(const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts);
-      void on_objects_changed(const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts);
-      void on_objects_removed(const vector<object_id_type>& ids, const vector<const object*>& objs, const flat_set<account_id_type>& impacted_accounts);
+      void on_objects_new(const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts);
+      void on_objects_changed(const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts);
+      void on_objects_removed(const vector<object_id_type>& ids, const vector<const object*>& objs, const flat_set<account_uid_type>& impacted_accounts);
       void on_applied_block();
 
       bool _notify_remove_create = false;
       mutable fc::bloom_filter _subscribe_filter;
-      std::set<account_id_type> _subscribed_accounts;
+      std::set<account_uid_type> _subscribed_accounts;
       std::function<void(const fc::variant&)> _subscribe_callback;
       std::function<void(const fc::variant&)> _pending_trx_callback;
       std::function<void(const fc::variant&)> _block_applied_callback;
@@ -262,13 +263,13 @@ database_api::~database_api() {}
 database_api_impl::database_api_impl( graphene::chain::database& db ):_db(db)
 {
    wlog("creating database api ${x}", ("x",int64_t(this)) );
-   _new_connection = _db.new_objects.connect([this](const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) {
+   _new_connection = _db.new_objects.connect([this](const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts) {
                                 on_objects_new(ids, impacted_accounts);
                                 });
-   _change_connection = _db.changed_objects.connect([this](const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) {
+   _change_connection = _db.changed_objects.connect([this](const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts) {
                                 on_objects_changed(ids, impacted_accounts);
                                 });
-   _removed_connection = _db.removed_objects.connect([this](const vector<object_id_type>& ids, const vector<const object*>& objs, const flat_set<account_id_type>& impacted_accounts) {
+   _removed_connection = _db.removed_objects.connect([this](const vector<object_id_type>& ids, const vector<const object*>& objs, const flat_set<account_uid_type>& impacted_accounts) {
                                 on_objects_removed(ids, objs, impacted_accounts);
                                 });
    _applied_block_connection = _db.applied_block.connect([this](const signed_block&){ on_applied_block(); });
@@ -651,28 +652,33 @@ std::map<string,full_account> database_api::get_full_accounts( const vector<stri
 
 std::map<std::string, full_account> database_api_impl::get_full_accounts( const vector<std::string>& names_or_ids, bool subscribe)
 {
-   idump((names_or_ids));
+   //idump((names_or_ids));
    std::map<std::string, full_account> results;
 
    for (const std::string& account_name_or_id : names_or_ids)
    {
       const account_object* account = nullptr;
-      if (std::isdigit(account_name_or_id[0]))
-         account = _db.find(fc::variant(account_name_or_id).as<account_id_type>());
-      else
+      if( graphene::utilities::is_number(account_name_or_id) )
       {
-         const auto& idx = _db.get_index_type<account_index>().indices().get<by_name>();
-         auto itr = idx.find(account_name_or_id);
-         if (itr != idx.end())
-            account = &*itr;
+          account = _db.find_account_by_uid( fc::variant(account_name_or_id).as<uint64_t>() );
+      }else if (std::isdigit(account_name_or_id[0]))
+      {
+          account = _db.find(fc::variant(account_name_or_id).as<account_id_type>());
+      }else
+      {
+          const auto& idx = _db.get_index_type<account_index>().indices().get<by_name>();
+          auto itr = idx.find(account_name_or_id);
+          if (itr != idx.end())
+             account = &*itr;
       }
+      
       if (account == nullptr)
          continue;
 
       if( subscribe )
       {
          FC_ASSERT( std::distance(_subscribed_accounts.begin(), _subscribed_accounts.end()) < 100 );
-         _subscribed_accounts.insert( account->get_id() );
+         _subscribed_accounts.insert( account->uid );
          subscribe_to_item( account->id );
       }
 
@@ -680,9 +686,15 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       full_account acnt;
       acnt.account = *account;
       acnt.statistics = account->statistics(_db);
-      acnt.registrar_name = _db.get_account_by_uid( account->registrar ).name;
-      acnt.referrer_name = _db.get_account_by_uid( account->referrer ).name;
-      acnt.lifetime_referrer_name = _db.get_account_by_uid( account->lifetime_referrer ).name;
+      auto reg = _db.find_account_by_uid( account->registrar );
+      if(reg != nullptr)
+         acnt.registrar_name = reg->name;
+      auto ref = _db.find_account_by_uid( account->referrer );
+      if(ref != nullptr)
+         acnt.referrer_name = ref->name;
+      auto lref = _db.find_account_by_uid( account->lifetime_referrer );
+      if(lref != nullptr)
+         acnt.lifetime_referrer_name = lref->name;
       
       // TODO review Performance issues
       //acnt.votes = lookup_vote_ids( vector<vote_id_type>(account->options.votes.begin(),account->options.votes.end()) );
@@ -2317,7 +2329,7 @@ void database_api_impl::broadcast_market_updates( const market_queue_type& queue
    }
 }
 
-void database_api_impl::on_objects_removed( const vector<object_id_type>& ids, const vector<const object*>& objs, const flat_set<account_id_type>& impacted_accounts)
+void database_api_impl::on_objects_removed( const vector<object_id_type>& ids, const vector<const object*>& objs, const flat_set<account_uid_type>& impacted_accounts)
 {
    handle_object_changed(_notify_remove_create, false, ids, impacted_accounts,
       [objs](object_id_type id) -> const object* {
@@ -2333,21 +2345,21 @@ void database_api_impl::on_objects_removed( const vector<object_id_type>& ids, c
    );
 }
 
-void database_api_impl::on_objects_new(const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts)
+void database_api_impl::on_objects_new(const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts)
 {
    handle_object_changed(_notify_remove_create, true, ids, impacted_accounts,
       std::bind(&object_database::find_object, &_db, std::placeholders::_1)
    );
 }
 
-void database_api_impl::on_objects_changed(const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts)
+void database_api_impl::on_objects_changed(const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts)
 {
    handle_object_changed(false, true, ids, impacted_accounts,
       std::bind(&object_database::find_object, &_db, std::placeholders::_1)
    );
 }
 
-void database_api_impl::handle_object_changed(bool force_notify, bool full_object, const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts, std::function<const object*(object_id_type id)> find_object)
+void database_api_impl::handle_object_changed(bool force_notify, bool full_object, const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts, std::function<const object*(object_id_type id)> find_object)
 {
    if( _subscribe_callback )
    {

@@ -455,7 +455,7 @@ void database_fixture::issue_uia( const account_object& recipient, asset amount 
 
 void database_fixture::issue_uia( account_uid_type recipient_id, asset amount )
 {
-   issue_uia( recipient_id, amount );
+   issue_uia( db.get_account_by_uid( recipient_id ), amount );
 }
 
 void database_fixture::change_fees(

@@ -637,13 +637,14 @@ public:
    optional<asset_object> find_asset(string asset_symbol_or_id)const
    {
       FC_ASSERT( asset_symbol_or_id.size() > 0 );
-
-      if( auto id = fc::variant( asset_symbol_or_id ).as_uint64() )
+      if(graphene::utilities::is_number(asset_symbol_or_id))
       {
-         // It's an ID
+         asset_aid_type id = fc::variant( asset_symbol_or_id ).as_uint64();
          return find_asset(id);
-      } else {
-         // It's a symbol
+      }else if(auto id = maybe_id<asset_id_type>(asset_symbol_or_id))
+      {
+         return get_object(*id);
+      }else{
          auto rec = _remote_db->lookup_asset_symbols({asset_symbol_or_id}).front();
          if( rec )
          {
