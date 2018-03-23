@@ -90,9 +90,9 @@ namespace graphene { namespace chain {
          uint32_t price_per_kbyte = 10; /// only required for large memos.
       };
 
-      asset                   fee;
+      fee_type                fee;
       /// This account must sign and pay the fee for this operation. Later, this account may update the asset
-      account_uid_type         issuer;
+      account_uid_type        issuer;
       /// The ticker symbol of this asset
       string                  symbol;
       /// Number of digits to the right of decimal point, must be less than or equal to 12
@@ -136,7 +136,7 @@ namespace graphene { namespace chain {
 
       asset_update_operation(){}
 
-      asset           fee;
+      fee_type         fee;
       account_uid_type issuer;
       asset_aid_type   asset_to_update;
 
@@ -160,9 +160,9 @@ namespace graphene { namespace chain {
          uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
       };
 
-      asset            fee;
+      fee_type          fee;
       account_uid_type  issuer; ///< Must be asset_to_issue->asset_id->issuer
-      asset            asset_to_issue;
+      asset             asset_to_issue;
       account_uid_type  issue_to_account;
 
 
@@ -185,8 +185,8 @@ namespace graphene { namespace chain {
    {
       struct fee_parameters_type { uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; };
 
-      asset             fee;
-      account_uid_type   payer;
+      fee_type          fee;
+      account_uid_type  payer;
       asset             amount_to_reserve;
       extensions_type   extensions;
 
@@ -203,10 +203,10 @@ namespace graphene { namespace chain {
          uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
       };
 
-      asset           fee;
+      fee_type         fee;
       account_uid_type issuer;
-      asset           amount_to_claim; /// amount_to_claim.asset_id->issuer must == issuer
-      extensions_type extensions;
+      asset            amount_to_claim; /// amount_to_claim.asset_id->issuer must == issuer
+      extensions_type  extensions;
 
       account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;

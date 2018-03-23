@@ -1624,7 +1624,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_transaction_id)
         (create_asset)
         (update_asset)
-        //(issue_asset)
+        (issue_asset)
         (get_asset)
         (reserve_asset)
         (whitelist_account)

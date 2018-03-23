@@ -3049,7 +3049,7 @@ std::string operation_printer::operator()(const asset_create_operation& op) cons
    out << "Create ";
    out << "User-Issue Asset ";
    out << "'" << op.symbol << "' with issuer " << wallet.get_account(op.issuer).name;
-   return fee(op.fee);
+   return fee(op.fee.total);
 }
 
 std::string operation_result_printer::operator()(const void_result& x) const
