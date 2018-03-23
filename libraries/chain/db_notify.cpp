@@ -28,7 +28,7 @@ struct get_impacted_account_uid_visitor
    void operator()( const account_create_operation& op )
    {
       _impacted.insert( op.uid );
-      //_impacted.insert( op.reg_info.registrar ); // fee payer
+      _impacted.insert( op.reg_info.registrar ); // fee payer
       _impacted.insert( op.reg_info.referrer );
       add_authority_account_uids( _impacted, op.owner );
       add_authority_account_uids( _impacted, op.active );
@@ -37,13 +37,13 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const transfer_operation& op )
    {
-      //_impacted.insert( op.from ); // fee payer
+      _impacted.insert( op.from ); // fee payer
       _impacted.insert( op.to );
    }
 
    void operator()( const post_operation& op )
    {
-      //_impacted.insert( op.poster ); // fee payer
+      _impacted.insert( op.poster ); // fee payer
       
       _impacted.insert( op.platform );
       if( op.origin_platform.valid() )
@@ -55,37 +55,37 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const post_update_operation& op )
    {
-      //_impacted.insert( op.poster ); // fee payer
+      _impacted.insert( op.poster ); // fee payer
       _impacted.insert( op.platform );
    }
 
    void operator()( const account_manage_operation& op )
    {
-      //_impacted.insert( op.executor ); // fee payer
+      _impacted.insert( op.executor ); // fee payer
       _impacted.insert( op.account );
    }
 
    void operator()( const csaf_collect_operation& op )
    {
-      //_impacted.insert( op.from ); // fee payer
+      _impacted.insert( op.from ); // fee payer
       _impacted.insert( op.to );
    }
 
    void operator()( const csaf_lease_operation& op )
    {
-      //_impacted.insert( op.from ); // fee payer
+      _impacted.insert( op.from ); // fee payer
       _impacted.insert( op.to );
    }
 
    void operator()( const account_update_key_operation& op )
    {
-      //_impacted.insert( op.fee_paying_account ); // fee payer
+      _impacted.insert( op.fee_paying_account ); // fee payer
       _impacted.insert( op.uid );
    }
 
    void operator()( const account_update_auth_operation& op )
    {
-      //_impacted.insert( op.uid ); // fee payer
+      _impacted.insert( op.uid ); // fee payer
       if( op.owner.valid() )
          add_authority_account_uids( _impacted, *op.owner );
       if( op.active.valid() )
@@ -96,35 +96,35 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const account_auth_platform_operation& op )
    {
-      //_impacted.insert( op.uid ); // fee payer
+      _impacted.insert( op.uid ); // fee payer
       _impacted.insert( op.platform );
    }
 
    void operator()( const account_cancel_auth_platform_operation& op )
    {
-      //_impacted.insert( op.uid ); // fee payer
+      _impacted.insert( op.uid ); // fee payer
       _impacted.insert( op.platform );
    }
 
    void operator()( const account_update_proxy_operation& op )
    {
-      //_impacted.insert( op.voter ); // fee payer
+      _impacted.insert( op.voter ); // fee payer
       _impacted.insert( op.proxy );
    }
 
    void operator()( const witness_create_operation& op )
    {
-      //_impacted.insert( op.account ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const witness_update_operation& op )
    {
-      //_impacted.insert( op.account ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const witness_vote_update_operation& op )
    {
-      //_impacted.insert( op.voter ); // fee payer
+      _impacted.insert( op.voter ); // fee payer
       for( auto uid : op.witnesses_to_add )
          _impacted.insert( uid );
       for( auto uid : op.witnesses_to_remove )
@@ -133,28 +133,28 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const witness_collect_pay_operation& op )
    {
-      //_impacted.insert( op.account ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const witness_report_operation& op )
    {
-      //_impacted.insert( op.reporter ); // fee payer
+      _impacted.insert( op.reporter ); // fee payer
       _impacted.insert( op.first_block.witness );
    }
 
    void operator()( const platform_create_operation& op )
    {
-      //_impacted.insert( op.account ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const platform_update_operation& op )
    {
-      //_impacted.insert( op.account ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const platform_vote_update_operation& op )
    {
-      //_impacted.insert( op.voter ); // fee payer
+      _impacted.insert( op.voter ); // fee payer
       for( auto uid : op.platform_to_add )
          _impacted.insert( uid );
       for( auto uid : op.platform_to_remove )
@@ -163,15 +163,15 @@ struct get_impacted_account_uid_visitor
 
    void operator()( const committee_member_create_operation& op )
    {
-      //_impacted.insert( op.account ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
    void operator()( const committee_member_update_operation& op )
    {
-      //_impacted.insert( op.account ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
    void operator()( const committee_member_vote_update_operation& op )
    {
-      //_impacted.insert( op.voter ); // fee payer
+      _impacted.insert( op.voter ); // fee payer
       for( auto uid : op.committee_members_to_add )
          _impacted.insert( uid );
       for( auto uid : op.committee_members_to_remove )
@@ -179,7 +179,7 @@ struct get_impacted_account_uid_visitor
    }
    void operator()( const committee_proposal_create_operation& op )
    {
-      //_impacted.insert( op.proposer ); // fee payer
+      _impacted.insert( op.proposer ); // fee payer
       for( const auto& item : op.items )
       {
          if( item.which() == committee_proposal_item_type::tag< committee_update_account_priviledge_item_type >::value )
@@ -193,41 +193,41 @@ struct get_impacted_account_uid_visitor
    }
    void operator()( const committee_proposal_update_operation& op )
    {
-      //_impacted.insert( op.account ); // fee payer
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const asset_create_operation& op ) 
    {
-      //_impacted.insert( op.issuer ); // fee payer
+      _impacted.insert( op.issuer ); // fee payer
    }
    void operator()( const asset_update_operation& op )
    {
-      //_impacted.insert( op.issuer ); // fee payer
+      _impacted.insert( op.issuer ); // fee payer
       if( op.new_issuer )
          _impacted.insert( *(op.new_issuer) );
    }
 
    void operator()( const asset_issue_operation& op )
    {
-      //_impacted.insert( op.issuer ); // fee payer
+      _impacted.insert( op.issuer ); // fee payer
       _impacted.insert( op.issue_to_account );
    }
 
    void operator()( const asset_reserve_operation& op ) 
    {
-      //_impacted.insert( op.payer ); // fee payer
+      _impacted.insert( op.payer ); // fee payer
    }
 
    void operator()( const asset_claim_fees_operation& op )
    {
-      //_impacted.insert( op.issuer ); // fee payer
+      _impacted.insert( op.issuer ); // fee payer
    }
 
    void operator()( const override_transfer_operation& op )
    {
       _impacted.insert( op.to );
       _impacted.insert( op.from );
-      //_impacted.insert( op.issuer ); // fee payer
+      _impacted.insert( op.issuer ); // fee payer
    }
 
 
