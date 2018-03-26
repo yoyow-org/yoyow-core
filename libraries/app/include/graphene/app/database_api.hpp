@@ -134,6 +134,17 @@ enum data_sorting_type
    order_by_pledge = 2
 };
 
+struct signed_block_with_info : public signed_block
+{
+   signed_block_with_info(){}
+   signed_block_with_info( const signed_block& block );
+   signed_block_with_info( const signed_block_with_info& block ) = default;
+
+   block_id_type block_id;
+   public_key_type signing_key;
+   vector< transaction_id_type > transaction_ids;
+};
+
 /**
  * @brief The database_api class implements the RPC API for the chain database.
  *
@@ -198,7 +209,7 @@ class database_api
        * @param block_num Height of the block to be returned
        * @return the referenced block, or null if no matching block was found
        */
-      optional<signed_block> get_block(uint32_t block_num)const;
+      optional<signed_block_with_info> get_block(uint32_t block_num)const;
 
       /**
        * @brief used to fetch an individual transaction.
@@ -733,6 +744,9 @@ FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_votes)
                  (order_by_pledge)
                );
+
+FC_REFLECT_DERIVED( graphene::app::signed_block_with_info, (graphene::chain::signed_block),
+   (block_id)(signing_key)(transaction_ids) )
 
 FC_API( graphene::app::database_api,
    // Objects

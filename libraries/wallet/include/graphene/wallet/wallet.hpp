@@ -170,16 +170,6 @@ struct worker_vote_delta
    flat_set<worker_id_type> vote_abstain;
 };
 
-struct signed_block_with_info : public signed_block
-{
-   signed_block_with_info( const signed_block& block );
-   signed_block_with_info( const signed_block_with_info& block ) = default;
-
-   block_id_type block_id;
-   public_key_type signing_key;
-   vector< transaction_id_type > transaction_ids;
-};
-
 struct vesting_balance_object_with_info : public vesting_balance_object
 {
    vesting_balance_object_with_info( const vesting_balance_object& vbo, fc::time_point_sec now );
@@ -1573,9 +1563,6 @@ FC_REFLECT( graphene::wallet::worker_vote_delta,
    (vote_against)
    (vote_abstain)
 )
-
-FC_REFLECT_DERIVED( graphene::wallet::signed_block_with_info, (graphene::chain::signed_block),
-   (block_id)(signing_key)(transaction_ids) )
 
 FC_REFLECT_DERIVED( graphene::wallet::vesting_balance_object_with_info, (graphene::chain::vesting_balance_object),
    (allowed_withdraw)(allowed_withdraw_time) )
