@@ -132,6 +132,12 @@ if( options.count(name) ) { \
       const std::vector<std::string>& ops = options[name].as<std::vector<std::string>>(); \
       std::transform(ops.begin(), ops.end(), std::inserter(container, container.end()), &graphene::app::dejsonify<type>); \
 }
+#define LOAD_VALUE_FLAT_SET(options, name, container, type) \
+if( options.count(name) ) { \
+      const std::string& str = options[name].as<string>(); \
+      const flat_set<std::string> ops = fc::json::from_string(str).as<flat_set<std::string>>(); \
+      std::transform(ops.begin(), ops.end(), std::inserter(container, container.end()), &graphene::app::dejsonify<type>); \
+}
 /// @}
 
 } } //graphene::app
