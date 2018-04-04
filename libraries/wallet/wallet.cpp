@@ -2710,6 +2710,33 @@ signed_transaction account_cancel_auth_platform(string account,
       return sign_transaction(tx, broadcast);
    }
 
+   signed_transaction committee_proposal_create(
+         const string committee_member_account,
+         const vector<committee_proposal_item_type> items,
+         const uint32_t voting_closing_block_num,
+         optional<voting_opinion_type> proposer_opinion,
+         const uint32_t execution_block_num = 0,
+         const uint32_t expiration_block_num = 0,
+         bool broadcast = false
+      )
+   { try {
+      committee_proposal_create_operation op;
+      op.proposer = get_account_uid( committee_member_account );
+      op.items = items;
+      op.voting_closing_block_num = voting_closing_block_num;
+      op.proposer_opinion = proposer_opinion;
+      op.execution_block_num = execution_block_num;
+      op.expiration_block_num = expiration_block_num;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+
+   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(items)(voting_closing_block_num)(proposer_opinion)(execution_block_num)(expiration_block_num)(broadcast) ) }
+
    signed_transaction committee_proposal_vote(
       const string committee_member_account,
       const uint64_t proposal_number,
@@ -3876,6 +3903,25 @@ signed_transaction wallet_api::propose_fee_change(
    return my->propose_fee_change( proposing_account, expiration_time, changed_fees, broadcast );
 }
 
+signed_transaction wallet_api::committee_proposal_create(
+         const string committee_member_account,
+         const vector<committee_proposal_item_type> items,
+         const uint32_t voting_closing_block_num,
+         optional<voting_opinion_type> proposer_opinion,
+         const uint32_t execution_block_num,
+         const uint32_t expiration_block_num,
+         bool broadcast
+      )
+{
+   return my->committee_proposal_create( committee_member_account, 
+                                         items, 
+                                         voting_closing_block_num, 
+                                         proposer_opinion,
+                                         execution_block_num,
+                                         expiration_block_num,
+                                         broadcast );
+}
+
 signed_transaction wallet_api::committee_proposal_vote(
    const string committee_member_account,
    const uint64_t proposal_number,
@@ -3966,7 +4012,26 @@ string wallet_api::gethelp(const string& method)const
       ss << "PRECISION_DIGITS: the number of digits after the decimal point\n\n";
       ss << "Example value of OPTIONS: \n";
       ss << fc::json::to_pretty_string( graphene::chain::asset_options() );
-      ss << "\nBITASSET_OPTIONS may be null\n";
+   }
+   else if( method == "committee_proposal_create" )
+   {
+      ss << "usage: COMMITTEE_MEMBER_UID PROPOSED_ITEMS BLOCK_NUM PROPOSER_OPINION BLOCK_NUM BLOCK_NUM BROADCAST\n\n";
+      ss << "Example value of PROPOSED_ITEMS: \n";
+      ss << "item[0].new_priviledges:\n\n";
+      graphene::chain::committee_update_account_priviledge_item_type::account_priviledge_update_options apuo;
+      apuo.can_vote = true;
+      apuo.is_admin = true;
+      apuo.is_registrar = true;
+      apuo.takeover_registrar = 25638;
+      ss << fc::json::to_pretty_string( apuo );
+      ss << "\n\nitem[1].parameters:\n\n";
+      ss << fc::json::to_pretty_string( fee_schedule::get_default().parameters );
+      ss << "\n\nitem[2]:\n\n";
+      ss << "see graphene::chain::committee_updatable_parameters or Calling \“get_global_properties\" to see";
+      ss << "\n\n";
+      ss << "[[0,{\"account\":28182,\"new_priviledges\": {\"can_vote\":true}}],[1,{\"parameters\": ";
+      ss << "[[16,{\"fee\":10000,\"min_real_fee\":0,\"min_rf_percent\":0}]]}],[2,{\"governance_voting_expiration_blocks\":150000}]]";
+      ss << "\n\n";
    }
    else
    {

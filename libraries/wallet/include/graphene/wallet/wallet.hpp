@@ -1471,6 +1471,27 @@ class wallet_api
          const variant_object& changed_values,
          bool broadcast = false);
 
+      /** create a committee proposal
+       * 
+       * @param committee_member_account The committee member
+       * @param items @see committee_proposal_item_type
+       * @param voting_closing_block_num When will voting for the proposal be closed
+       * @param proposer_opinion Whether the proposer agree with the proposal
+       * @param execution_block_num When will the proposal be executed if approved
+       * @param expiration_block_num When will the proposal be tried to executed again if failed on first execution, will be ignored if failed again.
+       * @param broadcast true if you wish to broadcast the transaction
+       * @return the signed version of the transaction
+       */ 
+      signed_transaction committee_proposal_create(
+         const string committee_member_account,
+         const vector<committee_proposal_item_type> items,
+         const uint32_t voting_closing_block_num,
+         optional<voting_opinion_type> proposer_opinion,
+         const uint32_t execution_block_num = 0,
+         const uint32_t expiration_block_num = 0,
+         bool broadcast = false
+      );
+
       /** Vote on a committee proposal.
        *
        * @param committee_member_account The committee member that casted the vote.
@@ -1627,6 +1648,7 @@ FC_API( graphene::wallet::wallet_api,
         (list_committee_members)
         (update_committee_member_votes)
         (list_committee_proposals)
+        (committee_proposal_create)
         (committee_proposal_vote)
         (create_witness)
         (update_witness)
