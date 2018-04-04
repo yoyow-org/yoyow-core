@@ -206,7 +206,7 @@ void database::initialize_evaluators()
    register_evaluator<withdraw_permission_update_evaluator>();
    register_evaluator<withdraw_permission_delete_evaluator>();
    register_evaluator<worker_create_evaluator>();
-   register_evaluator<balance_claim_evaluator>();
+   //register_evaluator<balance_claim_evaluator>();
    register_evaluator<asset_claim_fees_evaluator>();
 }
 
@@ -685,7 +685,18 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
    // Enable fees
    modify(get_global_properties(), [&genesis_state](global_property_object& p) {
-      p.parameters.current_fees = genesis_state.initial_parameters.current_fees;
+      //p.parameters.current_fees = genesis_state.initial_parameters.current_fees;
+      auto fees = fee_schedule::get_default();
+      auto& cp = fees.parameters;
+      for( const auto& f : genesis_state.initial_parameters.current_fees->parameters )
+      {
+         fee_parameters params; params.set_which(f.which());
+         auto itr = cp.find(params);
+         if( itr != cp.end() )
+            *itr = f;
+      }
+      p.parameters.current_fees = fees;
+      //idump((p.parameters.current_fees));
    });
 
    // Update budgets
