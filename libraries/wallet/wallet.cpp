@@ -4027,7 +4027,7 @@ string wallet_api::gethelp(const string& method)const
       ss << "\n\nitem[1].parameters:\n\n";
       ss << fc::json::to_pretty_string( fee_schedule::get_default().parameters );
       ss << "\n\nitem[2]:\n\n";
-      ss << "see graphene::chain::committee_updatable_parameters or Calling \“get_global_properties\" to see";
+      ss << "see graphene::chain::committee_updatable_parameters or Calling \"get_global_properties\" to see";
       ss << "\n\n";
       ss << "[[0,{\"account\":28182,\"new_priviledges\": {\"can_vote\":true}}],[1,{\"parameters\": ";
       ss << "[[16,{\"fee\":10000,\"min_real_fee\":0,\"min_rf_percent\":0}]]}],[2,{\"governance_voting_expiration_blocks\":150000}]]";
