@@ -74,25 +74,13 @@ namespace graphene { namespace chain {
        };
 
        asset              fee;
-       account_id_type    fee_paying_account;
+       account_uid_type    fee_paying_account;
        vector<op_wrapper> proposed_ops;
        time_point_sec     expiration_time;
        optional<uint32_t> review_period_seconds;
        extensions_type    extensions;
 
-       /**
-        * Constructs a proposal_create_operation suitable for committee
-        * proposals, with expiration time and review period set
-        * appropriately.  No proposed_ops are added.  When used to
-        * create a proposal to change chain parameters, this method
-        * expects to receive the currently effective parameters, not
-        * the proposed parameters.  (The proposed parameters will go
-        * in proposed_ops, and proposed_ops is untouched by this
-        * function.)
-        */
-       static proposal_create_operation committee_proposal(const chain_parameters& param, fc::time_point_sec head_block_time );
-
-       account_id_type fee_payer()const { return fee_paying_account; }
+       account_uid_type fee_payer_uid()const { return fee_paying_account; }
        void            validate()const;
        share_type      calculate_fee(const fee_parameters_type& k)const;
    };
@@ -122,23 +110,26 @@ namespace graphene { namespace chain {
          uint32_t price_per_kbyte = 10;
       };
 
-      account_id_type            fee_paying_account;
+      account_uid_type            fee_paying_account;
       asset                      fee;
       proposal_id_type           proposal;
-      flat_set<account_id_type>  active_approvals_to_add;
-      flat_set<account_id_type>  active_approvals_to_remove;
-      flat_set<account_id_type>  owner_approvals_to_add;
-      flat_set<account_id_type>  owner_approvals_to_remove;
+      flat_set<account_uid_type>  secondary_approvals_to_add;
+      flat_set<account_uid_type>  secondary_approvals_to_remove;
+      flat_set<account_uid_type>  active_approvals_to_add;
+      flat_set<account_uid_type>  active_approvals_to_remove;
+      flat_set<account_uid_type>  owner_approvals_to_add;
+      flat_set<account_uid_type>  owner_approvals_to_remove;
       flat_set<public_key_type>  key_approvals_to_add;
       flat_set<public_key_type>  key_approvals_to_remove;
       extensions_type            extensions;
 
-      account_id_type fee_payer()const { return fee_paying_account; }
+      account_uid_type fee_payer_uid()const { return fee_paying_account; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_authorities( vector<authority>& )const;
-      void get_required_active_authorities( flat_set<account_id_type>& )const;
-      void get_required_owner_authorities( flat_set<account_id_type>& )const;
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& )const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& )const;
+      void get_required_owner_uid_authorities( flat_set<account_uid_type>& )const;
    };
 
    /**
@@ -156,13 +147,13 @@ namespace graphene { namespace chain {
    {
       struct fee_parameters_type { uint64_t fee =  GRAPHENE_BLOCKCHAIN_PRECISION; };
 
-      account_id_type   fee_paying_account;
+      account_uid_type   fee_paying_account;
       bool              using_owner_authority = false;
       asset             fee;
       proposal_id_type  proposal;
       extensions_type   extensions;
 
-      account_id_type fee_payer()const { return fee_paying_account; }
+      account_uid_type fee_payer_uid()const { return fee_paying_account; }
       void       validate()const;
    };
    ///@}

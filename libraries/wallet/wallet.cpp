@@ -919,7 +919,7 @@ public:
    {
       FC_ASSERT(_builder_transactions.count(handle));
       proposal_create_operation op;
-      op.fee_paying_account = get_account(account_name_or_id).get_id();
+      op.fee_paying_account = get_account(account_name_or_id).get_uid();
       op.expiration_time = expiration;
       signed_transaction& trx = _builder_transactions[handle];
       std::transform(trx.operations.begin(), trx.operations.end(), std::back_inserter(op.proposed_ops),
@@ -2129,41 +2129,35 @@ signed_transaction account_cancel_auth_platform(string account,
             const auto& new_result = _remote_db->get_required_signatures( tx, available_keys );
             const auto& required_keys_subset = new_result.first.first;
             //const auto& missed_keys = new_result.first.second;
-            const auto& unused_signatures = new_result.second;
+            const auto& unused_keys = new_result.second;
 
             // unused signatures can be removed safely
-            for( const auto& sig : unused_signatures )
-               tx.signatures.erase( std::remove( tx.signatures.begin(), tx.signatures.end(), sig), tx.signatures.end() );
+            for( const auto& key : unused_keys )
+            {
+               available_keys.erase( key );
+               available_keys_map.erase( key );
+            }
+               
 
-            bool no_sig = tx.signatures.empty();
             auto dyn_props = get_dynamic_global_properties();
 
-            // if no signature is included in the trx, reset the tapos data; otherwise keep the tapos data
-            if( no_sig )
-               tx.set_reference_block( dyn_props.head_block_id );
+            tx.set_reference_block( dyn_props.head_block_id );
 
             // if no signature is included in the trx, reset expiration time; otherwise keep it
-            if( no_sig )
-            {
                // first, some bookkeeping, expire old items from _recently_generated_transactions
                // since transactions include the head block id, we just need the index for keeping transactions unique
                // when there are multiple transactions in the same block.  choose a time period that should be at
                // least one block long, even in the worst case.  2 minutes ought to be plenty.
-               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
-               auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
-               auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
-               _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
-
-            }
+            fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
+            auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
+            auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
+            _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
 
             uint32_t expiration_time_offset = 0;
             for (;;)
             {
-               if( no_sig )
-               {
-                  tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
-                  tx.signatures.clear();
-               }
+               tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
+               tx.signatures.clear();
 
                idump((required_keys_subset)(available_keys));
                // TODO: for better performance, sign after dupe check
@@ -2187,8 +2181,6 @@ signed_transaction account_cancel_auth_platform(string account,
                   _recently_generated_transactions.insert(this_transaction_record);
                   break;
                }
-
-               if( !no_sig ) break;
 
                // if we've generated a dupe, increment expiration time and re-sign it
                ++expiration_time_offset;
@@ -2615,7 +2607,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       prop_op.expiration_time = expiration_time;
       prop_op.review_period_seconds = current_params.committee_proposal_review_period;
-      prop_op.fee_paying_account = get_account(proposing_account).id;
+      prop_op.fee_paying_account = get_account(proposing_account).uid;
 
       prop_op.proposed_ops.emplace_back( update_op );
       current_params.current_fees->set_fee( prop_op.proposed_ops.back().op );
@@ -2697,7 +2689,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       prop_op.expiration_time = expiration_time;
       prop_op.review_period_seconds = current_params.committee_proposal_review_period;
-      prop_op.fee_paying_account = get_account(proposing_account).id;
+      prop_op.fee_paying_account = get_account(proposing_account).uid;
 
       prop_op.proposed_ops.emplace_back( update_op );
       current_params.current_fees->set_fee( prop_op.proposed_ops.back().op );
@@ -2765,19 +2757,23 @@ signed_transaction account_cancel_auth_platform(string account,
    {
       proposal_update_operation update_op;
 
-      update_op.fee_paying_account = get_account(fee_paying_account).id;
+      update_op.fee_paying_account = get_account(fee_paying_account).uid;
       update_op.proposal = fc::variant(proposal_id).as<proposal_id_type>( 1 );
       // make sure the proposal exists
       get_object( update_op.proposal );
 
+      for( const std::string& name : delta.secondary_approvals_to_add )
+         update_op.secondary_approvals_to_add.insert( get_account( name ).uid );
+      for( const std::string& name : delta.secondary_approvals_to_remove )
+         update_op.secondary_approvals_to_remove.insert( get_account( name ).uid );
       for( const std::string& name : delta.active_approvals_to_add )
-         update_op.active_approvals_to_add.insert( get_account( name ).id );
+         update_op.active_approvals_to_add.insert( get_account( name ).uid );
       for( const std::string& name : delta.active_approvals_to_remove )
-         update_op.active_approvals_to_remove.insert( get_account( name ).id );
+         update_op.active_approvals_to_remove.insert( get_account( name ).uid );
       for( const std::string& name : delta.owner_approvals_to_add )
-         update_op.owner_approvals_to_add.insert( get_account( name ).id );
+         update_op.owner_approvals_to_add.insert( get_account( name ).uid );
       for( const std::string& name : delta.owner_approvals_to_remove )
-         update_op.owner_approvals_to_remove.insert( get_account( name ).id );
+         update_op.owner_approvals_to_remove.insert( get_account( name ).uid );
       for( const std::string& k : delta.key_approvals_to_add )
          update_op.key_approvals_to_add.insert( public_key_type( k ) );
       for( const std::string& k : delta.key_approvals_to_remove )

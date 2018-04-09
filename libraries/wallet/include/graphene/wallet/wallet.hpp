@@ -161,6 +161,8 @@ struct exported_keys
 
 struct approval_delta
 {
+   vector<string> secondary_approvals_to_add;
+   vector<string> secondary_approvals_to_remove;
    vector<string> active_approvals_to_add;
    vector<string> active_approvals_to_remove;
    vector<string> owner_approvals_to_add;
@@ -1608,8 +1610,8 @@ FC_API( graphene::wallet::wallet_api,
         (set_fees_on_builder_transaction)
         (preview_builder_transaction)
         (sign_builder_transaction)
-        //(propose_builder_transaction)
-        //(propose_builder_transaction2)
+        (propose_builder_transaction)
+        (propose_builder_transaction2)
         (remove_builder_transaction)
         (is_new)
         (is_locked)
@@ -1697,7 +1699,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_prototype_operation)
         //(propose_parameter_change)
         //(propose_fee_change)
-        //(approve_proposal)
+        (approve_proposal)
         //(dbg_make_uia)
         //(dbg_push_blocks)
         //(dbg_generate_blocks)

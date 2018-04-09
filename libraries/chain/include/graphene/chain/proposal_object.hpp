@@ -45,10 +45,12 @@ class proposal_object : public abstract_object<proposal_object>
       time_point_sec                expiration_time;
       optional<time_point_sec>      review_period_time;
       transaction                   proposed_transaction;
-      flat_set<account_id_type>     required_active_approvals;
-      flat_set<account_id_type>     available_active_approvals;
-      flat_set<account_id_type>     required_owner_approvals;
-      flat_set<account_id_type>     available_owner_approvals;
+      flat_set<account_uid_type>     required_secondary_approvals;
+      flat_set<account_uid_type>     available_secondary_approvals;
+      flat_set<account_uid_type>     required_active_approvals;
+      flat_set<account_uid_type>     available_active_approvals;
+      flat_set<account_uid_type>     required_owner_approvals;
+      flat_set<account_uid_type>     available_owner_approvals;
       flat_set<public_key_type>     available_key_approvals;
 
       bool is_authorized_to_execute(database& db)const;
@@ -73,9 +75,9 @@ class required_approval_index : public secondary_index
       virtual void about_to_modify( const object& before ) override{};
       virtual void object_modified( const object& after  ) override{};
 
-      void remove( account_id_type a, proposal_id_type p );
+      void remove( account_uid_type a, proposal_id_type p );
 
-      map<account_id_type, set<proposal_id_type> > _account_to_proposals;
+      map<account_uid_type, set<proposal_id_type> > _account_to_proposals;
 };
 
 struct by_expiration{};

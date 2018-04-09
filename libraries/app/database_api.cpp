@@ -167,7 +167,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // Authority / validation
       std::string get_transaction_hex(const signed_transaction& trx)const;
       set<public_key_type> get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
-      std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
       set<public_key_type> get_potential_signatures( const signed_transaction& trx )const;
       set<address> get_potential_address_signatures( const signed_transaction& trx )const;
       bool verify_authority( const signed_transaction& trx )const;
@@ -178,7 +178,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector< required_fee_data > get_required_fee_data( const vector<operation>& ops )const;
 
       // Proposed transactions
-      vector<proposal_object> get_proposed_transactions( account_id_type id )const;
+      vector<proposal_object> get_proposed_transactions( account_uid_type uid )const;
 
    //private:
       template<typename T>
@@ -714,7 +714,7 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       const auto& proposal_idx = _db.get_index_type<proposal_index>();
       const auto& pidx = dynamic_cast<const primary_index<proposal_index>&>(proposal_idx);
       const auto& proposals_by_account = pidx.get_secondary_index<graphene::chain::required_approval_index>();
-      auto  required_approvals_itr = proposals_by_account._account_to_proposals.find( account->id );
+      auto  required_approvals_itr = proposals_by_account._account_to_proposals.find( account->uid );
       if( required_approvals_itr != proposals_by_account._account_to_proposals.end() )
       {
          acnt.proposals.reserve( required_approvals_itr->second.size() );
@@ -1987,12 +1987,12 @@ std::string database_api_impl::get_transaction_hex(const signed_transaction& trx
    return fc::to_hex(fc::raw::pack(trx));
 }
 
-std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> database_api::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
+std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> database_api::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
 {
    return my->get_required_signatures( trx, available_keys );
 }
 
-std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> database_api_impl::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
+std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> database_api_impl::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
 {
    wdump((trx)(available_keys));
    auto result = trx.get_required_signatures( _db.get_chain_id(),
@@ -2279,24 +2279,28 @@ vector< required_fee_data > database_api_impl::get_required_fee_data( const vect
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-vector<proposal_object> database_api::get_proposed_transactions( account_id_type id )const
+vector<proposal_object> database_api::get_proposed_transactions( account_uid_type uid )const
 {
-   return my->get_proposed_transactions( id );
+   return my->get_proposed_transactions( uid );
 }
 
 /** TODO: add secondary index that will accelerate this process */
-vector<proposal_object> database_api_impl::get_proposed_transactions( account_id_type id )const
+vector<proposal_object> database_api_impl::get_proposed_transactions( account_uid_type uid )const
 {
    const auto& idx = _db.get_index_type<proposal_index>();
    vector<proposal_object> result;
 
    idx.inspect_all_objects( [&](const object& obj){
            const proposal_object& p = static_cast<const proposal_object&>(obj);
-           if( p.required_active_approvals.find( id ) != p.required_active_approvals.end() )
+           if( p.required_secondary_approvals.find( uid ) != p.required_secondary_approvals.end() )
               result.push_back(p);
-           else if ( p.required_owner_approvals.find( id ) != p.required_owner_approvals.end() )
+           else if( p.required_active_approvals.find( uid ) != p.required_active_approvals.end() )
               result.push_back(p);
-           else if ( p.available_active_approvals.find( id ) != p.available_active_approvals.end() )
+           else if ( p.required_owner_approvals.find( uid ) != p.required_owner_approvals.end() )
+              result.push_back(p);
+           else if ( p.available_active_approvals.find( uid ) != p.available_active_approvals.end() )
+              result.push_back(p);
+           else if( p.available_secondary_approvals.find( uid ) != p.available_secondary_approvals.end() )
               result.push_back(p);
    });
    return result;

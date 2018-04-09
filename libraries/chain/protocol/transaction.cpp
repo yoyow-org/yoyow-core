@@ -349,19 +349,19 @@ struct sign_state
          return remove_sigs.size() != 0;
       }
 
-      sign_state( const flat_map<public_key_type,signature_type>& sigs,
+      sign_state( const flat_set<public_key_type>& sigs,
                   const std::function<const authority*(account_id_type)>& a,
                   const flat_set<public_key_type>& keys = empty_public_key_set )
       : get_active(a),
         get_owner_by_uid(null_by_uid),get_active_by_uid(null_by_uid),get_secondary_by_uid(null_by_uid),
         available_keys(keys)
       {
-         for( const auto& key_sig : sigs )
-            provided_signatures[ key_sig.first ] = false;
+         for( const auto& key : sigs )
+            provided_signatures[ key ] = false;
          approved_by.insert( GRAPHENE_TEMP_ACCOUNT  );
       }
 
-      sign_state( const flat_map<public_key_type,signature_type>& sigs,
+      sign_state( const flat_set<public_key_type>& sigs,
                   const std::function<const authority*(account_uid_type)>& o,
                   const std::function<const authority*(account_uid_type)>& a,
                   const std::function<const authority*(account_uid_type)>& s,
@@ -370,8 +370,8 @@ struct sign_state
         get_owner_by_uid(o),get_active_by_uid(a),get_secondary_by_uid(s),
         available_keys(keys)
       {
-         for( const auto& key_sig : sigs )
-            provided_signatures[ key_sig.first ] = false;
+         for( const auto& key : sigs )
+            provided_signatures[ key ] = false;
          approved_by_uid_auth.emplace( GRAPHENE_TEMP_ACCOUNT_UID, authority::owner_auth );
          approved_by_uid_auth.emplace( GRAPHENE_TEMP_ACCOUNT_UID, authority::active_auth );
          approved_by_uid_auth.emplace( GRAPHENE_TEMP_ACCOUNT_UID, authority::secondary_auth );
@@ -393,7 +393,7 @@ struct sign_state
 };
 
 
-void verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
+void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
                        const std::function<const authority*(account_id_type)>& get_active,
                        const std::function<const authority*(account_id_type)>& get_owner,
                        uint32_t max_recursion_depth,
@@ -446,7 +446,7 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
       );
 } FC_CAPTURE_AND_RETHROW( (ops)(sigs) ) }
 
-void verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
+void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
                           const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_active_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
@@ -536,24 +536,22 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
 } FC_CAPTURE_AND_RETHROW( (ops)(sigs) ) }
 
 
-flat_map<public_key_type,signature_type> signed_transaction::get_signature_keys( const chain_id_type& chain_id )const
+flat_set<public_key_type> signed_transaction::get_signature_keys( const chain_id_type& chain_id )const
 { try {
    auto d = sig_digest( chain_id );
-   flat_map<public_key_type,signature_type> result;
+   flat_set<public_key_type> result;
    for( const auto&  sig : signatures )
    {
-      const auto& key = fc::ecc::public_key(sig,d);
       GRAPHENE_ASSERT(
-         result.find( key ) == result.end(),
+         result.insert( fc::ecc::public_key(sig,d) ).second,
          tx_duplicate_sig,
          "Duplicate Signature detected" );
-      result[key] = sig;
    }
    return result;
 } FC_CAPTURE_AND_RETHROW() }
 
 
-std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signature_type>> signed_transaction::get_required_signatures(
+std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<public_key_type>> signed_transaction::get_required_signatures(
    const chain_id_type& chain_id,
    const flat_set<public_key_type>& available_keys,
    const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
@@ -606,11 +604,11 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
 
    const auto& used_keys = s.get_used_keys();
    const auto& unused_sig_keys = s.get_unused_signature_keys();
-   flat_set<signature_type> unused_sigs;
+   flat_set<public_key_type> unused_keys;
    for( const auto& key : unused_sig_keys )
-      unused_sigs.insert( key_sigs[key] );
+      unused_keys.insert( key );
 
-   return std::make_tuple( used_keys, missed_keys, unused_sigs );
+   return std::make_tuple( used_keys, missed_keys, unused_keys );
 }
 
 set<public_key_type> signed_transaction::get_required_signatures(
