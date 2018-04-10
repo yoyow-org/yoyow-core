@@ -99,6 +99,11 @@ typedef generic_index<proposal_object, proposal_multi_index_container> proposal_
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::proposal_object, (graphene::chain::object),
-                    (expiration_time)(review_period_time)(proposed_transaction)(required_active_approvals)
-                    (available_active_approvals)(required_owner_approvals)(available_owner_approvals)
+                    (expiration_time)(review_period_time)(proposed_transaction)
+                    (required_secondary_approvals)
+                    (available_secondary_approvals)
+                    (required_active_approvals)
+                    (available_active_approvals)
+                    (required_owner_approvals)
+                    (available_owner_approvals)
                     (available_key_approvals) )

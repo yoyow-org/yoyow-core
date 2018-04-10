@@ -82,6 +82,7 @@ object_id_type proposal_create_evaluator::do_apply(const proposal_create_operati
       std::set_difference(required_secondary.begin(), required_secondary.end(),
                           proposal.required_active_approvals.begin(), proposal.required_active_approvals.end(),
                           std::inserter(proposal.required_secondary_approvals, proposal.required_secondary_approvals.begin()));
+      idump((required_secondary)(proposal.required_secondary_approvals));
    });
 
    return proposal.id;
