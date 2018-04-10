@@ -73,8 +73,8 @@ namespace graphene { namespace chain {
           uint32_t price_per_kbyte = 10;
        };
 
-       asset              fee;
-       account_uid_type    fee_paying_account;
+       fee_type           fee;
+       account_uid_type   fee_paying_account;
        vector<op_wrapper> proposed_ops;
        time_point_sec     expiration_time;
        optional<uint32_t> review_period_seconds;
@@ -111,17 +111,17 @@ namespace graphene { namespace chain {
       };
 
       account_uid_type            fee_paying_account;
-      asset                      fee;
-      proposal_id_type           proposal;
+      fee_type                    fee;
+      proposal_id_type            proposal;
       flat_set<account_uid_type>  secondary_approvals_to_add;
       flat_set<account_uid_type>  secondary_approvals_to_remove;
       flat_set<account_uid_type>  active_approvals_to_add;
       flat_set<account_uid_type>  active_approvals_to_remove;
       flat_set<account_uid_type>  owner_approvals_to_add;
       flat_set<account_uid_type>  owner_approvals_to_remove;
-      flat_set<public_key_type>  key_approvals_to_add;
-      flat_set<public_key_type>  key_approvals_to_remove;
-      extensions_type            extensions;
+      flat_set<public_key_type>   key_approvals_to_add;
+      flat_set<public_key_type>   key_approvals_to_remove;
+      extensions_type             extensions;
 
       account_uid_type fee_payer_uid()const { return fee_paying_account; }
       void            validate()const;
@@ -147,9 +147,9 @@ namespace graphene { namespace chain {
    {
       struct fee_parameters_type { uint64_t fee =  GRAPHENE_BLOCKCHAIN_PRECISION; };
 
-      account_uid_type   fee_paying_account;
+      account_uid_type  fee_paying_account;
       bool              using_owner_authority = false;
-      asset             fee;
+      fee_type          fee;
       proposal_id_type  proposal;
       extensions_type   extensions;
 

@@ -2586,122 +2586,6 @@ signed_transaction account_cancel_auth_platform(string account,
       return m;
    }
 
-   signed_transaction propose_parameter_change(
-      const string& proposing_account,
-      fc::time_point_sec expiration_time,
-      const variant_object& changed_values,
-      bool broadcast = false)
-   {
-      FC_ASSERT( !changed_values.contains("current_fees") );
-
-      const chain_parameters& current_params = get_global_properties().parameters;
-      chain_parameters new_params = current_params;
-      fc::reflector<chain_parameters>::visit(
-         fc::from_variant_visitor<chain_parameters>( changed_values, new_params, GRAPHENE_MAX_NESTED_OBJECTS )
-         );
-
-      committee_member_update_global_parameters_operation update_op;
-      update_op.new_parameters = new_params;
-
-      proposal_create_operation prop_op;
-
-      prop_op.expiration_time = expiration_time;
-      prop_op.review_period_seconds = current_params.committee_proposal_review_period;
-      prop_op.fee_paying_account = get_account(proposing_account).uid;
-
-      prop_op.proposed_ops.emplace_back( update_op );
-      current_params.current_fees->set_fee( prop_op.proposed_ops.back().op );
-
-      signed_transaction tx;
-      tx.operations.push_back(prop_op);
-      set_operation_fees(tx, current_params.current_fees);
-      tx.validate();
-
-      return sign_transaction(tx, broadcast);
-   }
-
-   signed_transaction propose_fee_change(
-      const string& proposing_account,
-      fc::time_point_sec expiration_time,
-      const variant_object& changed_fees,
-      bool broadcast = false)
-   {
-      const chain_parameters& current_params = get_global_properties().parameters;
-      const fee_schedule_type& current_fees = *(current_params.current_fees);
-
-      flat_map< int, fee_parameters > fee_map;
-      fee_map.reserve( current_fees.parameters.size() );
-      for( const fee_parameters& op_fee : current_fees.parameters )
-         fee_map[ op_fee.which() ] = op_fee;
-      uint32_t scale = current_fees.scale;
-
-      for( const auto& item : changed_fees )
-      {
-         const string& key = item.key();
-         if( key == "scale" )
-         {
-            int64_t _scale = item.value().as_int64();
-            FC_ASSERT( _scale >= 0 );
-            FC_ASSERT( _scale <= std::numeric_limits<uint32_t>::max() );
-            scale = uint32_t( _scale );
-            continue;
-         }
-         // is key a number?
-         auto is_numeric = [&key]() -> bool
-         {
-            size_t n = key.size();
-            for( size_t i=0; i<n; i++ )
-            {
-               if( !isdigit( key[i] ) )
-                  return false;
-            }
-            return true;
-         };
-
-         int which;
-         if( is_numeric() )
-            which = std::stoi( key );
-         else
-         {
-            const auto& n2w = _operation_which_map.name_to_which;
-            auto it = n2w.find( key );
-            FC_ASSERT( it != n2w.end(), "unknown operation" );
-            which = it->second;
-         }
-
-         fee_parameters fp = from_which_variant< fee_parameters >( which, item.value(), GRAPHENE_MAX_NESTED_OBJECTS );
-         fee_map[ which ] = fp;
-      }
-
-      fee_schedule_type new_fees;
-
-      for( const std::pair< int, fee_parameters >& item : fee_map )
-         new_fees.parameters.insert( item.second );
-      new_fees.scale = scale;
-
-      chain_parameters new_params = current_params;
-      new_params.current_fees = new_fees;
-
-      committee_member_update_global_parameters_operation update_op;
-      update_op.new_parameters = new_params;
-
-      proposal_create_operation prop_op;
-
-      prop_op.expiration_time = expiration_time;
-      prop_op.review_period_seconds = current_params.committee_proposal_review_period;
-      prop_op.fee_paying_account = get_account(proposing_account).uid;
-
-      prop_op.proposed_ops.emplace_back( update_op );
-      current_params.current_fees->set_fee( prop_op.proposed_ops.back().op );
-
-      signed_transaction tx;
-      tx.operations.push_back(prop_op);
-      set_operation_fees(tx, current_params.current_fees);
-      tx.validate();
-
-      return sign_transaction(tx, broadcast);
-   }
-
    signed_transaction committee_proposal_create(
          const string committee_member_account,
          const vector<committee_proposal_item_type> items,
@@ -3879,26 +3763,6 @@ void wallet_api::flood_network(string prefix, uint32_t number_of_transactions)
    my->flood_network(prefix, number_of_transactions);
 }
 
-signed_transaction wallet_api::propose_parameter_change(
-   const string& proposing_account,
-   fc::time_point_sec expiration_time,
-   const variant_object& changed_values,
-   bool broadcast /* = false */
-   )
-{
-   return my->propose_parameter_change( proposing_account, expiration_time, changed_values, broadcast );
-}
-
-signed_transaction wallet_api::propose_fee_change(
-   const string& proposing_account,
-   fc::time_point_sec expiration_time,
-   const variant_object& changed_fees,
-   bool broadcast /* = false */
-   )
-{
-   return my->propose_fee_change( proposing_account, expiration_time, changed_fees, broadcast );
-}
-
 signed_transaction wallet_api::committee_proposal_create(
          const string committee_member_account,
          const vector<committee_proposal_item_type> items,
@@ -3936,6 +3800,12 @@ signed_transaction wallet_api::approve_proposal(
    )
 {
    return my->approve_proposal( fee_paying_account, proposal_id, delta, broadcast );
+}
+
+vector<proposal_object> wallet_api::list_proposals( string account_name_or_id )
+{
+   auto acc = my->get_account( account_name_or_id );
+   return my->_remote_db->get_proposed_transactions( acc.uid );
 }
 
 global_property_object wallet_api::get_global_properties() const
