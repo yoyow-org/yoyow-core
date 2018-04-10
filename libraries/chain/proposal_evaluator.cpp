@@ -34,6 +34,7 @@ namespace graphene { namespace chain {
 void_result proposal_create_evaluator::do_evaluate(const proposal_create_operation& o)
 { try {
    const database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_create after HARDFORK_0_3_1_TIME" );
    const auto& global_parameters = d.get_global_properties().parameters;
 
    FC_ASSERT( o.expiration_time > d.head_block_time(), "Proposal has already expired on creation." );
@@ -91,6 +92,7 @@ object_id_type proposal_create_evaluator::do_apply(const proposal_create_operati
 void_result proposal_update_evaluator::do_evaluate(const proposal_update_operation& o)
 { try {
    database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_update after HARDFORK_0_3_1_TIME" );
 
    _proposal = &o.proposal(d);
 
@@ -179,6 +181,7 @@ void_result proposal_update_evaluator::do_apply(const proposal_update_operation&
 void_result proposal_delete_evaluator::do_evaluate(const proposal_delete_operation& o)
 { try {
    database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_delete after HARDFORK_0_3_1_TIME" );
 
    _proposal = &o.proposal(d);
 

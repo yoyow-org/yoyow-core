@@ -230,6 +230,19 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.issuer ); // fee payer
    }
 
+   void operator()( const proposal_create_operation& op )
+   {
+      _impacted.insert( op.fee_paying_account ); // fee payer
+      vector<authority> other;
+      for( const auto& proposed_op : op.proposed_ops )
+         operation_get_required_uid_authorities( proposed_op.op, _impacted, _impacted, _impacted, other );
+      for( auto& o : other )
+         add_authority_account_uids( _impacted, o );
+   }
+
+   void operator()( const proposal_update_operation& op ) {}
+   void operator()( const proposal_delete_operation& op ) {}
+
 
 
    /*
@@ -267,17 +280,7 @@ struct get_impacted_account_uid_visitor
    }
 
    
-   void operator()( const proposal_create_operation& op )
-   {
-      vector<authority> other;
-      for( const auto& proposed_op : op.proposed_ops )
-         operation_get_required_authorities( proposed_op.op, _impacted, _impacted, other );
-      for( auto& o : other )
-         add_authority_accounts( _impacted, o );
-   }
-
-   void operator()( const proposal_update_operation& op ) {}
-   void operator()( const proposal_delete_operation& op ) {}
+   
 
    void operator()( const withdraw_permission_create_operation& op )
    {

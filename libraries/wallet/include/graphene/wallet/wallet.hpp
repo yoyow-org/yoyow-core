@@ -1576,7 +1576,6 @@ FC_API( graphene::wallet::wallet_api,
         (preview_builder_transaction)
         (sign_builder_transaction)
         (propose_builder_transaction)
-        (propose_builder_transaction2)
         (remove_builder_transaction)
         (approve_proposal)
         (list_proposals)
