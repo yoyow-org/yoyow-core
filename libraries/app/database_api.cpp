@@ -86,7 +86,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       dynamic_global_property_object get_dynamic_global_properties()const;
 
       // Keys
-      vector<vector<account_id_type>> get_key_references( vector<public_key_type> key )const;
+      vector<vector<account_uid_type>> get_key_references( vector<public_key_type> key )const;
      bool is_public_key_registered(string public_key) const;
 
       // Accounts
@@ -96,7 +96,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
                                                                         const full_account_query_options& options );
       optional<account_object> get_account_by_name( string name )const;
-      vector<account_id_type> get_account_references( account_id_type account_id )const;
+      vector<account_uid_type> get_account_references( account_uid_type uid )const;
       vector<optional<account_object>> lookup_account_names(const vector<string>& account_names)const;
       map<string,account_uid_type> lookup_accounts_by_name(const string& lower_bound_name, uint32_t limit)const;
       uint64_t get_account_count()const;
@@ -166,10 +166,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Authority / validation
       std::string get_transaction_hex(const signed_transaction& trx)const;
-      set<public_key_type> get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
       std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
       set<public_key_type> get_potential_signatures( const signed_transaction& trx )const;
-      set<address> get_potential_address_signatures( const signed_transaction& trx )const;
       bool verify_authority( const signed_transaction& trx )const;
       bool verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
       processed_transaction validate_transaction( const signed_transaction& trx )const;
@@ -512,7 +510,7 @@ dynamic_global_property_object database_api_impl::get_dynamic_global_properties(
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-vector<vector<account_id_type>> database_api::get_key_references( vector<public_key_type> key )const
+vector<vector<account_uid_type>> database_api::get_key_references( vector<public_key_type> key )const
 {
    return my->get_key_references( key );
 }
@@ -520,47 +518,21 @@ vector<vector<account_id_type>> database_api::get_key_references( vector<public_
 /**
  *  @return all accounts that referr to the key or account id in their owner or active authorities.
  */
-vector<vector<account_id_type>> database_api_impl::get_key_references( vector<public_key_type> keys )const
+vector<vector<account_uid_type>> database_api_impl::get_key_references( vector<public_key_type> keys )const
 {
    wdump( (keys) );
-   vector< vector<account_id_type> > final_result;
+   vector< vector<account_uid_type> > final_result;
    final_result.reserve(keys.size());
 
    for( auto& key : keys )
    {
-
-      address a1( pts_address(key, false, 56) );
-      address a2( pts_address(key, true, 56) );
-      address a3( pts_address(key, false, 0)  );
-      address a4( pts_address(key, true, 0)  );
-      address a5( key );
-
       subscribe_to_item( key );
-      subscribe_to_item( a1 );
-      subscribe_to_item( a2 );
-      subscribe_to_item( a3 );
-      subscribe_to_item( a4 );
-      subscribe_to_item( a5 );
 
       const auto& idx = _db.get_index_type<account_index>();
       const auto& aidx = dynamic_cast<const primary_index<account_index>&>(idx);
       const auto& refs = aidx.get_secondary_index<graphene::chain::account_member_index>();
       auto itr = refs.account_to_key_memberships.find(key);
-      vector<account_id_type> result;
-
-      for( auto& a : {a1,a2,a3,a4,a5} )
-      {
-          auto itr = refs.account_to_address_memberships.find(a);
-          if( itr != refs.account_to_address_memberships.end() )
-          {
-             result.reserve( itr->second.size() );
-             for( auto item : itr->second )
-             {
-                wdump((a)(item)(item(_db).name));
-                result.push_back(item);
-             }
-          }
-      }
+      vector<account_uid_type> result;
 
       if( itr != refs.account_to_key_memberships.end() )
       {
@@ -844,18 +816,18 @@ optional<account_object> database_api_impl::get_account_by_name( string name )co
    return optional<account_object>();
 }
 
-vector<account_id_type> database_api::get_account_references( account_id_type account_id )const
+vector<account_uid_type> database_api::get_account_references( account_uid_type uid )const
 {
-   return my->get_account_references( account_id );
+   return my->get_account_references( uid );
 }
 
-vector<account_id_type> database_api_impl::get_account_references( account_id_type account_id )const
+vector<account_uid_type> database_api_impl::get_account_references( account_uid_type uid )const
 {
    const auto& idx = _db.get_index_type<account_index>();
    const auto& aidx = dynamic_cast<const primary_index<account_index>&>(idx);
    const auto& refs = aidx.get_secondary_index<graphene::chain::account_member_index>();
-   auto itr = refs.account_to_account_memberships.find(account_id);
-   vector<account_id_type> result;
+   auto itr = refs.account_to_account_memberships.find(uid);
+   vector<account_uid_type> result;
 
    if( itr != refs.account_to_account_memberships.end() )
    {
@@ -2005,30 +1977,9 @@ std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_se
    return std::make_pair( std::make_pair( std::get<0>(result), std::get<1>(result) ), std::get<2>(result) );
 }
 
-set<public_key_type> database_api::get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
-{
-   return my->get_required_signatures_old( trx, available_keys );
-}
-
-set<public_key_type> database_api_impl::get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
-{
-   wdump((trx)(available_keys));
-   auto result = trx.get_required_signatures( _db.get_chain_id(),
-                                       available_keys,
-                                       [&]( account_id_type id ){ return &id(_db).active; },
-                                       [&]( account_id_type id ){ return &id(_db).owner; },
-                                       _db.get_global_properties().parameters.max_authority_depth );
-   wdump((result));
-   return result;
-}
-
 set<public_key_type> database_api::get_potential_signatures( const signed_transaction& trx )const
 {
    return my->get_potential_signatures( trx );
-}
-set<address> database_api::get_potential_address_signatures( const signed_transaction& trx )const
-{
-   return my->get_potential_address_signatures( trx );
 }
 
 set<public_key_type> database_api_impl::get_potential_signatures( const signed_transaction& trx )const
@@ -2038,16 +1989,23 @@ set<public_key_type> database_api_impl::get_potential_signatures( const signed_t
    trx.get_required_signatures(
       _db.get_chain_id(),
       flat_set<public_key_type>(),
-      [&]( account_id_type id )
+      [&]( account_uid_type uid )
       {
-         const auto& auth = id(_db).active;
+         const auto& auth = _db.get_account_by_uid( uid ).owner;
          for( const auto& k : auth.get_keys() )
             result.insert(k);
          return &auth;
       },
-      [&]( account_id_type id )
+      [&]( account_uid_type uid )
       {
-         const auto& auth = id(_db).owner;
+         const auto& auth = _db.get_account_by_uid( uid ).active;
+         for( const auto& k : auth.get_keys() )
+            result.insert(k);
+         return &auth;
+      },
+      [&]( account_uid_type uid )
+      {
+         const auto& auth = _db.get_account_by_uid( uid ).secondary;
          for( const auto& k : auth.get_keys() )
             result.insert(k);
          return &auth;
@@ -2056,31 +2014,6 @@ set<public_key_type> database_api_impl::get_potential_signatures( const signed_t
    );
 
    wdump((result));
-   return result;
-}
-
-set<address> database_api_impl::get_potential_address_signatures( const signed_transaction& trx )const
-{
-   set<address> result;
-   trx.get_required_signatures(
-      _db.get_chain_id(),
-      flat_set<public_key_type>(),
-      [&]( account_id_type id )
-      {
-         const auto& auth = id(_db).active;
-         for( const auto& k : auth.get_addresses() )
-            result.insert(k);
-         return &auth;
-      },
-      [&]( account_id_type id )
-      {
-         const auto& auth = id(_db).owner;
-         for( const auto& k : auth.get_addresses() )
-            result.insert(k);
-         return &auth;
-      },
-      _db.get_global_properties().parameters.max_authority_depth
-   );
    return result;
 }
 
@@ -2091,10 +2024,10 @@ bool database_api::verify_authority( const signed_transaction& trx )const
 
 bool database_api_impl::verify_authority( const signed_transaction& trx )const
 {
-   //TODO review
    trx.verify_authority( _db.get_chain_id(),
-                         [this]( account_id_type id ){ return &id(_db).active; },
-                         [this]( account_id_type id ){ return &id(_db).owner; },
+                         [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).owner); },
+                         [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).active); },
+                         [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).secondary); },
                           _db.get_global_properties().parameters.max_authority_depth );
    return true;
 }

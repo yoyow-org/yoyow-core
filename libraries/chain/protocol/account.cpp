@@ -109,8 +109,6 @@ void validate_account_name( const string& name, const string& object_name = "" )
 void validate_new_authority( const authority& au, const string& object_name = "" )
 {
    FC_ASSERT( au.num_auths() != 0, "${o}authority should contain something", ("o", object_name) );
-   FC_ASSERT( au.address_auths.size() == 0, "cannot use address_auth in ${o}authority", ("o", object_name) );
-   FC_ASSERT( au.account_auths.size() == 0, "account_auth deprecated, use account_uid_auth instead in ${o}authority", ("o", object_name) );
    string uid_check_obj_name = object_name + "authority ";
    for( const auto& a : au.account_uid_auths )
       validate_account_uid( a.first.uid, uid_check_obj_name );
@@ -413,13 +411,11 @@ void account_update_operation::validate()const
    if( owner )
    {
       FC_ASSERT( owner->num_auths() != 0 );
-      FC_ASSERT( owner->address_auths.size() == 0 );
       FC_ASSERT( !owner->is_impossible(), "cannot update an account with an imposible owner authority threshold" );
    }
    if( active )
    {
       FC_ASSERT( active->num_auths() != 0 );
-      FC_ASSERT( active->address_auths.size() == 0 );
       FC_ASSERT( !active->is_impossible(), "cannot update an account with an imposible active authority threshold" );
    }
 

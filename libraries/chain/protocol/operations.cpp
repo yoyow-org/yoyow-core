@@ -48,29 +48,6 @@ struct operation_validator
    void operator()( const T& v )const { v.validate(); }
 };
 
-struct operation_get_required_auth
-{
-   typedef void result_type;
-
-   flat_set<account_id_type>& active;
-   flat_set<account_id_type>& owner;
-   vector<authority>&         other;
-
-
-   operation_get_required_auth( flat_set<account_id_type>& a,
-     flat_set<account_id_type>& own,
-     vector<authority>&  oth ):active(a),owner(own),other(oth){}
-
-   template<typename T>
-   void operator()( const T& v )const
-   {
-      active.insert( v.fee_payer() );
-      v.get_required_active_authorities( active );
-      v.get_required_owner_authorities( owner );
-      v.get_required_authorities( other );
-   }
-};
-
 struct operation_get_required_uid_auth
 {
    typedef void result_type;
@@ -171,14 +148,6 @@ struct operation_get_required_uid_auth
 void operation_validate( const operation& op )
 {
    op.visit( operation_validator() );
-}
-
-void operation_get_required_authorities( const operation& op,
-                                         flat_set<account_id_type>& active,
-                                         flat_set<account_id_type>& owner,
-                                         vector<authority>&  other )
-{
-   op.visit( operation_get_required_auth( active, owner, other ) );
 }
 
 void operation_get_required_uid_authorities( const operation& op,

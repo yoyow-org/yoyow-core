@@ -263,9 +263,9 @@ struct get_impacted_account_uid_visitor
    {
       _impacted.insert( op.account );
       if( op.owner )
-         add_authority_accounts( _impacted, *(op.owner) );
+         add_authority_account_uids( _impacted, *(op.owner) );
       if( op.active )
-         add_authority_accounts( _impacted, *(op.active) );
+         add_authority_account_uids( _impacted, *(op.active) );
    }
 
    void operator()( const account_whitelist_operation& op )

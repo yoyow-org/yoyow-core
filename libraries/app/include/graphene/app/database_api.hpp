@@ -256,7 +256,7 @@ class database_api
       // Keys //
       //////////
 
-      vector<vector<account_id_type>> get_key_references( vector<public_key_type> key )const;
+      vector<vector<account_uid_type>> get_key_references( vector<public_key_type> key )const;
 
      /**
       * Determine whether a textual representation of a public key
@@ -324,7 +324,7 @@ class database_api
       /**
        *  @return all accounts that referr to the key or account id in their owner or active authorities.
        */
-      vector<account_id_type> get_account_references( account_id_type account_id )const;
+      vector<account_uid_type> get_account_references( account_uid_type uid )const;
 
       /**
        * @brief Get a list of accounts by name
@@ -665,7 +665,6 @@ class database_api
        *  and return the minimal subset of public keys that should add signatures to the transaction.
        */
       std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
-      set<public_key_type> get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
 
       /**
        *  This method will return the set of all public keys that could possibly sign for a given transaction.  This call can
@@ -673,7 +672,6 @@ class database_api
        *  to get the minimum subset.
        */
       set<public_key_type> get_potential_signatures( const signed_transaction& trx )const;
-      set<address> get_potential_address_signatures( const signed_transaction& trx )const;
 
       /**
        * @return true of the @ref trx has all of the required signatures, otherwise throws an exception
@@ -841,9 +839,7 @@ FC_API( graphene::app::database_api,
    // Authority / validation
    (get_transaction_hex)
    (get_required_signatures)
-   (get_required_signatures_old)
    (get_potential_signatures)
-   (get_potential_address_signatures)
    (verify_authority)
    (verify_account_authority)
    (validate_transaction)

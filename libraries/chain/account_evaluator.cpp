@@ -46,13 +46,6 @@ void verify_authority_accounts( const database& db, const authority& a )
       a.num_auths() <= chain_params.maximum_authority_membership,
       internal_verify_auth_max_auth_exceeded,
       "Maximum authority membership exceeded" );
-   for( const auto& acnt : a.account_auths )
-   {
-      GRAPHENE_ASSERT( db.find_object( acnt.first ) != nullptr,
-         internal_verify_auth_account_not_found,
-         "Account ${a} specified in authority does not exist",
-         ("a", acnt.first) );
-   }
    for( const auto& uid_auth : a.account_uid_auths )
    {
       GRAPHENE_ASSERT( db.find_account_id_by_uid( uid_auth.first.uid ).valid(),
