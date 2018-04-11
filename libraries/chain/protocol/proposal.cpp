@@ -87,7 +87,8 @@ void proposal_update_operation::get_required_authorities( vector<authority>& o )
       auth.key_auths[k] = 1;
    auth.weight_threshold = auth.key_auths.size();
 
-   o.emplace_back( std::move(auth) );
+   if( auth.key_auths.size() > 0 )
+      o.emplace_back( std::move(auth) );
 }
 
 void proposal_update_operation::get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const

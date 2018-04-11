@@ -48,6 +48,56 @@ void_result proposal_create_evaluator::do_evaluate(const proposal_create_operati
       _proposed_trx.operations.push_back(op.op);
    _proposed_trx.validate();
 
+   vector<authority> other;
+   flat_set<account_uid_type> tmp_active;
+   flat_set<account_uid_type> tmp_secondary;
+   for( auto& op : _proposed_trx.operations )
+      operation_get_required_uid_authorities(op,
+                                             required_owner,
+                                             tmp_active,
+                                             tmp_secondary,
+                                             other);
+
+   std::set_difference(tmp_active.begin(), tmp_active.end(),
+                       required_owner.begin(), required_owner.end(),
+                       std::inserter(required_active, required_active.begin()));
+
+   std::set_difference(tmp_secondary.begin(), tmp_secondary.end(),
+                       required_active.begin(), required_active.end(),
+                       std::inserter(required_secondary, required_secondary.begin()));
+
+   auto get_acc_by_uid = [&]( account_uid_type uid ){ return &(d.get_account_by_uid(uid)); };
+   flat_set<account_uid_type> tmp;
+   std::copy(required_owner.begin(), required_owner.end(), std::inserter(tmp, tmp.end()));
+   for( auto uid : tmp )
+      get_authority_uid( uid,
+                         get_acc_by_uid,
+                         required_owner,
+                         required_active,
+                         required_secondary
+                       );
+   tmp.clear();
+
+   std::copy(required_active.begin(), required_active.end(), std::inserter(tmp, tmp.end()));
+   for( auto uid : tmp )
+      get_authority_uid( uid,
+                         get_acc_by_uid,
+                         required_owner,
+                         required_active,
+                         required_secondary
+                       );
+   tmp.clear();
+
+   std::copy(required_secondary.begin(), required_secondary.end(), std::inserter(tmp, tmp.end()));
+   for( auto uid : tmp )
+      get_authority_uid( uid,
+                         get_acc_by_uid,
+                         required_owner,
+                         required_active,
+                         required_secondary
+                       );
+   tmp.clear();
+
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -62,29 +112,9 @@ object_id_type proposal_create_evaluator::do_apply(const proposal_create_operati
       if( o.review_period_seconds )
          proposal.review_period_time = o.expiration_time - *o.review_period_seconds;
 
-      //Populate the required approval sets
-      flat_set<account_uid_type> required_active;
-      flat_set<account_uid_type> required_secondary;
-      vector<authority> other;
-      
-      // TODO: consider caching values from evaluate?
-      for( auto& op : _proposed_trx.operations )
-         operation_get_required_uid_authorities(op,
-                                                proposal.required_owner_approvals,
-                                                required_active,
-                                                required_secondary,
-                                                other);
-
-      //All accounts which must provide both owner and active authority should be omitted from the active authority set;
-      //owner authority approval implies active authority approval.
-      std::set_difference(required_active.begin(), required_active.end(),
-                          proposal.required_owner_approvals.begin(), proposal.required_owner_approvals.end(),
-                          std::inserter(proposal.required_active_approvals, proposal.required_active_approvals.begin()));
-
-      std::set_difference(required_secondary.begin(), required_secondary.end(),
-                          proposal.required_active_approvals.begin(), proposal.required_active_approvals.end(),
-                          std::inserter(proposal.required_secondary_approvals, proposal.required_secondary_approvals.begin()));
-      idump((required_secondary)(proposal.required_secondary_approvals));
+      std::copy(required_owner.begin(), required_owner.end(), std::inserter(proposal.required_owner_approvals, proposal.required_owner_approvals.end()));
+      std::copy(required_active.begin(), required_active.end(), std::inserter(proposal.required_active_approvals, proposal.required_active_approvals.end()));
+      std::copy(required_secondary.begin(), required_secondary.end(), std::inserter(proposal.required_secondary_approvals, proposal.required_secondary_approvals.end()));
    });
 
    return proposal.id;

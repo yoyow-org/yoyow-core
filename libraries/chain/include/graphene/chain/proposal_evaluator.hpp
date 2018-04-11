@@ -39,6 +39,9 @@ namespace graphene { namespace chain {
          object_id_type do_apply( const proposal_create_operation& o );
 
          transaction _proposed_trx;
+         flat_set<account_uid_type> required_owner;
+         flat_set<account_uid_type> required_active;
+         flat_set<account_uid_type> required_secondary;
    };
 
    class proposal_update_evaluator : public evaluator<proposal_update_evaluator>

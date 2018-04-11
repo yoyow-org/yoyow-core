@@ -23,6 +23,7 @@
  */
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
+#include <graphene/chain/account_object.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/bitutil.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -102,7 +103,6 @@ void transaction::get_required_uid_authorities( flat_set<account_uid_type>& owne
       operation_get_required_uid_authorities( op, owner_uids, active_uids, secondary_uids, other );
 }
 
-const std::function<const authority*(account_id_type)> null_by_id = []( account_id_type id ){ return nullptr; };
 const std::function<const authority*(account_uid_type)> null_by_uid = []( account_uid_type uid ){ return nullptr; };
 const flat_set<public_key_type> empty_public_key_set = flat_set<public_key_type>();
 
@@ -125,49 +125,6 @@ struct sign_state
             return false;
          }
          return itr->second = true;
-      }
-
-      optional<map<address,public_key_type>> available_address_sigs;
-      optional<map<address,public_key_type>> provided_address_sigs;
-
-      bool signed_by( const address& a ) {
-         if( !available_address_sigs ) {
-            available_address_sigs = std::map<address,public_key_type>();
-            provided_address_sigs = std::map<address,public_key_type>();
-            for( auto& item : available_keys ) {
-             (*available_address_sigs)[ address(pts_address(item, false, 56) ) ] = item;
-             (*available_address_sigs)[ address(pts_address(item, true, 56) ) ] = item;
-             (*available_address_sigs)[ address(pts_address(item, false, 0) ) ] = item;
-             (*available_address_sigs)[ address(pts_address(item, true, 0) ) ] = item;
-             (*available_address_sigs)[ address(item) ] = item;
-            }
-            for( auto& item : provided_signatures ) {
-             (*provided_address_sigs)[ address(pts_address(item.first, false, 56) ) ] = item.first;
-             (*provided_address_sigs)[ address(pts_address(item.first, true, 56) ) ] = item.first;
-             (*provided_address_sigs)[ address(pts_address(item.first, false, 0) ) ] = item.first;
-             (*provided_address_sigs)[ address(pts_address(item.first, true, 0) ) ] = item.first;
-             (*provided_address_sigs)[ address(item.first) ] = item.first;
-            }
-         }
-         auto itr = provided_address_sigs->find(a);
-         if( itr == provided_address_sigs->end() )
-         {
-            auto aitr = available_address_sigs->find(a);
-            if( aitr != available_address_sigs->end() ) {
-               auto pk = available_keys.find(aitr->second);
-               if( pk != available_keys.end() )
-                  return provided_signatures[aitr->second] = true;
-               return false;
-            }
-         }
-         return provided_signatures[itr->second] = true;
-      }
-
-      std::tuple<bool,bool,flat_set<public_key_type>> check_authority( account_id_type id )
-      {
-         if( approved_by.find(id) != approved_by.end() )
-            return std::make_tuple( true, true, empty_public_key_set );
-         return check_authority( get_active(id) );
       }
 
       std::tuple<bool,bool,flat_set<public_key_type>> check_authority( const authority::account_uid_auth_type& uid_auth )
@@ -298,24 +255,11 @@ struct sign_state
       }
 
       sign_state( const flat_set<public_key_type>& sigs,
-                  const std::function<const authority*(account_id_type)>& a,
-                  const flat_set<public_key_type>& keys = empty_public_key_set )
-      : get_active(a),
-        get_owner_by_uid(null_by_uid),get_active_by_uid(null_by_uid),get_secondary_by_uid(null_by_uid),
-        available_keys(keys)
-      {
-         for( const auto& key : sigs )
-            provided_signatures[ key ] = false;
-         approved_by.insert( GRAPHENE_TEMP_ACCOUNT  );
-      }
-
-      sign_state( const flat_set<public_key_type>& sigs,
                   const std::function<const authority*(account_uid_type)>& o,
                   const std::function<const authority*(account_uid_type)>& a,
                   const std::function<const authority*(account_uid_type)>& s,
                   const flat_set<public_key_type>& keys = empty_public_key_set )
-      : get_active(null_by_id),
-        get_owner_by_uid(o),get_active_by_uid(a),get_secondary_by_uid(s),
+      : get_owner_by_uid(o),get_active_by_uid(a),get_secondary_by_uid(s),
         available_keys(keys)
       {
          for( const auto& key : sigs )
@@ -324,8 +268,6 @@ struct sign_state
          approved_by_uid_auth.emplace( GRAPHENE_TEMP_ACCOUNT_UID, authority::active_auth );
          approved_by_uid_auth.emplace( GRAPHENE_TEMP_ACCOUNT_UID, authority::secondary_auth );
       }
-
-      const std::function<const authority*(account_id_type)>& get_active;
 
       const std::function<const authority*(account_uid_type)>& get_owner_by_uid;
       const std::function<const authority*(account_uid_type)>& get_active_by_uid;
@@ -428,6 +370,61 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
       "Unnecessary signature(s) detected"
       );
 } FC_CAPTURE_AND_RETHROW( (ops)(sigs) ) }
+
+void get_authority_uid( const account_uid_type uid,
+                        const std::function<const account_object*(account_uid_type)>& get_acc_by_uid,
+                        flat_set<account_uid_type>& owner_auth_uid,
+                        flat_set<account_uid_type>& active_auth_uid,
+                        flat_set<account_uid_type>& secondary_auth_uid
+                        )
+{ try {
+      auto accptr = get_acc_by_uid( uid );
+      if( accptr != nullptr ){
+         const account_object& acc = *accptr;
+         get_authority_uid( &acc.owner, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid );
+         get_authority_uid( &acc.active, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid );
+         get_authority_uid( &acc.secondary, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid );
+      }
+    
+
+} FC_CAPTURE_AND_RETHROW() }
+
+void get_authority_uid( const authority* au,
+                        const std::function<const account_object*(account_uid_type)>& get_acc_by_uid,
+                        flat_set<account_uid_type>& owner_auth_uid,
+                        flat_set<account_uid_type>& active_auth_uid,
+                        flat_set<account_uid_type>& secondary_auth_uid,
+                        uint32_t depth)
+{ try {
+      if( au != nullptr )
+      {
+         const authority& auth = *au;
+         for( const auto& a : auth.account_uid_auths )
+         {
+            if( depth == GRAPHENE_MAX_SIG_CHECK_DEPTH )
+               continue;
+            auto accptr = get_acc_by_uid( a.first.uid );
+            if( accptr == nullptr )
+               continue;
+            const account_object& acc = *accptr;
+            if( a.first.auth_type == authority::secondary_auth )
+            {
+               secondary_auth_uid.insert( acc.uid );
+               get_authority_uid( &acc.secondary, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid, depth+1 );
+            }
+            else if( a.first.auth_type == authority::active_auth )
+            {
+               active_auth_uid.insert( acc.uid );
+               get_authority_uid( &acc.active, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid, depth+1 );
+            }
+            else
+            {
+               owner_auth_uid.insert( acc.uid );
+               get_authority_uid( &acc.owner, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid, depth+1 );
+            }
+         }
+      }
+} FC_CAPTURE_AND_RETHROW() }
 
 
 flat_set<public_key_type> signed_transaction::get_signature_keys( const chain_id_type& chain_id )const

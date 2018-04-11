@@ -194,6 +194,20 @@ namespace graphene { namespace chain {
                           const flat_set<account_uid_type>& active_uid_aprovals = flat_set<account_uid_type>(),
                           const flat_set<account_uid_type>& secondary_uid_approvals = flat_set<account_uid_type>());
 
+void get_authority_uid( const account_uid_type uid,
+                        const std::function<const account_object*(account_uid_type)>& get_acc_by_uid,
+                        flat_set<account_uid_type>& owner_auth_uid,
+                        flat_set<account_uid_type>& active_auth_uid,
+                        flat_set<account_uid_type>& secondary_auth_uid
+                        );
+                        
+void get_authority_uid( const authority* au,
+                        const std::function<const account_object*(account_uid_type)>& get_acc_by_uid,
+                        flat_set<account_uid_type>& owner_auth_uid,
+                        flat_set<account_uid_type>& active_auth_uid,
+                        flat_set<account_uid_type>& secondary_auth_uid,
+                        uint32_t depth = 0);
+
    /**
     *  @brief captures the result of evaluating the operations contained in the transaction
     *

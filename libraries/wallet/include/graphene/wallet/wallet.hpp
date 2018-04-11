@@ -1534,6 +1534,8 @@ FC_REFLECT( graphene::wallet::exported_account_keys, (account_name)(encrypted_pr
 FC_REFLECT( graphene::wallet::exported_keys, (password_checksum)(account_keys) )
 
 FC_REFLECT( graphene::wallet::approval_delta,
+   (secondary_approvals_to_add)
+   (secondary_approvals_to_remove)
    (active_approvals_to_add)
    (active_approvals_to_remove)
    (owner_approvals_to_add)
