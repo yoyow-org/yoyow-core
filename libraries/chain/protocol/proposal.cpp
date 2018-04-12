@@ -30,6 +30,7 @@ namespace graphene { namespace chain {
 void proposal_create_operation::validate() const
 {
    validate_op_fee( fee, "proposal create " );
+   validate_account_uid( fee_paying_account, "proposal create " );
    FC_ASSERT( !proposed_ops.empty() );
    for( const auto& op : proposed_ops ) operation_validate( op.op );
 }
@@ -42,6 +43,7 @@ share_type proposal_create_operation::calculate_fee(const fee_parameters_type& k
 void proposal_update_operation::validate() const
 {
    validate_op_fee( fee, "proposal update " );
+   validate_account_uid( fee_paying_account, "proposal update " );
    FC_ASSERT(!(secondary_approvals_to_add.empty() && secondary_approvals_to_remove.empty() && 
                active_approvals_to_add.empty() && active_approvals_to_remove.empty() &&
                owner_approvals_to_add.empty() && owner_approvals_to_remove.empty() &&
@@ -71,6 +73,7 @@ void proposal_update_operation::validate() const
 void proposal_delete_operation::validate() const
 {
    validate_op_fee( fee, "proposal delete " );
+   validate_account_uid( fee_paying_account, "proposal delete " );
 }
 
 share_type proposal_update_operation::calculate_fee(const fee_parameters_type& k) const
