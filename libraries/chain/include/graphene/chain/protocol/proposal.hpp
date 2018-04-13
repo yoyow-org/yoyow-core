@@ -148,7 +148,6 @@ namespace graphene { namespace chain {
       struct fee_parameters_type { uint64_t fee =  GRAPHENE_BLOCKCHAIN_PRECISION; };
 
       account_uid_type  fee_paying_account;
-      bool              using_owner_authority = false;
       fee_type          fee;
       proposal_id_type  proposal;
       extensions_type   extensions;
@@ -171,4 +170,4 @@ FC_REFLECT( graphene::chain::proposal_update_operation, (fee)(fee_paying_account
             (active_approvals_to_add)(active_approvals_to_remove)
             (owner_approvals_to_add)(owner_approvals_to_remove)
             (key_approvals_to_add)(key_approvals_to_remove)(extensions) )
-FC_REFLECT( graphene::chain::proposal_delete_operation, (fee)(fee_paying_account)(using_owner_authority)(proposal)(extensions) )
+FC_REFLECT( graphene::chain::proposal_delete_operation, (fee)(fee_paying_account)(proposal)(extensions) )

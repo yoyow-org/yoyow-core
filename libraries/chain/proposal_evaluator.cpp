@@ -216,11 +216,13 @@ void_result proposal_delete_evaluator::do_evaluate(const proposal_delete_operati
 
    _proposal = &o.proposal(d);
 
-   auto required_approvals = o.using_owner_authority? &_proposal->required_owner_approvals
-                                                    : &_proposal->required_active_approvals;
-   FC_ASSERT( required_approvals->find(o.fee_paying_account) != required_approvals->end(),
+   bool inowner = _proposal->required_owner_approvals.find( o.fee_paying_account ) != _proposal->required_owner_approvals.end();
+   bool inactive = _proposal->required_active_approvals.find( o.fee_paying_account ) != _proposal->required_active_approvals.end();
+   bool insecondary = _proposal->required_secondary_approvals.find( o.fee_paying_account ) != _proposal->required_secondary_approvals.end();
+
+   FC_ASSERT( ( inowner || inactive || insecondary ),
               "Provided authority is not authoritative for this proposal.",
-              ("provided", o.fee_paying_account)("required", *required_approvals));
+              ("provided", o.fee_paying_account));
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
