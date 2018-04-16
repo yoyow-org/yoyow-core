@@ -272,10 +272,12 @@ namespace graphene { namespace chain {
          void adjust_voter_self_votes( const voter_object& voter, share_type delta );
          void adjust_voter_self_witness_votes( const voter_object& voter, share_type delta );
          void adjust_voter_self_committee_member_votes( const voter_object& voter, share_type delta );
+         void adjust_voter_self_platform_votes( const voter_object& voter, share_type delta );
          void adjust_voter_proxy_votes( const voter_object& voter, vector<share_type> delta, bool update_last_vote );
          void clear_voter_proxy_votes( const voter_object& voter );
          void clear_voter_witness_votes( const voter_object& voter );
          void clear_voter_committee_member_votes( const voter_object& voter );
+         void clear_voter_platform_votes( const voter_object& voter );
          void clear_voter_votes( const voter_object& voter );
          void invalidate_voter( const voter_object& voter );
          bool check_voter_valid( const voter_object& voter, bool deep_check );
