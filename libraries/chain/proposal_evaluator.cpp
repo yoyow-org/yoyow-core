@@ -196,6 +196,7 @@ void_result proposal_update_evaluator::do_apply(const proposal_update_operation&
    if( _proposal->is_authorized_to_execute(d) )
    {
       // All required approvals are satisfied. Execute!
+      //ilog( "apply proposed ${id}", ("id", _proposal->id ) );
       _executed_proposal = true;
       try {
          _processed_transaction = d.push_proposal(*_proposal);

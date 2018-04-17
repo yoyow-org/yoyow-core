@@ -277,7 +277,6 @@ struct sign_state
       flat_set<public_key_type>                               used_keys;
 
       flat_map<public_key_type,bool>             provided_signatures; // the bool means "is_used"
-      flat_set<account_id_type>                  approved_by;
       flat_set<authority::account_uid_auth_type> approved_by_uid_auth;
       uint32_t                                   max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH;
 };
