@@ -40,6 +40,10 @@ void transfer_operation::validate()const
    validate_account_uid( from, "from " );
    validate_account_uid( to, "to " );
    validate_positive_asset( amount, "transfer amount" );
+   if( amount.asset_id > GRAPHENE_CORE_ASSET_AID )
+   {
+      FC_ASSERT( !extensions.valid(), "Non-core assets do not allow for expansions." );
+   }
    if ( !extensions.valid() || amount.asset_id > GRAPHENE_CORE_ASSET_AID )  //Non-core asset and no extensions
    {
       FC_ASSERT( from != to, "can not transfer to self." );
