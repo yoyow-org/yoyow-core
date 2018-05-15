@@ -144,7 +144,7 @@ namespace graphene { namespace chain {
        *          the second set contains more potential keys required,
        *          the third set contains redundant signatures need to be removed.
        */
-      std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<public_key_type>> get_required_signatures(
+      std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signature_type>> get_required_signatures(
          const chain_id_type& chain_id,
          const flat_set<public_key_type>& available_keys,
          const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
@@ -176,7 +176,7 @@ namespace graphene { namespace chain {
          ) const;
       */
 
-      flat_set<public_key_type> get_signature_keys( const chain_id_type& chain_id )const;
+      flat_map<public_key_type,signature_type> get_signature_keys( const chain_id_type& chain_id )const;
 
       vector<signature_type> signatures;
 
@@ -184,15 +184,15 @@ namespace graphene { namespace chain {
       void clear() { operations.clear(); signatures.clear(); }
    };
 
-   void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
-                          const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
-                          const std::function<const authority*(account_uid_type)>& get_active_by_uid,
-                          const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
-                          uint32_t max_recursion_depth = GRAPHENE_MAX_SIG_CHECK_DEPTH,
-                          bool allow_committe = false,
-                          const flat_set<account_uid_type>& owner_uid_approvals = flat_set<account_uid_type>(),
-                          const flat_set<account_uid_type>& active_uid_aprovals = flat_set<account_uid_type>(),
-                          const flat_set<account_uid_type>& secondary_uid_approvals = flat_set<account_uid_type>());
+void verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
+                       const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
+                       const std::function<const authority*(account_uid_type)>& get_active_by_uid,
+                       const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
+                       uint32_t max_recursion_depth = GRAPHENE_MAX_SIG_CHECK_DEPTH,
+                       bool allow_committe = false,
+                       const flat_set<account_uid_type>& owner_uid_approvals = flat_set<account_uid_type>(),
+                       const flat_set<account_uid_type>& active_uid_aprovals = flat_set<account_uid_type>(),
+                       const flat_set<account_uid_type>& secondary_uid_approvals = flat_set<account_uid_type>());
 
 void get_authority_uid( const account_uid_type uid,
                         const std::function<const account_object*(account_uid_type)>& get_acc_by_uid,

@@ -166,7 +166,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Authority / validation
       std::string get_transaction_hex(const signed_transaction& trx)const;
-      std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
       set<public_key_type> get_potential_signatures( const signed_transaction& trx )const;
       bool verify_authority( const signed_transaction& trx )const;
       bool verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
@@ -1959,12 +1959,12 @@ std::string database_api_impl::get_transaction_hex(const signed_transaction& trx
    return fc::to_hex(fc::raw::pack(trx));
 }
 
-std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> database_api::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
+std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> database_api::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
 {
    return my->get_required_signatures( trx, available_keys );
 }
 
-std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> database_api_impl::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
+std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> database_api_impl::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
 {
    wdump((trx)(available_keys));
    auto result = trx.get_required_signatures( _db.get_chain_id(),

@@ -2111,37 +2111,42 @@ signed_transaction account_cancel_auth_platform(string account,
             const auto& new_result = _remote_db->get_required_signatures( tx, available_keys );
             const auto& required_keys_subset = new_result.first.first;
             //const auto& missed_keys = new_result.first.second;
-            const auto& unused_keys = new_result.second;
+            const auto& unused_signatures = new_result.second;
 
             // unused signatures can be removed safely
-            for( const auto& key : unused_keys )
-            {
-               available_keys.erase( key );
-               available_keys_map.erase( key );
-            }
-               
+            for( const auto& sig : unused_signatures )
+               tx.signatures.erase( std::remove( tx.signatures.begin(), tx.signatures.end(), sig), tx.signatures.end() );
 
+            bool no_sig = tx.signatures.empty();
             auto dyn_props = get_dynamic_global_properties();
 
-            tx.set_reference_block( dyn_props.head_block_id );
+            if( no_sig )
+               tx.set_reference_block( dyn_props.head_block_id );
 
             // if no signature is included in the trx, reset expiration time; otherwise keep it
-               // first, some bookkeeping, expire old items from _recently_generated_transactions
-               // since transactions include the head block id, we just need the index for keeping transactions unique
-               // when there are multiple transactions in the same block.  choose a time period that should be at
-               // least one block long, even in the worst case.  2 minutes ought to be plenty.
-            fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
-            auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
-            auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
-            _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
+            if( no_sig )
+            {
+                // first, some bookkeeping, expire old items from _recently_generated_transactions
+                // since transactions include the head block id, we just need the index for keeping transactions unique
+                // when there are multiple transactions in the same block.  choose a time period that should be at
+                // least one block long, even in the worst case.  2 minutes ought to be plenty.
+               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(2));
+               auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
+               auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
+               _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
+
+            }
 
             uint32_t expiration_time_offset = 0;
             for (;;)
             {
-               tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
-               tx.signatures.clear();
+               if( no_sig )
+               {
+                  tx.set_expiration( dyn_props.time + fc::seconds(30 + expiration_time_offset) );
+                  tx.signatures.clear();
+               }
 
-               idump((required_keys_subset)(available_keys));
+               idump((required_keys_subset)(available_keys_map));
                // TODO: for better performance, sign after dupe check
                for( const auto& key : required_keys_subset )
                {
