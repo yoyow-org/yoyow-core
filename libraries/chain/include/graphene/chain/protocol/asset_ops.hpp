@@ -69,6 +69,7 @@ namespace graphene { namespace chain {
        * size of description.
        */
       string description;
+
       extensions_type extensions;
 
       /// Perform internal consistency checks.
@@ -84,10 +85,13 @@ namespace graphene { namespace chain {
    struct asset_create_operation : public base_operation
    {
       struct fee_parameters_type { 
-         uint64_t symbol3        = 500000 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint64_t symbol4        = 300000 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint64_t long_symbol    = 5000   * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t price_per_kbyte = 10; 
+         uint64_t symbol3          = 500000 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t symbol4          = 300000 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t long_symbol      = 5000   * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = GRAPHENE_100_PERCENT;
+         extensions_type   extensions;
       };
 
       fee_type                fee;
@@ -130,8 +134,11 @@ namespace graphene { namespace chain {
    struct asset_update_operation : public base_operation
    {
       struct fee_parameters_type { 
-         uint64_t fee            = 500 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t price_per_kbyte = 10;
+         uint64_t fee              = 500 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
       };
 
       asset_update_operation(){}
@@ -141,7 +148,7 @@ namespace graphene { namespace chain {
       asset_aid_type   asset_to_update;
 
       /// If the asset is to be given a new issuer, specify his ID here.
-      optional<account_uid_type>   new_issuer;
+      optional<account_uid_type>  new_issuer;
       asset_options               new_options;
       extensions_type             extensions;
 
@@ -157,7 +164,10 @@ namespace graphene { namespace chain {
    {
       struct fee_parameters_type { 
          uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; 
-         uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION; ///< Only for memo
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
       };
 
       fee_type          fee;
@@ -183,7 +193,12 @@ namespace graphene { namespace chain {
     */
    struct asset_reserve_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type {
+         uint64_t fee              = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
 
       fee_type          fee;
       account_uid_type  payer;
@@ -200,7 +215,10 @@ namespace graphene { namespace chain {
    struct asset_claim_fees_operation : public base_operation
    {
       struct fee_parameters_type {
-         uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t fee              = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
       };
 
       fee_type         fee;
@@ -216,7 +234,7 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::asset_claim_fees_operation, (fee)(issuer)(amount_to_claim)(extensions) )
-FC_REFLECT( graphene::chain::asset_claim_fees_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::asset_claim_fees_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 
 FC_REFLECT( graphene::chain::asset_options,
             (max_supply)
@@ -232,10 +250,14 @@ FC_REFLECT( graphene::chain::asset_options,
             (extensions)
           )
 
-FC_REFLECT( graphene::chain::asset_create_operation::fee_parameters_type, (symbol3)(symbol4)(long_symbol)(price_per_kbyte) )
-FC_REFLECT( graphene::chain::asset_update_operation::fee_parameters_type, (fee)(price_per_kbyte) )
-FC_REFLECT( graphene::chain::asset_issue_operation::fee_parameters_type, (fee)(price_per_kbyte) )
-FC_REFLECT( graphene::chain::asset_reserve_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::asset_create_operation::fee_parameters_type,
+            (symbol3)(symbol4)(long_symbol)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::asset_update_operation::fee_parameters_type,
+            (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::asset_issue_operation::fee_parameters_type,
+            (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
+FC_REFLECT( graphene::chain::asset_reserve_operation::fee_parameters_type,
+            (fee)(min_real_fee)(min_rf_percent)(extensions) )
 
 
 FC_REFLECT( graphene::chain::asset_create_operation,
