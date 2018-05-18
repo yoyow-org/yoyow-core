@@ -33,7 +33,6 @@
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/budget_record_object.hpp>
-#include <graphene/chain/buyback_object.hpp>
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
@@ -309,105 +308,6 @@ void database::initialize_budget_record( fc::time_point_sec now, budget_record& 
    return;
 }
 
-/**
- * Update the budget for witnesses and workers.
- */
-void database::process_budget()
-{
-   try
-   {
-      const global_property_object& gpo = get_global_properties();
-      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-      const asset_dynamic_data_object& core =
-         this->get_core_asset().dynamic_asset_data_id(*this);
-      fc::time_point_sec now = head_block_time();
-
-      int64_t time_to_maint = (dpo.next_maintenance_time - now).to_seconds();
-      //
-      // The code that generates the next maintenance time should
-      //    only produce a result in the future.  If this assert
-      //    fails, then the next maintenance time algorithm is buggy.
-      //
-      assert( time_to_maint > 0 );
-      //
-      // Code for setting chain parameters should validate
-      //    block_interval > 0 (as well as the humans proposing /
-      //    voting on changes to block interval).
-      //
-      assert( gpo.parameters.block_interval > 0 );
-      uint64_t blocks_to_maint = (uint64_t(time_to_maint) + gpo.parameters.block_interval - 1) / gpo.parameters.block_interval;
-
-      // blocks_to_maint > 0 because time_to_maint > 0,
-      // which means numerator is at least equal to block_interval
-
-      budget_record rec;
-      initialize_budget_record( now, rec );
-      share_type available_funds = rec.total_budget;
-
-      share_type witness_budget = gpo.parameters.witness_pay_per_block.value * blocks_to_maint;
-      rec.requested_witness_budget = witness_budget;
-      witness_budget = std::min(witness_budget, available_funds);
-      rec.witness_budget = witness_budget;
-      available_funds -= witness_budget;
-
-      fc::uint128_t worker_budget_u128 = gpo.parameters.worker_budget_per_day.value;
-      worker_budget_u128 *= uint64_t(time_to_maint);
-      worker_budget_u128 /= 60*60*24;
-
-      share_type worker_budget;
-      if( worker_budget_u128 >= available_funds.value )
-         worker_budget = available_funds;
-      else
-         worker_budget = worker_budget_u128.to_uint64();
-      rec.worker_budget = worker_budget;
-      available_funds -= worker_budget;
-
-      share_type leftover_worker_funds = worker_budget;
-      pay_workers(leftover_worker_funds);
-      rec.leftover_worker_funds = leftover_worker_funds;
-      available_funds += leftover_worker_funds;
-
-      rec.supply_delta = rec.witness_budget
-         + rec.worker_budget
-         - rec.leftover_worker_funds
-         - rec.from_accumulated_fees
-         - rec.from_unused_witness_budget;
-
-      modify(core, [&]( asset_dynamic_data_object& _core )
-      {
-         _core.current_supply = (_core.current_supply + rec.supply_delta );
-
-         assert( rec.supply_delta ==
-                                   witness_budget
-                                 + worker_budget
-                                 - leftover_worker_funds
-                                 - _core.accumulated_fees
-                                 - dpo.witness_budget
-                                );
-         _core.accumulated_fees = 0;
-      });
-
-      modify(dpo, [&]( dynamic_global_property_object& _dpo )
-      {
-         // Since initial witness_budget was rolled into
-         // available_funds, we replace it with witness_budget
-         // instead of adding it.
-         _dpo.witness_budget = witness_budget;
-         _dpo.last_budget_time = now;
-      });
-
-      create< budget_record_object >( [&]( budget_record_object& _rec )
-      {
-         _rec.time = head_block_time();
-         _rec.record = rec;
-      });
-
-      // available_funds is money we could spend, but don't want to.
-      // we simply let it evaporate back into the reserve.
-   }
-   FC_CAPTURE_AND_RETHROW()
-}
-
 template< typename Visitor >
 void visit_special_authorities( const database& db, Visitor visit )
 {
@@ -466,121 +366,9 @@ void update_top_n_authorities( database& db )
    } );
 }
 
-void create_buyback_orders( database& db )
-{
-   const auto& bbo_idx = db.get_index_type< buyback_index >().indices().get<by_id>();
-   const auto& bal_idx = db.get_index_type< account_balance_index >().indices().get< by_account_asset >();
-
-   for( const buyback_object& bbo : bbo_idx )
-   {
-      const asset_object& asset_to_buy = db.get_asset_by_aid( bbo.asset_to_buy );
-      assert( asset_to_buy.buyback_account.valid() );
-
-      const account_object& buyback_account = db.get_account_by_uid( *(asset_to_buy.buyback_account) );
-      asset_aid_type next_asset = GRAPHENE_CORE_ASSET_AID;
-
-      if( !buyback_account.allowed_assets.valid() )
-      {
-         wlog( "skipping buyback account ${b} at block ${n} because allowed_assets does not exist", ("b", buyback_account)("n", db.head_block_num()) );
-         continue;
-      }
-
-      while( true )
-      {
-         auto it = bal_idx.lower_bound( boost::make_tuple( buyback_account.uid, next_asset ) );
-         if( it == bal_idx.end() )
-            break;
-         if( it->owner != buyback_account.uid )
-            break;
-         asset_aid_type asset_to_sell = it->asset_type;
-         share_type amount_to_sell = it->balance;
-         next_asset = asset_to_sell + 1;
-         if( asset_to_sell == asset_to_buy.asset_id )
-            continue;
-         if( amount_to_sell == 0 )
-            continue;
-         if( buyback_account.allowed_assets->find( asset_to_sell ) == buyback_account.allowed_assets->end() )
-         {
-            wlog( "buyback account ${b} not selling disallowed holdings of asset ${a} at block ${n}", ("b", buyback_account)("a", asset_to_sell)("n", db.head_block_num()) );
-            continue;
-         }
-
-         try
-         {
-            transaction_evaluation_state buyback_context(&db);
-            buyback_context.skip_fee_schedule_check = true;
-
-            limit_order_create_operation create_vop;
-            create_vop.fee = asset( 0, GRAPHENE_CORE_ASSET_AID );
-            create_vop.seller = buyback_account.uid;
-            create_vop.amount_to_sell = asset( amount_to_sell, asset_to_sell );
-            create_vop.min_to_receive = asset( 1, asset_to_buy.asset_id );
-            create_vop.expiration = time_point_sec::maximum();
-            create_vop.fill_or_kill = false;
-
-            limit_order_id_type order_id = db.apply_operation( buyback_context, create_vop ).get< object_id_type >();
-
-            if( db.find( order_id ) != nullptr )
-            {
-               limit_order_cancel_operation cancel_vop;
-               cancel_vop.fee = asset( 0, GRAPHENE_CORE_ASSET_AID );
-               cancel_vop.order = order_id;
-               cancel_vop.fee_paying_account = buyback_account.uid;
-
-               db.apply_operation( buyback_context, cancel_vop );
-            }
-         }
-         catch( const fc::exception& e )
-         {
-            // we can in fact get here, e.g. if asset issuer of buy/sell asset blacklists/whitelists the buyback account
-            wlog( "Skipping buyback processing selling ${as} for ${ab} for buyback account ${b} at block ${n}; exception was ${e}",
-                  ("as", asset_to_sell)("ab", asset_to_buy)("b", buyback_account)("n", db.head_block_num())("e", e.to_detail_string()) );
-            continue;
-         }
-      }
-   }
-   return;
-}
-
-void deprecate_annual_members( database& db )
-{
-   const auto& account_idx = db.get_index_type<account_index>().indices().get<by_id>();
-   fc::time_point_sec now = db.head_block_time();
-   for( const account_object& acct : account_idx )
-   {
-      try
-      {
-         transaction_evaluation_state upgrade_context(&db);
-         upgrade_context.skip_fee_schedule_check = true;
-
-         if( acct.is_annual_member( now ) )
-         {
-            account_upgrade_operation upgrade_vop;
-            upgrade_vop.fee = asset( 0, GRAPHENE_CORE_ASSET_AID );
-            upgrade_vop.account_to_upgrade = acct.id;
-            upgrade_vop.upgrade_to_lifetime_member = true;
-            db.apply_operation( upgrade_context, upgrade_vop );
-         }
-      }
-      catch( const fc::exception& e )
-      {
-         // we can in fact get here, e.g. if asset issuer of buy/sell asset blacklists/whitelists the buyback account
-         wlog( "Skipping annual member deprecate processing for account ${a} (${an}) at block ${n}; exception was ${e}",
-               ("a", acct.id)("an", acct.name)("n", db.head_block_num())("e", e.to_detail_string()) );
-         continue;
-      }
-   }
-   return;
-}
-
 void database::perform_chain_maintenance(const signed_block& next_block, const global_property_object& global_props)
 {
    const auto& gpo = get_global_properties();
-
-   /* removed for yy. no longer needed.
-   distribute_fba_balances(*this);
-   create_buyback_orders(*this);
-   */
 
    struct vote_tally_helper {
       database& d;
@@ -733,18 +521,11 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
 
    const dynamic_global_property_object& dgpo = get_dynamic_global_properties();
 
-   //deprecate_annual_members(*this);
-
    modify(dgpo, [next_maintenance_time](dynamic_global_property_object& d) {
       d.next_maintenance_time = next_maintenance_time;
       d.accounts_registered_this_interval = 0;
    });
 
-   /* removed for yy. no longer needed.
-   // process_budget needs to run at the bottom because
-   //   it needs to know the next_maintenance_time
-   process_budget();
-   */
 }
 
 } }

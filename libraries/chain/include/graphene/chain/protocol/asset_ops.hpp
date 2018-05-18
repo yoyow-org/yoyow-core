@@ -46,9 +46,9 @@ namespace graphene { namespace chain {
       share_type max_market_fee = GRAPHENE_MAX_SHARE_SUPPLY;
 
       /// The flags which the issuer has permission to update. See @ref asset_issuer_permission_flags
-      uint16_t issuer_permissions = UIA_ASSET_ISSUER_PERMISSION_MASK;
+      uint16_t issuer_permissions = 0; // by default the issuer has all permissions
       /// The currently active flags on this permission. See @ref asset_issuer_permission_flags
-      uint16_t flags = 0;
+      uint16_t flags = 0; // by default enabled no flag
 
       /// A set of accounts which maintain whitelists to consult for this asset. If whitelist_authorities
       /// is non-empty, then only accounts in whitelist_authorities are allowed to hold, use, or transfer the asset.

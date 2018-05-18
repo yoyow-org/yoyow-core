@@ -542,7 +542,6 @@ namespace graphene { namespace chain {
          //////////////////// db_maint.cpp ////////////////////
 
          void initialize_budget_record( fc::time_point_sec now, budget_record& rec )const;
-         void process_budget();
          void pay_workers( share_type& budget );
          void perform_chain_maintenance(const signed_block& next_block, const global_property_object& global_props);
          void update_active_witnesses();

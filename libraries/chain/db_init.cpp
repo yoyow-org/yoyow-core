@@ -29,7 +29,6 @@
 #include <graphene/chain/balance_object.hpp>
 #include <graphene/chain/block_summary_object.hpp>
 #include <graphene/chain/budget_record_object.hpp>
-#include <graphene/chain/buyback_object.hpp>
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/content_object.hpp>
@@ -259,7 +258,6 @@ void database::initialize_indexes()
    add_index< primary_index<simple_index<witness_schedule_object        > > >();
    add_index< primary_index<simple_index<budget_record_object           > > >();
    add_index< primary_index< special_authority_index                      > >();
-   add_index< primary_index< buyback_index                                > >();
 
 }
 
@@ -407,7 +405,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          a.options.max_supply = genesis_state.max_core_supply;
          a.precision = GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS;
          a.options.flags = 0;
-         a.options.issuer_permissions = 0;
+         a.options.issuer_permissions = 0; // owned by null-account, doesn't matter what permission it has
          a.issuer = GRAPHENE_NULL_ACCOUNT_UID;
          a.dynamic_asset_data_id = dyn_asset.id;
       });
@@ -429,7 +427,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          a.options.max_supply = 0;
          a.precision = GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS;
          a.options.flags = 0;
-         a.options.issuer_permissions = 0;
+         a.options.issuer_permissions = 0; // owned by null-account, doesn't matter what permission it has
          a.issuer = GRAPHENE_NULL_ACCOUNT_UID;
          a.dynamic_asset_data_id = dyn_asset.id;
       });
@@ -554,7 +552,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          string issuer_name = asset.issuer_name;
          a.issuer = get_account_uid(issuer_name);
          a.options.max_supply = asset.max_supply;
-         a.options.issuer_permissions = charge_market_fee | override_authority | white_list | transfer_restricted | disable_confidential;
+         a.options.issuer_permissions = 0; // by default the issuer has all permissions
          a.dynamic_asset_data_id = dynamic_data_id;
       });
       modify( new_asset, [](asset_object& a) {

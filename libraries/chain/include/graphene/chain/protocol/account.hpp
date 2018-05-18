@@ -23,7 +23,6 @@
  */
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
-#include <graphene/chain/protocol/buyback.hpp>
 #include <graphene/chain/protocol/ext.hpp>
 #include <graphene/chain/protocol/special_authority.hpp>
 #include <graphene/chain/protocol/types.hpp>
@@ -122,8 +121,6 @@ namespace graphene { namespace chain {
          // registrar should be required anyway as it is the fee_payer_uid(),
          // but we insert it here because fee can be paid with secondary authority
          a.insert( reg_info.registrar );
-         //if( extensions.value.buyback_options.valid() )
-         //   a.insert( extensions.value.buyback_options->asset_to_buy_issuer );
       }
    };
 
