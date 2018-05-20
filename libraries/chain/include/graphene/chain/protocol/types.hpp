@@ -111,7 +111,10 @@ namespace graphene { namespace chain {
    //const static uint32_t ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_force_settle|global_settle|disable_confidential|witness_fed_asset|committee_fed_asset;
    
    //const static uint32_t UIA_ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_confidential;
-   const static uint32_t ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted;
+
+   // For testing. TODO remove it when merging to mainnet branch
+   #define TEST_MASK1 (0x40)
+   const static uint32_t ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|TEST_MASK1;
 
    enum scheduled_witness_type
    {
