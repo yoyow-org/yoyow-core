@@ -72,6 +72,16 @@ namespace graphene { namespace chain {
 
       extensions_type extensions;
 
+      /// How much size for calculating data fee
+      inline uint64_t data_size_for_fee() const
+      {
+         return ( whitelist_authorities.empty() ? 0 : fc::raw::pack_size( whitelist_authorities ) ) +
+                ( blacklist_authorities.empty() ? 0 : fc::raw::pack_size( blacklist_authorities ) ) +
+                ( whitelist_markets.empty() ? 0 : fc::raw::pack_size( whitelist_markets ) ) +
+                ( blacklist_markets.empty() ? 0 : fc::raw::pack_size( blacklist_markets ) ) +
+                ( description.empty() ? 0 : fc::raw::pack_size( description ) );
+      }
+
       /// Perform internal consistency checks.
       /// @throws fc::exception if any check fails
       void validate()const;

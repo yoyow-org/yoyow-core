@@ -88,7 +88,7 @@ share_type asset_create_operation::calculate_fee(const asset_create_operation::f
    }
 
    // common_options contains several lists and a string. Charge fees for its size
-   core_fee_required += calculate_data_fee( fc::raw::pack_size(*this), param.price_per_kbyte );
+   core_fee_required += calculate_data_fee( common_options.data_size_for_fee(), param.price_per_kbyte );
 
    return core_fee_required;
 }
