@@ -69,21 +69,6 @@ namespace graphene { namespace chain {
          share_type lifetime_fees_paid;
 
          /**
-          * Tracks the fees paid by this account which have not been disseminated to the various parties that receive
-          * them yet (registrar, referrer, lifetime referrer, network, etc). This is used as an optimization to avoid
-          * doing massive amounts of uint128 arithmetic on each and every operation.
-          *
-          * These fees will be paid out as vesting cash-back, and this counter will reset during the maintenance
-          * interval.
-          */
-         share_type pending_fees;
-         /**
-          * Same as @ref pending_fees, except these fees will be paid out as pre-vested cash-back (immediately
-          * available for withdrawal) rather than requiring the normal vesting period.
-          */
-         share_type pending_vested_fees;
-
-         /**
           * Prepaid fee.
           */
          share_type prepaid;
@@ -243,14 +228,6 @@ namespace graphene { namespace chain {
           */
          post_pid_type last_post_sequence = 0;
 
-         /// @brief Split up and pay out @ref pending_fees and @ref pending_vested_fees
-         void process_fees(const account_object& a, database& d) const;
-
-         /**
-          * Core fees are paid into the account_statistics_object by this method
-          */
-         void pay_fee( share_type core_fee, share_type cashback_vesting_threshold );
-
          /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds
@@ -409,40 +386,11 @@ namespace graphene { namespace chain {
          flat_set<account_uid_type> blacklisting_accounts;
 
          /**
-          * Vesting balance which receives cashback_reward deposits.
-          */
-         optional<vesting_balance_id_type> cashback_vb;
-
-         special_authority owner_special_authority = no_special_authority();
-         special_authority active_special_authority = no_special_authority();
-
-         /**
-          * This flag is set when the top_n logic sets both authorities,
-          * and gets reset when authority or special_authority is set.
-          */
-         uint8_t top_n_control_flags = 0;
-         static const uint8_t top_n_control_owner  = 1;
-         static const uint8_t top_n_control_active = 2;
-
-         /**
           * This is a set of assets which the account is allowed to have.
           * This is utilized to restrict buyback accounts to the assets that trade in their markets.
           * In the future we may expand this to allow accounts to e.g. voluntarily restrict incoming transfers.
           */
          optional< flat_set<asset_aid_type> > allowed_assets;
-
-         bool has_special_authority()const
-         {
-            return (owner_special_authority.which() != special_authority::tag< no_special_authority >::value)
-                || (active_special_authority.which() != special_authority::tag< no_special_authority >::value);
-         }
-
-         template<typename DB>
-         const vesting_balance_object& cashback_balance(const DB& db)const
-         {
-            FC_ASSERT(cashback_vb);
-            return db.get(*cashback_vb);
-         }
 
          /// @return true if this is a lifetime member account; false otherwise.
          bool is_lifetime_member()const
@@ -783,9 +731,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (statistics)
                     //(whitelisting_accounts)(blacklisting_accounts)
                     //(whitelisted_accounts)(blacklisted_accounts)
-                    //(cashback_vb)
-                    //(owner_special_authority)(active_special_authority)
-                    //(top_n_control_flags)
                     //(allowed_assets)
                   )
 
@@ -819,7 +764,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (removed_ops)
                     //(total_core_in_orders)
                     //(lifetime_fees_paid)
-                    //(pending_fees)(pending_vested_fees)
                     (prepaid)(csaf)
                     (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)

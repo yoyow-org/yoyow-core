@@ -29,9 +29,6 @@
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/internal_exceptions.hpp>
-#include <graphene/chain/special_authority.hpp>
-#include <graphene/chain/special_authority_object.hpp>
-#include <graphene/chain/worker_object.hpp>
 
 #include <algorithm>
 
@@ -52,43 +49,6 @@ void verify_authority_accounts( const database& db, const authority& a )
          ("a", uid_auth.first.uid) );
    }
 }
-
-void verify_account_votes( const database& db, const account_options& options )
-{
-   // ensure account's votes satisfy requirements
-   // NB only the part of vote checking that requires chain state is here,
-   // the rest occurs in account_options::validate()
-
-   // TODO review
-   /*
-   const auto& gpo = db.get_global_properties();
-   const auto& chain_params = gpo.parameters;
-
-   FC_ASSERT( options.num_witness <= chain_params.maximum_witness_count,
-              "Voted for more witnesses than currently allowed (${c})", ("c", chain_params.maximum_witness_count) );
-   FC_ASSERT( options.num_committee <= chain_params.maximum_committee_count,
-              "Voted for more committee members than currently allowed (${c})", ("c", chain_params.maximum_committee_count) );
-
-   uint32_t max_vote_id = gpo.next_available_vote_id;
-   bool has_worker_votes = false;
-   for( auto id : options.votes )
-   {
-      FC_ASSERT( id < max_vote_id );
-      has_worker_votes |= (id.type() == vote_id_type::worker);
-   }
-
-      const auto& against_worker_idx = db.get_index_type<worker_index>().indices().get<by_vote_against>();
-      for( auto id : options.votes )
-      {
-         if( id.type() == vote_id_type::worker )
-         {
-            FC_ASSERT( against_worker_idx.find( id ) == against_worker_idx.end() );
-         }
-      }
-   */
-
-}
-
 
 void_result account_create_evaluator::do_evaluate( const account_create_operation& op )
 { try {
@@ -262,7 +222,7 @@ void_result account_update_auth_evaluator::do_evaluate( const account_update_aut
       if( o.active ) verify_authority_accounts( d, *o.active );
       if( o.secondary ) verify_authority_accounts( d, *o.secondary );
    }
-   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
+   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_auth_max_auth_exceeded )
    GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
 
    acnt = &d.get_account_by_uid( o.uid );
@@ -311,7 +271,7 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    {
       verify_authority_accounts( d, auth );
    }
-   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
+   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_auth_max_auth_exceeded )
    GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
 
    return void_result();
@@ -533,47 +493,6 @@ void_result account_update_proxy_evaluator::do_apply( const account_update_proxy
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-void_result account_update_evaluator::do_evaluate( const account_update_operation& o )
-{ try {
-   database& d = db();
-
-   try
-   {
-      if( o.owner )  verify_authority_accounts( d, *o.owner );
-      if( o.active ) verify_authority_accounts( d, *o.active );
-   }
-   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
-   GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
-
-   acnt = &o.account(d);
-
-   if( o.new_options.valid() )
-      verify_account_votes( d, *o.new_options );
-
-   return void_result();
-} FC_CAPTURE_AND_RETHROW( (o) ) }
-
-void_result account_update_evaluator::do_apply( const account_update_operation& o )
-{ try {
-   database& d = db();
-   d.modify( *acnt, [&](account_object& a){
-      if( o.owner )
-      {
-         a.owner = *o.owner;
-         a.top_n_control_flags = 0;
-      }
-      if( o.active )
-      {
-         a.active = *o.active;
-         a.top_n_control_flags = 0;
-      }
-      // TODO review
-      //if( o.new_options ) a.options = *o.new_options;
-   });
-
-   return void_result();
-} FC_CAPTURE_AND_RETHROW( (o) ) }
-
 void_result account_whitelist_evaluator::do_evaluate(const account_whitelist_operation& o)
 { try {
    database& d = db();
@@ -616,34 +535,5 @@ void_result account_whitelist_evaluator::do_apply(const account_whitelist_operat
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
-
-void_result account_upgrade_evaluator::do_evaluate(const account_upgrade_evaluator::operation_type& o)
-{ try {
-   database& d = db();
-
-   account = &d.get(o.account_to_upgrade);
-   FC_ASSERT(!account->is_lifetime_member());
-
-   return {};
-//} FC_CAPTURE_AND_RETHROW( (o) ) }
-} FC_RETHROW_EXCEPTIONS( error, "Unable to upgrade account '${a}'", ("a",o.account_to_upgrade(db()).name) ) }
-
-void_result account_upgrade_evaluator::do_apply(const account_upgrade_evaluator::operation_type& o)
-{ try {
-   database& d = db();
-
-   d.modify(*account, [&](account_object& a) {
-      if( o.upgrade_to_lifetime_member )
-      {
-         // Upgrade to lifetime member. I don't care what the account was before.
-         a.statistics(d).process_fees(a, d);
-         a.membership_expiration_date = time_point_sec::maximum();
-         a.referrer = a.registrar = a.lifetime_referrer = a.uid;
-         a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - a.network_fee_percentage;
-      }
-   });
-
-   return {};
-} FC_RETHROW_EXCEPTIONS( error, "Unable to upgrade account '${a}'", ("a",o.account_to_upgrade(db()).name) ) }
 
 } } // graphene::chain

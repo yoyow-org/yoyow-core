@@ -223,10 +223,4 @@ void committee_proposal_update_operation::validate()const
    validate_account_uid( account, "committee member " );
 }
 
-void committee_member_update_global_parameters_operation::validate() const
-{
-   FC_ASSERT( fee.amount >= 0 );
-   new_parameters.validate();
-}
-
 } } // graphene::chain

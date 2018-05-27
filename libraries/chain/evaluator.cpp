@@ -31,7 +31,6 @@
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
-#include <graphene/chain/market_evaluator.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
 #include <fc/uint128.hpp>
@@ -158,12 +157,14 @@ database& generic_evaluator::db()const { return trx_state->db(); }
    void generic_evaluator::pay_fee()
    { try {
       if( !trx_state->skip_fee ) {
+         /* TODO review
          database& d = db();
          /// TODO: db().pay_fee( account_id, core_fee );
          d.modify(*fee_paying_account_statistics, [&](account_statistics_object& s)
          {
-            s.pay_fee( core_fee_paid, d.get_global_properties().parameters.cashback_vesting_threshold );
+            //s.pay_fee( core_fee_paid, d.get_global_properties().parameters.cashback_vesting_threshold );
          });
+         */
       }
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -207,7 +208,7 @@ database& generic_evaluator::db()const { return trx_state->db(); }
    void generic_evaluator::db_adjust_balance(const account_id_type& fee_payer, asset fee_from_account)
    {
       // TODO review
-      FC_ASSERT( "deprecated." );
+      FC_THROW( "deprecated." );
       //db().adjust_balance(fee_payer, fee_from_account);
    }
    void generic_evaluator::db_adjust_balance(const account_uid_type& fee_payer, asset fee_from_account)

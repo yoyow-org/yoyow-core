@@ -26,7 +26,6 @@
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/asset_object.hpp>
-#include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 
 namespace graphene { namespace chain {
@@ -141,91 +140,6 @@ void database::adjust_balance(account_uid_type account, asset delta )
    }
 
 } FC_CAPTURE_AND_RETHROW( (account)(delta) ) }
-
-optional< vesting_balance_id_type > database::deposit_lazy_vesting(
-   const optional< vesting_balance_id_type >& ovbid,
-   share_type amount, uint32_t req_vesting_seconds,
-   account_uid_type req_owner,
-   bool require_vesting )
-{
-   if( amount == 0 )
-      return optional< vesting_balance_id_type >();
-
-   fc::time_point_sec now = head_block_time();
-
-   while( true )
-   {
-      if( !ovbid.valid() )
-         break;
-      const vesting_balance_object& vbo = (*ovbid)(*this);
-      if( vbo.owner != req_owner )
-         break;
-      if( vbo.policy.which() != vesting_policy::tag< cdd_vesting_policy >::value )
-         break;
-      if( vbo.policy.get< cdd_vesting_policy >().vesting_seconds != req_vesting_seconds )
-         break;
-      modify( vbo, [&]( vesting_balance_object& _vbo )
-      {
-         if( require_vesting )
-            _vbo.deposit(now, amount);
-         else
-            _vbo.deposit_vested(now, amount);
-      } );
-      return optional< vesting_balance_id_type >();
-   }
-
-   const vesting_balance_object& vbo = create< vesting_balance_object >( [&]( vesting_balance_object& _vbo )
-   {
-      _vbo.owner = req_owner;
-      _vbo.balance = amount;
-
-      cdd_vesting_policy policy;
-      policy.vesting_seconds = req_vesting_seconds;
-      policy.coin_seconds_earned = require_vesting ? 0 : amount.value * policy.vesting_seconds;
-      policy.coin_seconds_earned_last_update = now;
-
-      _vbo.policy = policy;
-   } );
-
-   return vbo.id;
-}
-
-void database::deposit_cashback(const account_object& acct, share_type amount, bool require_vesting)
-{
-   // If we don't have a VBO, or if it has the wrong maturity
-   // due to a policy change, cut it loose.
-
-   if( amount == 0 )
-      return;
-
-   if( acct.get_id() == GRAPHENE_COMMITTEE_ACCOUNT || acct.get_id() == GRAPHENE_WITNESS_ACCOUNT ||
-       acct.get_id() == GRAPHENE_RELAXED_COMMITTEE_ACCOUNT || acct.get_id() == GRAPHENE_NULL_ACCOUNT ||
-       acct.get_id() == GRAPHENE_TEMP_ACCOUNT )
-   {
-      // The blockchain's accounts do not get cashback; it simply goes to the reserve pool.
-      modify(get_core_asset().dynamic_asset_data_id(*this), [amount](asset_dynamic_data_object& d) {
-         d.current_supply -= amount;
-      });
-      return;
-   }
-
-   optional< vesting_balance_id_type > new_vbid = deposit_lazy_vesting(
-      acct.cashback_vb,
-      amount,
-      get_global_properties().parameters.cashback_vesting_period_seconds,
-      acct.uid,
-      require_vesting );
-
-   if( new_vbid.valid() )
-   {
-      modify( acct, [&]( account_object& _acct )
-      {
-         _acct.cashback_vb = *new_vbid;
-      } );
-   }
-
-   return;
-}
 
 void database::deposit_witness_pay(const witness_object& wit, share_type amount)
 {

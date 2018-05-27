@@ -24,20 +24,13 @@
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
 #include <graphene/chain/protocol/account.hpp>
-#include <graphene/chain/protocol/assert.hpp>
 #include <graphene/chain/protocol/asset_ops.hpp>
-#include <graphene/chain/protocol/balance.hpp>
 #include <graphene/chain/protocol/committee_member.hpp>
 #include <graphene/chain/protocol/content.hpp>
 #include <graphene/chain/protocol/csaf.hpp>
-#include <graphene/chain/protocol/custom.hpp>
-#include <graphene/chain/protocol/market.hpp>
 #include <graphene/chain/protocol/proposal.hpp>
 #include <graphene/chain/protocol/transfer.hpp>
-#include <graphene/chain/protocol/vesting.hpp>
-#include <graphene/chain/protocol/withdraw_permission.hpp>
 #include <graphene/chain/protocol/witness.hpp>
-#include <graphene/chain/protocol/worker.hpp>
 
 namespace graphene { namespace chain {
 
@@ -82,24 +75,7 @@ namespace graphene { namespace chain {
             proposal_update_operation,
             proposal_delete_operation,
             // the operations below are not supported
-            balance_claim_operation,
-            limit_order_create_operation,
-            limit_order_cancel_operation,
-            fill_order_operation,           // VIRTUAL
-            account_update_operation,
-            account_whitelist_operation,
-            account_upgrade_operation,
-            account_transfer_operation,
-            withdraw_permission_create_operation,
-            withdraw_permission_update_operation,
-            withdraw_permission_claim_operation,
-            withdraw_permission_delete_operation,
-            committee_member_update_global_parameters_operation,
-            vesting_balance_create_operation,
-            vesting_balance_withdraw_operation,
-            worker_create_operation,
-            custom_operation,
-            assert_operation
+            account_whitelist_operation
          > operation;
 
    /// @} // operations group
