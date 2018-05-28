@@ -30,11 +30,49 @@
 
 namespace graphene { namespace chain {
 
+struct proposal_operation_hardfork_visitor
+{
+   typedef void result_type;
+   const uint32_t block_num;
+   const fc::time_point_sec block_time;
+   const fc::time_point_sec next_maintenance_time;
+
+   proposal_operation_hardfork_visitor( uint32_t bn, fc::time_point_sec bt, fc::time_point_sec nmt )
+   : block_num(bn), block_time(bt), next_maintenance_time(nmt)
+   {
+      wdump( (bn)(bt)(nmt) );
+   }
+
+   template<typename T>
+   void operator()(const T &v) const
+   {
+      v.validate();
+   }
+
+   // loop and self visit in proposals
+   void operator()(const graphene::chain::proposal_create_operation &v) const
+   {
+      if( block_num != 5881511 ) // skip validation for transactions in this block
+      {
+         // validates all nested operations, which should been done in validate(), moved here for testnet
+         for (const op_wrapper &op : v.proposed_ops)
+            op.op.visit(*this);
+      }
+   }
+};
+
 void_result proposal_create_evaluator::do_evaluate(const proposal_create_operation& o)
 { try {
    const database& d = db();
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_create after HARDFORK_0_3_1_TIME" );
    const auto& global_parameters = d.get_global_properties().parameters;
+
+   // Calling the proposal hardfork visitor
+   const uint32_t block_num = d.head_block_num();
+   const fc::time_point_sec block_time = d.head_block_time();
+   const fc::time_point_sec next_maint_time = d.get_dynamic_global_properties().next_maintenance_time;
+   proposal_operation_hardfork_visitor vtor( block_num, block_time, next_maint_time );
+   vtor( o );
 
    FC_ASSERT( o.expiration_time > d.head_block_time(), "Proposal has already expired on creation." );
    FC_ASSERT( o.expiration_time <= d.head_block_time() + global_parameters.maximum_proposal_lifetime,
@@ -44,7 +82,9 @@ void_result proposal_create_evaluator::do_evaluate(const proposal_create_operati
 
    for( const op_wrapper& op : o.proposed_ops )
       _proposed_trx.operations.push_back(op.op);
-   _proposed_trx.validate();
+
+   if( block_num != 5881511 ) // skip validation for transactions in this block
+      _proposed_trx.validate();
 
    vector<authority> other;
    flat_set<account_uid_type> tmp_active;

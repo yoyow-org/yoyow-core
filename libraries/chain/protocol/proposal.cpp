@@ -32,7 +32,8 @@ void proposal_create_operation::validate() const
    validate_op_fee( fee, "proposal create " );
    validate_account_uid( fee_paying_account, "proposal create " );
    FC_ASSERT( !proposed_ops.empty() );
-   for( const auto& op : proposed_ops ) operation_validate( op.op );
+   // Note: for testnet, this check is commented out and moved to evaluator due to historical data
+   //for( const auto& op : proposed_ops ) operation_validate( op.op );
 }
 
 share_type proposal_create_operation::calculate_fee(const fee_parameters_type& k) const

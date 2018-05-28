@@ -183,7 +183,10 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
 void account_history_plugin_impl::add_account_history( const account_uid_type account_uid, const operation_history_id_type op_id, uint16_t op_type )
 {
    graphene::chain::database& db = database();
-   const auto& account_obj = db.get_account_by_uid(account_uid);
+   const auto* account_ptr = db.find_account_by_uid( account_uid );
+   if( !account_ptr )
+      return;
+   const auto& account_obj = *account_ptr;
    const auto& stats_obj = account_obj.statistics(db);
    // add new entry
    const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
