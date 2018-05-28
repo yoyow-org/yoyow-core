@@ -219,12 +219,14 @@ void database::clear_expired_proposals()
    while( !proposal_expiration_index.empty() && proposal_expiration_index.begin()->expiration_time <= head_block_time() )
    {
       const proposal_object& proposal = *proposal_expiration_index.begin();
+      wdump( (proposal) );
       processed_transaction result;
       try {
          if( proposal.is_authorized_to_execute(*this) )
          {
             result = push_proposal(proposal);
             //TODO: Do something with result so plugins can process it.
+            wdump( (result) );
             continue;
          }
       } catch( const fc::exception& e ) {

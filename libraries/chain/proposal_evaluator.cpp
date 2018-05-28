@@ -63,6 +63,7 @@ struct proposal_operation_hardfork_visitor
 
 void_result proposal_create_evaluator::do_evaluate(const proposal_create_operation& o)
 { try {
+   wdump( (o) );
    const database& d = db();
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_create after HARDFORK_0_3_1_TIME" );
    const auto& global_parameters = d.get_global_properties().parameters;
@@ -142,6 +143,8 @@ void_result proposal_create_evaluator::do_evaluate(const proposal_create_operati
 object_id_type proposal_create_evaluator::do_apply(const proposal_create_operation& o)
 { try {
    database& d = db();
+   if( d.head_block_num() == 5881511 ) // skip this proposal
+      return object_id_type();
 
    const proposal_object& proposal = d.create<proposal_object>([&](proposal_object& proposal) {
       _proposed_trx.expiration = o.expiration_time;
@@ -155,6 +158,7 @@ object_id_type proposal_create_evaluator::do_apply(const proposal_create_operati
       std::copy(required_secondary.begin(), required_secondary.end(), std::inserter(proposal.required_secondary_approvals, proposal.required_secondary_approvals.end()));
    });
 
+   wdump( (proposal) );
    return proposal.id;
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -162,6 +166,8 @@ void_result proposal_update_evaluator::do_evaluate(const proposal_update_operati
 { try {
    database& d = db();
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_update after HARDFORK_0_3_1_TIME" );
+
+   wdump( (o)(d.head_block_num()) );
 
    _proposal = &o.proposal(d);
 

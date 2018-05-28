@@ -78,6 +78,8 @@ account_history_plugin_impl::~account_history_plugin_impl()
 
 void account_history_plugin_impl::update_account_histories( const signed_block& b )
 {
+   if( b.block_num() == 5881511 ) // skip this block
+      return;
    graphene::chain::database& db = database();
    const vector<optional< operation_history_object > >& hist = db.get_applied_operations();
    bool is_first = true;
