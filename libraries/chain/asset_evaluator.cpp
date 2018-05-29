@@ -162,16 +162,26 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
       FC_ASSERT(d.find_account_by_uid(*o.new_issuer));
    }
 
+   bool for_testnet_and_before_hf = ( d.head_block_num() <= 7500000 ); // TESTNET ONLY
+
    if( a.dynamic_asset_data_id(d).current_supply != 0 )
    {
       // new issuer_permissions must be subset of old issuer permissions
-      FC_ASSERT(!(~o.new_options.issuer_permissions & a.options.issuer_permissions),
-                "Cannot reinstate previously revoked issuer permissions on an asset.");
+      if( for_testnet_and_before_hf )
+         FC_ASSERT(!(o.new_options.issuer_permissions & ~a.options.issuer_permissions),
+                   "Cannot reinstate previously revoked issuer permissions on an asset.");
+      else
+         FC_ASSERT(!(~o.new_options.issuer_permissions & a.options.issuer_permissions),
+                   "Cannot reinstate previously revoked issuer permissions on an asset.");
    }
 
    // changed flags must be subset of old issuer permissions
-   FC_ASSERT(!((o.new_options.flags ^ a.options.flags) & a.options.issuer_permissions),
-             "Flag change is forbidden by issuer permissions");
+   if( for_testnet_and_before_hf )
+      FC_ASSERT(!((o.new_options.flags ^ a.options.flags) & ~a.options.issuer_permissions),
+                "Flag change is forbidden by issuer permissions");
+   else
+      FC_ASSERT(!((o.new_options.flags ^ a.options.flags) & a.options.issuer_permissions),
+                "Flag change is forbidden by issuer permissions");
 
    asset_to_update = &a;
    FC_ASSERT( o.issuer == a.issuer, "", ("o.issuer", o.issuer)("a.issuer", a.issuer) );
