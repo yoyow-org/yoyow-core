@@ -98,7 +98,7 @@ namespace graphene { namespace chain {
          uint64_t symbol3          = 500000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t symbol4          = 300000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t long_symbol      = 5000   * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = 10; // TESTNET
          uint64_t min_real_fee     = 0;
          uint16_t min_rf_percent   = GRAPHENE_100_PERCENT;
          extensions_type   extensions;
@@ -145,7 +145,7 @@ namespace graphene { namespace chain {
    {
       struct fee_parameters_type { 
          uint64_t fee              = 500 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = 10; // TESTNET
          uint64_t min_real_fee     = 0;
          uint16_t min_rf_percent   = 0;
          extensions_type   extensions;
