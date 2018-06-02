@@ -314,32 +314,13 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
    }).get_id() == GRAPHENE_TEMP_ACCOUNT);
 
-   // Create more special accounts
-   while( true )
-   {
-      uint64_t id = get_index<account_object>().get_next_id().instance();
-      if( id >= genesis_state.immutable_parameters.num_special_accounts )
-         break;
-      const account_object& acct = create<account_object>([&](account_object& a) {
-          a.name = "special-account-" + std::to_string(id);
-          a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
-          a.owner.weight_threshold = 1;
-          a.active.weight_threshold = 1;
-          a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
-          a.membership_expiration_date = time_point_sec::maximum();
-          a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
-          a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
-      });
-      FC_ASSERT( acct.get_id() == account_id_type(id) );
-      remove( acct );
-   }
-
    // Create core asset
    const asset_dynamic_data_object& dyn_asset =
       create<asset_dynamic_data_object>([&](asset_dynamic_data_object& a) {
+         a.asset_id = GRAPHENE_CORE_ASSET_AID;
          a.current_supply = GRAPHENE_MAX_SHARE_SUPPLY;
       });
-   //const asset_object& core_asset =
+   const asset_object& core_asset =
      create<asset_object>( [&]( asset_object& a ) {
          a.asset_id = GRAPHENE_CORE_ASSET_AID;
          a.symbol = GRAPHENE_SYMBOL;
@@ -350,31 +331,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          a.issuer = GRAPHENE_NULL_ACCOUNT_UID;
          a.dynamic_asset_data_id = dyn_asset.id;
       });
-   assert( object_id_type(core_asset.id).instance() == core_asset.asset_id );
-   assert( core_asset.asset_id == asset().asset_id );
-   assert( get_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID) == asset(dyn_asset.current_supply) );
-   // Create more special assets
-   while( true )
-   {
-      uint64_t id = get_index<asset_object>().get_next_id().instance();
-      if( id >= genesis_state.immutable_parameters.num_special_assets )
-         break;
-      const asset_dynamic_data_object& dyn_asset =
-         create<asset_dynamic_data_object>([&](asset_dynamic_data_object& a) {
-            a.current_supply = 0;
-         });
-      const asset_object& asset_obj = create<asset_object>( [&]( asset_object& a ) {
-         a.symbol = "SPECIAL" + std::to_string( id );
-         a.options.max_supply = 0;
-         a.precision = GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS;
-         a.options.flags = 0;
-         a.options.issuer_permissions = 0; // owned by null-account, doesn't matter what permission it has
-         a.issuer = GRAPHENE_NULL_ACCOUNT_UID;
-         a.dynamic_asset_data_id = dyn_asset.id;
-      });
-      FC_ASSERT( asset_obj.get_id() == asset_id_type(id) );
-      remove( asset_obj );
-   }
+   FC_ASSERT( object_id_type(core_asset.id).instance() == core_asset.asset_id );
+   FC_ASSERT( core_asset.asset_id == asset().asset_id );
+   FC_ASSERT( get_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID) == asset(dyn_asset.current_supply) );
 
    chain_id_type chain_id = genesis_state.compute_chain_id();
 
@@ -452,11 +411,6 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    
    const auto get_asset_aid = [&assets_by_symbol](const string& symbol) {
       auto itr = assets_by_symbol.find(symbol);
-
-      // TODO: This is temporary for handling BTS snapshot
-      if( symbol == "BTS" )
-          itr = assets_by_symbol.find(GRAPHENE_SYMBOL);
-
       FC_ASSERT(itr != assets_by_symbol.end(),
                 "Unable to find asset '${sym}'. Did you forget to add a record for it to initial_assets?",
                 ("sym", symbol));
@@ -464,50 +418,6 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    };
 
    map<asset_aid_type, share_type> total_supplies;
-
-   // Create initial assets
-   for( const genesis_state_type::initial_asset_type& asset : genesis_state.initial_assets )
-   {
-      asset_aid_type new_asset_id = get_index_type<asset_index>().get_next_id().instance();
-      total_supplies[ new_asset_id ] = 0;
-
-      asset_dynamic_data_id_type dynamic_data_id;
-
-      dynamic_data_id = create<asset_dynamic_data_object>([&](asset_dynamic_data_object& d) {
-         d.accumulated_fees = asset.accumulated_fees;
-      }).id;
-
-      total_supplies[ new_asset_id ] += asset.accumulated_fees;
-
-      const asset_object& new_asset = create<asset_object>([&](asset_object& a) {
-         a.symbol = asset.symbol;
-         a.options.description = asset.description;
-         a.precision = asset.precision;
-         string issuer_name = asset.issuer_name;
-         a.issuer = get_account_uid(issuer_name);
-         a.options.max_supply = asset.max_supply;
-         a.options.issuer_permissions = 0; // by default the issuer has all permissions
-         a.dynamic_asset_data_id = dynamic_data_id;
-      });
-      modify( new_asset, [](asset_object& a) {
-         a.asset_id = object_id_type(a.id).instance();
-      });
-   }
-
-   // Create initial balances
-   share_type total_allocation;
-   /* // TODO review
-   for( const auto& handout : genesis_state.initial_balances )
-   {
-      const auto asset_id = get_asset_aid(handout.asset_symbol);
-      create<balance_object>([&handout,&get_asset_aid,total_allocation,asset_id](balance_object& b) {
-         b.balance = asset(handout.amount, asset_id);
-         b.owner = handout.owner;
-      });
-
-      total_supplies[ asset_id ] += handout.amount;
-   }
-   */
 
    // Create initial account balances
    for( const auto& handout : genesis_state.initial_account_balances )
@@ -517,31 +427,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       total_supplies[ asset_id ] += handout.amount;
    }
 
-   // Create initial vesting balances
-   /* // TODO review
-   for( const genesis_state_type::initial_vesting_balance_type& vest : genesis_state.initial_vesting_balances )
-   {
-      const auto asset_id = get_asset_aid(vest.asset_symbol);
-      create<balance_object>([&](balance_object& b) {
-         b.owner = vest.owner;
-         b.balance = asset(vest.amount, asset_id);
-
-         linear_vesting_policy policy;
-         policy.begin_timestamp = vest.begin_timestamp;
-         policy.vesting_cliff_seconds = 0;
-         policy.vesting_duration_seconds = vest.vesting_duration_seconds;
-         policy.begin_balance = vest.begin_balance;
-
-         b.vesting_policy = std::move(policy);
-      });
-
-      total_supplies[ asset_id ] += vest.amount;
-   }
-   */
-
    if( total_supplies[ GRAPHENE_CORE_ASSET_AID ] > 0 )
    {
-       adjust_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, -get_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID,{}));
+       adjust_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, -get_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID,GRAPHENE_CORE_ASSET_AID));
    }
    else
    {
@@ -554,10 +442,8 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        const auto asset_id = item.first;
        const auto total_supply = item.second;
 
-       modify( get_asset_by_aid( asset_id ), [ & ]( asset_object& asset ) {
-           modify( get( asset.dynamic_asset_data_id ), [ & ]( asset_dynamic_data_object& asset_data ) {
-               asset_data.current_supply = total_supply;
-           } );
+       modify( get( get_asset_by_aid( asset_id ).dynamic_asset_data_id ), [ total_supply ]( asset_dynamic_data_object& addo ) {
+           addo.current_supply = total_supply;
        } );
    }
 
@@ -635,7 +521,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       wso.next_schedule_block_num = wso.current_shuffled_witnesses.size();
    });
 
-   debug_dump();
+   //debug_dump();
 
    _undo_db.enable();
 } FC_CAPTURE_AND_RETHROW() }

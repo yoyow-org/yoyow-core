@@ -59,6 +59,8 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = implementation_ids;
          static const uint8_t type_id  = impl_asset_dynamic_data_type;
 
+         /// asset ID (AID)
+         asset_aid_type asset_id = 0;
          /// The number of shares currently in existence
          share_type current_supply;
          //share_type confidential_supply; ///< total asset held in confidential balances
@@ -92,7 +94,7 @@ namespace graphene { namespace chain {
          //bool can_global_settle()const { return options.issuer_permissions & global_settle; }
 
          /// @return true if this asset charges a fee for the issuer on market operations; false otherwise
-         bool charges_market_fees()const { return options.flags & charge_market_fee; }
+         //bool charges_market_fees()const { return options.flags & charge_market_fee; }
          /// @return true if this asset may only be transferred to/from the issuer or market orders
          bool is_transfer_restricted()const { return options.flags & transfer_restricted; }
          bool can_override()const { return options.flags & override_authority; }
@@ -168,7 +170,7 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::asset_dynamic_data_object, (graphene::db::object),
-                    (current_supply)(accumulated_fees) )
+                    (asset_id)(current_supply)(accumulated_fees) )
 
 FC_REFLECT_DERIVED( graphene::chain::asset_object, (graphene::db::object),
                     (asset_id)
