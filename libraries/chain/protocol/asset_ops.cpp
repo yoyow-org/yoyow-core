@@ -41,6 +41,10 @@ bool is_valid_symbol( const string& symbol )
     if( symbol.front() < 'A' || symbol.front() > 'Z' )
         return false;
 
+    // testnet only
+    if( symbol == "YOYOW" )
+        return true;
+
     auto symb4 = symbol.substr( 0, 4 );
     if( symb4 == "YOYO" || symb4 == "YOY0" || symb4 == "Y0YO" || symb4 == "Y0Y0" )
        return false;
