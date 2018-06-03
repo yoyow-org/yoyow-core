@@ -270,7 +270,6 @@ namespace graphene { namespace chain {
 
          asset get_balance()const { return asset(balance, asset_type); }
          void  adjust_balance(const asset& delta);
-         asset_id_type get_id()const { return id; }
    };
 
 
@@ -539,8 +538,7 @@ namespace graphene { namespace chain {
                member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>
             >
          >,
-         // TODO remove it? seems used by FBA only
-         ordered_unique< tag<by_asset_balance>,
+         ordered_unique< tag<by_asset_balance>, // used by asset_api
             composite_key<
                account_balance_object,
                member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>,
