@@ -729,7 +729,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (statistics)
                     //(whitelisting_accounts)(blacklisting_accounts)
                     //(whitelisted_accounts)(blacklisted_accounts)
-                    //(allowed_assets)
+                    (allowed_assets)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::voter_object,
