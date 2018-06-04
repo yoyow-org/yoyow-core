@@ -42,6 +42,13 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
    FC_ASSERT( op.common_options.whitelist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities );
    FC_ASSERT( op.common_options.blacklist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities );
 
+   // TESTNET only
+   if( d.head_block_num() > 7500000 )
+   {
+      FC_ASSERT( op.common_options.market_fee_percent == 0 );
+      FC_ASSERT( op.common_options.max_market_fee == 0 );
+   }
+
    // Check that all authorities do exist
    for( auto id : op.common_options.whitelist_authorities )
       d.get_account_by_uid(id);
@@ -153,6 +160,13 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
 
    database& d = db();
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_update after HARDFORK_0_3_TIME" );
+
+   // TESTNET only
+   if( d.head_block_num() > 7500000 )
+   {
+      FC_ASSERT( o.new_options.market_fee_percent == 0 );
+      FC_ASSERT( o.new_options.max_market_fee == 0 );
+   }
 
    const asset_object& a = d.get_asset_by_aid( o.asset_to_update );
    auto a_copy = a;

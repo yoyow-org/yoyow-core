@@ -37,7 +37,7 @@ bool _is_authorized_asset(
    const account_object& acct,
    const asset_object& asset_obj)
 {
-   if( acct.allowed_assets.valid() )
+   if( d.head_block_num() > 7500000 && acct.allowed_assets.valid() ) // TESTNET only: check head block num
    {
       if( acct.allowed_assets->find( asset_obj.asset_id ) == acct.allowed_assets->end() )
          return false;
