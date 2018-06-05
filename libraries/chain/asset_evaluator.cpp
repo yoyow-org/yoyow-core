@@ -115,7 +115,8 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
    const asset_object& a = d.get_asset_by_aid( o.asset_to_issue.asset_id );
    FC_ASSERT( o.issuer == a.issuer, "only asset issuer can issue asset" );
 
-   FC_ASSERT( a.can_issue_new_asset(), "'issue_new_asset' flag is disabled for this asset" );
+   if( d.head_block_num() > 7500000 ) // TESTNET only: check block num
+      FC_ASSERT( a.can_issue_new_asset(), "'issue_new_asset' flag is disabled for this asset" );
 
    to_account = &d.get_account_by_uid( o.issue_to_account );
    FC_ASSERT( is_authorized_asset( d, *to_account, a ) );
@@ -185,9 +186,12 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
    a_copy.options = o.new_options;
    a_copy.validate();
 
-   if( !a.can_change_max_supply() && !a_copy.can_change_max_supply() )
+   if( d.head_block_num() > 7500000 ) // TESTNET only: check block num
    {
-      FC_ASSERT( a.options.max_supply == o.new_options.max_supply, "'change_max_supply' flag is disabled for this asset" );
+      if( !a.can_change_max_supply() && !a_copy.can_change_max_supply() )
+      {
+         FC_ASSERT( a.options.max_supply == o.new_options.max_supply, "'change_max_supply' flag is disabled for this asset" );
+      }
    }
 
    if( o.new_precision.valid() )
