@@ -106,13 +106,16 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_issue after HARDFORK_0_3_TIME" );
 
    const asset_object& a = d.get_asset_by_aid( o.asset_to_issue.asset_id );
-   FC_ASSERT( o.issuer == a.issuer );
+   FC_ASSERT( o.issuer == a.issuer, "only asset issuer can issue asset" );
+
+   FC_ASSERT( a.can_issue_new_asset(), "'issue_new_asset' flag is disabled for this asset" );
 
    to_account = &d.get_account_by_uid( o.issue_to_account );
    FC_ASSERT( is_authorized_asset( d, *to_account, a ) );
 
    asset_dyn_data = &a.dynamic_asset_data_id(d);
-   FC_ASSERT( (asset_dyn_data->current_supply + o.asset_to_issue.amount) <= a.options.max_supply );
+   FC_ASSERT( (asset_dyn_data->current_supply + o.asset_to_issue.amount) <= a.options.max_supply,
+              "can not create more than max supply" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -167,6 +170,11 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
    auto a_copy = a;
    a_copy.options = o.new_options;
    a_copy.validate();
+
+   if( !a.can_change_max_supply() && !a_copy.can_change_max_supply() )
+   {
+      FC_ASSERT( a.options.max_supply == o.new_options.max_supply, "'change_max_supply' flag is disabled for this asset" );
+   }
 
    if( o.new_precision.valid() )
    {
