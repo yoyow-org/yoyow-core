@@ -57,18 +57,6 @@ namespace graphene { namespace chain {
          uint32_t                            removed_ops = 0;
 
          /**
-          * When calculating votes it is necessary to know how much is stored in orders (and thus unavailable for
-          * transfers). Rather than maintaining an index of [asset,owner,order_id] we will simply maintain the running
-          * total here and update it every time an order is created or modified.
-          */
-         share_type total_core_in_orders;
-
-         /**
-          * Tracks the total fees paid by this account for the purpose of calculating bulk discounts.
-          */
-         share_type lifetime_fees_paid;
-
-         /**
           * Prepaid fee.
           */
          share_type prepaid;
@@ -760,8 +748,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     //(most_recent_op)
                     (total_ops)
                     (removed_ops)
-                    //(total_core_in_orders)
-                    //(lifetime_fees_paid)
                     (prepaid)(csaf)
                     (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)
