@@ -108,6 +108,9 @@ void  asset_create_operation::validate()const
 
       bool positive_initial_supply = ( *ev.initial_supply > 0 );
       FC_ASSERT( positive_initial_supply, "initial supply should be positive" );
+
+      bool initial_supply_more_than_max = ( *ev.initial_supply > common_options.max_supply );
+      FC_ASSERT( !initial_supply_more_than_max, "initial supply should not be more than max supply" );
    }
 }
 
