@@ -119,10 +119,6 @@ namespace graphene { namespace chain {
       uint8_t                 precision = 0;
 
       /// Options common to all assets.
-      ///
-      /// @note common_options.core_exchange_rate technically needs to store the asset ID of this new asset. Since this
-      /// ID is not known at the time this operation is created, create this price as though the new asset has instance
-      /// ID 1, and the chain will overwrite it with the new asset's ID.
       asset_options              common_options;
       
       optional< extension< ext > > extensions;
@@ -138,9 +134,6 @@ namespace graphene { namespace chain {
     *
     * There are a number of options which all assets in the network use. These options are enumerated in the @ref
     * asset_options struct. This operation is used to update these options for an existing asset.
-    *
-    * @note This operation cannot be used to update BitAsset-specific options. For these options, use @ref
-    * asset_update_bitasset_operation instead.
     *
     * @pre @ref issuer SHALL be an existing account and MUST match asset_object::issuer on @ref asset_to_update
     * @pre @ref fee SHALL be nonnegative, and @ref issuer MUST have a sufficient balance to pay it
