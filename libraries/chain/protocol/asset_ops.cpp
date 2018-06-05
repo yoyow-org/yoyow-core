@@ -97,17 +97,16 @@ void  asset_create_operation::validate()const
    FC_ASSERT( is_valid_symbol(symbol) );
    common_options.validate();
 
-   FC_ASSERT(precision <= 12);
+   FC_ASSERT( precision <= 12, "precision should be no more than 12" );
 }
 
 void asset_update_operation::validate()const
 {
    validate_op_fee( fee, "asset update " );
    validate_account_uid( issuer, "asset update ");
-   if( new_issuer.valid() )
+   if( new_precision.valid() )
    {
-      validate_account_uid( *new_issuer, "asset update ");
-      FC_ASSERT(issuer != *new_issuer);
+      FC_ASSERT( *new_precision <= 12, "new precision should be no more than 12" );
    }
    new_options.validate();
 }

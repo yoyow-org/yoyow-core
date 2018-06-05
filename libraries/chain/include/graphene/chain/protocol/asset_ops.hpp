@@ -157,8 +157,7 @@ namespace graphene { namespace chain {
       account_uid_type issuer;
       asset_aid_type   asset_to_update;
 
-      /// If the asset is to be given a new issuer, specify his ID here.
-      optional<account_uid_type>  new_issuer;
+      optional<uint8_t>           new_precision;
       asset_options               new_options;
       extensions_type             extensions;
 
@@ -282,7 +281,7 @@ FC_REFLECT( graphene::chain::asset_update_operation,
             (fee)
             (issuer)
             (asset_to_update)
-            (new_issuer)
+            (new_precision)
             (new_options)
             (extensions)
           )

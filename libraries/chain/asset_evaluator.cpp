@@ -159,13 +159,15 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
    a_copy.options = o.new_options;
    a_copy.validate();
 
-   if( o.new_issuer )
+   if( o.new_precision.valid() )
    {
-      FC_ASSERT(d.find_account_by_uid(*o.new_issuer));
+      FC_ASSERT( *o.new_precision != a.precision, "new precision should not be equal to current precision" );
    }
 
    if( a.dynamic_asset_data_id(d).current_supply != 0 )
    {
+      FC_ASSERT( !o.new_precision.valid(), "Cannot change asset precision when current supply is not zero" );
+
       // new issuer_permissions must be subset of old issuer permissions
       FC_ASSERT(!(~o.new_options.issuer_permissions & a.options.issuer_permissions),
                 "Cannot reinstate previously revoked issuer permissions on an asset.");
@@ -195,8 +197,8 @@ void_result asset_update_evaluator::do_apply(const asset_update_operation& o)
    database& d = db();
 
    d.modify(*asset_to_update, [&](asset_object& a) {
-      if( o.new_issuer )
-         a.issuer = *o.new_issuer;
+      if( o.new_precision.valid() )
+         a.precision = *o.new_precision;
       a.options = o.new_options;
    });
 
