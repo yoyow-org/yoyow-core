@@ -98,6 +98,17 @@ void  asset_create_operation::validate()const
    common_options.validate();
 
    FC_ASSERT( precision <= 12, "precision should be no more than 12" );
+
+   if( extensions.valid() )
+   {
+      const auto& ev = extensions->value;
+
+      bool non_empty_extensions = ( ev.initial_supply.valid() );
+      FC_ASSERT( non_empty_extensions, "extensions specified but is empty" );
+
+      bool positive_initial_supply = ( *ev.initial_supply > 0 );
+      FC_ASSERT( positive_initial_supply, "initial supply should be positive" );
+   }
 }
 
 void asset_update_operation::validate()const

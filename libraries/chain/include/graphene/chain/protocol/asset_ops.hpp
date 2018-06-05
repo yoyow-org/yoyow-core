@@ -23,6 +23,7 @@
  */
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
+#include <graphene/chain/protocol/ext.hpp>
 #include <graphene/chain/protocol/memo.hpp>
 
 namespace graphene { namespace chain { 
@@ -94,6 +95,11 @@ namespace graphene { namespace chain {
     */
    struct asset_create_operation : public base_operation
    {
+      struct ext
+      {
+         optional< share_type > initial_supply; ///< issue this amount to self immediately after the asset is created
+      };
+
       struct fee_parameters_type { 
          uint64_t symbol3          = 500000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t symbol4          = 300000 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -119,7 +125,7 @@ namespace graphene { namespace chain {
       /// ID 1, and the chain will overwrite it with the new asset's ID.
       asset_options              common_options;
       
-      extensions_type extensions;
+      optional< extension< ext > > extensions;
 
       account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
@@ -268,6 +274,7 @@ FC_REFLECT( graphene::chain::asset_issue_operation::fee_parameters_type,
 FC_REFLECT( graphene::chain::asset_reserve_operation::fee_parameters_type,
             (fee)(min_real_fee)(min_rf_percent)(extensions) )
 
+FC_REFLECT( graphene::chain::asset_create_operation::ext, (initial_supply) )
 
 FC_REFLECT( graphene::chain::asset_create_operation,
             (fee)

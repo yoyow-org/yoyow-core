@@ -68,16 +68,22 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
 
 object_id_type asset_create_evaluator::do_apply( const asset_create_operation& op )
 { try {
-   auto next_asset_id = db().get_index_type<asset_index>().get_next_id();
+   database& d = db();
+
+   auto next_asset_id = d.get_index_type<asset_index>().get_next_id();
+
+   share_type initial_supply = 0;
+   if( op.extensions.valid() && op.extensions->value.initial_supply.valid() )
+      initial_supply = *op.extensions->value.initial_supply;
 
    const asset_dynamic_data_object& dyn_asset =
-      db().create<asset_dynamic_data_object>( [next_asset_id]( asset_dynamic_data_object& a ) {
+      d.create<asset_dynamic_data_object>( [next_asset_id,initial_supply]( asset_dynamic_data_object& a ) {
          a.asset_id = next_asset_id.instance();
-         a.current_supply = 0;
+         a.current_supply = initial_supply;
       });
 
    const asset_object& new_asset =
-     db().create<asset_object>( [&]( asset_object& a ) {
+     d.create<asset_object>( [&op,next_asset_id,&dyn_asset]( asset_object& a ) {
          a.issuer = op.issuer;
          a.symbol = op.symbol;
          a.precision = op.precision;
@@ -87,6 +93,9 @@ object_id_type asset_create_evaluator::do_apply( const asset_create_operation& o
       });
 
    FC_ASSERT( new_asset.id == next_asset_id );
+
+   if( initial_supply > 0 )
+      d.adjust_balance( op.issuer, new_asset.amount( initial_supply ) );
 
    return new_asset.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
