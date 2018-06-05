@@ -669,7 +669,6 @@ FC_API( graphene::app::database_api,
    //(verify_account_authority)
    //(validate_transaction)
    //(get_required_fees)
-   //(get_required_fee_pairs)
    (get_required_fee_data)
 
    // Proposed transactions
