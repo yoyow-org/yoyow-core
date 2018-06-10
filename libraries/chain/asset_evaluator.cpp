@@ -43,7 +43,7 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
    FC_ASSERT( op.common_options.blacklist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities );
 
    // TESTNET only
-   if( d.head_block_num() > 7500000 )
+   if( d.head_block_num() > 8000000 )
    {
       FC_ASSERT( op.common_options.market_fee_percent == 0 );
       FC_ASSERT( op.common_options.max_market_fee == 0 );
@@ -115,7 +115,7 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
    const asset_object& a = d.get_asset_by_aid( o.asset_to_issue.asset_id );
    FC_ASSERT( o.issuer == a.issuer, "only asset issuer can issue asset" );
 
-   if( d.head_block_num() > 7500000 ) // TESTNET only: check block num
+   if( d.head_block_num() > 8000000 ) // TESTNET only: check block num
       FC_ASSERT( a.can_issue_new_asset(), "'issue_new_asset' flag is disabled for this asset" );
 
    to_account = &d.get_account_by_uid( o.issue_to_account );
@@ -175,7 +175,7 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_update after HARDFORK_0_3_TIME" );
 
    // TESTNET only
-   if( d.head_block_num() > 7500000 )
+   if( d.head_block_num() > 8000000 )
    {
       FC_ASSERT( o.new_options.market_fee_percent == 0 );
       FC_ASSERT( o.new_options.max_market_fee == 0 );
@@ -186,7 +186,7 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
    a_copy.options = o.new_options;
    a_copy.validate();
 
-   if( d.head_block_num() > 7500000 ) // TESTNET only: check block num
+   if( d.head_block_num() > 8000000 ) // TESTNET only: check block num
    {
       if( !a.can_change_max_supply() && !a_copy.can_change_max_supply() )
       {
@@ -199,7 +199,7 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
       FC_ASSERT( *o.new_precision != a.precision, "new precision should not be equal to current precision" );
    }
 
-   bool for_testnet_and_before_hf = ( d.head_block_num() <= 7500000 ); // TESTNET ONLY
+   bool for_testnet_and_before_hf = ( d.head_block_num() <= 8000000 ); // TESTNET ONLY
 
    if( a.dynamic_asset_data_id(d).current_supply != 0 )
    {
