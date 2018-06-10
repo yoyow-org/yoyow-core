@@ -126,10 +126,10 @@ void platform_vote_update_operation::validate()const
 
 share_type platform_vote_update_operation::calculate_fee(const fee_parameters_type& k)const
 {
-   auto core_fee_required = k.basic_fee;
+   share_type core_fee_required = k.basic_fee;
 
    auto total_size = platform_to_add.size();
-   core_fee_required += ( k.price_per_platform * total_size );
+   core_fee_required += ( share_type( k.price_per_platform ) * total_size );
 
    return core_fee_required;
 }
