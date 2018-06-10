@@ -314,6 +314,77 @@ namespace graphene { namespace chain {
    };
 
    /**
+    * @brief account enable or disable allowed_assets attribute
+    * @ingroup operations
+    */
+   struct account_enable_allowed_assets_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type          fee;
+      account_uid_type  account;
+      bool              enable = true;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return account; }
+      void              validate()const;
+      //share_type        calculate_fee(const fee_parameters_type& k)const; // use default
+
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority
+         a.insert( account );
+      }
+   };
+
+   /**
+    * @brief account update allowed_assets attribute
+    * @ingroup operations
+    */
+   struct account_update_allowed_assets_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t price_per_asset  = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type                   fee;
+      account_uid_type           account;
+      flat_set<asset_aid_type>   assets_to_add;
+      flat_set<asset_aid_type>   assets_to_remove;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return account; }
+      void              validate()const;
+      share_type        calculate_fee(const fee_parameters_type& k)const;
+
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need active authority if to remove any asset
+         if( !assets_to_remove.empty() )
+            a.insert( account );
+      }
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+      {
+         // need secondary authority if only to add
+         if( assets_to_remove.empty() )
+            a.insert( account );
+      }
+   };
+
+   /**
     * @brief This operation is used to whitelist and blacklist accounts, primarily for transacting in whitelisted assets
     * @ingroup operations
     *
@@ -400,8 +471,6 @@ FC_REFLECT( graphene::chain::account_auth_platform_operation::fee_parameters_typ
 FC_REFLECT( graphene::chain::account_cancel_auth_platform_operation, (fee)(uid)(platform)(extensions) )
 FC_REFLECT( graphene::chain::account_cancel_auth_platform_operation::fee_parameters_type,(fee)(min_real_fee)(min_rf_percent)(extensions) )
 
-FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
-
 FC_REFLECT( graphene::chain::account_create_operation::fee_parameters_type,
             (basic_fee)
             (price_per_auth)(min_real_fee)(min_rf_percent)(extensions) )
@@ -410,4 +479,16 @@ FC_REFLECT( graphene::chain::account_update_key_operation::fee_parameters_type, 
 FC_REFLECT( graphene::chain::account_update_auth_operation::fee_parameters_type,
             (fee)(price_per_auth)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::account_update_proxy_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
+
+FC_REFLECT( graphene::chain::account_enable_allowed_assets_operation,
+            (fee)(account)(enable)(extensions) )
+FC_REFLECT( graphene::chain::account_enable_allowed_assets_operation::fee_parameters_type,
+            (fee)(min_real_fee)(min_rf_percent)(extensions) )
+
+FC_REFLECT( graphene::chain::account_update_allowed_assets_operation,
+            (fee)(account)(assets_to_add)(assets_to_remove)(extensions) )
+FC_REFLECT( graphene::chain::account_update_allowed_assets_operation::fee_parameters_type,
+            (fee)(price_per_asset)(min_real_fee)(min_rf_percent)(extensions) )
+
+FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )

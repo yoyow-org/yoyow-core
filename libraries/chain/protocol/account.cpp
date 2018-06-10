@@ -115,7 +115,7 @@ void validate_new_authority( const authority& au, const string& object_name = ""
    FC_ASSERT( !au.is_impossible(), "cannot use an imposible ${o}authority threshold", ("o", object_name) );
 }
 
-void is_special_account( const account_uid_type uid, const string& object_name = "" )
+void validate_non_special_account( const account_uid_type uid, const string& object_name = "" )
 {
    bool is_special_account = ( uid == GRAPHENE_COMMITTEE_ACCOUNT_UID ||
                                uid == GRAPHENE_WITNESS_ACCOUNT_UID ||
@@ -151,13 +151,10 @@ share_type account_create_operation::calculate_fee( const fee_parameters_type& k
 {
    share_type core_fee_required = k.basic_fee;
 
-   // Authorities and vote lists can be arbitrarily large, so charge a data fee for big ones
-   //auto data_size = fc::raw::pack_size(owner) + fc::raw::pack_size(active) + fc::raw::pack_size(secondary);
-   //auto data_fee =  calculate_data_fee( data_size, k.price_per_kbyte );
-   //core_fee_required += data_fee;
-
-   uint32_t total_auths = owner.num_auths() + active.num_auths() + secondary.num_auths();
-   core_fee_required += ( share_type( k.price_per_auth ) * total_auths );
+   // Authorities can be arbitrarily large, so charge a data fee for big ones
+   core_fee_required += ( share_type( k.price_per_auth ) * owner.num_auths() );
+   core_fee_required += ( share_type( k.price_per_auth ) * active.num_auths() );
+   core_fee_required += ( share_type( k.price_per_auth ) * secondary.num_auths() );
 
    return core_fee_required;
 }
@@ -199,15 +196,12 @@ share_type account_update_auth_operation::calculate_fee( const fee_parameters_ty
    share_type core_fee_required = k.fee;
 
    // Authorities can be arbitrarily large, so charge a data fee for big ones
-   uint32_t total_auths = 0;
    if( owner.valid() )
-      total_auths += owner->num_auths();
+      core_fee_required += ( share_type( k.price_per_auth ) * owner->num_auths() );
    if( active.valid() )
-      total_auths += active->num_auths();
+      core_fee_required += ( share_type( k.price_per_auth ) * active->num_auths() );
    if( secondary.valid() )
-      total_auths += secondary->num_auths();
-   if( total_auths > 0 )
-      core_fee_required += ( share_type( k.price_per_auth ) * total_auths );
+      core_fee_required += ( share_type( k.price_per_auth ) * secondary->num_auths() );
 
    return core_fee_required;
 }
@@ -216,7 +210,7 @@ void account_update_auth_operation::validate()const
 {
    validate_op_fee( fee, "account authority update " );
    validate_account_uid( uid, "target " );
-   is_special_account( uid );
+   validate_non_special_account( uid );
    FC_ASSERT( owner.valid() || active.valid() || secondary.valid() || memo_key.valid(), "Should update something" );
    if( owner.valid() )
       validate_new_authority( *owner, "new owner " );
@@ -230,7 +224,7 @@ void account_auth_platform_operation::validate()const
 {
    validate_op_fee( fee, "account authority platform " );
    validate_account_uid( uid, "target " );
-   is_special_account( uid );
+   validate_non_special_account( uid );
    validate_account_uid( platform, "platform " );
 }
 
@@ -238,7 +232,7 @@ void account_cancel_auth_platform_operation::validate()const
 {
    validate_op_fee( fee, "cancel account authority platform " );
    validate_account_uid( uid, "target " );
-   is_special_account( uid );
+   validate_non_special_account( uid );
    validate_account_uid( platform, "platform " );
 }
 
@@ -248,6 +242,44 @@ void account_update_proxy_operation::validate() const
    validate_account_uid( voter, "voter " );
    validate_account_uid( proxy, "proxy " );
    FC_ASSERT( voter != proxy, "voter and proxy should not be same" );
+}
+
+void account_enable_allowed_assets_operation::validate() const
+{
+   validate_op_fee( fee, "account enable allowed assets " );
+   validate_account_uid( account, "target " );
+   validate_non_special_account( account );
+}
+
+share_type account_update_allowed_assets_operation::calculate_fee( const fee_parameters_type& k )const
+{
+   share_type core_fee_required = k.fee;
+
+   core_fee_required += ( share_type( k.price_per_asset ) * assets_to_add.size() );
+   core_fee_required += ( share_type( k.price_per_asset ) * assets_to_remove.size() );
+
+   return core_fee_required;
+}
+
+void account_update_allowed_assets_operation::validate() const
+{
+   validate_op_fee( fee, "account update allowed assets " );
+   validate_account_uid( account, "target " );
+   validate_non_special_account( account );
+   FC_ASSERT( assets_to_remove.find( GRAPHENE_CORE_ASSET_AID ) == assets_to_remove.end(), "Can not remove CORE asset" );
+
+   FC_ASSERT( assets_to_add.size() > 0 || assets_to_remove.size() > 0, "Should change something" );
+
+   auto itr_add = assets_to_add.begin();
+   auto itr_remove = assets_to_remove.begin();
+   while( itr_add != assets_to_add.end() && itr_remove != assets_to_remove.end() )
+   {
+      FC_ASSERT( *itr_add != *itr_remove, "Can not add and remove same asset, aid: ${a}", ("a",*itr_add) );
+      if( *itr_add < *itr_remove )
+         ++itr_add;
+      else
+         ++itr_remove;
+   }
 }
 
 } } // graphene::chain

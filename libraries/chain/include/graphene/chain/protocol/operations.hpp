@@ -74,6 +74,8 @@ namespace graphene { namespace chain {
             proposal_create_operation,
             proposal_update_operation,
             proposal_delete_operation,
+            account_enable_allowed_assets_operation,
+            account_update_allowed_assets_operation,
             // the operations below are not supported
             account_whitelist_operation
          > operation;
