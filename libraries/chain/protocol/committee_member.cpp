@@ -173,6 +173,17 @@ void committee_updatable_parameters::validate()const
    if( witness_report_pledge_deduction_amount.valid() )
       FC_ASSERT( *witness_report_pledge_deduction_amount >= 0,
                  "Witness pledge deduction amount should not be negative" );
+   // platform_min_pledge: no limitation so far
+   // platform_pledge_release_delay: no limitation so far
+   if( platform_max_vote_per_account.valid() )
+      FC_ASSERT( *platform_max_vote_per_account > 0,
+                 "Maximum platforms voted per account must be positive" );
+   if( platform_max_pledge_seconds.valid() )
+      FC_ASSERT( *platform_max_pledge_seconds > 0,
+                 "Maximum platform pledge accumulation seconds must be positive" );
+   if( platform_avg_pledge_update_interval.valid() )
+      FC_ASSERT( *platform_avg_pledge_update_interval > 0,
+                 "Platform average pledge update interval must be positive" );
 }
 
 void committee_proposal_create_operation::validate()const
