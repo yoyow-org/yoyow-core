@@ -96,7 +96,7 @@ namespace graphene { namespace chain {
          /// @return true if this asset is using whitelist or blacklist
          bool enabled_whitelist()const { return options.flags & white_list; }
          /// @return true if the issuer can create new supply
-         bool can_issue_new_asset()const { return options.flags & issue_new_asset; }
+         bool can_issue_asset()const { return options.flags & issue_asset; }
          /// @return true if the issuer can change max supply
          bool can_change_max_supply()const { return options.flags & change_max_supply; }
 

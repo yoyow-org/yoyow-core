@@ -108,7 +108,7 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
    const asset_object& a = d.get_asset_by_aid( o.asset_to_issue.asset_id );
    FC_ASSERT( o.issuer == a.issuer, "only asset issuer can issue asset" );
 
-   FC_ASSERT( a.can_issue_new_asset(), "'issue_new_asset' flag is disabled for this asset" );
+   FC_ASSERT( a.can_issue_asset(), "'issue_asset' flag is disabled for this asset" );
 
    to_account = &d.get_account_by_uid( o.issue_to_account );
    FC_ASSERT( is_authorized_asset( d, *to_account, a ) );
