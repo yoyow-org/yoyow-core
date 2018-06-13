@@ -137,6 +137,9 @@ share_type platform_vote_update_operation::calculate_fee(const fee_parameters_ty
 share_type post_operation::calculate_fee( const fee_parameters_type& schedule )const
 {
    share_type core_fee_required = schedule.fee;
+   auto hash_size = fc::raw::pack_size(hash_value);
+   if( hash_size > 65 )
+      core_fee_required += calculate_data_fee( hash_size, schedule.price_per_kbyte );
    core_fee_required += calculate_data_fee( fc::raw::pack_size(extra_data), schedule.price_per_kbyte );
    core_fee_required += calculate_data_fee( fc::raw::pack_size(title), schedule.price_per_kbyte );
    core_fee_required += calculate_data_fee( fc::raw::pack_size(body), schedule.price_per_kbyte );
@@ -149,6 +152,7 @@ void post_operation::validate()const
    validate_op_fee( fee, "post " );
    validate_account_uid( poster, "poster " );
    validate_account_uid( platform, "platform" );
+   FC_ASSERT( post_pid > uint64_t( 0 ), "post_pid must be greater than 0 ");
    bool flag = origin_poster.valid() == origin_post_pid.valid();
    bool flag2 = origin_poster.valid() == origin_platform.valid();
    FC_ASSERT( flag && flag2, "origin poster and origin post pid and origin platform should be all presented or all not " );
@@ -170,14 +174,20 @@ void post_update_operation::validate()const
 
 share_type post_update_operation::calculate_fee( const fee_parameters_type& schedule )const
 {
-    share_type core_fee_required = schedule.fee;
-    if( extra_data.valid() )
-       core_fee_required += calculate_data_fee( fc::raw::pack_size(extra_data), schedule.price_per_kbyte );
-    if( title.valid() )
-       core_fee_required += calculate_data_fee( fc::raw::pack_size(title), schedule.price_per_kbyte );
-    if( body.valid() )
-       core_fee_required += calculate_data_fee( fc::raw::pack_size(body), schedule.price_per_kbyte );
-    return core_fee_required;
+   share_type core_fee_required = schedule.fee;
+   if( hash_value.valid() )
+   {
+      auto hash_size = fc::raw::pack_size(*hash_value);
+      if( hash_size > 65 )
+         core_fee_required += calculate_data_fee( hash_size, schedule.price_per_kbyte );
+   }
+   if( extra_data.valid() )
+      core_fee_required += calculate_data_fee( fc::raw::pack_size(extra_data), schedule.price_per_kbyte );
+   if( title.valid() )
+      core_fee_required += calculate_data_fee( fc::raw::pack_size(title), schedule.price_per_kbyte );
+   if( body.valid() )
+      core_fee_required += calculate_data_fee( fc::raw::pack_size(body), schedule.price_per_kbyte );
+   return core_fee_required;
 }
 
 
