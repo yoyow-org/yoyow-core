@@ -1074,6 +1074,30 @@ class wallet_api
                                                   string platform_owner,
                                                   bool broadcast = false);
 
+      /**
+       * Enable or disable allowed_assets option for an account
+       *
+       * @param account the name or uid of the account
+       * @param enable true to enable, false to disable
+       * @param broadcast true if you wish to broadcast the transaction
+       */
+      signed_transaction enable_allowed_assets(string account,
+                                          bool enable,
+                                          bool broadcast = false);
+
+      /**
+       * Update allowed_assets option for an account
+       *
+       * @param account the name or uid of the account
+       * @param assets_to_add a list of id or symbol of assets to be added to allowed_assets
+       * @param assets_to_remove a list of id or symbol of assets to be removed from allowed_assets
+       * @param broadcast true if you wish to broadcast the transaction
+       */
+      signed_transaction update_allowed_assets(string account,
+                                          flat_set<string> assets_to_add,
+                                          flat_set<string> assets_to_remove,
+                                          bool broadcast = false);
+
       /** Update witness voting options.
        *
        * An account can publish a list of all witnesses they approve of.  This
@@ -1307,6 +1331,8 @@ FC_API( graphene::wallet::wallet_api,
         (issue_asset)
         (get_asset)
         (reserve_asset)
+        (enable_allowed_assets)
+        (update_allowed_assets)
         (whitelist_account)
         (create_committee_member)
         (update_committee_member)

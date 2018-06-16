@@ -1733,6 +1733,50 @@ signed_transaction account_cancel_auth_platform(string account,
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (account_to_modify)(voting_account)(broadcast) ) }
 
+   signed_transaction enable_allowed_assets(string account,
+                                          bool enable,
+                                          bool broadcast /* = false */)
+   { try {
+      account_enable_allowed_assets_operation op;
+      op.account = get_account_uid( account );
+      op.enable = enable;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(enable)(broadcast) ) }
+
+   signed_transaction update_allowed_assets(string account,
+                                          flat_set<string> assets_to_add,
+                                          flat_set<string> assets_to_remove,
+                                          bool broadcast /* = false */)
+   { try {
+      account_object account_obj = get_account( account );
+      flat_set<asset_aid_type> aids_to_add;
+      flat_set<asset_aid_type> aids_to_remove;
+      aids_to_add.reserve( assets_to_add.size() );
+      aids_to_remove.reserve( assets_to_remove.size() );
+      for( string a : assets_to_add )
+         aids_to_add.insert( get_asset( a ).asset_id );
+      for( string a : assets_to_remove )
+         aids_to_remove.insert( get_asset( a ).asset_id );
+
+      account_update_allowed_assets_operation op;
+      op.account = get_account_uid( account );
+      op.assets_to_add = aids_to_add;
+      op.assets_to_remove = aids_to_remove;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(assets_to_add)(assets_to_remove)(broadcast) ) }
+
    signed_transaction sign_transaction( signed_transaction tx, bool broadcast = false )
    {
       // get required keys to sign the trx
@@ -2939,6 +2983,21 @@ signed_transaction wallet_api::set_voting_proxy(string account_to_modify,
                                                 bool broadcast /* = false */)
 {
    return my->set_voting_proxy(account_to_modify, voting_account, broadcast);
+}
+
+signed_transaction wallet_api::enable_allowed_assets(string account,
+                                          bool enable,
+                                          bool broadcast /* = false */)
+{
+   return my->enable_allowed_assets( account, enable, broadcast );
+}
+
+signed_transaction wallet_api::update_allowed_assets(string account,
+                                          flat_set<string> assets_to_add,
+                                          flat_set<string> assets_to_remove,
+                                          bool broadcast /* = false */)
+{
+   return my->update_allowed_assets( account, assets_to_add, assets_to_remove, broadcast );
 }
 
 void wallet_api::set_wallet_filename(string wallet_filename)
