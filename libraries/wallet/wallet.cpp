@@ -1096,6 +1096,7 @@ public:
       create_op.common_options = common;
 
       if( initial_supply ) {
+         create_op.extensions = extension<asset_create_operation::ext>();
          create_op.extensions->value.initial_supply = initial_supply;
       }
 
