@@ -96,6 +96,14 @@ struct signed_block_with_info : public signed_block
    vector< transaction_id_type > transaction_ids;
 };
 
+struct asset_object_with_data : public asset_object
+{
+   asset_object_with_data() {}
+   asset_object_with_data( const asset_object& a ) : asset_object( a ) {}
+
+   asset_dynamic_data_object dynamic_asset_data;
+};
+
 /**
  * @brief The database_api class implements the RPC API for the chain database.
  *
@@ -411,15 +419,15 @@ class database_api
        *
        * This function has semantics identical to @ref get_objects
        */
-      vector<optional<asset_object>> get_assets(const vector<asset_aid_type>& asset_ids)const;
+      vector<optional<asset_object_with_data>> get_assets(const vector<asset_aid_type>& asset_ids)const;
 
       /**
        * @brief Get assets alphabetically by symbol name
        * @param lower_bound_symbol Lower bound of symbol names to retrieve
-       * @param limit Maximum number of assets to fetch (must not exceed 100)
+       * @param limit Maximum number of assets to fetch (must not exceed 101)
        * @return The assets found
        */
-      vector<asset_object> list_assets(const string& lower_bound_symbol, uint32_t limit)const;
+      vector<asset_object_with_data> list_assets(const string& lower_bound_symbol, uint32_t limit)const;
 
       /**
        * @brief Get a list of assets by symbol
@@ -428,7 +436,7 @@ class database_api
        *
        * This function has semantics identical to @ref get_objects
        */
-      vector<optional<asset_object>> lookup_asset_symbols(const vector<string>& symbols_or_ids)const;
+      vector<optional<asset_object_with_data>> lookup_asset_symbols(const vector<string>& symbols_or_ids)const;
 
       ///////////////
       // Witnesses //
@@ -587,6 +595,9 @@ FC_REFLECT_ENUM( graphene::app::data_sorting_type,
 
 FC_REFLECT_DERIVED( graphene::app::signed_block_with_info, (graphene::chain::signed_block),
    (block_id)(signing_key)(transaction_ids) )
+
+FC_REFLECT_DERIVED( graphene::app::asset_object_with_data, (graphene::chain::asset_object),
+   (dynamic_asset_data) )
 
 FC_API( graphene::app::database_api,
    // Objects

@@ -40,7 +40,7 @@ namespace graphene { namespace app {
       string                           lifetime_referrer_name;
       vector<account_balance_object>   balances;
       vector<proposal_object>          proposals;
-      vector<asset_id_type>            assets;
+      vector<asset_aid_type>           assets;
       vector<csaf_lease_object>        csaf_leases_in;
       vector<csaf_lease_object>        csaf_leases_out;
       optional<voter_object>           voter;

@@ -594,44 +594,43 @@ public:
       return get_account(account_name_or_id).get_id();
    }
 
-   optional<asset_object> find_asset(asset_aid_type aid)const
+   optional<asset_object_with_data> find_asset(asset_aid_type aid)const
    {
       auto rec = _remote_db->get_assets({aid}).front();
-      if( rec )
-         _asset_cache[aid] = *rec;
       return rec;
    }
-   optional<asset_object> find_asset(string asset_symbol_or_id)const
+   optional<asset_object_with_data> find_asset(string asset_symbol_or_id)const
    {
       FC_ASSERT( asset_symbol_or_id.size() > 0 );
       if(graphene::utilities::is_number(asset_symbol_or_id))
       {
          asset_aid_type id = fc::variant( asset_symbol_or_id ).as_uint64();
          return find_asset(id);
-      }else if(auto id = maybe_id<asset_id_type>(asset_symbol_or_id))
+      }
+      else if(auto id = maybe_id<asset_id_type>(asset_symbol_or_id))
       {
          return get_object(*id);
-      }else{
+      }
+      else
+      {
          auto rec = _remote_db->lookup_asset_symbols({asset_symbol_or_id}).front();
          if( rec )
          {
             if( rec->symbol != asset_symbol_or_id )
                return optional<asset_object>();
-
-            _asset_cache[rec->asset_id] = *rec;
          }
          return rec;
       }
    }
 
-   asset_object get_asset(asset_aid_type aid)const
+   asset_object_with_data get_asset(asset_aid_type aid)const
    {
       auto opt = find_asset(aid);
       FC_ASSERT( opt, "Can not find asset ${a}", ("a", aid) );
       return *opt;
    }
 
-   asset_object get_asset(string asset_symbol_or_id)const
+   asset_object_with_data get_asset(string asset_symbol_or_id)const
    {
       auto opt = find_asset(asset_symbol_or_id);
       FC_ASSERT( opt, "Can not find asset ${a}", ("a", asset_symbol_or_id) );
@@ -641,12 +640,9 @@ public:
    asset_aid_type get_asset_aid(string asset_symbol_or_id) const
    {
       FC_ASSERT( asset_symbol_or_id.size() > 0 );
-      vector<optional<asset_object>> opt_asset;
-      if( std::isdigit( asset_symbol_or_id.front() ) )
-         return fc::variant( asset_symbol_or_id ).as<uint64_t>( 1 );
-      opt_asset = _remote_db->lookup_asset_symbols( {asset_symbol_or_id} );
-      FC_ASSERT( (opt_asset.size() > 0) && (opt_asset[0].valid()), "Can not find asset ${a}", ("a", asset_symbol_or_id) );
-      return opt_asset[0]->asset_id;
+      auto opt_asset = find_asset( asset_symbol_or_id );
+      FC_ASSERT( opt_asset.valid(), "Can not find asset ${a}", ("a", asset_symbol_or_id) );
+      return opt_asset->asset_id;
    }
 
    string                            get_wallet_filename() const
@@ -1116,9 +1112,8 @@ public:
                                    asset_options new_options,
                                    bool broadcast /* = false */)
    { try {
-      optional<asset_object> asset_to_update = find_asset(symbol);
-      if (!asset_to_update)
-        FC_THROW("No asset with that symbol exists!");
+      optional<asset_object_with_data> asset_to_update = find_asset(symbol);
+      FC_ASSERT( asset_to_update.valid(), "Can not find asset ${a}", ("a", symbol) );
 
       asset_update_operation update_op;
       update_op.issuer = asset_to_update->issuer;
@@ -1140,9 +1135,8 @@ public:
                                  bool broadcast /* = false */)
    { try {
       account_object from_account = get_account(from);
-      optional<asset_object> asset_to_reserve = find_asset(symbol);
-      if (!asset_to_reserve)
-        FC_THROW("No asset with that symbol exists!");
+      optional<asset_object_with_data> asset_to_reserve = find_asset(symbol);
+      FC_ASSERT( asset_to_reserve.valid(), "Can not find asset ${a}", ("a", symbol) );
 
       asset_reserve_operation reserve_op;
       reserve_op.payer = from_account.uid;
@@ -1185,7 +1179,7 @@ public:
       if( _remote_db->get_committee_member_by_account( committee_member_account.uid ) )
          FC_THROW( "Account ${owner_account} is already a committee_member", ("owner_account", owner_account) );
 
-      fc::optional<asset_object> asset_obj = get_asset( pledge_asset_symbol );
+      fc::optional<asset_object_with_data> asset_obj = get_asset( pledge_asset_symbol );
       FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", pledge_asset_symbol) );
 
       committee_member_create_operation committee_member_create_op;
@@ -1333,7 +1327,7 @@ public:
       if( _remote_db->get_witness_by_account( witness_account.uid ) )
          FC_THROW( "Account ${owner_account} is already a witness", ("owner_account", owner_account) );
 
-      fc::optional<asset_object> asset_obj = get_asset( pledge_asset_symbol );
+      fc::optional<asset_object_with_data> asset_obj = get_asset( pledge_asset_symbol );
       FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", pledge_asset_symbol) );
 
       witness_create_operation witness_create_op;
@@ -1392,7 +1386,7 @@ public:
       if( _remote_db->get_platform_by_account( platform_account.uid ) )
          FC_THROW( "Account ${owner_account} is already a platform", ( "owner_account", owner_account ) );
 
-      fc::optional<asset_object> asset_obj = get_asset( pledge_asset_symbol );
+      fc::optional<asset_object_with_data> asset_obj = get_asset( pledge_asset_symbol );
       FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ( "asset", pledge_asset_symbol ) );
 
       platform_create_operation platform_create_op;
@@ -1426,7 +1420,7 @@ signed_transaction update_platform(string platform_account,
       fc::optional<asset> pledge;
       if( pledge_amount.valid() )
       {
-         fc::optional<asset_object> asset_obj = get_asset( *pledge_asset_symbol );
+         fc::optional<asset_object_with_data> asset_obj = get_asset( *pledge_asset_symbol );
          FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ( "asset", *pledge_asset_symbol ) );
          pledge = asset_obj->amount_from_string( *pledge_amount );
       }
@@ -1504,7 +1498,7 @@ signed_transaction account_cancel_auth_platform(string account,
       fc::optional<asset> pledge;
       if( pledge_amount.valid() )
       {
-         fc::optional<asset_object> asset_obj = get_asset( *pledge_asset_symbol );
+         fc::optional<asset_object_with_data> asset_obj = get_asset( *pledge_asset_symbol );
          FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", *pledge_asset_symbol) );
          pledge = asset_obj->amount_from_string( *pledge_amount );
       }
@@ -1538,7 +1532,7 @@ signed_transaction account_cancel_auth_platform(string account,
       fc::optional<asset> pledge;
       if( pledge_amount.valid() )
       {
-         fc::optional<asset_object> asset_obj = get_asset( *pledge_asset_symbol );
+         fc::optional<asset_object_with_data> asset_obj = get_asset( *pledge_asset_symbol );
          FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", *pledge_asset_symbol) );
          pledge = asset_obj->amount_from_string( *pledge_amount );
       }
@@ -1591,7 +1585,7 @@ signed_transaction account_cancel_auth_platform(string account,
    { try {
       witness_object witness = get_witness(witness_account);
 
-      fc::optional<asset_object> asset_obj = get_asset( pay_asset_symbol );
+      fc::optional<asset_object_with_data> asset_obj = get_asset( pay_asset_symbol );
       FC_ASSERT( asset_obj, "Could not find asset matching ${asset}", ("asset", pay_asset_symbol) );
 
       witness_collect_pay_operation witness_collect_pay_op;
@@ -1614,7 +1608,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                    bool broadcast /* = false */)
    { try {
       FC_ASSERT( !self.is_locked(), "Should unlock first" );
-      fc::optional<asset_object> asset_obj = get_asset(asset_symbol);
+      fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
       FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
 
       account_object from_account = get_account(from);
@@ -1857,7 +1851,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                string asset_symbol, string memo, bool broadcast = false)
    { try {
       FC_ASSERT( !self.is_locked(), "Should unlock first" );
-      fc::optional<asset_object> asset_obj = get_asset(asset_symbol);
+      fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
       FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
 
       account_object from_account = get_account(from);
@@ -1932,7 +1926,7 @@ signed_transaction account_cancel_auth_platform(string account,
       m["list_account_balances"] = [this](variant result, const fc::variants& a)
       {
          auto r = result.as<vector<asset>>( GRAPHENE_MAX_NESTED_OBJECTS );
-         vector<asset_object> asset_recs;
+         vector<asset_object_with_data> asset_recs;
          std::transform(r.begin(), r.end(), std::back_inserter(asset_recs), [this](const asset& a) {
             return get_asset(a.asset_id);
          });
@@ -2208,7 +2202,6 @@ signed_transaction account_cancel_auth_platform(string account,
 #endif
    const string _wallet_filename_extension = ".wallet";
 
-   mutable map<asset_aid_type, asset_object> _asset_cache;
 };
 
 std::string operation_printer::fee(const asset& a)const {
@@ -2392,7 +2385,7 @@ vector<asset> wallet_api::list_account_balances(const string& account)
    return my->_remote_db->get_account_balances( get_account( account ).uid, flat_set<asset_aid_type>() );
 }
 
-vector<asset_object> wallet_api::list_assets(const string& lowerbound, uint32_t limit)const
+vector<asset_object_with_data> wallet_api::list_assets(const string& lowerbound, uint32_t limit)const
 {
    return my->_remote_db->list_assets( lowerbound, limit );
 }
@@ -2541,7 +2534,7 @@ full_account wallet_api::get_full_account(string account_name_or_uid) const
    return results.at( uid );
 }
 
-asset_object wallet_api::get_asset(string asset_name_or_id) const
+asset_object_with_data wallet_api::get_asset(string asset_name_or_id) const
 {
    auto a = my->find_asset(asset_name_or_id);
    FC_ASSERT( a, "Can not find asset ${a}", ("a", asset_name_or_id) );

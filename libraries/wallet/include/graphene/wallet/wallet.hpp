@@ -264,7 +264,7 @@ class wallet_api
        * @param limit the maximum number of assets to return (max: 100)
        * @returns the list of asset objects, ordered by symbol
        */
-      vector<asset_object>              list_assets(const string& lowerbound, uint32_t limit)const;
+      vector<asset_object_with_data>    list_assets(const string& lowerbound, uint32_t limit)const;
 
       /** Returns the relative operations on the account from start number.
        *
@@ -312,14 +312,14 @@ class wallet_api
        * @param asset_name_or_id the symbol or id of the asset in question
        * @returns the information about the asset stored in the block chain
        */
-      asset_object                      get_asset(string asset_name_or_id) const;
+      asset_object_with_data            get_asset(string asset_name_or_id) const;
 
       /**
        * Lookup the id of a named asset.
        * @param asset_name_or_id the symbol of an asset to look up
        * @returns the id of the given asset
        */
-      asset_aid_type                     get_asset_aid(string asset_name_or_id) const;
+      asset_aid_type                    get_asset_aid(string asset_name_or_id) const;
 
       /**
        * Returns the blockchain object corresponding to the given id.
@@ -530,7 +530,7 @@ class wallet_api
       * @see suggest_brain_key()
       *
       * @param brain_key    Brain key
-      * @param numberOfDesiredKeys  Number of desired keys
+      * @param number_of_desired_keys  Number of desired keys
       * @return A list of keys that are deterministically derived from the brainkey
       */
      vector<brain_key_info> derive_owner_keys_from_brain_key(string brain_key, int number_of_desired_keys = 1) const;
@@ -745,8 +745,8 @@ class wallet_api
        * \c update_bitasset() instead.
        *
        * @param symbol the name or id of the asset to update
-       * @param new_issuer if changing the asset's issuer, the name or id of the new issuer.
-       *                   null if you wish to remain the issuer of the asset
+       * @param new_precision if changing the asset's precision, the new precision.
+       *                   null if you wish to remain the precision of the asset
        * @param new_options the new asset_options object, which will entirely replace the existing
        *                    options.
        * @param broadcast true to broadcast the transaction on the network
@@ -1055,8 +1055,9 @@ class wallet_api
       /**
        * auth of account to platform
        * 
-       * @param account the name or uid of the account which is auth to platform
+       * @param account the name or uid of the account
        * @param platform_owner the platform owner uid
+       * @param broadcast true if you wish to broadcast the transaction
        */ 
       signed_transaction account_auth_platform(string account,
                                             string platform_owner,
@@ -1065,8 +1066,9 @@ class wallet_api
       /**
        * cancel auth of account to platform
        * 
-       * @param account the name or uid of the account which is auth to platform
+       * @param account the name or uid of the account
        * @param platform_owner the platform owner uid
+       * @param broadcast true if you wish to broadcast the transaction
        */ 
       signed_transaction account_cancel_auth_platform(string account,
                                                   string platform_owner,

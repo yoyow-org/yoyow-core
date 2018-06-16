@@ -130,9 +130,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const;
 
       // Assets
-      vector<optional<asset_object>> get_assets(const vector<asset_aid_type>& asset_ids)const;
-      vector<asset_object>           list_assets(const string& lower_bound_symbol, uint32_t limit)const;
-      vector<optional<asset_object>> lookup_asset_symbols(const vector<string>& symbols_or_ids)const;
+      vector<optional<asset_object_with_data>> get_assets(const vector<asset_aid_type>& asset_ids)const;
+      vector<asset_object_with_data>           list_assets(const string& lower_bound_symbol, uint32_t limit)const;
+      vector<optional<asset_object_with_data>> lookup_asset_symbols(const vector<string>& symbols_or_ids)const;
 
       // Witnesses
       vector<optional<witness_object>> get_witnesses(const vector<account_uid_type>& witness_uids)const;
@@ -663,7 +663,7 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       auto asset_range = _db.get_index_type<asset_index>().indices().get<by_issuer>().equal_range(account->uid);
       std::for_each(asset_range.first, asset_range.second,
                     [&acnt] (const asset_object& asset) {
-                       acnt.assets.emplace_back(asset.id);
+                       acnt.assets.emplace_back(asset.asset_id);
                     });
 
       results[account_name_or_id] = acnt;
@@ -1130,23 +1130,25 @@ vector<asset> database_api_impl::get_named_account_balances(const std::string& n
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-vector<optional<asset_object>> database_api::get_assets(const vector<asset_aid_type>& asset_ids)const
+vector<optional<asset_object_with_data>> database_api::get_assets(const vector<asset_aid_type>& asset_ids)const
 {
    return my->get_assets( asset_ids );
 }
 
-vector<optional<asset_object>> database_api_impl::get_assets(const vector<asset_aid_type>& asset_ids)const
+vector<optional<asset_object_with_data>> database_api_impl::get_assets(const vector<asset_aid_type>& asset_ids)const
 {
-   vector<optional<asset_object>> result; result.reserve(asset_ids.size());
+   vector<optional<asset_object_with_data>> result; result.reserve(asset_ids.size());
    std::transform(asset_ids.begin(), asset_ids.end(), std::back_inserter(result),
-                  [this](asset_aid_type id) -> optional<asset_object> {
+                  [this](asset_aid_type id) -> optional<asset_object_with_data> {
 
       const auto& idx = _db.get_index_type<asset_index>().indices().get<by_aid>();
       auto itr = idx.find( id );
       if( itr != idx.end() )
       {
          subscribe_to_item( (*itr).id );
-         return *itr;
+         asset_object_with_data aod( *itr );
+         aod.dynamic_asset_data = itr->dynamic_data( _db );
+         return aod;
       }
          
       return {};
@@ -1154,16 +1156,16 @@ vector<optional<asset_object>> database_api_impl::get_assets(const vector<asset_
    return result;
 }
 
-vector<asset_object> database_api::list_assets(const string& lower_bound_symbol, uint32_t limit)const
+vector<asset_object_with_data> database_api::list_assets(const string& lower_bound_symbol, uint32_t limit)const
 {
    return my->list_assets( lower_bound_symbol, limit );
 }
 
-vector<asset_object> database_api_impl::list_assets(const string& lower_bound_symbol, uint32_t limit)const
+vector<asset_object_with_data> database_api_impl::list_assets(const string& lower_bound_symbol, uint32_t limit)const
 {
-   FC_ASSERT( limit <= 100 );
+   FC_ASSERT( limit <= 101 );
    const auto& assets_by_symbol = _db.get_index_type<asset_index>().indices().get<by_symbol>();
-   vector<asset_object> result;
+   vector<asset_object_with_data> result;
    result.reserve(limit);
 
    auto itr = assets_by_symbol.lower_bound(lower_bound_symbol);
@@ -1172,30 +1174,43 @@ vector<asset_object> database_api_impl::list_assets(const string& lower_bound_sy
       itr = assets_by_symbol.begin();
 
    while(limit-- && itr != assets_by_symbol.end())
+   {
       result.emplace_back(*itr++);
+      result.back().dynamic_asset_data = result.back().dynamic_data( _db );
+   }
 
    return result;
 }
 
-vector<optional<asset_object>> database_api::lookup_asset_symbols(const vector<string>& symbols_or_ids)const
+vector<optional<asset_object_with_data>> database_api::lookup_asset_symbols(const vector<string>& symbols_or_ids)const
 {
    return my->lookup_asset_symbols( symbols_or_ids );
 }
 
-vector<optional<asset_object>> database_api_impl::lookup_asset_symbols(const vector<string>& symbols_or_ids)const
+vector<optional<asset_object_with_data>> database_api_impl::lookup_asset_symbols(const vector<string>& symbols_or_ids)const
 {
    const auto& assets_by_symbol = _db.get_index_type<asset_index>().indices().get<by_symbol>();
-   vector<optional<asset_object> > result;
+   vector<optional<asset_object_with_data> > result;
    result.reserve(symbols_or_ids.size());
    std::transform(symbols_or_ids.begin(), symbols_or_ids.end(), std::back_inserter(result),
-                  [this, &assets_by_symbol](const string& symbol_or_id) -> optional<asset_object> {
-      if( !symbol_or_id.empty() && std::isdigit(symbol_or_id[0]) )
+                  [this, &assets_by_symbol](const string& symbol_or_id) -> optional<asset_object_with_data> {
+      if( symbol_or_id.empty() )
+         return {};
+      if( symbol_or_id[0] >= '0' && symbol_or_id[0] <= '9' )
       {
-         auto ptr = _db.find(asset_id_type(variant(symbol_or_id ).as<uint64_t>( 1 )));
-         return ptr == nullptr? optional<asset_object>() : *ptr;
+         auto ptr = _db.find_asset_by_aid( variant( symbol_or_id ).as<asset_aid_type>( 1 ) );
+         if( ptr == nullptr )
+            return {};
+         asset_object_with_data aod( *ptr );
+         aod.dynamic_asset_data = aod.dynamic_data( _db );
+         return aod;
       }
-      auto itr = assets_by_symbol.find(symbol_or_id);
-      return itr == assets_by_symbol.end()? optional<asset_object>() : *itr;
+      auto itr = assets_by_symbol.find( symbol_or_id );
+      if( itr == assets_by_symbol.end() )
+         return {};
+      asset_object_with_data aod( *itr );
+      aod.dynamic_asset_data = aod.dynamic_data( _db );
+      return aod;
    });
    return result;
 }
