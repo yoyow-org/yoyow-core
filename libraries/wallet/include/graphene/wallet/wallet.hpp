@@ -694,7 +694,7 @@ class wallet_api
       public_key_type             get_public_key( string label )const;
       ///@}
 
-      /** Creates a new user-issued or market-issued asset.
+      /** Creates a new user-issued asset.
        *
        * Many options can be changed later using \c update_asset()
        *
@@ -702,7 +702,7 @@ class wallet_api
        * structures for the options objects, and those include prices and asset ids.
        *
        * @param issuer the name or id of the account who will pay the fee and become the 
-       *               issuer of the new asset.  This can be updated later
+       *               issuer of the new asset.
        * @param symbol the ticker symbol of the new asset
        * @param precision the number of digits of precision to the right of the decimal point,
        *                  must be less than or equal to 12
@@ -760,7 +760,6 @@ class wallet_api
       /** Burns the given user-issued asset.
        *
        * This command burns the user-issued asset to reduce the amount in circulation.
-       * @note you cannot burn market-issued assets.
        * @param from the account containing the asset you wish to burn
        * @param amount the amount to burn, in nominal units
        * @param symbol the name or id of the asset to burn

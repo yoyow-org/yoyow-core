@@ -3159,6 +3159,15 @@ string wallet_api::gethelp(const string& method)const
    std::stringstream ss;
    ss << "\n";
 
+   // doxygen help string first
+   {
+      std::string doxygenHelpString = my->method_documentation.get_detailed_description(method);
+      if (!doxygenHelpString.empty())
+         ss << doxygenHelpString;
+      else
+         ss << "No doxygen help defined for method " << method << "\n\n";
+   }
+
    if( method == "import_key" )
    {
       ss << "usage: import_key ACCOUNT_NAME_OR_ID  WIF_PRIVATE_KEY\n\n";
@@ -3180,7 +3189,6 @@ string wallet_api::gethelp(const string& method)const
       ss << "This method should be used if you would like the wallet to generate new keys derived from the brain key.\n";
       ss << "The BRAIN_KEY will be used as the owner key, and the active key will be derived from the BRAIN_KEY.  Use\n";
       ss << "register_account if you already know the keys you know the public keys that you would like to register.\n";
-
    }
    else if( method == "register_account" )
    {
@@ -3191,7 +3199,7 @@ string wallet_api::gethelp(const string& method)const
    }
    else if( method == "create_asset" )
    {
-      ss << "usage: ISSUER SYMBOL PRECISION_DIGITS OPTIONS BROADCAST\n\n";
+      ss << "usage: ISSUER SYMBOL PRECISION_DIGITS OPTIONS INITIAL_SUPPLY BROADCAST\n\n";
       ss << "PRECISION_DIGITS: the number of digits after the decimal point\n\n";
       ss << "Example value of OPTIONS: \n";
       ss << fc::json::to_pretty_string( graphene::chain::asset_options() );
@@ -3216,15 +3224,6 @@ string wallet_api::gethelp(const string& method)const
       ss << "[[16,{\"fee\":10000,\"min_real_fee\":0,\"min_rf_percent\":0}]]}],[2,{\"governance_voting_expiration_blocks\":150000}]]";
       ss << "\n\n";
    }
-   else
-   {
-      std::string doxygenHelpString = my->method_documentation.get_detailed_description(method);
-      if (!doxygenHelpString.empty())
-         ss << doxygenHelpString;
-      else
-         ss << "No help defined for method " << method << "\n";
-   }
-
    return ss.str();
 }
 
