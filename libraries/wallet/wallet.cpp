@@ -1805,7 +1805,7 @@ signed_transaction account_cancel_auth_platform(string account,
                   tx.signatures.clear();
                }
 
-               idump((required_keys_subset)(available_keys_map));
+               //idump((required_keys_subset)(available_keys_map));
                // TODO: for better performance, sign after dupe check
                for( const auto& key : required_keys_subset )
                {
