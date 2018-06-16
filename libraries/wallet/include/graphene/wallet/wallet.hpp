@@ -261,7 +261,7 @@ class wallet_api
        * at the beginning of the list, and iterate as necessary.
        *
        * @param lowerbound  the symbol of the first asset to include in the list.
-       * @param limit the maximum number of assets to return (max: 100)
+       * @param limit the maximum number of assets to return (max: 101)
        * @returns the list of asset objects, ordered by symbol
        */
       vector<asset_object_with_data>    list_assets(const string& lowerbound, uint32_t limit)const;
@@ -1314,7 +1314,7 @@ FC_API( graphene::wallet::wallet_api,
         (list_my_accounts_cached)
         (list_accounts_by_name)
         (list_account_balances)
-        //(list_assets)
+        (list_assets)
         (import_key)
         //(import_accounts)
         //(import_account_keys)
@@ -1333,7 +1333,7 @@ FC_API( graphene::wallet::wallet_api,
         (reserve_asset)
         (enable_allowed_assets)
         (update_allowed_assets)
-        (whitelist_account)
+        //(whitelist_account)
         (create_committee_member)
         (update_committee_member)
         (get_committee_member)
