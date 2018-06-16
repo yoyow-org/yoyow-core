@@ -1967,6 +1967,29 @@ signed_transaction account_cancel_auth_platform(string account,
          return result.get_string();
       };
 
+      m["get_relative_account_history"] = [this](variant result, const fc::variants& a)
+      {
+         auto r = result.as<vector<operation_detail>>( GRAPHENE_MAX_NESTED_OBJECTS );
+         std::stringstream ss;
+
+         ss << "#" << " ";
+         ss << "block_num" << " ";
+         ss << "time             " << " ";
+         ss << "description/fee_payer/fee/operation_result" << " ";
+         ss << " \n";
+         for( operation_detail& d : r )
+         {
+            operation_history_object& i = d.op;
+            ss << d.sequence << " ";
+            ss << i.block_num << " ";
+            ss << i.block_timestamp.to_iso_string() << " ";
+            i.op.visit(operation_printer(ss, *this, i.result));
+            ss << " \n";
+         }
+
+         return ss.str();
+      };
+
       m["list_account_balances"] = [this](variant result, const fc::variants& a)
       {
          auto r = result.as<vector<asset>>( GRAPHENE_MAX_NESTED_OBJECTS );
@@ -2074,7 +2097,7 @@ signed_transaction account_cancel_auth_platform(string account,
       asset_options opts;
       opts.flags &= ~(white_list);
       opts.issuer_permissions = opts.flags;
-      create_asset(get_account(creator).name, symbol, 2, opts, NULL, true);
+      create_asset(get_account(creator).name, symbol, 2, opts, {}, true);
    }
 
    void dbg_push_blocks( const std::string& src_filename, uint32_t count )
