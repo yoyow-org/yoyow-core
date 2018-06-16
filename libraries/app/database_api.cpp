@@ -730,6 +730,26 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
                        acnt.committee_member_votes.emplace_back( o.committee_member_uid );
                     });
       }
+      // get assets issued by user
+      if( options.fetch_assets.valid() && *options.fetch_assets == true )
+      {
+         auto asset_range = _db.get_index_type<asset_index>().indices().get<by_issuer>()
+                               .equal_range( account->uid );
+         std::for_each(asset_range.first, asset_range.second,
+                    [&acnt] (const asset_object& asset_obj) {
+                       acnt.assets.emplace_back( asset_obj.asset_id );
+                    });
+      }
+      // Add the account's balances
+      if( options.fetch_balances.valid() && *options.fetch_balances == true )
+      {
+         auto balance_range = _db.get_index_type<account_balance_index>().indices().get<by_account_asset>()
+                                 .equal_range( account->uid );
+         std::for_each(balance_range.first, balance_range.second,
+                    [&acnt](const account_balance_object& balance) {
+                       acnt.balances.emplace_back( balance );
+                    });
+      }
 
       results[uid] = acnt;
    }
