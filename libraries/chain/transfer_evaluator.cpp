@@ -151,9 +151,8 @@ void_result override_transfer_evaluator::do_evaluate( const override_transfer_op
    const account_object& to_account      = d.get_account_by_uid( op.to );
 
    FC_ASSERT( is_authorized_asset( d, to_account, asset_type ) );
-   FC_ASSERT( is_authorized_asset( d, from_account, asset_type ) );
-
-   // the above becomes no-op after hardfork because this check will then be performed in evaluator
+   // the line below is commented out, since issuer should always be able to override-transfer from any account
+   //FC_ASSERT( is_authorized_asset( d, from_account, asset_type ) );
 
    FC_ASSERT( d.get_balance( from_account, asset_type ).amount >= op.amount.amount,
               "", ("total_transfer",op.amount)("balance",d.get_balance(from_account, asset_type).amount) );
