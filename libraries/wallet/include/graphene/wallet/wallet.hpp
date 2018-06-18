@@ -980,12 +980,17 @@ class wallet_api
        *
        * @param lowerbound the UID of the first platform to return.  If the platform does not exist,
        *                   the list will start at the platform that comes after \c lowerbound
-       * @param limit the maximum number of platform to return (max: 100)
+       * @param limit the maximum number of platform to return (max: 101)
        * @param order_by how the returned list will be sorted
        * @returns a list of platforms
        */
       vector<platform_object> list_platforms(const account_uid_type lowerbound, uint32_t limit, data_sorting_type order_by);
 
+      /**
+       * Get total number of platforms registered with the blockchain
+       *
+       * @returns number of platforms
+       */
       uint64_t get_platform_count();
 
       /** Creates a platform object owned by the given account.
