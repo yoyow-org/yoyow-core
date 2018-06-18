@@ -719,7 +719,7 @@ class wallet_api
                                       string symbol,
                                       uint8_t precision,
                                       asset_options common,
-                                      optional< share_type > initial_supply,
+                                      share_type initial_supply,
                                       bool broadcast = false);
 
       /** Issue new shares of an asset.

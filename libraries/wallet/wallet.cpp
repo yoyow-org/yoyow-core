@@ -1083,7 +1083,7 @@ public:
                                    string symbol,
                                    uint8_t precision,
                                    asset_options common,
-                                   optional< share_type > initial_supply,
+                                   share_type initial_supply,
                                    bool broadcast = false)
    { try {
       account_object issuer_account = get_account( issuer );
@@ -1095,7 +1095,8 @@ public:
       create_op.precision = precision;
       create_op.common_options = common;
 
-      if( initial_supply ) {
+      if( initial_supply != 0 )
+      {
          create_op.extensions = extension<asset_create_operation::ext>();
          create_op.extensions->value.initial_supply = initial_supply;
       }
@@ -2801,7 +2802,7 @@ signed_transaction wallet_api::create_asset(string issuer,
                                             string symbol,
                                             uint8_t precision,
                                             asset_options common,
-                                            optional< share_type > initial_supply,
+                                            share_type initial_supply,
                                             bool broadcast)
 
 {
