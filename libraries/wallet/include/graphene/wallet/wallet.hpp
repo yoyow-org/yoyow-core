@@ -642,7 +642,7 @@ class wallet_api
       /** Transfer an amount from one account to another.
        * @param from the name or id of the account sending the funds
        * @param to the name or id of the account receiving the funds
-       * @param amount the amount to send (in nominal units -- to send half of a BTS, specify 0.5)
+       * @param amount the amount to send (in nominal units -- to send half of an asset, specify 0.5)
        * @param asset_symbol the symbol or id of the asset to send
        * @param memo a memo to attach to the transaction.  The memo will be encrypted in the 
        *             transaction and readable for the receiver.  There is no length limit
@@ -698,20 +698,17 @@ class wallet_api
        *
        * Many options can be changed later using \c update_asset()
        *
-       * Right now this function is difficult to use because you must provide raw JSON data
-       * structures for the options objects, and those include prices and asset ids.
+       * Must provide raw JSON data structure for the options object.
        *
        * @param issuer the name or id of the account who will pay the fee and become the 
        *               issuer of the new asset.
        * @param symbol the ticker symbol of the new asset
        * @param precision the number of digits of precision to the right of the decimal point,
        *                  must be less than or equal to 12
-       * @param common asset options required for all new assets.
-       *               Note that core_exchange_rate technically needs to store the asset ID of 
-       *               this new asset. Since this ID is not known at the time this operation is 
-       *               created, create this price as though the new asset has instance ID 1, and
-       *               the chain will overwrite it with the new asset's ID.
+       * @param common asset options required for the new asset.
        * @param initial_supply issue this amount to self immediately after the asset is created.
+       *                       Note: this amount is NOT in nominal units, E.G. if precision of
+       *                         new asset is 3, to issue 1 nominal unit of asset, specify 1000.
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction creating a new asset
        */
@@ -736,13 +733,11 @@ class wallet_api
                                      string memo,
                                      bool broadcast = false);
 
-      /** Update the core options on an asset.
+      /** Update options of an asset.
+       *
        * There are a number of options which all assets in the network use. These options are 
        * enumerated in the asset_object::asset_options struct. This command is used to update 
        * these options for an existing asset.
-       *
-       * @note This operation cannot be used to update BitAsset-specific options. For these options,
-       * \c update_bitasset() instead.
        *
        * @param symbol the name or id of the asset to update
        * @param new_precision if changing the asset's precision, the new precision.
@@ -757,9 +752,9 @@ class wallet_api
                                       asset_options new_options,
                                       bool broadcast = false);
 
-      /** Burns the given user-issued asset.
+      /** Burns the given amount of asset.
        *
-       * This command burns the user-issued asset to reduce the amount in circulation.
+       * This command burns an amount of asset to reduce the amount in circulation.
        * @param from the account containing the asset you wish to burn
        * @param amount the amount to burn, in nominal units
        * @param symbol the name or id of the asset to burn
