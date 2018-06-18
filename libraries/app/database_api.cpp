@@ -700,6 +700,7 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
          acnt.csaf_leases_out = get_csaf_leases_by_from( uid, 0, 100 );
       if( options.fetch_voter_object.valid() && *options.fetch_voter_object == true && account_stats.is_voter )
          acnt.voter = *_db.find_voter( uid, account_stats.last_voter_sequence );
+      // witness
       if( options.fetch_witness_object.valid() && *options.fetch_witness_object == true )
       {
          const witness_object* wit = _db.find_witness_by_uid( uid );
@@ -712,9 +713,11 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
                          .equal_range( std::make_tuple( uid, account_stats.last_voter_sequence ) );
          std::for_each(range.first, range.second,
                     [&acnt] (const witness_vote_object& o) {
-                       acnt.witness_votes.emplace_back( o.witness_uid );
+                       if( acnt.witness_votes.empty() || acnt.witness_votes.back() != o.witness_uid )
+                          acnt.witness_votes.emplace_back( o.witness_uid );
                     });
       }
+      // committee member
       if( options.fetch_committee_member_object.valid() && *options.fetch_committee_member_object == true )
       {
          const committee_member_object* com = _db.find_committee_member_by_uid( uid );
@@ -727,7 +730,25 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
                          .equal_range( std::make_tuple( uid, account_stats.last_voter_sequence ) );
          std::for_each(range.first, range.second,
                     [&acnt] (const committee_member_vote_object& o) {
-                       acnt.committee_member_votes.emplace_back( o.committee_member_uid );
+                       if( acnt.committee_member_votes.empty() || acnt.committee_member_votes.back() != o.committee_member_uid )
+                          acnt.committee_member_votes.emplace_back( o.committee_member_uid );
+                    });
+      }
+      // platform
+      if( options.fetch_platform_object.valid() && *options.fetch_platform_object == true )
+      {
+         const platform_object* pf = _db.find_platform_by_owner( uid );
+         if( pf != nullptr )
+            acnt.platform = *pf;
+      }
+      if( options.fetch_platform_votes.valid() && *options.fetch_platform_votes == true && account_stats.is_voter )
+      {
+         auto range = _db.get_index_type<platform_vote_index>().indices().get<by_platform_voter_seq>()
+                         .equal_range( std::make_tuple( uid, account_stats.last_voter_sequence ) );
+         std::for_each(range.first, range.second,
+                    [&acnt] (const platform_vote_object& o) {
+                       if( acnt.platform_votes.empty() || acnt.platform_votes.back() != o.platform_owner )
+                          acnt.platform_votes.emplace_back( o.platform_owner );
                     });
       }
       // get assets issued by user

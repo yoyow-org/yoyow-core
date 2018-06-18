@@ -76,6 +76,8 @@ struct full_account_query_options
    optional<bool> fetch_witness_votes;
    optional<bool> fetch_committee_member_object;
    optional<bool> fetch_committee_member_votes;
+   optional<bool> fetch_platform_object;
+   optional<bool> fetch_platform_votes;
    optional<bool> fetch_assets;
    optional<bool> fetch_balances;
 };
@@ -587,6 +589,8 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_witness_votes)
             (fetch_committee_member_object)
             (fetch_committee_member_votes)
+            (fetch_platform_object)
+            (fetch_platform_votes)
             (fetch_assets)
             (fetch_balances)
           );
