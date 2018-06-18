@@ -644,14 +644,33 @@ class wallet_api
        * @param to the name or id of the account receiving the funds
        * @param amount the amount to send (in nominal units -- to send half of an asset, specify 0.5)
        * @param asset_symbol the symbol or id of the asset to send
-       * @param memo a memo to attach to the transaction.  The memo will be encrypted in the 
+       * @param memo a memo to attach to the transaction.  The memo will be encrypted in the
        *             transaction and readable for the receiver.  There is no length limit
-       *             other than the limit imposed by maximum transaction size, but transaction
+       *             other than the limit imposed by maximum transaction size, but transaction fee
        *             increase with transaction size
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction transferring funds
        */
       signed_transaction transfer(string from,
+                                  string to,
+                                  string amount,
+                                  string asset_symbol,
+                                  string memo,
+                                  bool broadcast = false);
+
+      /** Force one account to transfer an amount to another account, can only used by asset issuer.
+       * @param from the name or id of the account sending the funds
+       * @param to the name or id of the account receiving the funds
+       * @param amount the amount to send (in nominal units -- to send half of an asset, specify 0.5)
+       * @param asset_symbol the symbol or id of the asset to send
+       * @param memo a memo to attach to the transaction.  The memo will be encrypted in the
+       *             transaction and readable for the receiver.  There is no length limit
+       *             other than the limit imposed by maximum transaction size, but transaction fee
+       *             increase with transaction size
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction transferring funds
+       */
+      signed_transaction override_transfer(string from,
                                   string to,
                                   string amount,
                                   string asset_symbol,
@@ -1323,6 +1342,7 @@ FC_API( graphene::wallet::wallet_api,
         //(register_account)
         //(create_account_with_brain_key)
         (transfer)
+        (override_transfer)
         //(transfer2)
         (get_transaction_id)
         (create_asset)

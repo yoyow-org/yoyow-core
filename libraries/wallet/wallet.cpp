@@ -120,6 +120,7 @@ public:
    std::string operator()(const T& op)const;
 
    std::string operator()(const transfer_operation& op)const;
+   std::string operator()(const override_transfer_operation& op)const;
    std::string operator()(const account_create_operation& op)const;
    std::string operator()(const asset_create_operation& op)const;
 };
@@ -1927,6 +1928,41 @@ signed_transaction account_cancel_auth_platform(string account,
       return sign_transaction(tx, broadcast);
    } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(broadcast) ) }
 
+   signed_transaction override_transfer(string from, string to, string amount,
+                               string asset_symbol, string memo, bool broadcast = false)
+   { try {
+      FC_ASSERT( !self.is_locked(), "Should unlock first" );
+      fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
+      FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+
+      account_object issuer_account = get_account(asset_obj->issuer);
+      account_object from_account = get_account(from);
+      account_object to_account = get_account(to);
+
+      override_transfer_operation xfer_op;
+
+      xfer_op.issuer = issuer_account.uid;
+      xfer_op.from = from_account.uid;
+      xfer_op.to = to_account.uid;
+      xfer_op.amount = asset_obj->amount_from_string(amount);
+
+      if( memo.size() )
+      {
+         xfer_op.memo = memo_data();
+         xfer_op.memo->from = issuer_account.memo_key;
+         xfer_op.memo->to = to_account.memo_key;
+         xfer_op.memo->set_message(get_private_key(issuer_account.memo_key),
+                                   to_account.memo_key, memo);
+      }
+
+      signed_transaction tx;
+      tx.operations.push_back(xfer_op);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction(tx, broadcast);
+   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(broadcast) ) }
+
    signed_transaction issue_asset(string to_account, string amount, string symbol,
                                   string memo, bool broadcast = false)
    {
@@ -2324,6 +2360,7 @@ std::string operation_printer::operator()(const T& op)const
    }
    return "";
 }
+
 string operation_printer::operator()(const transfer_operation& op) const
 {
    out << "Transfer " << wallet.get_asset(op.amount.asset_id).amount_to_pretty_string(op.amount)
@@ -2350,7 +2387,41 @@ string operation_printer::operator()(const transfer_operation& op) const
             }
          } catch (const fc::exception& e) {
             out << " -- could not decrypt memo";
-            elog("Error when decrypting memo: ${e}", ("e", e.to_detail_string()));
+            //elog("Error when decrypting memo: ${e}", ("e", e.to_detail_string()));
+         }
+      }
+   }
+   fee(op.fee.total);
+   return memo;
+}
+
+string operation_printer::operator()(const override_transfer_operation& op) const
+{
+   out << "Override-transfer " << wallet.get_asset(op.amount.asset_id).amount_to_pretty_string(op.amount)
+       << " from " << op.from << " to " << op.to;
+   std::string memo;
+   if( op.memo )
+   {
+      if( wallet.is_locked() )
+      {
+         out << " -- Unlock wallet to see memo.";
+      } else {
+         try {
+            FC_ASSERT(wallet._keys.count(op.memo->to) || wallet._keys.count(op.memo->from), "Memo is encrypted to a key ${to} or ${from} not in this wallet.", ("to", op.memo->to)("from",op.memo->from));
+            if( wallet._keys.count(op.memo->to) ) {
+               auto my_key = wif_to_key(wallet._keys.at(op.memo->to));
+               FC_ASSERT(my_key, "Unable to recover private key to decrypt memo. Wallet may be corrupted.");
+               memo = op.memo->get_message(*my_key, op.memo->from);
+               out << " -- Memo: " << memo;
+            } else {
+               auto my_key = wif_to_key(wallet._keys.at(op.memo->from));
+               FC_ASSERT(my_key, "Unable to recover private key to decrypt memo. Wallet may be corrupted.");
+               memo = op.memo->get_message(*my_key, op.memo->to);
+               out << " -- Memo: " << memo;
+            }
+         } catch (const fc::exception& e) {
+            out << " -- could not decrypt memo";
+            //elog("Error when decrypting memo: ${e}", ("e", e.to_detail_string()));
          }
       }
    }
@@ -2367,7 +2438,7 @@ std::string operation_printer::operator()(const account_create_operation& op) co
 std::string operation_printer::operator()(const asset_create_operation& op) const
 {
    out << "Create ";
-   out << "User-Issue Asset ";
+   out << "Asset ";
    out << "'" << op.symbol << "' with issuer " << wallet.get_account(op.issuer).name;
    return fee(op.fee.total);
 }
@@ -2799,6 +2870,13 @@ signed_transaction wallet_api::transfer(string from, string to, string amount,
 {
    return my->transfer(from, to, amount, asset_symbol, memo, broadcast);
 }
+
+signed_transaction wallet_api::override_transfer(string from, string to, string amount,
+                                        string asset_symbol, string memo, bool broadcast /* = false */)
+{
+   return my->override_transfer(from, to, amount, asset_symbol, memo, broadcast);
+}
+
 signed_transaction wallet_api::create_asset(string issuer,
                                             string symbol,
                                             uint8_t precision,
