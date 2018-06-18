@@ -958,7 +958,7 @@ vector<platform_object> database_api_impl::lookup_platforms( const account_uid_t
                                                             uint32_t limit,
                                                             data_sorting_type order_by )const
 {
-   FC_ASSERT( limit <= 100 );
+   FC_ASSERT( limit <= 101 );
    vector<platform_object> result;
 
    if( order_by == order_by_uid )

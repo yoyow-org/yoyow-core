@@ -372,7 +372,7 @@ class database_api
       /**
        * @brief Query for registered platforms
        * @param lower_bound_uid Lower bound of the first uid to return
-       * @param limit Maximum number of results to return -- must not exceed 100
+       * @param limit Maximum number of results to return -- must not exceed 101
        * @param order_by how the returned list will be sorted
        * @return A list of platform objects
        */
