@@ -32,6 +32,7 @@
 
 #include <boost/version.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
 #include <boost/range/adaptor/map.hpp>
@@ -3162,12 +3163,20 @@ string wallet_api::gethelp(const string& method)const
    ss << "\n";
 
    // doxygen help string first
+   try
    {
+      string brief_desc = my->method_documentation.get_brief_description(method);
+      boost::trim( brief_desc );
+      ss << brief_desc << "\n\n";
       std::string doxygenHelpString = my->method_documentation.get_detailed_description(method);
       if (!doxygenHelpString.empty())
-         ss << doxygenHelpString;
+         ss << doxygenHelpString << "\n";
       else
          ss << "No doxygen help defined for method " << method << "\n\n";
+   }
+   catch (const fc::key_not_found_exception&)
+   {
+      ss << "No doxygen help defined for method " << method << "\n\n";
    }
 
    if( method == "import_key" )
