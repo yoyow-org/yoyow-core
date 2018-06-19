@@ -88,7 +88,15 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
          return optional<operation_history_object>( db.create<operation_history_object>( [&]( operation_history_object& h )
          {
             if( o_op.valid() )
-               h = *o_op;
+            {
+               h.op           = o_op->op;
+               h.result       = o_op->result;
+               h.block_num    = o_op->block_num;
+               h.trx_in_block = o_op->trx_in_block;
+               h.op_in_trx    = o_op->op_in_trx;
+               h.virtual_op   = o_op->virtual_op;
+               h.block_timestamp = o_op->block_timestamp;
+            }
          } ) );
       };
 
@@ -249,7 +257,7 @@ void account_history_plugin::plugin_set_program_options(
    )
 {
    cli.add_options()
-         ("track-account", boost::program_options::value<std::vector<std::string>>()->composing()->multitoken(), "Account ID to track history for (may specify multiple times)")
+         ("track-account", boost::program_options::value<string>()->default_value("[]"), "Account ID to track history for (specified as a JSON array)")
          ("partial-operations", boost::program_options::value<bool>(), "Keep only those operations in memory that are related to account history tracking")
          ("max-ops-per-account", boost::program_options::value<uint32_t>(), "Maximum number of operations per account will be kept in memory")
          ;
@@ -259,10 +267,10 @@ void account_history_plugin::plugin_set_program_options(
 void account_history_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 {
    database().applied_block.connect( [&]( const signed_block& b){ my->update_account_histories(b); } );
-   database().add_index< primary_index< simple_index< operation_history_object > > >();
+   my->_oho_index = database().add_index< primary_index< operation_history_index > >();
    database().add_index< primary_index< account_transaction_history_index > >();
 
-   LOAD_VALUE_SET(options, "track-account", my->_tracked_accounts, graphene::chain::account_uid_type);
+   LOAD_VALUE_FLAT_SET(options, "track-account", my->_tracked_accounts, graphene::chain::account_uid_type);
    if (options.count("partial-operations")) {
        my->_partial_operations = options["partial-operations"].as<bool>();
    }

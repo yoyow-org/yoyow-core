@@ -22,7 +22,6 @@
  * THE SOFTWARE.
  */
 #include <graphene/chain/protocol/account.hpp>
-#include <graphene/chain/hardfork.hpp>
 
 #include "../utf8/checked.h"
 
