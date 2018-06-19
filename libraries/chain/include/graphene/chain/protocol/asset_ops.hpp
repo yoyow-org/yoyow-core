@@ -110,16 +110,16 @@ namespace graphene { namespace chain {
          extensions_type   extensions;
       };
 
-      fee_type                fee;
+      fee_type                     fee;
       /// This account must sign and pay the fee for this operation. Later, this account may update the asset
-      account_uid_type        issuer;
+      account_uid_type             issuer;
       /// The ticker symbol of this asset
-      string                  symbol;
+      string                       symbol;
       /// Number of digits to the right of decimal point, must be less than or equal to 12
-      uint8_t                 precision = 0;
+      uint8_t                      precision = 0;
 
       /// Options common to all assets.
-      asset_options              common_options;
+      asset_options                common_options;
       
       optional< extension< ext > > extensions;
 
@@ -152,9 +152,9 @@ namespace graphene { namespace chain {
 
       asset_update_operation(){}
 
-      fee_type         fee;
-      account_uid_type issuer;
-      asset_aid_type   asset_to_update;
+      fee_type                    fee;
+      account_uid_type            issuer;
+      asset_aid_type              asset_to_update;
 
       optional<uint8_t>           new_precision;
       asset_options               new_options;
@@ -178,10 +178,10 @@ namespace graphene { namespace chain {
          extensions_type   extensions;
       };
 
-      fee_type          fee;
-      account_uid_type  issuer; ///< Must be asset_to_issue->asset_id->issuer
-      asset             asset_to_issue;
-      account_uid_type  issue_to_account;
+      fee_type             fee;
+      account_uid_type     issuer; ///< Must be asset_to_issue->asset_id->issuer
+      asset                asset_to_issue;
+      account_uid_type     issue_to_account;
 
 
       /** user provided data encrypted to the memo key of the "to" account */

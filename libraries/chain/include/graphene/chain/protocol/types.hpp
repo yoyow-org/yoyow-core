@@ -109,7 +109,7 @@ namespace graphene { namespace chain {
       //disable_confidential = 0x40 //, /**< allow the asset to be used with confidential transactions */
       //witness_fed_asset    = 0x80, /**< allow the asset to be fed by witnesses */
       //committee_fed_asset  = 0x100 /**< allow the asset to be fed by the committee */
-      issue_new_asset      = 0x200, /**< allow the issuer to create new supply */
+      issue_asset          = 0x200, /**< allow the issuer to create an amount of the asset (increase current supply) */
       change_max_supply    = 0x400, /**< allow the issuer to change the asset's max supply */
    };
    //const static uint32_t ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_force_settle|global_settle|disable_confidential|witness_fed_asset|committee_fed_asset;
@@ -118,7 +118,7 @@ namespace graphene { namespace chain {
 
    // TESTNET only
    #define TEST_MASK1 (0x41) // 0x01 | 0x40
-   const static asset_flags_type ASSET_ISSUER_PERMISSION_MASK = white_list|override_authority|transfer_restricted|issue_new_asset|change_max_supply|TEST_MASK1;
+   const static asset_flags_type ASSET_ISSUER_PERMISSION_MASK = white_list|override_authority|transfer_restricted|issue_asset|change_max_supply|TEST_MASK1;
 
    enum scheduled_witness_type
    {
@@ -404,7 +404,7 @@ FC_REFLECT_ENUM( graphene::chain::asset_issuer_permission_flags,
    //(disable_confidential)
    //(witness_fed_asset)
    //(committee_fed_asset)
-   (issue_new_asset)
+   (issue_asset)
    (change_max_supply)
    )
 

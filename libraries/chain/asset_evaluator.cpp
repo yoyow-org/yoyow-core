@@ -116,7 +116,7 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
    FC_ASSERT( o.issuer == a.issuer, "only asset issuer can issue asset" );
 
    if( d.head_block_num() > 8000000 ) // TESTNET only: check block num
-      FC_ASSERT( a.can_issue_new_asset(), "'issue_new_asset' flag is disabled for this asset" );
+      FC_ASSERT( a.can_issue_asset(), "'issue_asset' flag is disabled for this asset" );
 
    to_account = &d.get_account_by_uid( o.issue_to_account );
    FC_ASSERT( is_authorized_asset( d, *to_account, a ) );
