@@ -443,7 +443,7 @@ namespace graphene { namespace app {
     vector<account_asset_balance> asset_api::get_asset_holders( asset_aid_type asset_id ) const {
 
       const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
-      auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
+      auto range = bal_idx.equal_range( asset_id );
 
       vector<account_asset_balance> result;
 
@@ -461,12 +461,12 @@ namespace graphene { namespace app {
       return result;
     }
     // get number of asset holders.
-    int asset_api::get_asset_holders_count( asset_aid_type asset_id ) const {
+    uint64_t asset_api::get_asset_holders_count( asset_aid_type asset_id ) const {
 
       const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
-      auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
+      auto range = bal_idx.equal_range( asset_id );
       // TODO FIXME filter out accounts with balance == 0
-      int count = boost::distance(range) - 1;
+      uint64_t count = boost::distance(range) - 1;
 
       return count;
     }
@@ -475,21 +475,15 @@ namespace graphene { namespace app {
             
       vector<asset_holders> result;
             
-      vector<asset_id_type> total_assets;
       for( const asset_object& asset_obj : _db.get_index_type<asset_index>().indices() )
       {
-        const auto& dasset_obj = asset_obj.dynamic_asset_data_id(_db);
-
-        asset_aid_type asset_id;
-        asset_id = object_id_type(dasset_obj.id).instance();
-
         const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
-        auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
+        auto range = bal_idx.equal_range( asset_obj.asset_id );
         // TODO FIXME filter out accounts with balance == 0
-        int count = boost::distance(range) - 1;
+        uint64_t count = boost::distance(range) - 1;
                 
         asset_holders ah;
-        ah.asset_id  = asset_id;
+        ah.asset_id  = asset_obj.asset_id;
         ah.count     = count;
 
         result.push_back(ah);

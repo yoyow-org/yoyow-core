@@ -75,7 +75,7 @@ namespace graphene { namespace app {
    struct asset_holders
    {
       asset_aid_type  asset_id;
-      int             count;
+      uint64_t        count;
    };
    
    /**
@@ -300,7 +300,7 @@ namespace graphene { namespace app {
          ~asset_api();
 
          vector<account_asset_balance> get_asset_holders( asset_aid_type asset_id )const;
-         int get_asset_holders_count( asset_aid_type asset_id )const;
+         uint64_t get_asset_holders_count( asset_aid_type asset_id )const;
          vector<asset_holders> get_all_asset_holders() const;
 
       private:
