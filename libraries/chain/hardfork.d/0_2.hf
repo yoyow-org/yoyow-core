@@ -5,5 +5,5 @@
 
 // add partial-operations,max-ops-per-account and account auth platform op
 #ifndef HARDFORK_0_2_1_TIME
-#define HARDFORK_0_2_1_TIME (fc::time_point_sec( 1521709200 ))  //2018-03-22 09:00:00
+#define HARDFORK_0_2_1_TIME (fc::time_point_sec( 1520265600 ))  //2018-03-06 00:00:00
 #endif
