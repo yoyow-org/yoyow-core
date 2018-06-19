@@ -561,7 +561,7 @@ namespace graphene { namespace app {
           start = min( stats.total_ops, start );
 
 
-       if( start >= stop && start > 0 && limit > 0 )
+       if( start >= stop && start > stats.removed_ops && limit > 0 )
        {
           const auto& hist_idx = db.get_index_type<account_transaction_history_index>();
 
