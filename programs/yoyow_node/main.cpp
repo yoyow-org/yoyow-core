@@ -25,7 +25,6 @@
 
 #include <graphene/witness/witness.hpp>
 #include <graphene/account_history/account_history_plugin.hpp>
-#include <graphene/market_history/market_history_plugin.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
@@ -184,7 +183,6 @@ int main(int argc, char** argv) {
 
       auto witness_plug = node->register_plugin<witness_plugin::witness_plugin>();
       auto history_plug = node->register_plugin<account_history::account_history_plugin>();
-      auto market_history_plug = node->register_plugin<market_history::market_history_plugin>();
 
       try
       {

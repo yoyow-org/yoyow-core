@@ -27,9 +27,6 @@
 #include <graphene/chain/csaf_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
-#include <graphene/chain/vesting_balance_object.hpp>
-#include <graphene/chain/market_evaluator.hpp>
-#include <graphene/chain/withdraw_permission_object.hpp>
 
 namespace graphene { namespace app {
    using namespace graphene::chain;
@@ -41,14 +38,9 @@ namespace graphene { namespace app {
       string                           registrar_name;
       string                           referrer_name;
       string                           lifetime_referrer_name;
-      vector<variant>                  votes;
-      optional<vesting_balance_object> cashback_balance;
       vector<account_balance_object>   balances;
-      vector<vesting_balance_object>   vesting_balances;
-      vector<limit_order_object>       limit_orders;
       vector<proposal_object>          proposals;
       vector<asset_id_type>            assets;
-      vector<withdraw_permission_object> withdraws;
       vector<csaf_lease_object>        csaf_leases_in;
       vector<csaf_lease_object>        csaf_leases_out;
       optional<voter_object>           voter;
@@ -66,16 +58,9 @@ FC_REFLECT( graphene::app::full_account,
             //(registrar_name)
             //(referrer_name)
             //(lifetime_referrer_name)
-            //(votes)
-            //(cashback_balance)
             //(balances)
-            //(vesting_balances)
-            //(limit_orders)
-            //(call_orders)
-            //(settle_orders)
             //(proposals)
             //(assets)
-            //(withdraws)
             (csaf_leases_in)
             (csaf_leases_out)
             (voter)

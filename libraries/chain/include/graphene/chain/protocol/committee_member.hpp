@@ -317,30 +317,6 @@ namespace graphene { namespace chain {
       }
    };
 
-   /**
-    * @brief Used by committee_members to update the global parameters of the blockchain.
-    * @ingroup operations
-    *
-    * This operation allows the committee_members to update the global parameters on the blockchain. These control various
-    * tunable aspects of the chain, including block and maintenance intervals, maximum data sizes, the fees charged by
-    * the network, etc.
-    *
-    * This operation may only be used in a proposed transaction, and a proposed transaction which contains this
-    * operation must have a review period specified in the current global parameters before it may be accepted.
-    */
-   struct committee_member_update_global_parameters_operation : public base_operation
-   {
-      struct fee_parameters_type { uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION; };
-
-      asset             fee;
-      chain_parameters  new_parameters;
-
-      account_uid_type fee_payer_uid()const { return GRAPHENE_TEMP_ACCOUNT_UID; }
-      void            validate()const;
-   };
-
-   /// TODO: committee_member_resign_operation : public base_operation
-
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::committee_member_create_operation::fee_parameters_type,
@@ -423,6 +399,3 @@ FC_REFLECT( graphene::chain::committee_proposal_create_operation,
 FC_REFLECT( graphene::chain::committee_proposal_update_operation::fee_parameters_type,
             (fee)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::committee_proposal_update_operation, (fee)(account)(proposal_number)(opinion)(extensions) )
-
-FC_REFLECT( graphene::chain::committee_member_update_global_parameters_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::committee_member_update_global_parameters_operation, (fee)(new_parameters) );

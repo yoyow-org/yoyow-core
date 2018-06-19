@@ -115,9 +115,9 @@ void asset_update_operation::validate()const
    new_options.validate();
 }
 
-share_type asset_update_operation::calculate_fee(const asset_update_operation::fee_parameters_type& k)const
+share_type asset_update_operation::calculate_fee(const asset_update_operation::fee_parameters_type& param)const
 {
-   return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
+   return param.fee + calculate_data_fee( new_options.data_size_for_fee(), param.price_per_kbyte );
 }
 
 void asset_reserve_operation::validate()const

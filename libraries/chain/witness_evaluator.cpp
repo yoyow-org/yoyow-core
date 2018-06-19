@@ -23,10 +23,8 @@
  */
 #include <graphene/chain/witness_evaluator.hpp>
 #include <graphene/chain/witness_object.hpp>
-#include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/database.hpp>
-#include <graphene/chain/protocol/vote.hpp>
 
 namespace graphene { namespace chain {
 
@@ -75,7 +73,6 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
       wit.signing_key         = op.block_signing_key;
       wit.pledge              = op.pledge.amount.value;
       wit.pledge_last_update  = d.head_block_time();
-      //wit.vote_id           = vote_id;
 
       wit.average_pledge_last_update       = d.head_block_time();
       if( wit.pledge > 0 )
