@@ -29,6 +29,21 @@ struct get_impacted_account_visitor
    void operator()( const post_operation& op )
    {
       // TODO review
+      //_impacted.insert( op.poster ); // fee payer
+      /*
+      _impacted.insert( op.platform );
+      if( op.origin_platform.valid() )
+          _impacted.insert( *(op.origin_platform) );
+      if( op.origin_poster.valid() )
+          _impacted.insert( *(op.origin_poster) );
+      */
+   }
+
+   void operator()( const post_update_operation& op )
+   {
+      // TODO review
+      //_impacted.insert( op.poster ); // fee payer
+      //_impacted.insert( op.platform );
    }
 
    void operator()( const csaf_collect_operation& op )
@@ -137,6 +152,21 @@ struct get_impacted_account_visitor
       // TODO review
    }
    void operator()( const witness_report_operation& op )
+   {
+      // TODO review
+   }
+
+   void operator()( const platform_create_operation& op )
+   {
+      // TODO review
+      //_impacted.insert( op.owner );
+   }
+   void operator()( const platform_update_operation& op )
+   {
+      // TODO review
+      //_impacted.insert( op.owner );
+   }
+   void operator()( const platform_vote_update_operation& op )
    {
       // TODO review
    }
@@ -389,6 +419,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
               break;
             } case impl_witness_vote_object_type:{
                // TODO review
+              break;
+            } case impl_platform_vote_object_type:{
+              // TODO review
               break;
             } case impl_committee_member_vote_object_type:{
                // TODO review

@@ -392,19 +392,48 @@ class database_api
       /////////////////////////
 
       /**
+       * @brief Get a list of platforms by account UID
+       * @param account_uids account UIDs of the platforms to retrieve
+       * @return The platforms corresponding to the provided account UIDs
+       */
+      vector<optional<platform_object>> get_platforms(const vector<account_uid_type>& account_uids)const;
+
+      /**
+       * @brief Get the platform owned by a given account
+       * @param account The UID of the account whose platform should be retrieved
+       * @return The platform object, or null if the account does not have a platform
+       */
+      fc::optional<platform_object> get_platform_by_account(account_uid_type account)const;
+
+      /**
+       * @brief Query for registered platforms
+       * @param lower_bound_uid Lower bound of the first uid to return
+       * @param limit Maximum number of results to return -- must not exceed 100
+       * @param order_by how the returned list will be sorted
+       * @return A list of platform objects
+       */
+      vector<platform_object> lookup_platforms(const account_uid_type lower_bound_uid,
+                                              uint32_t limit, data_sorting_type order_by)const;
+
+      /**
+       * @brief Get the total number of platforms registered with the blockchain
+       */
+      uint64_t get_platform_count()const;
+
+      /**
        * @brief Get a post
-       * @param platform_pid pid of the platform
+       * @param platform_owner uid of the platform
        * @param poster_uid UID of the poster
        * @param post_pid pid of the post
        * @return The post corresponding to the provided parameters.
        */
-      optional<post_object> get_post( const platform_pid_type platform_pid,
+      optional<post_object> get_post( const account_uid_type platform_owner,
                                       const account_uid_type poster_uid,
                                       const post_pid_type post_pid )const;
 
       /**
        * @brief Get posts by platform plus poster
-       * @param platform_pid pid of a platform
+       * @param platform_owner uid of a platform
        * @param poster UID of a poster, will query for all posters if omitted
        * @param create_time_range a time range (earliest, latest] to query
        * @param limit Maximum number of posts to fetch (must not exceed 100)
@@ -412,25 +441,10 @@ class database_api
        */
       // TODO may need a flag to fetch root posts only, or non-root posts only, or both
       // FIXME if limit is 100, will be buggy when too many posts in same second
-      vector<post_object> get_posts_by_platform_poster( const platform_pid_type platform_pid,
+      vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;
-
-      /**
-       * @brief Get posts by parent
-       * @param platform_pid pid of a platform
-       * @param parent a pair of poster UID and post pid of the parent post, will fetch root posts if omitted
-       * @param create_time_range a time range (earliest, latest] to query
-       * @param limit Maximum number of posts to fetch (must not exceed 100)
-       * @return posts corresponding to the provided parameters, ordered by create time, newest first
-       */
-       // FIXME if limit is 100, will be buggy when too many posts in same second
-       vector<post_object> get_posts_by_parent( const platform_pid_type platform_pid,
-                                      const optional<std::pair<account_uid_type, post_pid_type>> parent,
-                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
-                                      const uint32_t limit )const;
-
 
       ////////////
       // Assets //
@@ -586,6 +600,7 @@ class database_api
        * @brief Get the total number of witnesses registered with the blockchain
        */
       uint64_t get_witness_count()const;
+
 
       /////////////////////////////////////
       // Committee members and proposals //
@@ -750,7 +765,7 @@ FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_pledge)
                );
 
-FC_API(graphene::app::database_api,
+FC_API( graphene::app::database_api,
    // Objects
    (get_objects)
 
@@ -794,9 +809,12 @@ FC_API(graphene::app::database_api,
    (get_csaf_leases_by_to)
 
    // Platforms and posts
+   (get_platforms)
+   (get_platform_by_account)
+   (lookup_platforms)
+   (get_platform_count)
    (get_post)
    (get_posts_by_platform_poster)
-   (get_posts_by_parent)
 
    // Balances
    (get_account_balances)
@@ -836,7 +854,7 @@ FC_API(graphene::app::database_api,
    (list_committee_proposals)
 
    // workers
-   (get_workers_by_account)
+   //(get_workers_by_account)
    // Votes
    (lookup_vote_ids)
 

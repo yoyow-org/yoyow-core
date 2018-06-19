@@ -173,17 +173,6 @@ BOOST_AUTO_TEST_CASE(asset_claim_fees_test)
 
       }
 
-      if( db.head_block_time() <= HARDFORK_413_TIME )
-      {
-         // can't claim before hardfork
-         GRAPHENE_REQUIRE_THROW( claim_fees( izzy_id, _izzy(1) ), fc::exception );
-         generate_blocks( HARDFORK_413_TIME );
-         while( db.head_block_time() <= HARDFORK_413_TIME )
-         {
-            generate_block();
-         }
-      }
-
       {
          const asset_object& izzycoin = izzycoin_id(db);
          const asset_object& jillcoin = jillcoin_id(db);
@@ -636,7 +625,6 @@ BOOST_AUTO_TEST_CASE( fee_refund_test )
       {
          if( i == 1 )
          {
-            generate_blocks( HARDFORK_445_TIME, true, skip );
             generate_block( skip );
          }
 
@@ -686,10 +674,7 @@ BOOST_AUTO_TEST_CASE( fee_refund_test )
          cancel_limit_order( bo1_id(db) );
 
          int64_t cancel_net_fee;
-         if( db.head_block_time() >= HARDFORK_445_TIME )
-            cancel_net_fee = order_cancel_fee;
-         else
-            cancel_net_fee = order_create_fee + order_cancel_fee;
+         cancel_net_fee = order_cancel_fee;
 
          BOOST_CHECK_EQUAL( get_balance( alice_id, core_id ), alice_b0 - 1000 - order_create_fee );
          BOOST_CHECK_EQUAL( get_balance( alice_id,  usd_id ), alice_b0 );
@@ -743,11 +728,6 @@ BOOST_AUTO_TEST_CASE( stealth_fba_test )
       ACTORS( (alice)(bob)(chloe)(dan)(izzy)(philbin)(tom) );
       upgrade_to_lifetime_member(philbin_id);
 
-      generate_blocks( HARDFORK_538_TIME );
-      generate_blocks( HARDFORK_555_TIME );
-      generate_blocks( HARDFORK_563_TIME );
-      generate_blocks( HARDFORK_572_TIME );
-      generate_blocks( HARDFORK_599_TIME );
 
       // Philbin (registrar who registers Rex)
 

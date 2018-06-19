@@ -152,14 +152,7 @@ BOOST_AUTO_TEST_CASE( issue_whitelist_uia )
       op.issue_to_account = nathan_id;
       trx.operations.emplace_back(op);
       set_expiration( db, trx );
-      //Fail because nathan is not whitelisted, but only before hardfork time
-      if( db.head_block_time() <= HARDFORK_415_TIME )
-      {
-         GRAPHENE_REQUIRE_THROW(PUSH_TX( db, trx, ~0 ), fc::exception);
-         generate_blocks( HARDFORK_415_TIME );
-         generate_block();
-         set_expiration( db, trx );
-      }
+      
       PUSH_TX( db, trx, ~0 );
 
       BOOST_CHECK(is_authorized_asset( db, nathan_id(db), uia_id(db) ));
@@ -271,17 +264,9 @@ BOOST_AUTO_TEST_CASE( transfer_whitelist_uia )
       BOOST_TEST_MESSAGE( "Attempting to transfer from nathan after blacklisting, should fail" );
       op.amount = advanced.amount(50);
       trx.operations.back() = op;
-      //Fail because nathan is blacklisted
-      if( db.head_block_time() <= HARDFORK_419_TIME )
-      {
-         // before the hardfork time, it fails because the whitelist check fails
-         GRAPHENE_REQUIRE_THROW(PUSH_TX( db, trx, ~0 ), transfer_from_account_not_whitelisted );
-      }
-      else
-      {
-         // after the hardfork time, it fails because the fees are not in a whitelisted asset
-         GRAPHENE_REQUIRE_THROW(PUSH_TX( db, trx, ~0 ), fc::exception );
-      }
+      
+      // after the hardfork time, it fails because the fees are not in a whitelisted asset
+      GRAPHENE_REQUIRE_THROW(PUSH_TX( db, trx, ~0 ), fc::exception );
 
       BOOST_TEST_MESSAGE( "Attempting to burn from nathan after blacklisting, should fail" );
       asset_reserve_operation burn;
@@ -452,17 +437,7 @@ BOOST_AUTO_TEST_CASE( asset_name_test )
       // Bob can't create ALPHA.ONE
       GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA.ONE", bob_id(db), 0 ), fc::exception );
       BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( !has_asset("ALPHA.ONE") );
-      if( db.head_block_time() <= HARDFORK_409_TIME )
-      {
-         // Alice can't create ALPHA.ONE before hardfork
-         GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA.ONE", alice_id(db), 0 ), fc::exception );
-         BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( !has_asset("ALPHA.ONE") );
-         generate_blocks( HARDFORK_409_TIME );
-         generate_block();
-         // Bob can't create ALPHA.ONE after hardfork
-         GRAPHENE_REQUIRE_THROW( create_user_issued_asset( "ALPHA.ONE", bob_id(db), 0 ), fc::exception );
-         BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( !has_asset("ALPHA.ONE") );
-      }
+      
       // Alice can create it
       create_user_issued_asset( "ALPHA.ONE", alice_id(db), 0 );
       BOOST_CHECK(  has_asset("ALPHA") );    BOOST_CHECK( has_asset("ALPHA.ONE") );

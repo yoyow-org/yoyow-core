@@ -485,10 +485,7 @@ void database::update_expired_feeds()
 
       const asset_bitasset_data_object& b = a.bitasset_data(*this);
       bool feed_is_expired;
-      if( head_block_time() < HARDFORK_615_TIME )
-         feed_is_expired = b.feed_is_expired_before_hardfork_615( head_block_time() );
-      else
-         feed_is_expired = b.feed_is_expired( head_block_time() );
+      feed_is_expired = b.feed_is_expired( head_block_time() );
       if( feed_is_expired )
       {
          modify(b, [this](asset_bitasset_data_object& a) {
@@ -1065,6 +1062,13 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                o.witness_report_allow_pre_last_block = *pv.witness_report_allow_pre_last_block;
             if( pv.witness_report_pledge_deduction_amount.valid() )
                o.witness_report_pledge_deduction_amount = *pv.witness_report_pledge_deduction_amount;
+            
+            if( pv.platform_min_pledge.valid() )
+               o.platform_min_pledge = *pv.platform_min_pledge;
+            if( pv.platform_pledge_release_delay.valid() )
+               o.platform_pledge_release_delay = *pv.platform_pledge_release_delay;
+            if( pv.platform_max_vote_per_account.valid() )
+               o.platform_max_vote_per_account = *pv.platform_max_vote_per_account;
          });
       }
 
@@ -1121,6 +1125,7 @@ void database::check_invariants()
    share_type total_core_leased_out = 0;
    share_type total_core_witness_pledge = 0;
    share_type total_core_committee_member_pledge = 0;
+   share_type total_core_platform_pledge = 0;
 
    uint64_t total_voting_accounts = 0;
    share_type total_voting_core_balance = 0;
@@ -1142,6 +1147,9 @@ void database::check_invariants()
       FC_ASSERT( s.uncollected_witness_pay >= 0 );
       FC_ASSERT( s.witness_pledge_release_block_number > head_num );
       FC_ASSERT( s.committee_member_pledge_release_block_number > head_num );
+      FC_ASSERT( s.total_platform_pledge >= s.releasing_platform_pledge );
+      FC_ASSERT( s.releasing_platform_pledge >= 0 );
+      FC_ASSERT( s.platform_pledge_release_block_number > head_num );
 
       total_core_balance += s.core_balance;
       total_core_non_bal += ( s.prepaid + s.uncollected_witness_pay );
@@ -1149,7 +1157,8 @@ void database::check_invariants()
       total_core_leased_out += s.core_leased_out;
       total_core_witness_pledge += ( s.total_witness_pledge - s.releasing_witness_pledge );
       total_core_committee_member_pledge += ( s.total_committee_member_pledge - s.releasing_committee_member_pledge );
-      FC_ASSERT( s.core_balance >= s.core_leased_out + s.total_witness_pledge + s.total_committee_member_pledge );
+      total_core_platform_pledge += (s.total_platform_pledge - s.releasing_platform_pledge );
+      FC_ASSERT( s.core_balance >= s.core_leased_out + s.total_witness_pledge + s.total_committee_member_pledge + s.total_platform_pledge );
 
       if( s.is_voter )
       {
@@ -1186,9 +1195,11 @@ void database::check_invariants()
    uint64_t total_voters = 0;
    uint64_t total_witnesses_voted = 0;
    uint64_t total_committee_members_voted = 0;
+   uint64_t total_platform_voted = 0;
    uint64_t total_voter_votes = 0;
    fc::uint128_t total_voter_witness_votes;
    fc::uint128_t total_voter_committee_member_votes;
+   fc::uint128_t total_voter_platform_votes;
    vector<share_type> total_got_proxied_votes;
    vector<share_type> total_proxied_votes;
    total_got_proxied_votes.resize( gpo.parameters.max_governance_voting_proxy_level );
@@ -1206,15 +1217,18 @@ void database::check_invariants()
          total_voter_votes += s.votes;
          total_witnesses_voted += s.number_of_witnesses_voted;
          total_committee_members_voted += s.number_of_committee_members_voted;
+         total_platform_voted += s.number_of_platform_voted;
          if( s.proxy_uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID )
          {
             total_voter_witness_votes += fc::uint128_t( s.total_votes() ) * s.number_of_witnesses_voted;
             total_voter_committee_member_votes += fc::uint128_t( s.total_votes() ) * s.number_of_committee_members_voted;
+            total_voter_platform_votes += fc::uint128_t( s.total_votes() ) * s.number_of_platform_voted;
          }
          else
          {
             FC_ASSERT( s.number_of_witnesses_voted == 0 );
             FC_ASSERT( s.number_of_committee_members_voted == 0 );
+            FC_ASSERT( s.number_of_platform_voted == 0 );
             total_proxied_votes[0] += s.effective_votes;
             for( size_t i = 1; i < gpo.parameters.max_governance_voting_proxy_level; ++i )
                total_proxied_votes[i] += s.proxied_votes[i-1];
@@ -1267,32 +1281,193 @@ void database::check_invariants()
    FC_ASSERT( total_committee_member_pledges == total_core_committee_member_pledge );
    FC_ASSERT( total_committee_member_received_votes == total_voter_committee_member_votes );
 
+   /// platform
+   share_type total_platform_pledges;
+   fc::uint128_t total_platform_received_votes;
+   const auto& pla_idx = get_index_type<platform_index>().indices();
+   for( const auto& s: pla_idx )
+   {
+      if( s.is_valid )
+      {
+         const auto& stats = get_account_statistics_by_uid( s.owner );
+         FC_ASSERT( stats.last_platform_sequence == s.sequence );
+         FC_ASSERT( stats.total_platform_pledge - stats.releasing_platform_pledge == s.pledge );
+         total_platform_pledges += s.pledge;
+         total_platform_received_votes += s.total_votes;
+      }
+   }
+   FC_ASSERT( total_platform_pledges == total_core_platform_pledge );
+   FC_ASSERT( total_platform_received_votes == total_voter_platform_votes );
 
-   fc::uint128_t total_witness_vote_objects;
+
+   uint64_t total_witness_vote_objects = 0;
    const auto& wit_vote_idx = get_index_type<witness_vote_index>().indices();
    for( const auto& s: wit_vote_idx )
    {
       const auto wit = find_witness_by_uid( s.witness_uid );
       const auto voter = find_voter( s.voter_uid, s.voter_sequence );
-      if( wit != nullptr && voter != nullptr && voter->is_valid )
+      if( wit != nullptr && voter != nullptr && voter->is_valid && wit->sequence == s.witness_sequence )
       {
          ++total_witness_vote_objects;
       }
    }
-   FC_ASSERT( total_witnesses_voted == total_witnesses_voted );
+   FC_ASSERT( total_witnesses_voted == total_witness_vote_objects );
 
-   fc::uint128_t total_committee_member_vote_objects;
+   uint64_t total_committee_member_vote_objects = 0;
    const auto& com_vote_idx = get_index_type<committee_member_vote_index>().indices();
    for( const auto& s: com_vote_idx )
    {
       const auto com = find_committee_member_by_uid( s.committee_member_uid );
       const auto voter = find_voter( s.voter_uid, s.voter_sequence );
-      if( com != nullptr && voter != nullptr && voter->is_valid )
+      if( com != nullptr && voter != nullptr && voter->is_valid && com->sequence == s.committee_member_sequence )
       {
          ++total_committee_member_vote_objects;
       }
    }
-   FC_ASSERT( total_committee_members_voted == total_committee_members_voted );
+   FC_ASSERT( total_committee_members_voted == total_committee_member_vote_objects );
+
+   /// platform
+   uint64_t total_platform_vote_objects = 0;
+   const auto& pla_vote_idx = get_index_type<platform_vote_index>().indices();
+   for( const auto& s: pla_vote_idx )
+   {
+      const auto pla = find_platform_by_owner( s.platform_owner );
+      const auto voter = find_voter( s.voter_uid, s.voter_sequence );
+      if( pla != nullptr && voter != nullptr && voter->is_valid && pla->sequence == s.platform_sequence )
+      {
+         ++total_platform_vote_objects;
+      }
+   }
+   FC_ASSERT( total_platform_voted == total_platform_vote_objects );
+}
+
+void database::release_platform_pledges()
+{
+   const auto head_num = head_block_num();
+   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_platform_pledge_release>();
+   auto itr = idx.begin();
+   while( itr != idx.end() && itr->platform_pledge_release_block_number <= head_num )
+   {
+      modify( *itr, [&](account_statistics_object& s) {
+         s.total_platform_pledge -= s.releasing_platform_pledge;
+         s.releasing_platform_pledge = 0;
+         s.platform_pledge_release_block_number = -1;
+      });
+      itr = idx.begin();
+   }
+}
+
+void database::adjust_platform_votes( const platform_object& platform, share_type delta ){
+   if( delta == 0 || !platform.is_valid )
+      return;
+   modify( platform, [&]( platform_object& pla )
+   {
+      pla.total_votes += delta.value;
+   } );
+}
+
+void database::update_platform_avg_pledge( const account_uid_type uid )
+{
+   update_platform_avg_pledge( get_platform_by_owner( uid ) );
+}
+
+void database::update_platform_avg_pledge( const platform_object& pla )
+{
+   if( !pla.is_valid )
+      return;
+
+   const auto& global_params = get_global_properties().parameters;
+   const auto window = global_params.platform_max_pledge_seconds;
+   const auto now = head_block_time();
+
+   // update avg pledge
+   const auto old_avg_pledge = pla.average_pledge;
+   if( pla.average_pledge == pla.pledge )
+   {
+      modify( pla, [&]( platform_object& p )
+      {
+         p.average_pledge_last_update = now;
+         p.average_pledge_next_update_block = -1;
+      } );
+   }
+   else if( pla.average_pledge > pla.pledge || now >= pla.pledge_last_update + window )
+   {
+      modify( pla, [&]( platform_object& p )
+      {
+         p.average_pledge = p.pledge;
+         p.average_pledge_last_update = now;
+         p.average_pledge_next_update_block = -1;
+      } );
+   }
+   else if( now > pla.average_pledge_last_update )
+   {
+      // need to schedule next update because average_pledge < pledge, and need to update average_pledge
+      uint64_t delta_seconds = ( now - pla.average_pledge_last_update ).to_seconds();
+      uint64_t old_seconds = window - delta_seconds;
+
+      fc::uint128_t old_coin_seconds = fc::uint128_t( pla.average_pledge ) * old_seconds;
+      fc::uint128_t new_coin_seconds = fc::uint128_t( pla.pledge ) * delta_seconds;
+
+      uint64_t new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+
+      modify( pla, [&]( platform_object& p )
+      {
+         p.average_pledge = new_average_coins;
+         p.average_pledge_last_update = now;
+         p.average_pledge_next_update_block = head_block_num() + global_params.platform_avg_pledge_update_interval;
+      } );
+   }
+   else
+   {
+      // need to schedule next update because average_pledge < pledge, but no need to update average_pledge
+      modify( pla, [&]( platform_object& p )
+      {
+         p.average_pledge_next_update_block = head_block_num() + global_params.platform_avg_pledge_update_interval;
+      } );
+   }
+
+   if( old_avg_pledge != pla.average_pledge )
+   {
+      // TODO: Adjust distribution logic
+   }
+}
+
+void database::clear_resigned_platform_votes()
+{
+   const uint32_t max_votes_to_process = GRAPHENE_MAX_RESIGNED_PLATFORM_VOTES_PER_BLOCK;
+   uint32_t votes_processed = 0;
+   const auto& pla_idx = get_index_type<platform_index>().indices().get<by_valid>();
+   const auto& vote_idx = get_index_type<platform_vote_index>().indices().get<by_platform_owner_seq>();
+   auto pla_itr = pla_idx.begin(); // assume that false < true
+   while( pla_itr != pla_idx.end() && pla_itr->is_valid == false )
+   {
+      auto vote_itr = vote_idx.lower_bound( std::make_tuple( pla_itr->owner, pla_itr->sequence ) );
+      while( vote_itr != vote_idx.end()
+            && vote_itr->platform_owner == pla_itr->owner
+            && vote_itr->platform_sequence == pla_itr->sequence )
+      {
+         const voter_object* voter = find_voter( vote_itr->voter_uid, vote_itr->voter_sequence );
+         modify( *voter, [&]( voter_object& v )
+         {
+            v.number_of_platform_voted -= 1;
+         } );
+
+         auto tmp_itr = vote_itr;
+         ++vote_itr;
+         remove( *tmp_itr );
+
+         votes_processed += 1;
+         if( votes_processed >= max_votes_to_process )
+         {
+            ilog( "On block ${n}, reached threshold while removing votes for resigned platforms", ("n",head_block_num()) );
+            return;
+         }
+      }
+
+      remove( *pla_itr );
+
+      pla_itr = pla_idx.begin();
+   }
 }
 
 } }

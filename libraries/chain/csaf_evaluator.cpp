@@ -107,6 +107,7 @@ void_result csaf_lease_evaluator::do_evaluate( const csaf_lease_operation& op )
       auto available_balance = from_stats->core_balance
                              - from_stats->core_leased_out
                              - from_stats->total_witness_pledge
+                             - from_stats->total_platform_pledge
                              - from_stats->total_committee_member_pledge;
       FC_ASSERT( available_balance >= delta,
                  "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",

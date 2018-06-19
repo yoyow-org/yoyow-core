@@ -282,18 +282,7 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
       remove(proposal);
       session.merge();
    } catch ( const fc::exception& e ) {
-      if( head_block_time() <= HARDFORK_483_TIME )
-      {
-         for( size_t i=old_applied_ops_size,n=_applied_ops.size(); i<n; i++ )
-         {
-            ilog( "removing failed operation from applied_ops: ${op}", ("op", *(_applied_ops[i])) );
-            _applied_ops[i].reset();
-         }
-      }
-      else
-      {
-         _applied_ops.resize( old_applied_ops_size );
-      }
+      _applied_ops.resize( old_applied_ops_size );
       elog( "e", ("e",e.to_detail_string() ) );
       throw;
    }
@@ -552,8 +541,10 @@ void database::_apply_block( const signed_block& next_block )
    update_average_witness_pledges();
    release_witness_pledges();
    release_committee_member_pledges();
+   release_platform_pledges();
    clear_resigned_witness_votes();
    clear_resigned_committee_member_votes();
+   clear_resigned_platform_votes();
    invalidate_expired_governance_voters();
    process_invalid_governance_voters();
    update_voter_effective_votes();

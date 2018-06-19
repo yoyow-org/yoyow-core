@@ -128,9 +128,15 @@ int main( int argc, char** argv )
       for(uint32_t i=0;i<dev_account_count;i++)
       {
          genesis_state_type::initial_account_type acct(
+            graphene::chain::calc_account_uid(90+i),
             dev_account_prefix+std::to_string(i),
+            graphene::chain::calc_account_uid(100),
             get_dev_key( "owner-", i ),
             get_dev_key( "active-", i ),
+            get_dev_key( "secondary-", i ),
+            get_dev_key( "memo-", i ),
+            false,
+            false,
             false );
 
          genesis.initial_accounts.push_back( acct );
