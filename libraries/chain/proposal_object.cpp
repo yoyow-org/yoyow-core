@@ -32,8 +32,14 @@ bool proposal_object::is_authorized_to_execute(database& db) const
    transaction_evaluation_state dry_run_eval(&db);
 
    try {
-     verify_authority( proposed_transaction.operations, 
-                       available_key_approvals,
+       flat_map<public_key_type,signature_type> map;
+       signature_type st;
+       for( const auto&  key : available_key_approvals )
+       {
+           map[key] = st;
+       }
+        verify_authority( proposed_transaction.operations, 
+                       map,
                        [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).owner); },
                        [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).active); },
                        [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).secondary); },

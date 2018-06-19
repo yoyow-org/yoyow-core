@@ -62,7 +62,7 @@ namespace graphene { namespace chain {
 
          /// The number of shares currently in existence
          share_type current_supply;
-         share_type confidential_supply; ///< total asset held in confidential balances
+         //share_type confidential_supply; ///< total asset held in confidential balances
          share_type accumulated_fees; ///< fees accumulate to be paid out over time
          //share_type fee_pool;         ///< in core asset
    };
@@ -97,7 +97,7 @@ namespace graphene { namespace chain {
          /// @return true if this asset may only be transferred to/from the issuer or market orders
          bool is_transfer_restricted()const { return options.flags & transfer_restricted; }
          bool can_override()const { return options.flags & override_authority; }
-         bool allow_confidential()const { return !(options.flags & asset_issuer_permission_flags::disable_confidential); }
+         //bool allow_confidential()const { return !(options.flags & asset_issuer_permission_flags::disable_confidential); }
 
          /// Helper function to get an asset object with the given amount in this asset's type
          asset amount(share_type a)const { return asset(a, asset_id); }
@@ -132,8 +132,6 @@ namespace graphene { namespace chain {
          asset_dynamic_data_id_type  dynamic_asset_data_id;
          /// Extra data associated with BitAssets. This field is non-null if and only if is_market_issued() returns true
          //optional<asset_bitasset_data_id_type> bitasset_data_id;
-
-         optional<account_uid_type> buyback_account;
 
          asset_id_type get_id()const { return id; }
          asset_aid_type get_asset_id()const { return asset_id; }
@@ -171,7 +169,7 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::asset_dynamic_data_object, (graphene::db::object),
-                    (current_supply)(confidential_supply)(accumulated_fees) )
+                    (current_supply)(accumulated_fees) )
 
 FC_REFLECT_DERIVED( graphene::chain::asset_object, (graphene::db::object),
                     (asset_id)
@@ -180,5 +178,4 @@ FC_REFLECT_DERIVED( graphene::chain::asset_object, (graphene::db::object),
                     (issuer)
                     (options)
                     (dynamic_asset_data_id)
-                    (buyback_account)
                   )

@@ -1067,7 +1067,7 @@ void database::check_invariants()
       }
    }
    FC_ASSERT( total_platform_pledges == total_core_platform_pledge );
-   FC_ASSERT( total_platform_received_votes == total_voter_platform_votes );
+   FC_ASSERT( total_platform_received_votes == total_voter_platform_votes, "t1:${t1}  t2:${t2}",("t1",total_platform_received_votes)("t2",total_voter_platform_votes) );
 
 
    uint64_t total_witness_vote_objects = 0;

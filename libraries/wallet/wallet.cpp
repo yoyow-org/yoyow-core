@@ -892,26 +892,8 @@ public:
 
       return _builder_transactions[transaction_handle] = sign_transaction(_builder_transactions[transaction_handle], broadcast);
    }
+
    signed_transaction propose_builder_transaction(
-      transaction_handle_type handle,
-      time_point_sec expiration = time_point::now() + fc::minutes(1),
-      uint32_t review_period_seconds = 0, bool broadcast = true)
-   {
-      FC_ASSERT(_builder_transactions.count(handle));
-      proposal_create_operation op;
-      op.expiration_time = expiration;
-      signed_transaction& trx = _builder_transactions[handle];
-      std::transform(trx.operations.begin(), trx.operations.end(), std::back_inserter(op.proposed_ops),
-                     [](const operation& op) -> op_wrapper { return op; });
-      if( review_period_seconds )
-         op.review_period_seconds = review_period_seconds;
-      trx.operations = {op};
-      _remote_db->get_global_properties().parameters.current_fees->set_fee( trx.operations.front() );
-
-      return trx = sign_transaction(trx, broadcast);
-   }
-
-   signed_transaction propose_builder_transaction2(
       transaction_handle_type handle,
       string account_name_or_id,
       time_point_sec expiration = time_point::now() + fc::minutes(1),
@@ -2129,37 +2111,42 @@ signed_transaction account_cancel_auth_platform(string account,
             const auto& new_result = _remote_db->get_required_signatures( tx, available_keys );
             const auto& required_keys_subset = new_result.first.first;
             //const auto& missed_keys = new_result.first.second;
-            const auto& unused_keys = new_result.second;
+            const auto& unused_signatures = new_result.second;
 
             // unused signatures can be removed safely
-            for( const auto& key : unused_keys )
-            {
-               available_keys.erase( key );
-               available_keys_map.erase( key );
-            }
-               
+            for( const auto& sig : unused_signatures )
+               tx.signatures.erase( std::remove( tx.signatures.begin(), tx.signatures.end(), sig), tx.signatures.end() );
 
+            bool no_sig = tx.signatures.empty();
             auto dyn_props = get_dynamic_global_properties();
 
-            tx.set_reference_block( dyn_props.head_block_id );
+            if( no_sig )
+               tx.set_reference_block( dyn_props.head_block_id );
 
             // if no signature is included in the trx, reset expiration time; otherwise keep it
-               // first, some bookkeeping, expire old items from _recently_generated_transactions
-               // since transactions include the head block id, we just need the index for keeping transactions unique
-               // when there are multiple transactions in the same block.  choose a time period that should be at
-               // least one block long, even in the worst case.  2 minutes ought to be plenty.
-            fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
-            auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
-            auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
-            _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
+            if( no_sig )
+            {
+                // first, some bookkeeping, expire old items from _recently_generated_transactions
+                // since transactions include the head block id, we just need the index for keeping transactions unique
+                // when there are multiple transactions in the same block.  choose a time period that should be at
+                // least one block long, even in the worst case.  2 minutes ought to be plenty.
+               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(2));
+               auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
+               auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
+               _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
+
+            }
 
             uint32_t expiration_time_offset = 0;
             for (;;)
             {
-               tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
-               tx.signatures.clear();
+               if( no_sig )
+               {
+                  tx.set_expiration( dyn_props.time + fc::seconds(30 + expiration_time_offset) );
+                  tx.signatures.clear();
+               }
 
-               idump((required_keys_subset)(available_keys));
+               idump((required_keys_subset)(available_keys_map));
                // TODO: for better performance, sign after dupe check
                for( const auto& key : required_keys_subset )
                {
@@ -2190,142 +2177,6 @@ signed_transaction account_cancel_auth_platform(string account,
       }
 
       wdump((tx));
-
-      if( broadcast )
-      {
-         try
-         {
-            _remote_net_broadcast->broadcast_transaction( tx );
-         }
-         catch (const fc::exception& e)
-         {
-            elog("Caught exception while broadcasting tx ${id}:  ${e}", ("id", tx.id().str())("e", e.to_detail_string()) );
-            throw;
-         }
-      }
-
-      return tx;
-   }
-
-   signed_transaction sign_transaction_old(signed_transaction tx, bool broadcast = false)
-   {
-      flat_set<account_id_type> req_active_approvals;
-      flat_set<account_id_type> req_owner_approvals;
-      vector<authority>         other_auths;
-
-      tx.get_required_authorities( req_active_approvals, req_owner_approvals, other_auths );
-
-      for( const auto& auth : other_auths )
-         for( const auto& a : auth.account_auths )
-            req_active_approvals.insert(a.first);
-
-      // std::merge lets us de-duplicate account_id's that occur in both
-      //   sets, and dump them into a vector (as required by remote_db api)
-      //   at the same time
-      vector<account_id_type> v_approving_account_ids;
-      std::merge(req_active_approvals.begin(), req_active_approvals.end(),
-                 req_owner_approvals.begin() , req_owner_approvals.end(),
-                 std::back_inserter(v_approving_account_ids));
-
-      /// TODO: fetch the accounts specified via other_auths as well.
-
-      vector< optional<account_object> > approving_account_objects =
-            _remote_db->get_accounts( v_approving_account_ids );
-
-      /// TODO: recursively check one layer deeper in the authority tree for keys
-
-      FC_ASSERT( approving_account_objects.size() == v_approving_account_ids.size() );
-
-      flat_map<account_id_type, account_object*> approving_account_lut;
-      size_t i = 0;
-      for( optional<account_object>& approving_acct : approving_account_objects )
-      {
-         if( !approving_acct.valid() )
-         {
-            wlog( "operation_get_required_auths said approval of non-existing account ${id} was needed",
-                  ("id", v_approving_account_ids[i]) );
-            i++;
-            continue;
-         }
-         approving_account_lut[ approving_acct->id ] = &(*approving_acct);
-         i++;
-      }
-
-      flat_set<public_key_type> approving_key_set;
-      for( account_id_type& acct_id : req_active_approvals )
-      {
-         const auto it = approving_account_lut.find( acct_id );
-         if( it == approving_account_lut.end() )
-            continue;
-         const account_object* acct = it->second;
-         vector<public_key_type> v_approving_keys = acct->active.get_keys();
-         for( const public_key_type& approving_key : v_approving_keys )
-            approving_key_set.insert( approving_key );
-      }
-      for( account_id_type& acct_id : req_owner_approvals )
-      {
-         const auto it = approving_account_lut.find( acct_id );
-         if( it == approving_account_lut.end() )
-            continue;
-         const account_object* acct = it->second;
-         vector<public_key_type> v_approving_keys = acct->owner.get_keys();
-         for( const public_key_type& approving_key : v_approving_keys )
-            approving_key_set.insert( approving_key );
-      }
-      for( const authority& a : other_auths )
-      {
-         for( const auto& k : a.key_auths )
-            approving_key_set.insert( k.first );
-      }
-
-      auto dyn_props = get_dynamic_global_properties();
-      tx.set_reference_block( dyn_props.head_block_id );
-
-      // first, some bookkeeping, expire old items from _recently_generated_transactions
-      // since transactions include the head block id, we just need the index for keeping transactions unique
-      // when there are multiple transactions in the same block.  choose a time period that should be at
-      // least one block long, even in the worst case.  2 minutes ought to be plenty.
-      fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
-      auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
-      auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
-      _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
-
-      uint32_t expiration_time_offset = 0;
-      for (;;)
-      {
-         tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
-         tx.signatures.clear();
-
-         for( public_key_type& key : approving_key_set )
-         {
-            auto it = _keys.find(key);
-            if( it != _keys.end() )
-            {
-               fc::optional<fc::ecc::private_key> privkey = wif_to_key( it->second );
-               FC_ASSERT( privkey.valid(), "Malformed private key in _keys" );
-               tx.sign( *privkey, _chain_id );
-            }
-            /// TODO: if transaction has enough signatures to be "valid" don't add any more,
-            /// there are cases where the wallet may have more keys than strictly necessary and
-            /// the transaction will be rejected if the transaction validates without requiring
-            /// all signatures provided
-         }
-
-         graphene::chain::transaction_id_type this_transaction_id = tx.id();
-         auto iter = _recently_generated_transactions.find(this_transaction_id);
-         if (iter == _recently_generated_transactions.end())
-         {
-            // we haven't generated this transaction before, the usual case
-            recently_generated_transaction_record this_transaction_record;
-            this_transaction_record.generation_time = dyn_props.time;
-            this_transaction_record.transaction_id = this_transaction_id;
-            _recently_generated_transactions.insert(this_transaction_record);
-            break;
-         }
-
-         // else we've generated a dupe, increment expiration time and re-sign it
-         ++expiration_time_offset;
-      }
 
       if( broadcast )
       {
@@ -3198,21 +3049,12 @@ signed_transaction wallet_api::sign_builder_transaction(transaction_handle_type 
 
 signed_transaction wallet_api::propose_builder_transaction(
    transaction_handle_type handle,
-   time_point_sec expiration,
-   uint32_t review_period_seconds,
-   bool broadcast)
-{
-   return my->propose_builder_transaction(handle, expiration, review_period_seconds, broadcast);
-}
-
-signed_transaction wallet_api::propose_builder_transaction2(
-   transaction_handle_type handle,
    string account_name_or_id,
    time_point_sec expiration,
    uint32_t review_period_seconds,
    bool broadcast)
 {
-   return my->propose_builder_transaction2(handle, account_name_or_id, expiration, review_period_seconds, broadcast);
+   return my->propose_builder_transaction(handle, account_name_or_id, expiration, review_period_seconds, broadcast);
 }
 
 void wallet_api::remove_builder_transaction(transaction_handle_type handle)
@@ -3709,11 +3551,6 @@ void wallet_api::set_wallet_filename(string wallet_filename)
 signed_transaction wallet_api::sign_transaction(signed_transaction tx, bool broadcast /* = false */)
 { try {
    return my->sign_transaction( tx, broadcast);
-} FC_CAPTURE_AND_RETHROW( (tx) ) }
-
-signed_transaction wallet_api::sign_transaction_old(signed_transaction tx, bool broadcast /* = false */)
-{ try {
-   return my->sign_transaction_old( tx, broadcast);
 } FC_CAPTURE_AND_RETHROW( (tx) ) }
 
 operation wallet_api::get_prototype_operation(string operation_name)

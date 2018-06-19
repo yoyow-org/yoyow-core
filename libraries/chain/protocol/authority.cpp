@@ -26,15 +26,6 @@
 
 namespace graphene { namespace chain {
 
-void add_authority_accounts(
-   flat_set<account_id_type>& result,
-   const authority& a
-   )
-{
-   for( auto& item : a.account_auths )
-      result.insert( item.first );
-}
-
 void add_authority_account_uids(
    flat_set<account_uid_type>& result,
    const authority& a
