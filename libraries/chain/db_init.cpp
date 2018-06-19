@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#include <graphene/db/flat_index.hpp>
 #include <graphene/chain/database.hpp>
 
 #include <graphene/chain/account_object.hpp>

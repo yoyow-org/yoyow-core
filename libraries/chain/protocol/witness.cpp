@@ -29,7 +29,7 @@ void witness_create_operation::validate() const
 {
    validate_op_fee( fee, "witness creation " );
    validate_account_uid( account, "witness " );
-   validate_non_negative_asset( pledge, "pledge" );
+   validate_non_negative_core_asset( pledge, "pledge" );
    FC_ASSERT( url.size() < GRAPHENE_MAX_URL_LENGTH, "url is too long" );
 }
 
@@ -39,7 +39,7 @@ void witness_update_operation::validate() const
    validate_account_uid( account, "witness " );
    FC_ASSERT( new_pledge.valid() || new_signing_key.valid() || new_url.valid(), "Should change something" );
    if( new_pledge.valid() )
-      validate_non_negative_asset( *new_pledge, "new pledge" );
+      validate_non_negative_core_asset( *new_pledge, "new pledge" );
    if( new_url.valid() )
       FC_ASSERT( new_url->size() < GRAPHENE_MAX_URL_LENGTH, "new url is too long" );
 }
@@ -79,7 +79,7 @@ void witness_collect_pay_operation::validate() const
 {
    validate_op_fee( fee, "witness pay collecting " );
    validate_account_uid( account, "witness " );
-   validate_positive_asset( pay, "pay" );
+   validate_positive_core_asset( pay, "pay" );
 }
 
 void witness_report_operation::validate() const

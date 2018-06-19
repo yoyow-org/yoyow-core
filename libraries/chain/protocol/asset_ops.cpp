@@ -28,7 +28,6 @@ namespace graphene { namespace chain {
 /**
  *  Valid symbols can contain [A-Z0-9], and '.'
  *  They must start with [A, Z]
- *  They must end with [A, Z]
  *  They can contain a maximum of one '.'
  */
 bool is_valid_symbol( const string& symbol )
@@ -36,22 +35,20 @@ bool is_valid_symbol( const string& symbol )
     if( symbol.size() < GRAPHENE_MIN_ASSET_SYMBOL_LENGTH )
         return false;
 
-    if( symbol.substr(0,3) == "BIT" ) 
-       return false;
-
     if( symbol.size() > GRAPHENE_MAX_ASSET_SYMBOL_LENGTH )
         return false;
 
-    if( !isalpha( symbol.front() ) )
+    if( symbol.front() < 'A' || symbol.front() > 'Z' )
         return false;
 
-    if( !isalpha( symbol.back() ) )
-        return false;
+    auto symb4 = symbol.substr( 0, 4 );
+    if( symb4 == "YOYO" || symb4 == "YOY0" || symb4 == "Y0YO" || symb4 == "Y0Y0" )
+       return false;
 
     bool dot_already_present = false;
     for( const auto c : symbol )
     {
-        if( (isalpha( c ) && isupper( c )) || isdigit(c) )
+        if( ( c >= 'A' && c <= 'Z' ) || ( c >= '0' && c <= '9' ) )
             continue;
 
         if( c == '.' )
@@ -76,7 +73,7 @@ share_type asset_issue_operation::calculate_fee(const fee_parameters_type& k)con
 
 share_type asset_create_operation::calculate_fee(const asset_create_operation::fee_parameters_type& param)const
 {
-   auto core_fee_required = param.long_symbol; 
+   auto core_fee_required = param.long_symbol;
 
    switch(symbol.size()) {
       case 3: core_fee_required = param.symbol3;

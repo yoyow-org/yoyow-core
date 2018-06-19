@@ -269,9 +269,9 @@ void account_reg_info::validate() const
    validate_percentage( registrar_percent + referrer_percent, "registrar_percent plus referrer_percent" );
    validate_percentage( buyout_percent, "buyout_percent" );
    // assets should be core asset
-   validate_asset_id( allowance_per_article, "allowance_per_article" );
-   validate_asset_id( max_share_per_article, "max_share_per_article" );
-   validate_asset_id( max_share_total,       "max_share_total"       );
+   validate_core_asset_id( allowance_per_article, "allowance_per_article" );
+   validate_core_asset_id( max_share_per_article, "max_share_per_article" );
+   validate_core_asset_id( max_share_total,       "max_share_total"       );
    // ==== checks below are not needed
    // allowance_per_article should be >= 0
    // max_share_per_article should be >= 0

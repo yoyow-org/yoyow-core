@@ -62,7 +62,7 @@ void platform_create_operation::validate() const
 {
    validate_op_fee( fee, "platform creation " );
    validate_account_uid( account, "platform " );
-   validate_non_negative_asset( pledge, "pledge " );
+   validate_non_negative_core_asset( pledge, "pledge " );
    validate_platform_string( name, "name " );
    validate_platform_string( url, "url ", GRAPHENE_MAX_URL_LENGTH );
    validate_platform_string( extra_data, "extra_data ", GRAPHENE_MAX_PLATFORM_EXTRA_DATA_LENGTH );
@@ -83,7 +83,7 @@ void platform_update_operation::validate() const
    validate_account_uid( account, "platform " );
    FC_ASSERT( new_pledge.valid() || new_name.valid() || new_url.valid() || new_extra_data.valid(), "Should change something" );
    if( new_pledge.valid() )
-      validate_non_negative_asset( *new_pledge, "new pledge" );
+      validate_non_negative_core_asset( *new_pledge, "new pledge" );
    if( new_url.valid() )
       validate_platform_string( *new_url, "new url ", GRAPHENE_MAX_URL_LENGTH );
    if( new_name.valid() )
