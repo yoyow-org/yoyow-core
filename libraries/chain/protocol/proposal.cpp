@@ -30,18 +30,21 @@ namespace graphene { namespace chain {
 void proposal_create_operation::validate() const
 {
    validate_op_fee( fee, "proposal create " );
+   validate_account_uid( fee_paying_account, "proposal create " );
    FC_ASSERT( !proposed_ops.empty() );
-   for( const auto& op : proposed_ops ) operation_validate( op.op );
+   // Note: for testnet, this check is commented out and moved to evaluator due to historical data
+   //for( const auto& op : proposed_ops ) operation_validate( op.op );
 }
 
 share_type proposal_create_operation::calculate_fee(const fee_parameters_type& k) const
 {
-   return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
+   return share_type( k.fee ) + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
 }
 
 void proposal_update_operation::validate() const
 {
    validate_op_fee( fee, "proposal update " );
+   validate_account_uid( fee_paying_account, "proposal update " );
    FC_ASSERT(!(secondary_approvals_to_add.empty() && secondary_approvals_to_remove.empty() && 
                active_approvals_to_add.empty() && active_approvals_to_remove.empty() &&
                owner_approvals_to_add.empty() && owner_approvals_to_remove.empty() &&
@@ -71,11 +74,12 @@ void proposal_update_operation::validate() const
 void proposal_delete_operation::validate() const
 {
    validate_op_fee( fee, "proposal delete " );
+   validate_account_uid( fee_paying_account, "proposal delete " );
 }
 
 share_type proposal_update_operation::calculate_fee(const fee_parameters_type& k) const
 {
-   return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
+   return share_type( k.fee ) + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
 }
 
 void proposal_update_operation::get_required_authorities( vector<authority>& o )const
@@ -87,7 +91,8 @@ void proposal_update_operation::get_required_authorities( vector<authority>& o )
       auth.key_auths[k] = 1;
    auth.weight_threshold = auth.key_auths.size();
 
-   o.emplace_back( std::move(auth) );
+   if( auth.key_auths.size() > 0 )
+      o.emplace_back( std::move(auth) );
 }
 
 void proposal_update_operation::get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const

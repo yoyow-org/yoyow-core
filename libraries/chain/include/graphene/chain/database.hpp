@@ -252,38 +252,39 @@ namespace graphene { namespace chain {
           */
          uint32_t get_slot_at_time(fc::time_point_sec when)const;
 
-         void update_witness_schedule();
-
          void update_witness_avg_pledge( const account_uid_type uid );
          void update_witness_avg_pledge( const witness_object& wit );
+         void adjust_witness_votes( const witness_object& witness, share_type delta );
+
+      private:
+         void update_witness_schedule();
 
          void reset_witness_by_pledge_schedule();
          void reset_witness_by_vote_schedule();
 
-         void adjust_witness_votes( const witness_object& witness, share_type delta );
-
-         void update_platform_avg_pledge( const account_uid_type uid );
-         void update_platform_avg_pledge( const platform_object& pla );
-         void adjust_platform_votes( const platform_object& platform, share_type delta );
 
          //////////////////// db_voter.cpp ////////////////////
+      public:
+         bool check_voter_valid( const voter_object& voter, bool deep_check );
+         void invalidate_voter( const voter_object& voter );
+         void clear_voter_votes( const voter_object& voter );
+         void adjust_voter_proxy_votes( const voter_object& voter, vector<share_type> delta, bool update_last_vote );
+         void clear_voter_proxy_votes( const voter_object& voter );
+         void adjust_committee_member_votes( const committee_member_object& committee_member, share_type delta );
+      private:
          void update_voter_effective_votes( const voter_object& voter );
          void adjust_voter_votes( const voter_object& voter, share_type delta );
          void adjust_voter_self_votes( const voter_object& voter, share_type delta );
          void adjust_voter_self_witness_votes( const voter_object& voter, share_type delta );
          void adjust_voter_self_committee_member_votes( const voter_object& voter, share_type delta );
-         void adjust_voter_proxy_votes( const voter_object& voter, vector<share_type> delta, bool update_last_vote );
-         void clear_voter_proxy_votes( const voter_object& voter );
+         void adjust_voter_self_platform_votes( const voter_object& voter, share_type delta );
          void clear_voter_witness_votes( const voter_object& voter );
          void clear_voter_committee_member_votes( const voter_object& voter );
-         void clear_voter_votes( const voter_object& voter );
-         void invalidate_voter( const voter_object& voter );
-         bool check_voter_valid( const voter_object& voter, bool deep_check );
+         void clear_voter_platform_votes( const voter_object& voter );
          uint32_t process_invalid_proxied_voters( const voter_object& proxy, uint32_t max_voters_to_process );
 
-         void adjust_committee_member_votes( const committee_member_object& committee_member, share_type delta );
-
          //////////////////// db_getter.cpp ////////////////////
+      public:
 
          const chain_id_type&                   get_chain_id()const;
          const asset_object&                    get_core_asset()const;
@@ -385,30 +386,9 @@ namespace graphene { namespace chain {
          void adjust_balance(account_uid_type account, asset delta);
          void adjust_balance(const account_object& account, asset delta);
 
-         /**
-          * @brief Helper to make lazy deposit to CDD VBO.
-          *
-          * If the given optional VBID is not valid(),
-          * or it does not have a CDD vesting policy,
-          * or the owner / vesting_seconds of the policy
-          * does not match the parameter, then credit amount
-          * to newly created VBID and return it.
-          *
-          * Otherwise, credit amount to ovbid.
-          * 
-          * @return ID of newly created VBO, but only if VBO was created.
-          */
-         optional< vesting_balance_id_type > deposit_lazy_vesting(
-            const optional< vesting_balance_id_type >& ovbid,
-            share_type amount,
-            uint32_t req_vesting_seconds,
-            account_uid_type req_owner,
-            bool require_vesting );
-
-         // helper to handle cashback rewards
-         void deposit_cashback(const account_object& acct, share_type amount, bool require_vesting = true);
          // helper to handle witness pay
          void deposit_witness_pay(const witness_object& wit, share_type amount);
+
 
          //////////////////// db_debug.cpp ////////////////////
 
@@ -416,66 +396,14 @@ namespace graphene { namespace chain {
          void apply_debug_updates();
          void debug_update( const fc::variant_object& update );
 
-         //////////////////// db_market.cpp ////////////////////
+         //////////////////// db_notify.cpp ////////////////////
 
-         /// @{ @group Market Helpers
-         void cancel_order(const limit_order_object& order, bool create_virtual_op = true);
-
-         /**
-          * @brief Process a new limit order through the markets
-          * @param order The new order to process
-          * @return true if order was completely filled; false otherwise
-          *
-          * This function takes a new limit order, and runs the markets attempting to match it with existing orders
-          * already on the books.
-          */
-         bool apply_order(const limit_order_object& new_order_object, bool allow_black_swan = true);
-
-         /**
-          * Matches the two orders,
-          *
-          * @return a bit field indicating which orders were filled (and thus removed)
-          *
-          * 0 - no orders were matched
-          * 1 - bid was filled
-          * 2 - ask was filled
-          * 3 - both were filled
-          */
-         ///@{
-         template<typename OrderType>
-         int match( const limit_order_object& bid, const OrderType& ask, const price& match_price );
-         int match( const limit_order_object& bid, const limit_order_object& ask, const price& trade_price );
-         ///@}
-
-         /**
-          * @return true if the order was completely filled and thus freed.
-          */
-         bool fill_order( const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small );
-
-         // helpers to fill_order
-         void pay_order( const account_object& receiver, const asset& receives, const asset& pays );
-
-         asset calculate_market_fee(const asset_object& recv_asset, const asset& trade_amount);
-         asset pay_market_fees( const asset_object& recv_asset, const asset& receives );
-
-
-         ///@}
-         /**
-          *  This method validates transactions without adding it to the pending state.
-          *  @return true if the transaction would validate
-          */
-         processed_transaction validate_transaction( const signed_transaction& trx );
-
-
-         /** when popping a block, the transactions that were removed get cached here so they
-          * can be reapplied at the proper time */
-         std::deque< signed_transaction >       _popped_tx;
-
+      private:
          void notify_changed_objects();
-         /**
-          * @}
-          */
-   protected:
+
+         //////////////////// db_block.cpp ////////////////////
+
+      protected:
          //Mark pop_undo() as protected -- we do not want outside calling pop_undo(); it should call pop_block() instead
          void pop_undo() { object_database::pop_undo(); }
 
@@ -486,14 +414,20 @@ namespace graphene { namespace chain {
          template<class Index>
          vector<std::reference_wrapper<const typename Index::object_type>> sort_votable_objects(size_t count)const;
 
-         //////////////////// db_block.cpp ////////////////////
-
-       public:
+      public:
          // these were formerly private, but they have a fairly well-defined API, so let's make them public
          void                  apply_block( const signed_block& next_block, uint32_t skip = skip_nothing );
          processed_transaction apply_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing );
          operation_result      apply_operation( transaction_evaluation_state& eval_state, const operation& op );
+
+         /**
+          *  This method validates transactions without adding it to the pending state.
+          *  @return true if the transaction would validate
+          */
+         processed_transaction validate_transaction( const signed_transaction& trx );
+
       private:
+
          void                  _apply_block( const signed_block& next_block );
          processed_transaction _apply_transaction( const signed_transaction& trx );
 
@@ -503,6 +437,8 @@ namespace graphene { namespace chain {
          const witness_object& validate_block_header( uint32_t skip, const signed_block& next_block )const;
          const witness_object& _validate_block_header( const signed_block& next_block )const;
          void create_block_summary(const signed_block& next_block);
+
+         ///@}
 
          //////////////////// db_update.cpp ////////////////////
       public:
@@ -514,9 +450,7 @@ namespace graphene { namespace chain {
          void update_last_irreversible_block();
          void clear_expired_transactions();
          void clear_expired_proposals();
-         void clear_expired_orders();
          void update_maintenance_flag( bool new_maintenance_flag );
-         void update_withdraw_permissions();
          void clear_expired_csaf_leases();
          void update_average_witness_pledges();
          void release_witness_pledges();
@@ -534,23 +468,18 @@ namespace graphene { namespace chain {
          void release_platform_pledges();
          void clear_resigned_platform_votes();
 
-         ///Steps performed only at maintenance intervals
-         ///@{
+         void update_platform_avg_pledge( const account_uid_type uid );
+      public:
+         void update_platform_avg_pledge( const platform_object& pla );
+         void adjust_platform_votes( const platform_object& platform, share_type delta );
 
-         //////////////////// db_maint.cpp ////////////////////
 
-         void initialize_budget_record( fc::time_point_sec now, budget_record& rec )const;
-         void process_budget();
-         void pay_workers( share_type& budget );
-         void perform_chain_maintenance(const signed_block& next_block, const global_property_object& global_props);
-         void update_active_witnesses();
-         void update_active_committee_members();
-         void update_worker_votes();
+      public:
+         /** when popping a block, the transactions that were removed get cached here so they
+          * can be reapplied at the proper time */
+         std::deque< signed_transaction >       _popped_tx;
 
-         template<class... Types>
-         void perform_account_maintenance(std::tuple<Types...> helpers);
-         ///@}
-         ///@}
+      private:
 
          vector< processed_transaction >        _pending_tx;
          fork_database                          _fork_db;
@@ -579,11 +508,6 @@ namespace graphene { namespace chain {
          uint16_t                          _current_trx_in_block = 0;
          uint16_t                          _current_op_in_trx    = 0;
          uint16_t                          _current_virtual_op   = 0;
-
-         vector<uint64_t>                  _vote_tally_buffer;
-         vector<uint64_t>                  _witness_count_histogram_buffer;
-         vector<uint64_t>                  _committee_count_histogram_buffer;
-         uint64_t                          _total_voting_stake;
 
          flat_map<uint32_t,block_id_type>  _checkpoints;
 

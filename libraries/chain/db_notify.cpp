@@ -4,9 +4,6 @@
 #include <graphene/chain/protocol/operations.hpp>
 #include <graphene/chain/protocol/transaction.hpp>
 #include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/withdraw_permission_object.hpp>
-#include <graphene/chain/worker_object.hpp>
-#include <graphene/chain/market_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/impacted.hpp>
 
@@ -21,9 +18,7 @@ struct get_impacted_account_uid_visitor
    get_impacted_account_uid_visitor( flat_set<account_uid_type>& impact ):_impacted(impact) {}
    typedef void result_type;
 
-   // fee payer will be checked outside
-   template<typename T>
-   void operator()( const T& op ) {}
+   // NOTE: don't use a default template operator, since it may cause unintended behavior
 
    void operator()( const account_create_operation& op )
    {
@@ -110,6 +105,16 @@ struct get_impacted_account_uid_visitor
    {
       _impacted.insert( op.voter ); // fee payer
       _impacted.insert( op.proxy );
+   }
+
+   void operator()( const account_enable_allowed_assets_operation& op )
+   {
+      _impacted.insert( op.account ); // fee payer
+   }
+
+   void operator()( const account_update_allowed_assets_operation& op )
+   {
+      _impacted.insert( op.account ); // fee payer
    }
 
    void operator()( const witness_create_operation& op )
@@ -199,12 +204,18 @@ struct get_impacted_account_uid_visitor
    void operator()( const asset_create_operation& op ) 
    {
       _impacted.insert( op.issuer ); // fee payer
+      for( auto uid : op.common_options.whitelist_authorities )
+         _impacted.insert( uid );
+      for( auto uid : op.common_options.blacklist_authorities )
+         _impacted.insert( uid );
    }
    void operator()( const asset_update_operation& op )
    {
       _impacted.insert( op.issuer ); // fee payer
-      if( op.new_issuer )
-         _impacted.insert( *(op.new_issuer) );
+      for( auto uid : op.new_options.whitelist_authorities )
+         _impacted.insert( uid );
+      for( auto uid : op.new_options.blacklist_authorities )
+         _impacted.insert( uid );
    }
 
    void operator()( const asset_issue_operation& op )
@@ -230,92 +241,34 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.issuer ); // fee payer
    }
 
-
-
-   /*
-   void operator()( const balance_claim_operation& op ) {}
-
-   
-   void operator()( const limit_order_create_operation& op ) {}
-   void operator()( const limit_order_cancel_operation& op )
+   void operator()( const proposal_create_operation& op )
    {
-      _impacted.insert( op.fee_paying_account );
-   }
-   void operator()( const fill_order_operation& op )
-   {
-      _impacted.insert( op.account_id );
+      _impacted.insert( op.fee_paying_account ); // fee payer
+      vector<authority> other;
+      for( const auto& proposed_op : op.proposed_ops )
+         operation_get_required_uid_authorities( proposed_op.op, _impacted, _impacted, _impacted, other );
+      for( auto& o : other )
+         add_authority_account_uids( _impacted, o );
    }
 
-   void operator()( const account_update_operation& op )
-   {
-      _impacted.insert( op.account );
-      if( op.owner )
-         add_authority_accounts( _impacted, *(op.owner) );
-      if( op.active )
-         add_authority_accounts( _impacted, *(op.active) );
-   }
-
+   // TODO review
    void operator()( const account_whitelist_operation& op )
    {
       _impacted.insert( op.account_to_list );
+      _impacted.insert( op.fee_payer_uid() ); // fee payer
    }
 
-   void operator()( const account_upgrade_operation& op ) {}
-   void operator()( const account_transfer_operation& op )
+   // TODO review
+   void operator()( const proposal_update_operation& op )
    {
-      _impacted.insert( op.new_owner );
+      _impacted.insert( op.fee_payer_uid() ); // fee payer
    }
 
-   
-   void operator()( const proposal_create_operation& op )
+   // TODO review
+   void operator()( const proposal_delete_operation& op )
    {
-      vector<authority> other;
-      for( const auto& proposed_op : op.proposed_ops )
-         operation_get_required_authorities( proposed_op.op, _impacted, _impacted, other );
-      for( auto& o : other )
-         add_authority_accounts( _impacted, o );
+      _impacted.insert( op.fee_payer_uid() ); // fee payer
    }
-
-   void operator()( const proposal_update_operation& op ) {}
-   void operator()( const proposal_delete_operation& op ) {}
-
-   void operator()( const withdraw_permission_create_operation& op )
-   {
-      _impacted.insert( op.authorized_account );
-   }
-
-   void operator()( const withdraw_permission_update_operation& op )
-   {
-      _impacted.insert( op.authorized_account );
-   }
-
-   void operator()( const withdraw_permission_claim_operation& op )
-   {
-      _impacted.insert( op.withdraw_from_account );
-   }
-
-   void operator()( const withdraw_permission_delete_operation& op )
-   {
-      _impacted.insert( op.authorized_account );
-   }
-
-   void operator()( const committee_member_update_global_parameters_operation& op ) {}
-
-   void operator()( const vesting_balance_create_operation& op )
-   {
-      _impacted.insert( op.owner );
-   }
-
-   void operator()( const vesting_balance_withdraw_operation& op ) {}
-   void operator()( const worker_create_operation& op ) {}
-   void operator()( const custom_operation& op ) {}
-   void operator()( const assert_operation& op ) {}
-
-   
-
-   
-
-   */
 
 };
 
@@ -345,6 +298,7 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
            accounts.insert( ((account_object*)obj)->uid );
            break;
         } case asset_object_type:{
+           // TODO review
            //const auto& aobj = dynamic_cast<const asset_object*>(obj);
            //assert( aobj != nullptr );
            //accounts.insert( aobj->issuer );
@@ -378,13 +332,6 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
            //assert( aobj != nullptr );
            //accounts.insert( aobj->account );
            break;
-        } case limit_order_object_type:{
-           //const auto& aobj = dynamic_cast<const limit_order_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->seller );
-           break;
-        } case custom_object_type:{
-          break;
         } case proposal_object_type:{
            const auto& aobj = dynamic_cast<const proposal_object*>(obj);
            assert( aobj != nullptr );
@@ -395,25 +342,6 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
            assert( aobj != nullptr );
            operation_get_impacted_account_uids( aobj->op, accounts );
            break;
-        } case withdraw_permission_object_type:{
-           //const auto& aobj = dynamic_cast<const withdraw_permission_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->withdraw_from_account );
-           //accounts.insert( aobj->authorized_account );
-           break;
-        } case vesting_balance_object_type:{
-           //const auto& aobj = dynamic_cast<const vesting_balance_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->owner );
-           break;
-        } case worker_object_type:{
-           //const auto& aobj = dynamic_cast<const worker_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->worker_account );
-           break;
-        } case balance_object_type:{
-           /** these are free from any accounts */
-           break;
         }
       }
    }
@@ -421,11 +349,11 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
    {
       switch( (impl_object_type)obj->id.type() )
       {
+             case IMPL_OBJECT_TYPE_COUNT:
+              break;
              case impl_global_property_object_type:
               break;
              case impl_dynamic_global_property_object_type:
-              break;
-             case impl_reserved0_object_type:
               break;
              case impl_asset_dynamic_data_type:
               break;
@@ -475,12 +403,6 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
              case impl_chain_property_object_type:
               break;
              case impl_witness_schedule_object_type:
-              break;
-             case impl_budget_record_object_type:
-              break;
-             case impl_special_authority_object_type:
-              break;
-             case impl_buyback_object_type:
               break;
       }
    }

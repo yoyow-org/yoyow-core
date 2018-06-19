@@ -24,7 +24,6 @@
 #pragma once
 #include <graphene/chain/protocol/asset_ops.hpp>
 #include <boost/multi_index/composite_key.hpp>
-#include <graphene/db/flat_index.hpp>
 #include <graphene/db/generic_index.hpp>
 
 /**
@@ -60,9 +59,11 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = implementation_ids;
          static const uint8_t type_id  = impl_asset_dynamic_data_type;
 
+         /// asset ID (AID)
+         asset_aid_type asset_id = 0;
          /// The number of shares currently in existence
          share_type current_supply;
-         share_type confidential_supply; ///< total asset held in confidential balances
+         //share_type confidential_supply; ///< total asset held in confidential balances
          share_type accumulated_fees; ///< fees accumulate to be paid out over time
          //share_type fee_pool;         ///< in core asset
    };
@@ -92,12 +93,20 @@ namespace graphene { namespace chain {
          /// @return true if the issuer of this market-issued asset may globally settle the asset; false otherwise
          //bool can_global_settle()const { return options.issuer_permissions & global_settle; }
 
+         /// @return true if this asset is using whitelist or blacklist
+         bool enabled_whitelist()const { return options.flags & white_list; }
+         /// @return true if the issuer can create new supply
+         bool can_issue_asset()const { return options.flags & issue_asset; }
+         /// @return true if the issuer can change max supply
+         bool can_change_max_supply()const { return options.flags & change_max_supply; }
+
          /// @return true if this asset charges a fee for the issuer on market operations; false otherwise
-         bool charges_market_fees()const { return options.flags & charge_market_fee; }
+         //bool charges_market_fees()const { return options.flags & charge_market_fee; }
          /// @return true if this asset may only be transferred to/from the issuer or market orders
          bool is_transfer_restricted()const { return options.flags & transfer_restricted; }
+         /// @return true if the issuer can transfer asset back to himself
          bool can_override()const { return options.flags & override_authority; }
-         bool allow_confidential()const { return !(options.flags & asset_issuer_permission_flags::disable_confidential); }
+         //bool allow_confidential()const { return !(options.flags & asset_issuer_permission_flags::disable_confidential); }
 
          /// Helper function to get an asset object with the given amount in this asset's type
          asset amount(share_type a)const { return asset(a, asset_id); }
@@ -132,8 +141,6 @@ namespace graphene { namespace chain {
          asset_dynamic_data_id_type  dynamic_asset_data_id;
          /// Extra data associated with BitAssets. This field is non-null if and only if is_market_issued() returns true
          //optional<asset_bitasset_data_id_type> bitasset_data_id;
-
-         optional<account_uid_type> buyback_account;
 
          asset_id_type get_id()const { return id; }
          asset_aid_type get_asset_id()const { return asset_id; }
@@ -171,7 +178,7 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::asset_dynamic_data_object, (graphene::db::object),
-                    (current_supply)(confidential_supply)(accumulated_fees) )
+                    (asset_id)(current_supply)(accumulated_fees) )
 
 FC_REFLECT_DERIVED( graphene::chain::asset_object, (graphene::db::object),
                     (asset_id)
@@ -180,5 +187,4 @@ FC_REFLECT_DERIVED( graphene::chain::asset_object, (graphene::db::object),
                     (issuer)
                     (options)
                     (dynamic_asset_data_id)
-                    (buyback_account)
                   )

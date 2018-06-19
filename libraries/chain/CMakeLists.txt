@@ -15,9 +15,7 @@ if( GRAPHENE_DISABLE_UNITY_BUILD )
         db_debug.cpp
         db_getter.cpp
         db_init.cpp
-        db_maint.cpp
         db_management.cpp
-        db_market.cpp
         db_update.cpp
         db_voter.cpp
         db_witness_schedule.cpp
@@ -38,57 +36,39 @@ add_library( graphene_chain
              fork_database.cpp
 
              protocol/types.cpp
-             protocol/address.cpp
              protocol/authority.cpp
              protocol/asset.cpp
-             protocol/assert.cpp
              protocol/account.cpp
              protocol/transfer.cpp
              protocol/csaf.cpp
              protocol/content.cpp
              protocol/committee_member.cpp
              protocol/witness.cpp
-             protocol/market.cpp
              protocol/proposal.cpp
-             protocol/withdraw_permission.cpp
              protocol/asset_ops.cpp
              protocol/memo.cpp
-             protocol/worker.cpp
-             protocol/custom.cpp
              protocol/operations.cpp
              protocol/transaction.cpp
              protocol/block.cpp
              protocol/fee_schedule.cpp
-             protocol/vote.cpp
 
              genesis_state.cpp
              get_config.cpp
 
-             pts_address.cpp
-
              evaluator.cpp
-             balance_evaluator.cpp
              account_evaluator.cpp
              csaf_evaluator.cpp
              content_evaluator.cpp
-             assert_evaluator.cpp
              witness_evaluator.cpp
              committee_member_evaluator.cpp
              asset_evaluator.cpp
              transfer_evaluator.cpp
              proposal_evaluator.cpp
-             market_evaluator.cpp
-             vesting_balance_evaluator.cpp
-             withdraw_permission_evaluator.cpp
-             worker_evaluator.cpp
-             special_authority.cpp
-             buyback.cpp
 
              account_object.cpp
              asset_object.cpp
              committee_member_object.cpp
              proposal_object.cpp
-             vesting_balance_object.cpp
 
              block_database.cpp
 

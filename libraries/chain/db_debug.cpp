@@ -26,8 +26,6 @@
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/asset_object.hpp>
-#include <graphene/chain/market_object.hpp>
-#include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 
 namespace graphene { namespace chain {
@@ -42,7 +40,7 @@ void database::debug_dump()
    const asset_dynamic_data_object& core_asset_data = db.get_core_asset().dynamic_asset_data_id(db);
 
    const auto& balance_index = db.get_index_type<account_balance_index>().indices();
-   const auto& statistics_index = db.get_index_type<account_statistics_index>().indices();
+   //const auto& statistics_index = db.get_index_type<account_statistics_index>().indices();
    map<asset_aid_type,share_type> total_balances;
    map<asset_aid_type,share_type> total_debts;
    share_type core_in_orders;
@@ -53,6 +51,7 @@ void database::debug_dump()
     //  idump(("balance")(a));
       total_balances[a.asset_type] += a.balance;
    }
+   /* TODO review
    for( const account_statistics_object& s : statistics_index )
    {
     //  idump(("statistics")(s));
@@ -65,6 +64,7 @@ void database::debug_dump()
       if( for_sale.asset_id == GRAPHENE_CORE_ASSET_AID ) core_in_orders += for_sale.amount;
       total_balances[for_sale.asset_id] += for_sale.amount;
    }
+   */
 
    for( const asset_object& asset_obj : db.get_index_type<asset_index>().indices() )
    {

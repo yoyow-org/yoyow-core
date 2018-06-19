@@ -28,7 +28,6 @@ namespace graphene { namespace chain {
 /**
  *  Valid symbols can contain [A-Z0-9], and '.'
  *  They must start with [A, Z]
- *  They must end with [A, Z]
  *  They can contain a maximum of one '.'
  */
 bool is_valid_symbol( const string& symbol )
@@ -36,22 +35,27 @@ bool is_valid_symbol( const string& symbol )
     if( symbol.size() < GRAPHENE_MIN_ASSET_SYMBOL_LENGTH )
         return false;
 
-    if( symbol.substr(0,3) == "BIT" ) 
-       return false;
-
     if( symbol.size() > GRAPHENE_MAX_ASSET_SYMBOL_LENGTH )
         return false;
 
-    if( !isalpha( symbol.front() ) )
+    if( symbol.back() == '.' )
         return false;
 
-    if( !isalpha( symbol.back() ) )
+    if( symbol.front() < 'A' || symbol.front() > 'Z' )
         return false;
+
+    // testnet only
+    if( symbol == "YOYOW" )
+        return true;
+
+    auto symb4 = symbol.substr( 0, 4 );
+    if( symb4 == "YOYO" || symb4 == "YOY0" || symb4 == "Y0YO" || symb4 == "Y0Y0" )
+       return false;
 
     bool dot_already_present = false;
     for( const auto c : symbol )
     {
-        if( (isalpha( c ) && isupper( c )) || isdigit(c) )
+        if( ( c >= 'A' && c <= 'Z' ) || ( c >= '0' && c <= '9' ) )
             continue;
 
         if( c == '.' )
@@ -71,12 +75,15 @@ bool is_valid_symbol( const string& symbol )
 
 share_type asset_issue_operation::calculate_fee(const fee_parameters_type& k)const
 {
-   return k.fee + calculate_data_fee( fc::raw::pack_size(memo), k.price_per_kbyte );
+   share_type core_fee_required = k.fee;
+   if( memo )
+      core_fee_required += calculate_data_fee( fc::raw::pack_size(memo), k.price_per_kbyte );
+   return core_fee_required;
 }
 
 share_type asset_create_operation::calculate_fee(const asset_create_operation::fee_parameters_type& param)const
 {
-   auto core_fee_required = param.long_symbol; 
+   share_type core_fee_required = param.long_symbol;
 
    switch(symbol.size()) {
       case 3: core_fee_required = param.symbol3;
@@ -88,7 +95,7 @@ share_type asset_create_operation::calculate_fee(const asset_create_operation::f
    }
 
    // common_options contains several lists and a string. Charge fees for its size
-   core_fee_required += calculate_data_fee( fc::raw::pack_size(*this), param.price_per_kbyte );
+   core_fee_required += calculate_data_fee( common_options.data_size_for_fee(), param.price_per_kbyte );
 
    return core_fee_required;
 }
@@ -96,28 +103,47 @@ share_type asset_create_operation::calculate_fee(const asset_create_operation::f
 void  asset_create_operation::validate()const
 {
    validate_op_fee( fee, "asset create " );
+   validate_account_uid( issuer, "asset create ");
    FC_ASSERT( is_valid_symbol(symbol) );
    common_options.validate();
 
-   FC_ASSERT(precision <= 12);
+   FC_ASSERT( precision <= 12, "precision should be no more than 12" );
+
+   if( extensions.valid() )
+   {
+      const auto& ev = extensions->value;
+
+      bool non_empty_extensions = ( ev.initial_supply.valid() );
+      FC_ASSERT( non_empty_extensions, "extensions specified but is empty" );
+
+      bool positive_initial_supply = ( *ev.initial_supply > 0 );
+      FC_ASSERT( positive_initial_supply, "initial supply should be positive" );
+
+      bool initial_supply_more_than_max = ( *ev.initial_supply > common_options.max_supply );
+      FC_ASSERT( !initial_supply_more_than_max, "initial supply should not be more than max supply" );
+   }
 }
 
 void asset_update_operation::validate()const
 {
    validate_op_fee( fee, "asset update " );
-   if( new_issuer )
-      FC_ASSERT(issuer != *new_issuer);
+   validate_account_uid( issuer, "asset update ");
+   if( new_precision.valid() )
+   {
+      FC_ASSERT( *new_precision <= 12, "new precision should be no more than 12" );
+   }
    new_options.validate();
 }
 
-share_type asset_update_operation::calculate_fee(const asset_update_operation::fee_parameters_type& k)const
+share_type asset_update_operation::calculate_fee(const asset_update_operation::fee_parameters_type& param)const
 {
-   return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
+   return share_type( param.fee ) + calculate_data_fee( new_options.data_size_for_fee(), param.price_per_kbyte );
 }
 
 void asset_reserve_operation::validate()const
 {
    validate_op_fee( fee, "asset reserve " );
+   validate_account_uid( payer, "asset reserve ");
    FC_ASSERT( amount_to_reserve.amount.value <= GRAPHENE_MAX_SHARE_SUPPLY );
    FC_ASSERT( amount_to_reserve.amount.value > 0 );
 }
@@ -125,6 +151,8 @@ void asset_reserve_operation::validate()const
 void asset_issue_operation::validate()const
 {
    validate_op_fee( fee, "asset issue " );
+   validate_account_uid( issuer, "asset issue ");
+   validate_account_uid( issue_to_account, "asset issue ");
    FC_ASSERT( asset_to_issue.amount.value <= GRAPHENE_MAX_SHARE_SUPPLY );
    FC_ASSERT( asset_to_issue.amount.value > 0 );
    FC_ASSERT( asset_to_issue.asset_id != GRAPHENE_CORE_ASSET_AID );
@@ -132,16 +160,29 @@ void asset_issue_operation::validate()const
 
 void asset_options::validate()const
 {
+   // TODO move to evaluator when enabling market
+   // TESTNET only: commented out here, moved checking to evaluator
+   //FC_ASSERT( market_fee_percent == 0 );
+   //FC_ASSERT( max_market_fee == 0 );
+
    FC_ASSERT( max_supply > 0 );
    FC_ASSERT( max_supply <= GRAPHENE_MAX_SHARE_SUPPLY );
    FC_ASSERT( market_fee_percent <= GRAPHENE_100_PERCENT );
    FC_ASSERT( max_market_fee >= 0 && max_market_fee <= GRAPHENE_MAX_SHARE_SUPPLY );
    // There must be no high bits in permissions whose meaning is not known.
-   FC_ASSERT( !(issuer_permissions & ~UIA_ASSET_ISSUER_PERMISSION_MASK) );
+   FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
+   // There must be no high bits in flags whose meaning is not known.
+   FC_ASSERT( !(flags & ~ASSET_ISSUER_PERMISSION_MASK) );
    // The global_settle flag may never be set (this is a permission only)
    //FC_ASSERT( !(flags & global_settle) );
    // the witness_fed and committee_fed flags cannot be set simultaneously
    //FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
+
+   // TODO move to evaluator when enabling account whitelisting feature with a hard fork
+   FC_ASSERT( whitelist_authorities.empty() && blacklist_authorities.empty() );
+
+   // TODO move to evaluator when enabling market whitelisting feature with a hard fork
+   FC_ASSERT( whitelist_markets.empty() && blacklist_markets.empty() );
 
    if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
       FC_ASSERT( flags & white_list );
@@ -157,6 +198,7 @@ void asset_options::validate()const
 
 void asset_claim_fees_operation::validate()const {
    validate_op_fee( fee, "asset claim fees " );
+   validate_account_uid( issuer, "asset claim fees ");
    FC_ASSERT( amount_to_claim.amount > 0 );
 }
 

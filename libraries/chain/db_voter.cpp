@@ -29,6 +29,7 @@
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
+#include <graphene/chain/content_object.hpp>
 
 #include <fc/uint128.hpp>
 
@@ -122,6 +123,7 @@ void database::adjust_voter_self_votes( const voter_object& voter, share_type de
 {
    adjust_voter_self_witness_votes( voter, delta );
    adjust_voter_self_committee_member_votes( voter, delta );
+   adjust_voter_self_platform_votes( voter, delta );
 }
 
 void database::adjust_voter_self_witness_votes( const voter_object& voter, share_type delta )
@@ -151,6 +153,37 @@ void database::adjust_voter_self_witness_votes( const voter_object& voter, share
       modify( voter, [&]( voter_object& v )
       {
          v.number_of_witnesses_voted -= invalid_witness_votes_removed;
+      } );
+   }
+}
+
+void database::adjust_voter_self_platform_votes( const voter_object& voter, share_type delta )
+{
+   // adjust platform votes
+   uint16_t invalid_platform_votes_removed = 0;
+   const auto& idx = get_index_type<platform_vote_index>().indices().get<by_platform_voter_seq>();
+   auto itr = idx.lower_bound( std::make_tuple( voter.uid, voter.sequence ) );
+   while( itr != idx.end() && itr->voter_uid == voter.uid && itr->voter_sequence == voter.sequence )
+   {
+      const platform_object* pla = find_platform_by_owner( itr->platform_owner );
+      bool to_remove = false;
+      if( pla != nullptr && pla->sequence == itr->platform_sequence )
+         adjust_platform_votes( *pla, delta );
+      else
+      {
+         to_remove = true;
+         invalid_platform_votes_removed += 1;
+      }
+      auto old_itr = itr;
+      ++itr;
+      if( to_remove )
+         remove( *old_itr );
+   }
+   if( invalid_platform_votes_removed > 0 )
+   {
+      modify( voter, [&]( voter_object& v )
+      {
+         v.number_of_platform_voted -= invalid_platform_votes_removed;
       } );
    }
 }
@@ -258,6 +291,27 @@ void database::clear_voter_witness_votes( const voter_object& voter )
    });
 }
 
+void database::clear_voter_platform_votes( const voter_object& voter )
+{
+   const share_type votes = voter.total_votes();
+   const auto& idx = get_index_type<platform_vote_index>().indices().get<by_platform_voter_seq>();
+   auto itr = idx.lower_bound( std::make_tuple( voter.uid, voter.sequence ) );
+   while( itr != idx.end() && itr->voter_uid == voter.uid && itr->voter_sequence == voter.sequence )
+   {
+      const platform_object* pla = find_platform_by_owner( itr->platform_owner );
+      if( pla != nullptr && pla->sequence == itr->platform_sequence )
+      {
+         adjust_platform_votes( *pla, -votes );
+      }
+      auto old_itr = itr;
+      ++itr;
+      remove( *old_itr );
+   }
+   modify( voter, [&](voter_object& v) {
+      v.number_of_platform_voted = 0;
+   });
+}
+
 void database::clear_voter_committee_member_votes( const voter_object& voter )
 {
    const share_type votes = voter.total_votes();
@@ -303,6 +357,8 @@ void database::clear_voter_votes( const voter_object& voter )
       clear_voter_witness_votes( voter );
       // remove its all committee votes
       clear_voter_committee_member_votes( voter );
+      // remove its all platform votes
+      clear_voter_platform_votes( voter );
    }
    else // voting with a proxy
    {

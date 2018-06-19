@@ -21,20 +21,59 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <graphene/chain/database.hpp>
 #include <graphene/chain/proposal_evaluator.hpp>
 #include <graphene/chain/proposal_object.hpp>
-#include <graphene/chain/account_object.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/exceptions.hpp>
+#include <graphene/chain/hardfork.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 
 namespace graphene { namespace chain {
 
+struct proposal_operation_hardfork_visitor
+{
+   typedef void result_type;
+   const uint32_t block_num;
+   const fc::time_point_sec block_time;
+   const fc::time_point_sec next_maintenance_time;
+
+   proposal_operation_hardfork_visitor( uint32_t bn, fc::time_point_sec bt, fc::time_point_sec nmt )
+   : block_num(bn), block_time(bt), next_maintenance_time(nmt)
+   {
+      wdump( (bn)(bt)(nmt) );
+   }
+
+   template<typename T>
+   void operator()(const T &v) const
+   {
+      v.validate();
+   }
+
+   // loop and self visit in proposals
+   void operator()(const graphene::chain::proposal_create_operation &v) const
+   {
+      if( block_num != 5881511 ) // skip validation for transactions in this block
+      {
+         // validates all nested operations, which should been done in validate(), moved here for testnet
+         for (const op_wrapper &op : v.proposed_ops)
+            op.op.visit(*this);
+      }
+   }
+};
+
 void_result proposal_create_evaluator::do_evaluate(const proposal_create_operation& o)
 { try {
+   wdump( (o) );
    const database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_create after HARDFORK_0_3_1_TIME" );
    const auto& global_parameters = d.get_global_properties().parameters;
+
+   // Calling the proposal hardfork visitor
+   const uint32_t block_num = d.head_block_num();
+   const fc::time_point_sec block_time = d.head_block_time();
+   const fc::time_point_sec next_maint_time = d.get_dynamic_global_properties().next_maintenance_time;
+   proposal_operation_hardfork_visitor vtor( block_num, block_time, next_maint_time );
+   vtor( o );
 
    FC_ASSERT( o.expiration_time > d.head_block_time(), "Proposal has already expired on creation." );
    FC_ASSERT( o.expiration_time <= d.head_block_time() + global_parameters.maximum_proposal_lifetime,
@@ -44,7 +83,59 @@ void_result proposal_create_evaluator::do_evaluate(const proposal_create_operati
 
    for( const op_wrapper& op : o.proposed_ops )
       _proposed_trx.operations.push_back(op.op);
-   _proposed_trx.validate();
+
+   if( block_num != 5881511 ) // skip validation for transactions in this block
+      _proposed_trx.validate();
+
+   vector<authority> other;
+   flat_set<account_uid_type> tmp_active;
+   flat_set<account_uid_type> tmp_secondary;
+   for( auto& op : _proposed_trx.operations )
+      operation_get_required_uid_authorities(op,
+                                             required_owner,
+                                             tmp_active,
+                                             tmp_secondary,
+                                             other);
+
+   std::set_difference(tmp_active.begin(), tmp_active.end(),
+                       required_owner.begin(), required_owner.end(),
+                       std::inserter(required_active, required_active.begin()));
+
+   std::set_difference(tmp_secondary.begin(), tmp_secondary.end(),
+                       required_active.begin(), required_active.end(),
+                       std::inserter(required_secondary, required_secondary.begin()));
+
+   auto get_acc_by_uid = [&]( account_uid_type uid ){ return &(d.get_account_by_uid(uid)); };
+   flat_set<account_uid_type> tmp;
+   std::copy(required_owner.begin(), required_owner.end(), std::inserter(tmp, tmp.end()));
+   for( auto uid : tmp )
+      get_authority_uid( uid,
+                         get_acc_by_uid,
+                         required_owner,
+                         required_active,
+                         required_secondary
+                       );
+   tmp.clear();
+
+   std::copy(required_active.begin(), required_active.end(), std::inserter(tmp, tmp.end()));
+   for( auto uid : tmp )
+      get_authority_uid( uid,
+                         get_acc_by_uid,
+                         required_owner,
+                         required_active,
+                         required_secondary
+                       );
+   tmp.clear();
+
+   std::copy(required_secondary.begin(), required_secondary.end(), std::inserter(tmp, tmp.end()));
+   for( auto uid : tmp )
+      get_authority_uid( uid,
+                         get_acc_by_uid,
+                         required_owner,
+                         required_active,
+                         required_secondary
+                       );
+   tmp.clear();
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -52,6 +143,8 @@ void_result proposal_create_evaluator::do_evaluate(const proposal_create_operati
 object_id_type proposal_create_evaluator::do_apply(const proposal_create_operation& o)
 { try {
    database& d = db();
+   if( d.head_block_num() == 5881511 ) // skip this proposal
+      return object_id_type();
 
    const proposal_object& proposal = d.create<proposal_object>([&](proposal_object& proposal) {
       _proposed_trx.expiration = o.expiration_time;
@@ -60,36 +153,21 @@ object_id_type proposal_create_evaluator::do_apply(const proposal_create_operati
       if( o.review_period_seconds )
          proposal.review_period_time = o.expiration_time - *o.review_period_seconds;
 
-      //Populate the required approval sets
-      flat_set<account_uid_type> required_active;
-      flat_set<account_uid_type> required_secondary;
-      vector<authority> other;
-      
-      // TODO: consider caching values from evaluate?
-      for( auto& op : _proposed_trx.operations )
-         operation_get_required_uid_authorities(op,
-                                                proposal.required_owner_approvals,
-                                                required_active,
-                                                required_secondary,
-                                                other);
-
-      //All accounts which must provide both owner and active authority should be omitted from the active authority set;
-      //owner authority approval implies active authority approval.
-      std::set_difference(required_active.begin(), required_active.end(),
-                          proposal.required_owner_approvals.begin(), proposal.required_owner_approvals.end(),
-                          std::inserter(proposal.required_active_approvals, proposal.required_active_approvals.begin()));
-
-      std::set_difference(required_secondary.begin(), required_secondary.end(),
-                          proposal.required_active_approvals.begin(), proposal.required_active_approvals.end(),
-                          std::inserter(proposal.required_secondary_approvals, proposal.required_secondary_approvals.begin()));
+      std::copy(required_owner.begin(), required_owner.end(), std::inserter(proposal.required_owner_approvals, proposal.required_owner_approvals.end()));
+      std::copy(required_active.begin(), required_active.end(), std::inserter(proposal.required_active_approvals, proposal.required_active_approvals.end()));
+      std::copy(required_secondary.begin(), required_secondary.end(), std::inserter(proposal.required_secondary_approvals, proposal.required_secondary_approvals.end()));
    });
 
+   wdump( (proposal) );
    return proposal.id;
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 void_result proposal_update_evaluator::do_evaluate(const proposal_update_operation& o)
 { try {
    database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_update after HARDFORK_0_3_1_TIME" );
+
+   wdump( (o)(d.head_block_num()) );
 
    _proposal = &o.proposal(d);
 
@@ -162,6 +240,7 @@ void_result proposal_update_evaluator::do_apply(const proposal_update_operation&
    if( _proposal->is_authorized_to_execute(d) )
    {
       // All required approvals are satisfied. Execute!
+      //ilog( "apply proposed ${id}", ("id", _proposal->id ) );
       _executed_proposal = true;
       try {
          _processed_transaction = d.push_proposal(*_proposal);
@@ -178,14 +257,17 @@ void_result proposal_update_evaluator::do_apply(const proposal_update_operation&
 void_result proposal_delete_evaluator::do_evaluate(const proposal_delete_operation& o)
 { try {
    database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_1_TIME, "Can only be proposal_delete after HARDFORK_0_3_1_TIME" );
 
    _proposal = &o.proposal(d);
 
-   auto required_approvals = o.using_owner_authority? &_proposal->required_owner_approvals
-                                                    : &_proposal->required_active_approvals;
-   FC_ASSERT( required_approvals->find(o.fee_paying_account) != required_approvals->end(),
+   bool inowner = _proposal->required_owner_approvals.find( o.fee_paying_account ) != _proposal->required_owner_approvals.end();
+   bool inactive = _proposal->required_active_approvals.find( o.fee_paying_account ) != _proposal->required_active_approvals.end();
+   bool insecondary = _proposal->required_secondary_approvals.find( o.fee_paying_account ) != _proposal->required_secondary_approvals.end();
+
+   FC_ASSERT( ( inowner || inactive || insecondary ),
               "Provided authority is not authoritative for this proposal.",
-              ("provided", o.fee_paying_account)("required", *required_approvals));
+              ("provided", o.fee_paying_account));
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

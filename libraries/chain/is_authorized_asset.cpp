@@ -37,12 +37,15 @@ bool _is_authorized_asset(
    const account_object& acct,
    const asset_object& asset_obj)
 {
-   if( acct.allowed_assets.valid() )
+   if( d.head_block_num() > 7785000 && acct.allowed_assets.valid() ) // TESTNET only: check head block num
    {
       if( acct.allowed_assets->find( asset_obj.asset_id ) == acct.allowed_assets->end() )
          return false;
       // must still pass other checks even if it is in allowed_assets
    }
+
+   if( !( asset_obj.enabled_whitelist() ) ) // pass if not enabled whitelisting
+      return true;
 
    for( const auto id : acct.blacklisting_accounts )
    {

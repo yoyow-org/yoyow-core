@@ -26,7 +26,6 @@
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/vote.hpp>
 #include <graphene/chain/transaction_evaluation_state.hpp>
 
 #include <fc/smart_ref_impl.hpp>
@@ -553,21 +552,5 @@ void_result committee_proposal_update_evaluator::do_apply( const committee_propo
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
-
-void_result committee_member_update_global_parameters_evaluator::do_evaluate(const committee_member_update_global_parameters_operation& o)
-{ try {
-   FC_ASSERT(trx_state->_is_proposed_trx);
-
-   return void_result();
-} FC_CAPTURE_AND_RETHROW( (o) ) }
-
-void_result committee_member_update_global_parameters_evaluator::do_apply(const committee_member_update_global_parameters_operation& o)
-{ try {
-   db().modify(db().get_global_properties(), [&o](global_property_object& p) {
-      p.pending_parameters = o.new_parameters;
-   });
-
-   return void_result();
-} FC_CAPTURE_AND_RETHROW( (o) ) }
 
 } } // graphene::chain

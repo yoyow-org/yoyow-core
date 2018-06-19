@@ -35,7 +35,6 @@
 #include <graphene/net/exceptions.hpp>
 
 #include <graphene/utilities/key_conversion.hpp>
-#include <graphene/chain/worker_evaluator.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 
@@ -387,9 +386,6 @@ namespace detail {
             }
          }
          _chain_db->add_checkpoints( loaded_checkpoints );
-
-         bool replay = false;
-         std::string replay_reason = "reason not provided";
 
          if( _options->count("replay-blockchain") )
             _chain_db->wipe( _data_dir / "blockchain", false );
@@ -998,7 +994,6 @@ void application::initialize(const fc::path& data_dir, const boost::program_opti
    {
       wanted.push_back("witness");
       wanted.push_back("account_history");
-      //wanted.push_back("market_history"); TODO review
    }
    for (auto& it : wanted)
    {

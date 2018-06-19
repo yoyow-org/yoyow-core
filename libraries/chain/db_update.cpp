@@ -28,10 +28,8 @@
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/hardfork.hpp>
-#include <graphene/chain/market_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/transaction_object.hpp>
-#include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
@@ -221,12 +219,14 @@ void database::clear_expired_proposals()
    while( !proposal_expiration_index.empty() && proposal_expiration_index.begin()->expiration_time <= head_block_time() )
    {
       const proposal_object& proposal = *proposal_expiration_index.begin();
+      wdump( (proposal) );
       processed_transaction result;
       try {
          if( proposal.is_authorized_to_execute(*this) )
          {
             result = push_proposal(proposal);
             //TODO: Do something with result so plugins can process it.
+            wdump( (result) );
             continue;
          }
       } catch( const fc::exception& e ) {
@@ -236,38 +236,6 @@ void database::clear_expired_proposals()
       remove(proposal);
    }
 }
-
-void database::clear_expired_orders()
-{ try {
-   detail::with_skip_flags( *this,
-      get_node_properties().skip_flags | skip_authority_check, [&](){
-         transaction_evaluation_state cancel_context(this);
-
-         //Cancel expired limit orders
-         auto& limit_index = get_index_type<limit_order_index>().indices().get<by_expiration>();
-         while( !limit_index.empty() && limit_index.begin()->expiration <= head_block_time() )
-         {
-            limit_order_cancel_operation canceler;
-            const limit_order_object& order = *limit_index.begin();
-            canceler.fee_paying_account = order.seller;
-            canceler.order = order.id;
-            canceler.fee = current_fee_schedule().calculate_fee( canceler );
-            if( canceler.fee.amount > order.deferred_fee )
-            {
-               // Cap auto-cancel fees at deferred_fee; see #549
-               wlog( "At block ${b}, fee for clearing expired order ${oid} was capped at deferred_fee ${fee}", ("b", head_block_num())("oid", order.id)("fee", order.deferred_fee) );
-               canceler.fee = asset( order.deferred_fee, GRAPHENE_CORE_ASSET_AID );
-            }
-            // we know the fee for this op is set correctly since it is set by the chain.
-            // this allows us to avoid a hung chain:
-            // - if #549 case above triggers
-            // - if the fee is incorrect, which may happen due to #435 (although since cancel is a fixed-fee op, it shouldn't)
-            cancel_context.skip_fee_schedule_check = true;
-            apply_operation(cancel_context, canceler);
-         }
-     });
-   
-} FC_CAPTURE_AND_RETHROW() }
 
 void database::update_maintenance_flag( bool new_maintenance_flag )
 {
@@ -279,13 +247,6 @@ void database::update_maintenance_flag( bool new_maintenance_flag )
          | (new_maintenance_flag ? maintenance_flag : 0);
    } );
    return;
-}
-
-void database::update_withdraw_permissions()
-{
-   auto& permit_index = get_index_type<withdraw_permission_index>().indices().get<by_expiration>();
-   while( !permit_index.empty() && permit_index.begin()->expiration <= head_block_time() )
-      remove(*permit_index.begin());
 }
 
 void database::clear_expired_csaf_leases()
@@ -1067,7 +1028,7 @@ void database::check_invariants()
       }
    }
    FC_ASSERT( total_platform_pledges == total_core_platform_pledge );
-   FC_ASSERT( total_platform_received_votes == total_voter_platform_votes );
+   FC_ASSERT( total_platform_received_votes == total_voter_platform_votes, "t1:${t1}  t2:${t2}",("t1",total_platform_received_votes)("t2",total_voter_platform_votes) );
 
 
    uint64_t total_witness_vote_objects = 0;
@@ -1127,7 +1088,8 @@ void database::release_platform_pledges()
    }
 }
 
-void database::adjust_platform_votes( const platform_object& platform, share_type delta ){
+void database::adjust_platform_votes( const platform_object& platform, share_type delta )
+{
    if( delta == 0 || !platform.is_valid )
       return;
    modify( platform, [&]( platform_object& pla )

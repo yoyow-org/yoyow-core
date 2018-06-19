@@ -27,8 +27,6 @@
 
 #include <graphene/chain/protocol/types.hpp>
 
-#include <graphene/market_history/market_history_plugin.hpp>
-
 #include <graphene/debug_witness/debug_api.hpp>
 
 #include <graphene/net/node.hpp>
@@ -47,7 +45,6 @@
 
 namespace graphene { namespace app {
    using namespace graphene::chain;
-   using namespace graphene::market_history;
    using namespace fc::ecc;
    using namespace std;
 
@@ -139,10 +136,6 @@ namespace graphene { namespace app {
                                                                                             unsigned limit = 100,
                                                                                             uint32_t start = 0) const;
 
-         vector<order_history_object> get_fill_order_history( asset_aid_type a, asset_aid_type b, uint32_t limit )const;
-         vector<bucket_object> get_market_history( asset_aid_type a, asset_aid_type b, uint32_t bucket_seconds,
-                                                   fc::time_point_sec start, fc::time_point_sec end )const;
-         flat_set<uint32_t> get_market_history_buckets()const;
       private:
            application& _app;
    };
@@ -382,12 +375,9 @@ FC_REFLECT( graphene::app::account_asset_balance, (account_uid)(amount) );
 FC_REFLECT( graphene::app::asset_holders, (asset_id)(count) );
 
 FC_API(graphene::app::history_api,
-       (get_account_history)
-       (get_account_history_operations)
+       //(get_account_history)
+       //(get_account_history_operations)
        (get_relative_account_history)
-       (get_fill_order_history)
-       (get_market_history)
-       (get_market_history_buckets)
      )
 FC_API(graphene::app::block_api,
        (get_blocks)
@@ -418,7 +408,7 @@ FC_API(graphene::app::crypto_api,
      )
 FC_API(graphene::app::asset_api,
        (get_asset_holders)
-	     (get_asset_holders_count)
+       (get_asset_holders_count)
        (get_all_asset_holders)
      )
 FC_API(graphene::app::login_api,

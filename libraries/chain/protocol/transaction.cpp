@@ -23,6 +23,7 @@
  */
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
+#include <graphene/chain/account_object.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/bitutil.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -102,14 +103,6 @@ void transaction::get_required_uid_authorities( flat_set<account_uid_type>& owne
       operation_get_required_uid_authorities( op, owner_uids, active_uids, secondary_uids, other );
 }
 
-void transaction::get_required_authorities( flat_set<account_id_type>& active, flat_set<account_id_type>& owner, vector<authority>& other )const
-{
-   for( const auto& op : operations )
-      operation_get_required_authorities( op, active, owner, other );
-}
-
-
-const std::function<const authority*(account_id_type)> null_by_id = []( account_id_type id ){ return nullptr; };
 const std::function<const authority*(account_uid_type)> null_by_uid = []( account_uid_type uid ){ return nullptr; };
 const flat_set<public_key_type> empty_public_key_set = flat_set<public_key_type>();
 
@@ -132,49 +125,6 @@ struct sign_state
             return false;
          }
          return itr->second = true;
-      }
-
-      optional<map<address,public_key_type>> available_address_sigs;
-      optional<map<address,public_key_type>> provided_address_sigs;
-
-      bool signed_by( const address& a ) {
-         if( !available_address_sigs ) {
-            available_address_sigs = std::map<address,public_key_type>();
-            provided_address_sigs = std::map<address,public_key_type>();
-            for( auto& item : available_keys ) {
-             (*available_address_sigs)[ address(pts_address(item, false, 56) ) ] = item;
-             (*available_address_sigs)[ address(pts_address(item, true, 56) ) ] = item;
-             (*available_address_sigs)[ address(pts_address(item, false, 0) ) ] = item;
-             (*available_address_sigs)[ address(pts_address(item, true, 0) ) ] = item;
-             (*available_address_sigs)[ address(item) ] = item;
-            }
-            for( auto& item : provided_signatures ) {
-             (*provided_address_sigs)[ address(pts_address(item.first, false, 56) ) ] = item.first;
-             (*provided_address_sigs)[ address(pts_address(item.first, true, 56) ) ] = item.first;
-             (*provided_address_sigs)[ address(pts_address(item.first, false, 0) ) ] = item.first;
-             (*provided_address_sigs)[ address(pts_address(item.first, true, 0) ) ] = item.first;
-             (*provided_address_sigs)[ address(item.first) ] = item.first;
-            }
-         }
-         auto itr = provided_address_sigs->find(a);
-         if( itr == provided_address_sigs->end() )
-         {
-            auto aitr = available_address_sigs->find(a);
-            if( aitr != available_address_sigs->end() ) {
-               auto pk = available_keys.find(aitr->second);
-               if( pk != available_keys.end() )
-                  return provided_signatures[aitr->second] = true;
-               return false;
-            }
-         }
-         return provided_signatures[itr->second] = true;
-      }
-
-      std::tuple<bool,bool,flat_set<public_key_type>> check_authority( account_id_type id )
-      {
-         if( approved_by.find(id) != approved_by.end() )
-            return std::make_tuple( true, true, empty_public_key_set );
-         return check_authority( get_active(id) );
       }
 
       std::tuple<bool,bool,flat_set<public_key_type>> check_authority( const authority::account_uid_auth_type& uid_auth )
@@ -225,51 +175,6 @@ struct sign_state
             {
                if( kf != public_key_type() )
                   missed_keys.insert( kf );
-            }
-         }
-
-         for( const auto& k : auth.address_auths )
-         {
-            total_possible_weight += k.second;
-            if( signed_by( k.first ) )
-            {
-               total_weight += k.second;
-               if( total_weight >= auth.weight_threshold )
-                  return std::make_tuple( true, true, empty_public_key_set );
-            }
-         }
-
-         for( const auto& a : auth.account_auths )
-         {
-            if( approved_by.find(a.first) == approved_by.end() )
-            {
-               if( depth == max_recursion )
-                  continue;
-               const auto& result = check_authority( get_active( a.first ), depth+1 );
-               if( std::get<0>( result ) )
-               {
-                  total_possible_weight += a.second;
-                  approved_by.insert( a.first );
-                  total_weight += a.second;
-                  if( total_weight >= auth.weight_threshold )
-                     return std::make_tuple( true, true, empty_public_key_set );
-               }
-               else
-               {
-                  if( std::get<1>( result ) )
-                  {
-                     total_possible_weight += a.second;
-                     for( const auto& k : std::get<2>( result ) )
-                        missed_keys.insert( k );
-                  }
-               }
-            }
-            else
-            {
-               total_possible_weight += a.second;
-               total_weight += a.second;
-               if( total_weight >= auth.weight_threshold )
-                  return std::make_tuple( true, true, empty_public_key_set );
             }
          }
 
@@ -349,35 +254,21 @@ struct sign_state
          return remove_sigs.size() != 0;
       }
 
-      sign_state( const flat_set<public_key_type>& sigs,
-                  const std::function<const authority*(account_id_type)>& a,
-                  const flat_set<public_key_type>& keys = empty_public_key_set )
-      : get_active(a),
-        get_owner_by_uid(null_by_uid),get_active_by_uid(null_by_uid),get_secondary_by_uid(null_by_uid),
-        available_keys(keys)
-      {
-         for( const auto& key : sigs )
-            provided_signatures[ key ] = false;
-         approved_by.insert( GRAPHENE_TEMP_ACCOUNT  );
-      }
-
-      sign_state( const flat_set<public_key_type>& sigs,
+      sign_state( const flat_map<public_key_type,signature_type>& sigs,
                   const std::function<const authority*(account_uid_type)>& o,
                   const std::function<const authority*(account_uid_type)>& a,
                   const std::function<const authority*(account_uid_type)>& s,
                   const flat_set<public_key_type>& keys = empty_public_key_set )
-      : get_active(null_by_id),
-        get_owner_by_uid(o),get_active_by_uid(a),get_secondary_by_uid(s),
+      : get_owner_by_uid(o),get_active_by_uid(a),get_secondary_by_uid(s),
         available_keys(keys)
       {
-         for( const auto& key : sigs )
-            provided_signatures[ key ] = false;
+         for( const auto& key_sig : sigs )
+            provided_signatures[ key_sig.first ] = false;
+
          approved_by_uid_auth.emplace( GRAPHENE_TEMP_ACCOUNT_UID, authority::owner_auth );
          approved_by_uid_auth.emplace( GRAPHENE_TEMP_ACCOUNT_UID, authority::active_auth );
          approved_by_uid_auth.emplace( GRAPHENE_TEMP_ACCOUNT_UID, authority::secondary_auth );
       }
-
-      const std::function<const authority*(account_id_type)>& get_active;
 
       const std::function<const authority*(account_uid_type)>& get_owner_by_uid;
       const std::function<const authority*(account_uid_type)>& get_active_by_uid;
@@ -387,66 +278,11 @@ struct sign_state
       flat_set<public_key_type>                               used_keys;
 
       flat_map<public_key_type,bool>             provided_signatures; // the bool means "is_used"
-      flat_set<account_id_type>                  approved_by;
       flat_set<authority::account_uid_auth_type> approved_by_uid_auth;
       uint32_t                                   max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH;
 };
 
-
-void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
-                       const std::function<const authority*(account_id_type)>& get_active,
-                       const std::function<const authority*(account_id_type)>& get_owner,
-                       uint32_t max_recursion_depth,
-                       bool  allow_committe,
-                       const flat_set<account_id_type>& active_aprovals,
-                       const flat_set<account_id_type>& owner_approvals )
-{ try {
-   flat_set<account_id_type> required_active;
-   flat_set<account_id_type> required_owner;
-   vector<authority> other;
-
-   for( const auto& op : ops )
-      operation_get_required_authorities( op, required_active, required_owner, other );
-
-   if( !allow_committe )
-      GRAPHENE_ASSERT( required_active.find(GRAPHENE_COMMITTEE_ACCOUNT) == required_active.end(),
-                       invalid_committee_approval, "Committee account may only propose transactions" );
-
-   sign_state s(sigs,get_active);
-   s.max_recursion = max_recursion_depth;
-   for( auto& id : active_aprovals )
-      s.approved_by.insert( id );
-   for( auto& id : owner_approvals )
-      s.approved_by.insert( id );
-
-   for( const auto& auth : other )
-   {
-      GRAPHENE_ASSERT( std::get<0>( s.check_authority(&auth) ), tx_missing_other_auth, "Missing Authority", ("auth",auth)("sigs",sigs) );
-   }
-
-   // fetch all of the top level authorities
-   for( auto id : required_active )
-   {
-      GRAPHENE_ASSERT( std::get<0>( s.check_authority(id) ) ||
-                       std::get<0>( s.check_authority(get_owner(id)) ),
-                       tx_missing_active_auth, "Missing Active Authority, account id: ${id}", ("id",id)("auth",*get_active(id))("owner",*get_owner(id)) );
-   }
-
-   for( auto id : required_owner )
-   {
-      GRAPHENE_ASSERT( owner_approvals.find(id) != owner_approvals.end() ||
-                       std::get<0>( s.check_authority(get_owner(id)) ),
-                       tx_missing_owner_auth, "Missing Owner Authority, account id: ${id}", ("id",id)("auth",*get_owner(id)) );
-   }
-
-   GRAPHENE_ASSERT(
-      !s.remove_unused_signatures(),
-      tx_irrelevant_sig,
-      "Unnecessary signature(s) detected"
-      );
-} FC_CAPTURE_AND_RETHROW( (ops)(sigs) ) }
-
-void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
+void verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
                           const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_active_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
@@ -535,23 +371,80 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
       );
 } FC_CAPTURE_AND_RETHROW( (ops)(sigs) ) }
 
+void get_authority_uid( const account_uid_type uid,
+                        const std::function<const account_object*(account_uid_type)>& get_acc_by_uid,
+                        flat_set<account_uid_type>& owner_auth_uid,
+                        flat_set<account_uid_type>& active_auth_uid,
+                        flat_set<account_uid_type>& secondary_auth_uid
+                        )
+{ try {
+      auto accptr = get_acc_by_uid( uid );
+      if( accptr != nullptr ){
+         const account_object& acc = *accptr;
+         get_authority_uid( &acc.owner, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid );
+         get_authority_uid( &acc.active, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid );
+         get_authority_uid( &acc.secondary, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid );
+      }
+    
 
-flat_set<public_key_type> signed_transaction::get_signature_keys( const chain_id_type& chain_id )const
+} FC_CAPTURE_AND_RETHROW() }
+
+void get_authority_uid( const authority* au,
+                        const std::function<const account_object*(account_uid_type)>& get_acc_by_uid,
+                        flat_set<account_uid_type>& owner_auth_uid,
+                        flat_set<account_uid_type>& active_auth_uid,
+                        flat_set<account_uid_type>& secondary_auth_uid,
+                        uint32_t depth)
+{ try {
+      if( au != nullptr )
+      {
+         const authority& auth = *au;
+         for( const auto& a : auth.account_uid_auths )
+         {
+            if( depth == GRAPHENE_MAX_SIG_CHECK_DEPTH )
+               continue;
+            auto accptr = get_acc_by_uid( a.first.uid );
+            if( accptr == nullptr )
+               continue;
+            const account_object& acc = *accptr;
+            if( a.first.auth_type == authority::secondary_auth )
+            {
+               secondary_auth_uid.insert( acc.uid );
+               get_authority_uid( &acc.secondary, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid, depth+1 );
+            }
+            else if( a.first.auth_type == authority::active_auth )
+            {
+               active_auth_uid.insert( acc.uid );
+               get_authority_uid( &acc.active, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid, depth+1 );
+            }
+            else
+            {
+               owner_auth_uid.insert( acc.uid );
+               get_authority_uid( &acc.owner, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid, depth+1 );
+            }
+         }
+      }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+flat_map<public_key_type,signature_type> signed_transaction::get_signature_keys( const chain_id_type& chain_id )const
 { try {
    auto d = sig_digest( chain_id );
-   flat_set<public_key_type> result;
+   flat_map<public_key_type,signature_type> result;
    for( const auto&  sig : signatures )
    {
+      const auto& key = fc::ecc::public_key(sig,d);
       GRAPHENE_ASSERT(
-         result.insert( fc::ecc::public_key(sig,d) ).second,
+         result.find( key ) == result.end(),
          tx_duplicate_sig,
          "Duplicate Signature detected" );
+      result[key] = sig;
    }
    return result;
 } FC_CAPTURE_AND_RETHROW() }
 
 
-std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<public_key_type>> signed_transaction::get_required_signatures(
+std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signature_type>> signed_transaction::get_required_signatures(
    const chain_id_type& chain_id,
    const flat_set<public_key_type>& available_keys,
    const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
@@ -604,84 +497,12 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<public_k
 
    const auto& used_keys = s.get_used_keys();
    const auto& unused_sig_keys = s.get_unused_signature_keys();
-   flat_set<public_key_type> unused_keys;
+   flat_set<signature_type> unused_sigs;
    for( const auto& key : unused_sig_keys )
-      unused_keys.insert( key );
+      unused_sigs.insert( key_sigs[key] );
 
-   return std::make_tuple( used_keys, missed_keys, unused_keys );
+   return std::make_tuple( used_keys, missed_keys, unused_sigs );
 }
-
-set<public_key_type> signed_transaction::get_required_signatures(
-   const chain_id_type& chain_id,
-   const flat_set<public_key_type>& available_keys,
-   const std::function<const authority*(account_id_type)>& get_active,
-   const std::function<const authority*(account_id_type)>& get_owner,
-   uint32_t max_recursion_depth )const
-{
-   flat_set<account_id_type> required_active;
-   flat_set<account_id_type> required_owner;
-   vector<authority> other;
-   get_required_authorities( required_active, required_owner, other );
-
-
-   sign_state s(get_signature_keys( chain_id ),get_active,available_keys);
-   s.max_recursion = max_recursion_depth;
-
-   for( const auto& auth : other )
-      s.check_authority(&auth);
-   for( auto& owner : required_owner )
-      s.check_authority( get_owner( owner ) );
-   for( auto& active : required_active )
-      s.check_authority( active  );
-
-   s.remove_unused_signatures();
-
-   set<public_key_type> result;
-
-   for( auto& provided_sig : s.provided_signatures )
-      if( available_keys.find( provided_sig.first ) != available_keys.end() )
-         result.insert( provided_sig.first );
-
-   return result;
-}
-
-/*
-set<public_key_type> signed_transaction::minimize_required_signatures(
-   const chain_id_type& chain_id,
-   const flat_set<public_key_type>& available_keys,
-   const std::function<const authority*(account_id_type)>& get_active,
-   const std::function<const authority*(account_id_type)>& get_owner,
-   uint32_t max_recursion
-   ) const
-{
-   set< public_key_type > s = get_required_signatures( chain_id, available_keys, get_active, get_owner, max_recursion );
-   flat_set< public_key_type > result( s.begin(), s.end() );
-
-   for( const public_key_type& k : s )
-   {
-      result.erase( k );
-      try
-      {
-         graphene::chain::verify_authority( operations, result, get_active, get_owner, max_recursion );
-         continue;  // element stays erased if verify_authority is ok
-      }
-      catch( const tx_missing_owner_auth& e ) {}
-      catch( const tx_missing_active_auth& e ) {}
-      catch( const tx_missing_other_auth& e ) {}
-      result.insert( k );
-   }
-   return set<public_key_type>( result.begin(), result.end() );
-}
-*/
-
-void signed_transaction::verify_authority(
-   const chain_id_type& chain_id,
-   const std::function<const authority*(account_id_type)>& get_active,
-   const std::function<const authority*(account_id_type)>& get_owner,
-   uint32_t max_recursion )const
-{ try {
-   graphene::chain::verify_authority( operations, get_signature_keys( chain_id ), get_active, get_owner, max_recursion );
-} FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 void signed_transaction::verify_authority(
    const chain_id_type& chain_id,

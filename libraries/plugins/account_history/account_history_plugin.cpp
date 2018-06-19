@@ -78,13 +78,26 @@ account_history_plugin_impl::~account_history_plugin_impl()
 
 void account_history_plugin_impl::update_account_histories( const signed_block& b )
 {
+   if( b.block_num() == 5881511 ) // skip this block
+      return;
    graphene::chain::database& db = database();
    const vector<optional< operation_history_object > >& hist = db.get_applied_operations();
+   bool is_first = true;
+   auto skip_oho_id = [&is_first,&db,this]() {
+      if( is_first && db._undo_db.enabled() ) // this ensures that the current id is rolled back on undo
+      {
+         db.remove( db.create<operation_history_object>( []( operation_history_object& obj) {} ) );
+         is_first = false;
+      }
+      else
+         _oho_index->use_next_id();
+   };
    for( const optional< operation_history_object >& o_op : hist )
    {
       optional<operation_history_object> oho;
 
       auto create_oho = [&]() {
+         is_first = false;
          return optional<operation_history_object>( db.create<operation_history_object>( [&]( operation_history_object& h )
          {
             if( o_op.valid() )
@@ -104,7 +117,7 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
       {
          // Note: the 2nd and 3rd checks above are for better performance, when the db is not clean,
          //       they will break consistency of account_stats.total_ops and removed_ops and most_recent_op
-         _oho_index->use_next_id();
+         skip_oho_id();
          continue;
       }
       else if( !_partial_operations )  // add to the operation history index
@@ -165,14 +178,17 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
          }
       }
       if ( _partial_operations && !oho.valid() )
-         _oho_index->use_next_id();
+         skip_oho_id();
    }
 }
 
 void account_history_plugin_impl::add_account_history( const account_uid_type account_uid, const operation_history_id_type op_id, uint16_t op_type )
 {
    graphene::chain::database& db = database();
-   const auto& account_obj = db.get_account_by_uid(account_uid);
+   const auto* account_ptr = db.find_account_by_uid( account_uid );
+   if( !account_ptr )
+      return;
+   const auto& account_obj = *account_ptr;
    const auto& stats_obj = account_obj.statistics(db);
    // add new entry
    const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
