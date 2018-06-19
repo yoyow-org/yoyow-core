@@ -98,17 +98,7 @@ void  asset_create_operation::validate()const
    FC_ASSERT( fee.amount >= 0 );
    FC_ASSERT( is_valid_symbol(symbol) );
    common_options.validate();
-   if( common_options.issuer_permissions & (disable_force_settle|global_settle) )
-      FC_ASSERT( bitasset_opts.valid() );
-   if( is_prediction_market )
-   {
-      FC_ASSERT( bitasset_opts.valid(), "Cannot have a User-Issued Asset implement a prediction market." );
-      FC_ASSERT( common_options.issuer_permissions & global_settle );
-   }
-   if( bitasset_opts ) bitasset_opts->validate();
 
-   asset dummy = asset(1) * common_options.core_exchange_rate;
-   FC_ASSERT(dummy.asset_id == 1);
    FC_ASSERT(precision <= 12);
 }
 
@@ -118,35 +108,11 @@ void asset_update_operation::validate()const
    if( new_issuer )
       FC_ASSERT(issuer != *new_issuer);
    new_options.validate();
-
-   asset dummy = asset(1, asset_to_update) * new_options.core_exchange_rate;
-   FC_ASSERT(dummy.asset_id == GRAPHENE_CORE_ASSET_AID);
 }
 
 share_type asset_update_operation::calculate_fee(const asset_update_operation::fee_parameters_type& k)const
 {
    return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
-}
-
-
-void asset_publish_feed_operation::validate()const
-{
-   FC_ASSERT( fee.amount >= 0 );
-   feed.validate();
-
-   // maybe some of these could be moved to feed.validate()
-   if( !feed.core_exchange_rate.is_null() )
-   {
-      feed.core_exchange_rate.validate();
-   }
-   if( (!feed.settlement_price.is_null()) && (!feed.core_exchange_rate.is_null()) )
-   {
-      FC_ASSERT( feed.settlement_price.base.asset_id == feed.core_exchange_rate.base.asset_id );
-   }
-
-   FC_ASSERT( !feed.settlement_price.is_null() );
-   FC_ASSERT( !feed.core_exchange_rate.is_null() );
-   FC_ASSERT( feed.is_for( asset_id ) );
 }
 
 void asset_reserve_operation::validate()const
@@ -164,43 +130,6 @@ void asset_issue_operation::validate()const
    FC_ASSERT( asset_to_issue.asset_id != GRAPHENE_CORE_ASSET_AID );
 }
 
-void asset_fund_fee_pool_operation::validate() const
-{
-   FC_ASSERT( fee.amount >= 0 );
-   FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID );
-   FC_ASSERT( amount > 0 );
-}
-
-void asset_settle_operation::validate() const
-{
-   FC_ASSERT( fee.amount >= 0 );
-   FC_ASSERT( amount.amount >= 0 );
-}
-
-void asset_update_bitasset_operation::validate() const
-{
-   FC_ASSERT( fee.amount >= 0 );
-   new_options.validate();
-}
-
-void asset_update_feed_producers_operation::validate() const
-{
-   FC_ASSERT( fee.amount >= 0 );
-}
-
-void asset_global_settle_operation::validate()const
-{
-   FC_ASSERT( fee.amount >= 0 );
-   FC_ASSERT( asset_to_settle == asset_id_type(settle_price.base.asset_id) );
-}
-
-void bitasset_options::validate() const
-{
-   FC_ASSERT(minimum_feeds > 0);
-   FC_ASSERT(force_settlement_offset_percent <= GRAPHENE_100_PERCENT);
-   FC_ASSERT(maximum_force_settlement_volume <= GRAPHENE_100_PERCENT);
-}
-
 void asset_options::validate()const
 {
    FC_ASSERT( max_supply > 0 );
@@ -208,14 +137,11 @@ void asset_options::validate()const
    FC_ASSERT( market_fee_percent <= GRAPHENE_100_PERCENT );
    FC_ASSERT( max_market_fee >= 0 && max_market_fee <= GRAPHENE_MAX_SHARE_SUPPLY );
    // There must be no high bits in permissions whose meaning is not known.
-   FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
+   FC_ASSERT( !(issuer_permissions & ~UIA_ASSET_ISSUER_PERMISSION_MASK) );
    // The global_settle flag may never be set (this is a permission only)
-   FC_ASSERT( !(flags & global_settle) );
+   //FC_ASSERT( !(flags & global_settle) );
    // the witness_fed and committee_fed flags cannot be set simultaneously
-   FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
-   core_exchange_rate.validate();
-   FC_ASSERT( core_exchange_rate.base.asset_id == 0 ||
-              core_exchange_rate.quote.asset_id == 0 );
+   //FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
 
    if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
       FC_ASSERT( flags & white_list );

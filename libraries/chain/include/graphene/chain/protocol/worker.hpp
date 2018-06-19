@@ -79,7 +79,7 @@ namespace graphene { namespace chain {
       struct fee_parameters_type { uint64_t fee = 5000*GRAPHENE_BLOCKCHAIN_PRECISION; };
 
       asset                fee;
-      account_id_type      owner;
+      account_uid_type      owner;
       time_point_sec       work_begin_date;
       time_point_sec       work_end_date;
       share_type           daily_pay;
@@ -88,7 +88,7 @@ namespace graphene { namespace chain {
       /// This should be set to the initializer appropriate for the type of worker to be created.
       worker_initializer   initializer;
 
-      account_id_type   fee_payer()const { return owner; }
+      account_uid_type   fee_payer_uid()const { return owner; }
       void              validate()const;
    };
    ///@}

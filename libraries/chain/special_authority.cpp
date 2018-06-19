@@ -55,7 +55,7 @@ struct special_authority_evaluate_visitor
 
    void operator()( const top_holders_special_authority& a )
    {
-      a.asset(db);     // require asset to exist
+      db.get_asset_by_aid( a.asset );     // require asset to exist
    }
 
    const database& db;

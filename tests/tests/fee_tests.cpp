@@ -740,28 +740,6 @@ BOOST_AUTO_TEST_CASE( stealth_fba_test )
       asset_id_type stealth_id = create_user_issued_asset( "STEALTH", izzy_id(db),
          disable_confidential | transfer_restricted | override_authority | white_list | charge_market_fee ).id;
 
-      /*
-      // this is disabled because it doesn't work, our modify() is probably being overwritten by undo
-
-      //
-      // Init blockchain with stealth ID's
-      // On a real chain, this would be done with #define GRAPHENE_FBA_STEALTH_DESIGNATED_ASSET
-      // causing the designated_asset fields of these objects to be set at genesis, but for
-      // this test we modify the db directly.
-      //
-      auto set_fba_asset = [&]( uint64_t fba_acc_id, asset_id_type asset_id )
-      {
-         db.modify( fba_accumulator_id_type(fba_acc_id)(db), [&]( fba_accumulator_object& fba )
-         {
-            fba.designated_asset = asset_id;
-         } );
-      };
-
-      set_fba_asset( fba_accumulator_id_transfer_to_blind  , stealth_id );
-      set_fba_asset( fba_accumulator_id_blind_transfer     , stealth_id );
-      set_fba_asset( fba_accumulator_id_transfer_from_blind, stealth_id );
-      */
-
       // Izzy kills some permission bits (this somehow happened to the real STEALTH in production)
       {
          asset_update_operation update_op;

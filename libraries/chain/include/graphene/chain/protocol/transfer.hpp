@@ -112,11 +112,11 @@ namespace graphene { namespace chain {
       };
 
       asset           fee;
-      account_id_type issuer;
+      account_uid_type issuer;
       /// Account to transfer asset from
-      account_id_type from;
+      account_uid_type from;
       /// Account to transfer asset to
-      account_id_type to;
+      account_uid_type to;
       /// The amount of asset to transfer from @ref from to @ref to
       asset amount;
 
@@ -124,7 +124,7 @@ namespace graphene { namespace chain {
       optional<memo_data> memo;
       extensions_type   extensions;
 
-      account_id_type fee_payer()const { return issuer; }
+      account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
    };

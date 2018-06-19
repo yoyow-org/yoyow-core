@@ -301,16 +301,20 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 { try {
    database& d = db();
 
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
+
    acnt = &d.get_account_by_uid( o.uid );
-   for( const auto& uid_auth : acnt->secondary.account_uid_auths )
-   {
-      FC_ASSERT( uid_auth.first.uid != o.platform, "platform ${p} is already in secondary authority", ("p", o.platform) );
-   }
+
+   auto& ka = acnt->secondary.account_uid_auths;
+   auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
+   bool found = ( itr != ka.end() );
+   FC_ASSERT( !found, "platform ${p} is already in secondary authority", ("p", o.platform) );
+
    authority auth = acnt->secondary;
    authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
    //auat.uid = o.platform;
    //auat.auth_type = authority::secondary_auth;
-   auth.add_authority( auat, 1 );
+   auth.add_authority( auat, acnt->secondary.weight_threshold );
 
    try
    {
@@ -327,7 +331,7 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
    database& d = db();
    authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
    d.modify( *acnt, [&](account_object& a){
-      a.secondary.add_authority( auat, 1 );
+      a.secondary.add_authority( auat, acnt->secondary.weight_threshold );
       a.last_update_time = d.head_block_time();
    });
 
@@ -337,6 +341,8 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
 void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_cancel_auth_platform_operation& o )
 { try {
    database& d = db();
+
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_cancel_auth_platform after HARDFORK_0_2_1_TIME" );
 
    acnt = &d.get_account_by_uid( o.uid );
    auto& ka = acnt->secondary.account_uid_auths;
@@ -581,9 +587,9 @@ void_result account_whitelist_evaluator::do_evaluate(const account_whitelist_ope
 { try {
    database& d = db();
 
-   listed_account = &o.account_to_list(d);
+   listed_account = d.find_account_by_uid( o.account_to_list );
    if( !d.get_global_properties().parameters.allow_non_member_whitelists )
-      FC_ASSERT(o.authorizing_account(d).is_lifetime_member());
+      FC_ASSERT(d.get_account_by_uid( o.authorizing_account ).is_lifetime_member());
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -605,7 +611,7 @@ void_result account_whitelist_evaluator::do_apply(const account_whitelist_operat
    });
 
    /** for tracking purposes only, this state is not needed to evaluate */
-   d.modify( o.authorizing_account(d), [&]( account_object& a ) {
+   d.modify( d.get_account_by_uid( o.authorizing_account ), [&]( account_object& a ) {
      if( o.new_listing & o.white_listed )
         a.whitelisted_accounts.insert( o.account_to_list );
      else
@@ -641,7 +647,7 @@ void_result account_upgrade_evaluator::do_apply(const account_upgrade_evaluator:
          // Upgrade to lifetime member. I don't care what the account was before.
          a.statistics(d).process_fees(a, d);
          a.membership_expiration_date = time_point_sec::maximum();
-         a.referrer = a.registrar = a.lifetime_referrer = a.get_id();
+         a.referrer = a.registrar = a.lifetime_referrer = a.uid;
          a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - a.network_fee_percentage;
       }
    });

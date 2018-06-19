@@ -46,7 +46,7 @@ class blinded_balance_object : public graphene::db::abstract_object<blinded_bala
       static const uint8_t type_id  = impl_blinded_balance_object_type;
 
       fc::ecc::commitment_type                commitment;
-      asset_id_type                           asset_id;
+      asset_aid_type                           asset_id;
       authority                               owner;
 };
 

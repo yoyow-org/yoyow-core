@@ -428,15 +428,15 @@ namespace graphene { namespace chain {
       /// Paid by authorizing_account
       asset           fee;
       /// The account which is specifying an opinion of another account
-      account_id_type authorizing_account;
+      account_uid_type authorizing_account;
       /// The account being opined about
-      account_id_type account_to_list;
+      account_uid_type account_to_list;
       /// The new white and blacklist status of account_to_list, as determined by authorizing_account
       /// This is a bitfield using values defined in the account_listing enum
       uint8_t new_listing = no_listing;
       extensions_type extensions;
 
-      account_id_type fee_payer()const { return authorizing_account; }
+      account_uid_type fee_payer_uid()const { return authorizing_account; }
       void validate()const { FC_ASSERT( fee.amount >= 0 ); FC_ASSERT(new_listing < 0x4); }
    };
 

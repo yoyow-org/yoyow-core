@@ -47,7 +47,7 @@ class buyback_object : public graphene::db::abstract_object< buyback_object >
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id = impl_buyback_object_type;
 
-      asset_id_type asset_to_buy;
+      asset_aid_type asset_to_buy;
 };
 
 struct by_asset;
@@ -56,7 +56,7 @@ typedef multi_index_container<
    buyback_object,
    indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-      ordered_unique< tag<by_asset>, member< buyback_object, asset_id_type, &buyback_object::asset_to_buy> >
+      ordered_unique< tag<by_asset>, member< buyback_object, asset_aid_type, &buyback_object::asset_to_buy> >
    >
 > buyback_multi_index_type;
 

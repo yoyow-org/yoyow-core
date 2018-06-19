@@ -47,12 +47,12 @@ using namespace chain;
 
 struct bucket_key
 {
-   bucket_key( asset_id_type a, asset_id_type b, uint32_t s, fc::time_point_sec o )
+   bucket_key( asset_aid_type a, asset_aid_type b, uint32_t s, fc::time_point_sec o )
    :base(a),quote(b),seconds(s),open(o){}
    bucket_key(){}
 
-   asset_id_type      base;
-   asset_id_type      quote;
+   asset_aid_type      base;
+   asset_aid_type      quote;
    uint32_t           seconds = 0;
    fc::time_point_sec open;
 
@@ -88,8 +88,8 @@ struct bucket_object : public abstract_object<bucket_object>
 };
 
 struct history_key {
-  asset_id_type        base;
-  asset_id_type        quote;
+  asset_aid_type        base;
+  asset_aid_type        quote;
   int64_t              sequence = 0;
 
   friend bool operator < ( const history_key& a, const history_key& b ) {

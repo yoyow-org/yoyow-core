@@ -52,12 +52,14 @@ asset database::get_balance(const account_object& owner, asset_aid_type asset_id
 
 string database::to_pretty_string( const asset& a )const
 {
-   return this->get(asset_id_type(a.asset_id)).amount_to_pretty_string(a.amount);
+   const auto& ao = get_asset_by_aid( a.asset_id );
+   return ao.amount_to_pretty_string( a.amount );
 }
 
 string database::to_pretty_core_string( const share_type amount )const
 {
-   return this->get(asset_id_type()).amount_to_pretty_string(amount);
+   const auto& ao = get_asset_by_aid( GRAPHENE_CORE_ASSET_AID );
+   return ao.amount_to_pretty_string( amount );
 }
 
 void database::adjust_balance(const account_object& account, asset delta )
@@ -143,7 +145,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
 optional< vesting_balance_id_type > database::deposit_lazy_vesting(
    const optional< vesting_balance_id_type >& ovbid,
    share_type amount, uint32_t req_vesting_seconds,
-   account_id_type req_owner,
+   account_uid_type req_owner,
    bool require_vesting )
 {
    if( amount == 0 )
@@ -201,7 +203,7 @@ void database::deposit_cashback(const account_object& acct, share_type amount, b
        acct.get_id() == GRAPHENE_TEMP_ACCOUNT )
    {
       // The blockchain's accounts do not get cashback; it simply goes to the reserve pool.
-      modify(get(asset_id_type()).dynamic_asset_data_id(*this), [amount](asset_dynamic_data_object& d) {
+      modify(get_core_asset().dynamic_asset_data_id(*this), [amount](asset_dynamic_data_object& d) {
          d.current_supply -= amount;
       });
       return;
@@ -211,7 +213,7 @@ void database::deposit_cashback(const account_object& acct, share_type amount, b
       acct.cashback_vb,
       amount,
       get_global_properties().parameters.cashback_vesting_period_seconds,
-      acct.id,
+      acct.uid,
       require_vesting );
 
    if( new_vbid.valid() )

@@ -42,7 +42,7 @@ void_result balance_claim_evaluator::do_evaluate(const balance_claim_operation& 
              ("bal", balance->owner)
              );
 
-   FC_ASSERT(asset_id_type(op.total_claimed.asset_id) == balance->asset_type());
+   FC_ASSERT(op.total_claimed.asset_id == balance->asset_type());
 
    if( balance->is_vesting_balance() )
    {

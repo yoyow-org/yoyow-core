@@ -33,87 +33,11 @@
 
 namespace graphene { namespace chain {
 
-/**
- * All margin positions are force closed at the swan price
- * Collateral received goes into a force-settlement fund
- * No new margin positions can be created for this asset
- * No more price feed updates
- * Force settlement happens without delay at the swan price, deducting from force-settlement fund
- * No more asset updates may be issued.
-*/
-void database::globally_settle_asset( const asset_object& mia, const price& settlement_price )
-{ try {
-   /*
-   elog( "BLACK SWAN!" );
-   debug_dump();
-   edump( (mia.symbol)(settlement_price) );
-   */
-
-   const asset_bitasset_data_object& bitasset = mia.bitasset_data(*this);
-   FC_ASSERT( !bitasset.has_settlement(), "black swan already occurred, it should not happen again" );
-
-   const asset_object& backing_asset = bitasset.options.short_backing_asset(*this);
-   asset collateral_gathered = backing_asset.amount(0);
-
-   const asset_dynamic_data_object& mia_dyn = mia.dynamic_asset_data_id(*this);
-   auto original_mia_supply = mia_dyn.current_supply;
-
-   const call_order_index& call_index = get_index_type<call_order_index>();
-   const auto& call_price_index = call_index.indices().get<by_price>();
-
-   // cancel all call orders and accumulate it into collateral_gathered
-   auto call_itr = call_price_index.lower_bound( price::min( bitasset.options.short_backing_asset, mia.id ) );
-   auto call_end = call_price_index.upper_bound( price::max( bitasset.options.short_backing_asset, mia.id ) );
-   while( call_itr != call_end )
-   {
-      auto pays = call_itr->get_debt() * settlement_price;
-
-      if( pays > call_itr->get_collateral() )
-         pays = call_itr->get_collateral();
-
-      collateral_gathered += pays;
-      const auto&  order = *call_itr;
-      ++call_itr;
-      FC_ASSERT( fill_order( order, pays, order.get_debt() ) );
-   }
-
-   modify( bitasset, [&]( asset_bitasset_data_object& obj ){
-           assert( collateral_gathered.asset_id == settlement_price.quote.asset_id );
-           obj.settlement_price = mia.amount(original_mia_supply) / collateral_gathered; //settlement_price;
-           obj.settlement_fund  = collateral_gathered.amount;
-           });
-
-   /// After all margin positions are closed, the current supply will be reported as 0, but
-   /// that is a lie, the supply didn't change.   We need to capture the current supply before
-   /// filling all call orders and then restore it afterward.   Then in the force settlement
-   /// evaluator reduce the supply
-   modify( mia_dyn, [&]( asset_dynamic_data_object& obj ){
-           obj.current_supply = original_mia_supply;
-         });
-
-} FC_CAPTURE_AND_RETHROW( (mia)(settlement_price) ) }
-
-void database::cancel_order(const force_settlement_object& order, bool create_virtual_op)
-{
-   // TODO review
-   //adjust_balance(order.owner, order.balance);
-
-   if( create_virtual_op )
-   {
-      asset_settle_cancel_operation vop;
-      vop.settlement = order.id;
-      vop.account = order.owner;
-      vop.amount = order.balance;
-      push_applied_operation( vop );
-   }
-   remove(order);
-}
-
 void database::cancel_order( const limit_order_object& order, bool create_virtual_op  )
 {
    auto refunded = order.amount_for_sale();
 
-   modify( order.seller(*this).statistics(*this),[&]( account_statistics_object& obj ){
+   modify( get_account_by_uid( order.seller ).statistics(*this),[&]( account_statistics_object& obj ){
       if( refunded.asset_id == GRAPHENE_CORE_ASSET_AID )
       {
          obj.total_core_in_orders -= refunded.amount;
@@ -158,16 +82,8 @@ bool maybe_cull_small_order( database& db, const limit_order_object& order )
 bool database::apply_order(const limit_order_object& new_order_object, bool allow_black_swan)
 {
    auto order_id = new_order_object.id;
-   const asset_object& sell_asset = get(asset_id_type(new_order_object.amount_for_sale().asset_id));
-   const asset_object& receive_asset = get(asset_id_type(new_order_object.amount_to_receive().asset_id));
-
-   // Possible optimization: We only need to check calls if both are true:
-   //  - The new order is at the front of the book
-   //  - The new order is below the call limit price
-   bool called_some = check_call_orders(sell_asset, allow_black_swan);
-   called_some |= check_call_orders(receive_asset, allow_black_swan);
-   if( called_some && !find_object(order_id) ) // then we were filled by call order
-      return true;
+   get_asset_by_aid(new_order_object.amount_for_sale().asset_id);
+   get_asset_by_aid(new_order_object.amount_to_receive().asset_id);
 
    const auto& limit_price_idx = get_index_type<limit_order_index>().indices().get<by_price>();
 
@@ -188,11 +104,6 @@ bool database::apply_order(const limit_order_object& new_order_object, bool allo
       // match returns 2 when only the old order was fully filled. In this case, we keep matching; otherwise, we stop.
       finished = (match(new_order_object, *old_limit_itr, old_limit_itr->sell_price) != 2);
    }
-
-   //Possible optimization: only check calls if the new order completely filled some old order
-   //Do I need to check both assets?
-   check_call_orders(sell_asset, allow_black_swan);
-   check_call_orders(receive_asset, allow_black_swan);
 
    const limit_order_object* updated_order_object = find< limit_order_object >( order_id );
    if( updated_order_object == nullptr )
@@ -258,48 +169,14 @@ int database::match( const limit_order_object& bid, const limit_order_object& as
    return match<limit_order_object>( bid, ask, match_price );
 }
 
-
-asset database::match( const call_order_object& call, 
-                       const force_settlement_object& settle, 
-                       const price& match_price,
-                       asset max_settlement )
-{ try {
-   FC_ASSERT(call.get_debt().asset_id == settle.balance.asset_id );
-   FC_ASSERT(call.debt > 0 && call.collateral > 0 && settle.balance.amount > 0);
-
-   auto settle_for_sale = std::min(settle.balance, max_settlement);
-   auto call_debt = call.get_debt();
-
-   asset call_receives   = std::min(settle_for_sale, call_debt);
-   asset call_pays       = call_receives * match_price;
-   asset settle_pays     = call_receives;
-   asset settle_receives = call_pays;
-
-   /**
-    *  If the least collateralized call position lacks sufficient
-    *  collateral to cover at the match price then this indicates a black 
-    *  swan event according to the price feed, but only the market 
-    *  can trigger a black swan.  So now we must cancel the forced settlement
-    *  object.
-    */
-   GRAPHENE_ASSERT( call_pays < call.get_collateral(), black_swan_exception, "" );
-
-   assert( settle_pays == settle_for_sale || call_receives == call.get_debt() );
-
-   fill_order(call, call_pays, call_receives);
-   fill_order(settle, settle_pays, settle_receives);
-
-   return call_receives;
-} FC_CAPTURE_AND_RETHROW( (call)(settle)(match_price)(max_settlement) ) }
-
 bool database::fill_order( const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small )
 { try {
 
    FC_ASSERT( order.amount_for_sale().asset_id == pays.asset_id );
    FC_ASSERT( pays.asset_id != receives.asset_id );
 
-   const account_object& seller = order.seller(*this);
-   const asset_object& recv_asset = asset_id_type(receives.asset_id)(*this);
+   const account_object& seller = get_account_by_uid( order.seller );
+   const asset_object& recv_asset = get_asset_by_aid(receives.asset_id);
 
    auto issuer_fees = pay_market_fees( recv_asset, receives );
    pay_order( seller, receives - issuer_fees, pays );
@@ -333,213 +210,6 @@ bool database::fill_order( const limit_order_object& order, const asset& pays, c
    }
 } FC_CAPTURE_AND_RETHROW( (order)(pays)(receives) ) }
 
-
-bool database::fill_order( const call_order_object& order, const asset& pays, const asset& receives )
-{ try {
-   //idump((pays)(receives)(order));
-   FC_ASSERT( order.get_debt().asset_id == receives.asset_id );
-   FC_ASSERT( order.get_collateral().asset_id == pays.asset_id );
-   FC_ASSERT( order.get_collateral() >= pays );
-
-   optional<asset> collateral_freed;
-   modify( order, [&]( call_order_object& o ){
-            o.debt       -= receives.amount;
-            o.collateral -= pays.amount;
-            if( o.debt == 0 )
-            {
-              collateral_freed = o.get_collateral();
-              o.collateral = 0;
-            }
-       });
-   const asset_object& mia = asset_id_type(receives.asset_id)(*this);
-   assert( mia.is_market_issued() );
-
-   const asset_dynamic_data_object& mia_ddo = mia.dynamic_asset_data_id(*this);
-
-   modify( mia_ddo, [&]( asset_dynamic_data_object& ao ){
-       //idump((receives));
-        ao.current_supply -= receives.amount;
-      });
-
-   const account_object& borrower = order.borrower(*this);
-   if( collateral_freed || pays.asset_id == GRAPHENE_CORE_ASSET_AID )
-   {
-      const account_statistics_object& borrower_statistics = borrower.statistics(*this);
-      // TODO review
-      //if( collateral_freed )
-      //   adjust_balance(borrower.get_id(), *collateral_freed);
-
-      modify( borrower_statistics, [&]( account_statistics_object& b ){
-              if( collateral_freed && collateral_freed->amount > 0 )
-                b.total_core_in_orders -= collateral_freed->amount;
-              if( pays.asset_id == GRAPHENE_CORE_ASSET_AID )
-                b.total_core_in_orders -= pays.amount;
-
-              assert( b.total_core_in_orders >= 0 );
-           });
-   }
-
-   assert( pays.asset_id != receives.asset_id );
-   push_applied_operation( fill_order_operation{ order.id, order.borrower, pays, receives, asset(0, pays.asset_id) } );
-
-   if( collateral_freed )
-      remove( order );
-
-   return collateral_freed.valid();
-} FC_CAPTURE_AND_RETHROW( (order)(pays)(receives) ) }
-
-bool database::fill_order(const force_settlement_object& settle, const asset& pays, const asset& receives)
-{ try {
-   bool filled = false;
-
-   auto issuer_fees = pay_market_fees(get(asset_id_type(receives.asset_id)), receives);
-
-   if( pays < settle.balance )
-   {
-      modify(settle, [&pays](force_settlement_object& s) {
-         s.balance -= pays;
-      });
-      filled = false;
-   } else {
-      filled = true;
-   }
-   // TODO review
-   //adjust_balance(settle.owner, receives - issuer_fees);
-
-   assert( pays.asset_id != receives.asset_id );
-   push_applied_operation( fill_order_operation{ settle.id, settle.owner, pays, receives, issuer_fees } );
-
-   if (filled)
-      remove(settle);
-
-   return filled;
-} FC_CAPTURE_AND_RETHROW( (settle)(pays)(receives) ) }
-
-/**
- *  Starting with the least collateralized orders, fill them if their
- *  call price is above the max(lowest bid,call_limit).
- *
- *  This method will return true if it filled a short or limit
- *
- *  @param mia - the market issued asset that should be called.
- *  @param enable_black_swan - when adjusting collateral, triggering a black swan is invalid and will throw
- *                             if enable_black_swan is not set to true.
- *
- *  @return true if a margin call was executed.
- */
-bool database::check_call_orders(const asset_object& mia, bool enable_black_swan)
-{ try {
-    if( !mia.is_market_issued() ) return false;
-
-    if( check_for_blackswan( mia, enable_black_swan ) ) 
-       return false;
-
-    const asset_bitasset_data_object& bitasset = mia.bitasset_data(*this);
-    if( bitasset.is_prediction_market ) return false;
-    if( bitasset.current_feed.settlement_price.is_null() ) return false;
-
-    const call_order_index& call_index = get_index_type<call_order_index>();
-    const auto& call_price_index = call_index.indices().get<by_price>();
-
-    const limit_order_index& limit_index = get_index_type<limit_order_index>();
-    const auto& limit_price_index = limit_index.indices().get<by_price>();
-
-    // looking for limit orders selling the most USD for the least CORE
-    auto max_price = price::max( mia.id, bitasset.options.short_backing_asset );
-    // stop when limit orders are selling too little USD for too much CORE
-    auto min_price = bitasset.current_feed.max_short_squeeze_price();
-
-    assert( max_price.base.asset_id == min_price.base.asset_id );
-    // NOTE limit_price_index is sorted from greatest to least
-    auto limit_itr = limit_price_index.lower_bound( max_price );
-    auto limit_end = limit_price_index.upper_bound( min_price );
-
-    if( limit_itr == limit_end )
-       return false;
-
-    auto call_min = price::min( bitasset.options.short_backing_asset, mia.id );
-    auto call_max = price::max( bitasset.options.short_backing_asset, mia.id );
-    auto call_itr = call_price_index.lower_bound( call_min );
-    auto call_end = call_price_index.upper_bound( call_max );
-
-    bool filled_limit = false;
-    bool margin_called = false;
-
-    while( !check_for_blackswan( mia, enable_black_swan ) && call_itr != call_end )
-    {
-       bool  filled_call      = false;
-       price match_price;
-       asset usd_for_sale;
-       if( limit_itr != limit_end )
-       {
-          assert( limit_itr != limit_price_index.end() );
-          match_price      = limit_itr->sell_price;
-          usd_for_sale     = limit_itr->amount_for_sale();
-       }
-       else return margin_called;
-
-       match_price.validate();
-
-       // would be margin called, but there is no matching order #436
-       bool feed_protected = ( bitasset.current_feed.settlement_price > ~call_itr->call_price );
-       if( feed_protected )
-          return margin_called;
-
-       // would be margin called, but there is no matching order
-       if( match_price > ~call_itr->call_price )
-          return margin_called;
-
-     //  idump((*call_itr));
-     //  idump((*limit_itr));
-
-     //  ilog( "match_price <= ~call_itr->call_price  performing a margin call" );
-
-       margin_called = true;
-
-       auto usd_to_buy   = call_itr->get_debt();
-
-       if( usd_to_buy * match_price > call_itr->get_collateral() )
-       {
-          elog( "black swan detected" ); 
-          edump((enable_black_swan));
-          FC_ASSERT( enable_black_swan );
-          globally_settle_asset(mia, bitasset.current_feed.settlement_price );
-          return true;
-       }
-
-       asset call_pays, call_receives, order_pays, order_receives;
-       if( usd_to_buy >= usd_for_sale )
-       {  // fill order
-          call_receives   = usd_for_sale;
-          order_receives  = usd_for_sale * match_price;
-          call_pays       = order_receives;
-          order_pays      = usd_for_sale;
-
-          filled_limit = true;
-          filled_call           = (usd_to_buy == usd_for_sale);
-       } else { // fill call
-          call_receives  = usd_to_buy;
-          order_receives = usd_to_buy * match_price;
-          call_pays      = order_receives;
-          order_pays     = usd_to_buy;
-
-          filled_call    = true;
-       }
-
-       FC_ASSERT( filled_call || filled_limit );
-
-       auto old_call_itr = call_itr;
-       if( filled_call ) ++call_itr;
-       fill_order(*old_call_itr, call_pays, call_receives);
-
-       auto old_limit_itr = filled_limit ? limit_itr++ : limit_itr;
-       fill_order(*old_limit_itr, order_pays, order_receives, true);
-
-    } // whlie call_itr != call_end
-
-    return margin_called;
-} FC_CAPTURE_AND_RETHROW() }
-
 void database::pay_order( const account_object& receiver, const asset& receives, const asset& pays )
 {
    const auto& balances = receiver.statistics(*this);
@@ -554,7 +224,7 @@ void database::pay_order( const account_object& receiver, const asset& receives,
 
 asset database::calculate_market_fee( const asset_object& trade_asset, const asset& trade_amount )
 {
-   //assert( trade_asset.id == trade_amount.asset_id );
+   assert( trade_asset.asset_id == trade_amount.asset_id );
 
    if( !trade_asset.charges_market_fees() )
       return trade_asset.amount(0);

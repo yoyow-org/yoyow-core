@@ -96,9 +96,9 @@ void transfer_from_blind_operation::validate()const
  *  If fee_payer = temp_account_id, then the fee is paid by the surplus balance of inputs-outputs and
  *  100% of the fee goes to the network.
  */
-account_id_type blind_transfer_operation::fee_payer()const
+account_uid_type blind_transfer_operation::fee_payer_uid()const
 {
-   return GRAPHENE_TEMP_ACCOUNT;
+   return GRAPHENE_TEMP_ACCOUNT_UID;
 }
 
 

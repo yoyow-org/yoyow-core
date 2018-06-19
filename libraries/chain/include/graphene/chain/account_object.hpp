@@ -293,6 +293,7 @@ namespace graphene { namespace chain {
 
          asset get_balance()const { return asset(balance, asset_type); }
          void  adjust_balance(const asset& delta);
+         asset_id_type get_id()const { return id; }
    };
 
 
@@ -321,11 +322,11 @@ namespace graphene { namespace chain {
          time_point_sec membership_expiration_date;
 
          ///The account that paid the fee to register this account. Receives a percentage of referral rewards.
-         account_id_type registrar;
+         account_uid_type registrar;
          /// The account credited as referring this account. Receives a percentage of referral rewards.
-         account_id_type referrer;
+         account_uid_type referrer;
          /// The lifetime member at the top of the referral tree. Receives a percentage of referral rewards.
-         account_id_type lifetime_referrer;
+         account_uid_type lifetime_referrer;
 
          /// Percentage of fee which should go to network.
          uint16_t network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
@@ -382,7 +383,7 @@ namespace graphene { namespace chain {
           * account cannot update this set, except by transferring ownership of the account, which will clear it. Other
           * accounts may add or remove their IDs from this set.
           */
-         flat_set<account_id_type> whitelisting_accounts;
+         flat_set<account_uid_type> whitelisting_accounts;
 
          /**
           * Optionally track all of the accounts this account has whitelisted or blacklisted, these should
@@ -394,8 +395,8 @@ namespace graphene { namespace chain {
           * then every time someone fetches this account object they will get the full list of 2000 accounts.
           */
          ///@{
-         set<account_id_type> whitelisted_accounts;
-         set<account_id_type> blacklisted_accounts;
+         set<account_uid_type> whitelisted_accounts;
+         set<account_uid_type> blacklisted_accounts;
          ///@}
 
 
@@ -405,7 +406,7 @@ namespace graphene { namespace chain {
           * account cannot update this set, and it will be preserved even if the account is transferred. Other accounts
           * may add or remove their IDs from this set.
           */
-         flat_set<account_id_type> blacklisting_accounts;
+         flat_set<account_uid_type> blacklisting_accounts;
 
          /**
           * Vesting balance which receives cashback_reward deposits.
@@ -428,7 +429,7 @@ namespace graphene { namespace chain {
           * This is utilized to restrict buyback accounts to the assets that trade in their markets.
           * In the future we may expand this to allow accounts to e.g. voluntarily restrict incoming transfers.
           */
-         optional< flat_set<asset_id_type> > allowed_assets;
+         optional< flat_set<asset_aid_type> > allowed_assets;
 
          bool has_special_authority()const
          {
@@ -594,7 +595,7 @@ namespace graphene { namespace chain {
                member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>
             >
          >,
-         // TODO remove it? seems used by FBA only
+         
          ordered_unique< tag<by_asset_balance>,
             composite_key<
                account_balance_object,
@@ -638,6 +639,7 @@ namespace graphene { namespace chain {
 
 
    struct by_uid_seq;
+   struct by_uid_valid;
    struct by_votes_next_update;
    struct by_last_vote;
    struct by_valid;
@@ -691,6 +693,13 @@ namespace graphene { namespace chain {
                member< voter_object, uint32_t, &voter_object::proxy_sequence>,
                member< voter_object, account_uid_type, &voter_object::uid>,
                member< voter_object, uint32_t, &voter_object::sequence>
+            >
+         >,
+         ordered_non_unique< tag<by_uid_valid>, // for API
+            composite_key<
+               voter_object,
+               member< voter_object, account_uid_type, &voter_object::uid>,
+               member< voter_object, bool, &voter_object::is_valid>
             >
          >
       >

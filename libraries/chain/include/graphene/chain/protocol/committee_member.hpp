@@ -335,7 +335,7 @@ namespace graphene { namespace chain {
       asset             fee;
       chain_parameters  new_parameters;
 
-      account_id_type fee_payer()const { return account_id_type(); }
+      account_uid_type fee_payer_uid()const { return GRAPHENE_TEMP_ACCOUNT_UID; }
       void            validate()const;
    };
 

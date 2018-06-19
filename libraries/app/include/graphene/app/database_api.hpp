@@ -353,7 +353,7 @@ class database_api
 
       vector<asset> get_vested_balances( const vector<balance_id_type>& objs )const;
 
-      vector<vesting_balance_object> get_vesting_balances( account_id_type account_id )const;
+      vector<vesting_balance_object> get_vesting_balances( account_uid_type account_id )const;
 
       /**
        * @brief Get the total number of accounts registered with the blockchain
@@ -451,13 +451,13 @@ class database_api
       ////////////
 
       /**
-       * @brief Get a list of assets by ID
+       * @brief Get a list of assets by AID
        * @param asset_ids IDs of the assets to retrieve
-       * @return The assets corresponding to the provided IDs
+       * @return The assets corresponding to the provided AIDs
        *
        * This function has semantics identical to @ref get_objects
        */
-      vector<optional<asset_object>> get_assets(const vector<asset_id_type>& asset_ids)const;
+      vector<optional<asset_object>> get_assets(const vector<asset_aid_type>& asset_ids)const;
 
       /**
        * @brief Get assets alphabetically by symbol name
@@ -488,27 +488,6 @@ class database_api
        * @return The limit orders, ordered from least price to greatest
        */
       vector<limit_order_object> get_limit_orders(asset_id_type a, asset_id_type b, uint32_t limit)const;
-
-      /**
-       * @brief Get call orders in a given asset
-       * @param a ID of asset being called
-       * @param limit Maximum number of orders to retrieve
-       * @return The call orders, ordered from earliest to be called to latest
-       */
-      vector<call_order_object> get_call_orders(asset_id_type a, uint32_t limit)const;
-
-      /**
-       * @brief Get forced settlement orders in a given asset
-       * @param a ID of asset being settled
-       * @param limit Maximum number of orders to retrieve
-       * @return The settle orders, ordered from earliest settlement date to latest
-       */
-      vector<force_settlement_object> get_settle_orders(asset_id_type a, uint32_t limit)const;
-
-      /**
-       *  @return all open margin positions for a given account id.
-       */
-      vector<call_order_object> get_margin_positions( const account_id_type& id )const;
 
       /**
        * @brief Request notification when the active orders in the market between two assets changes
@@ -647,7 +626,7 @@ class database_api
       /**
        * Return the worker objects associated with this account.
        */
-      vector<worker_object> get_workers_by_account(account_id_type account)const;
+      vector<worker_object> get_workers_by_account(account_uid_type account)const;
 
 
       ///////////
@@ -831,9 +810,6 @@ FC_API( graphene::app::database_api,
    // Markets / feeds
    (get_order_book)
    (get_limit_orders)
-   (get_call_orders)
-   (get_settle_orders)
-   (get_margin_positions)
    (subscribe_to_market)
    (unsubscribe_from_market)
    (get_ticker)

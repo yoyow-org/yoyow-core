@@ -56,7 +56,7 @@ void account_statistics_object::process_fees(const account_object& a, database& 
       {
          // Check the referrer -- if he's no longer a member, pay to the lifetime referrer instead.
          // No need to check the registrar; registrars are required to be lifetime members.
-         if( account.referrer(d).is_basic_account(d.head_block_time()) )
+         if( d.get_account_by_uid( account.referrer ).is_basic_account(d.head_block_time()) )
             d.modify(account, [](account_object& a) {
                a.referrer = a.lifetime_referrer;
             });
@@ -84,9 +84,9 @@ void account_statistics_object::process_fees(const account_object& a, database& 
          share_type referrer_cut = cut_fee(referral, account.referrer_rewards_percentage);
          share_type registrar_cut = referral - referrer_cut;
 
-         d.deposit_cashback(d.get(account.lifetime_referrer), lifetime_cut, require_vesting);
-         d.deposit_cashback(d.get(account.referrer), referrer_cut, require_vesting);
-         d.deposit_cashback(d.get(account.registrar), registrar_cut, require_vesting);
+         d.deposit_cashback(d.get_account_by_uid(account.lifetime_referrer), lifetime_cut, require_vesting);
+         d.deposit_cashback(d.get_account_by_uid(account.referrer), referrer_cut, require_vesting);
+         d.deposit_cashback(d.get_account_by_uid(account.registrar), registrar_cut, require_vesting);
 
          assert( referrer_cut + registrar_cut + accumulated + reserveed + lifetime_cut == core_fee_total );
       };

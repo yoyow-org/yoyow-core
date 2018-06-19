@@ -65,18 +65,11 @@ void database::debug_dump()
       if( for_sale.asset_id == GRAPHENE_CORE_ASSET_AID ) core_in_orders += for_sale.amount;
       total_balances[for_sale.asset_id] += for_sale.amount;
    }
-   for( const call_order_object& o : db.get_index_type<call_order_index>().indices() )
-   {
-//      idump(("call_order")(o));
-      auto col = o.get_collateral();
-      if( col.asset_id == GRAPHENE_CORE_ASSET_AID ) core_in_orders += col.amount;
-      total_balances[col.asset_id] += col.amount;
-      total_debts[o.get_debt().asset_id] += o.get_debt().amount;
-   }
+
    for( const asset_object& asset_obj : db.get_index_type<asset_index>().indices() )
    {
       total_balances[asset_obj.id.instance()] += asset_obj.dynamic_asset_data_id(db).accumulated_fees;
-      total_balances[GRAPHENE_CORE_ASSET_AID] += asset_obj.dynamic_asset_data_id(db).fee_pool;
+//      total_balances[GRAPHENE_CORE_ASSET_AID] += asset_obj.dynamic_asset_data_id(db).fee_pool;
 //      edump((total_balances[asset_obj.id])(asset_obj.dynamic_asset_data_id(db).current_supply ) );
    }
 
