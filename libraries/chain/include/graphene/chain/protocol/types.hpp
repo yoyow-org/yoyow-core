@@ -96,9 +96,11 @@ namespace graphene { namespace chain {
    bool                                is_valid_account_uid( const account_uid_type uid );
 
 
+   // NOTE: permissions/flags are definded as uint16_t, aka at max 0xFFFF
+   typedef uint16_t                    asset_flags_type;
    enum asset_issuer_permission_flags
    {
-      charge_market_fee    = 0x01, /**< an issuer-specified percentage of all market trades in this asset is paid to the issuer */
+      //charge_market_fee    = 0x01, /**< an issuer-specified percentage of all market trades in this asset is paid to the issuer */
       white_list           = 0x02, /**< accounts must be whitelisted in order to hold this asset */
       override_authority   = 0x04, /**< issuer may transfer asset back to himself */
       transfer_restricted  = 0x08, /**< require the issuer to be one party to every transfer */
@@ -107,14 +109,16 @@ namespace graphene { namespace chain {
       //disable_confidential = 0x40 //, /**< allow the asset to be used with confidential transactions */
       //witness_fed_asset    = 0x80, /**< allow the asset to be fed by witnesses */
       //committee_fed_asset  = 0x100 /**< allow the asset to be fed by the committee */
+      issue_new_asset      = 0x200, /**< allow the issuer to create new supply */
+      change_max_supply    = 0x400, /**< allow the issuer to change the asset's max supply */
    };
    //const static uint32_t ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_force_settle|global_settle|disable_confidential|witness_fed_asset|committee_fed_asset;
    
    //const static uint32_t UIA_ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_confidential;
 
-   // For testing. TODO remove it when merging to mainnet branch
-   #define TEST_MASK1 (0x40)
-   const static uint32_t ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|TEST_MASK1;
+   // TESTNET only
+   #define TEST_MASK1 (0x41) // 0x01 | 0x40
+   const static asset_flags_type ASSET_ISSUER_PERMISSION_MASK = white_list|override_authority|transfer_restricted|issue_new_asset|change_max_supply|TEST_MASK1;
 
    enum scheduled_witness_type
    {
@@ -391,7 +395,7 @@ FC_REFLECT_TYPENAME( graphene::chain::account_transaction_history_id_type )
 FC_REFLECT( graphene::chain::void_t, )
 
 FC_REFLECT_ENUM( graphene::chain::asset_issuer_permission_flags,
-   (charge_market_fee)
+   //(charge_market_fee)
    (white_list)
    (transfer_restricted)
    (override_authority)
@@ -400,6 +404,8 @@ FC_REFLECT_ENUM( graphene::chain::asset_issuer_permission_flags,
    //(disable_confidential)
    //(witness_fed_asset)
    //(committee_fed_asset)
+   (issue_new_asset)
+   (change_max_supply)
    )
 
 FC_REFLECT_ENUM( graphene::chain::scheduled_witness_type,

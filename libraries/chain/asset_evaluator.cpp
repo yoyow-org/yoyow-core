@@ -68,12 +68,13 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
 
 object_id_type asset_create_evaluator::do_apply( const asset_create_operation& op )
 { try {
+   auto next_asset_id = db().get_index_type<asset_index>().get_next_id();
+
    const asset_dynamic_data_object& dyn_asset =
-      db().create<asset_dynamic_data_object>( [&]( asset_dynamic_data_object& a ) {
+      db().create<asset_dynamic_data_object>( [next_asset_id]( asset_dynamic_data_object& a ) {
+         a.asset_id = next_asset_id.instance();
          a.current_supply = 0;
       });
-
-   auto next_asset_id = db().get_index_type<asset_index>().get_next_id();
 
    const asset_object& new_asset =
      db().create<asset_object>( [&]( asset_object& a ) {
@@ -84,7 +85,8 @@ object_id_type asset_create_evaluator::do_apply( const asset_create_operation& o
          a.asset_id = next_asset_id.instance();
          a.dynamic_asset_data_id = dyn_asset.id;
       });
-   assert( new_asset.id == next_asset_id );
+
+   FC_ASSERT( new_asset.id == next_asset_id );
 
    return new_asset.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
