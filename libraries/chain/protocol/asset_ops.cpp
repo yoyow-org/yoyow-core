@@ -101,17 +101,30 @@ void  asset_create_operation::validate()const
    FC_ASSERT( is_valid_symbol(symbol) );
    common_options.validate();
 
-   FC_ASSERT(precision <= 12);
+   FC_ASSERT( precision <= 12, "precision should be no more than 12" );
+
+   if( extensions.valid() )
+   {
+      const auto& ev = extensions->value;
+
+      bool non_empty_extensions = ( ev.initial_supply.valid() );
+      FC_ASSERT( non_empty_extensions, "extensions specified but is empty" );
+
+      bool positive_initial_supply = ( *ev.initial_supply > 0 );
+      FC_ASSERT( positive_initial_supply, "initial supply should be positive" );
+
+      bool initial_supply_more_than_max = ( *ev.initial_supply > common_options.max_supply );
+      FC_ASSERT( !initial_supply_more_than_max, "initial supply should not be more than max supply" );
+   }
 }
 
 void asset_update_operation::validate()const
 {
    validate_op_fee( fee, "asset update " );
    validate_account_uid( issuer, "asset update ");
-   if( new_issuer.valid() )
+   if( new_precision.valid() )
    {
-      validate_account_uid( *new_issuer, "asset update ");
-      FC_ASSERT(issuer != *new_issuer);
+      FC_ASSERT( *new_precision <= 12, "new precision should be no more than 12" );
    }
    new_options.validate();
 }

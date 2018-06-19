@@ -23,6 +23,7 @@
  */
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
+#include <graphene/chain/protocol/ext.hpp>
 #include <graphene/chain/protocol/memo.hpp>
 
 namespace graphene { namespace chain { 
@@ -94,6 +95,11 @@ namespace graphene { namespace chain {
     */
    struct asset_create_operation : public base_operation
    {
+      struct ext
+      {
+         optional< share_type > initial_supply; ///< issue this amount to self immediately after the asset is created
+      };
+
       struct fee_parameters_type { 
          uint64_t symbol3          = 500000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t symbol4          = 300000 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -113,13 +119,9 @@ namespace graphene { namespace chain {
       uint8_t                 precision = 0;
 
       /// Options common to all assets.
-      ///
-      /// @note common_options.core_exchange_rate technically needs to store the asset ID of this new asset. Since this
-      /// ID is not known at the time this operation is created, create this price as though the new asset has instance
-      /// ID 1, and the chain will overwrite it with the new asset's ID.
       asset_options              common_options;
       
-      extensions_type extensions;
+      optional< extension< ext > > extensions;
 
       account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
@@ -132,9 +134,6 @@ namespace graphene { namespace chain {
     *
     * There are a number of options which all assets in the network use. These options are enumerated in the @ref
     * asset_options struct. This operation is used to update these options for an existing asset.
-    *
-    * @note This operation cannot be used to update BitAsset-specific options. For these options, use @ref
-    * asset_update_bitasset_operation instead.
     *
     * @pre @ref issuer SHALL be an existing account and MUST match asset_object::issuer on @ref asset_to_update
     * @pre @ref fee SHALL be nonnegative, and @ref issuer MUST have a sufficient balance to pay it
@@ -157,8 +156,7 @@ namespace graphene { namespace chain {
       account_uid_type issuer;
       asset_aid_type   asset_to_update;
 
-      /// If the asset is to be given a new issuer, specify his ID here.
-      optional<account_uid_type>  new_issuer;
+      optional<uint8_t>           new_precision;
       asset_options               new_options;
       extensions_type             extensions;
 
@@ -269,6 +267,7 @@ FC_REFLECT( graphene::chain::asset_issue_operation::fee_parameters_type,
 FC_REFLECT( graphene::chain::asset_reserve_operation::fee_parameters_type,
             (fee)(min_real_fee)(min_rf_percent)(extensions) )
 
+FC_REFLECT( graphene::chain::asset_create_operation::ext, (initial_supply) )
 
 FC_REFLECT( graphene::chain::asset_create_operation,
             (fee)
@@ -282,7 +281,7 @@ FC_REFLECT( graphene::chain::asset_update_operation,
             (fee)
             (issuer)
             (asset_to_update)
-            (new_issuer)
+            (new_precision)
             (new_options)
             (extensions)
           )

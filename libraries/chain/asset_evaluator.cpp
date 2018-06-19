@@ -75,16 +75,22 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
 
 object_id_type asset_create_evaluator::do_apply( const asset_create_operation& op )
 { try {
-   auto next_asset_id = db().get_index_type<asset_index>().get_next_id();
+   database& d = db();
+
+   auto next_asset_id = d.get_index_type<asset_index>().get_next_id();
+
+   share_type initial_supply = 0;
+   if( op.extensions.valid() && op.extensions->value.initial_supply.valid() )
+      initial_supply = *op.extensions->value.initial_supply;
 
    const asset_dynamic_data_object& dyn_asset =
-      db().create<asset_dynamic_data_object>( [next_asset_id]( asset_dynamic_data_object& a ) {
+      d.create<asset_dynamic_data_object>( [next_asset_id,initial_supply]( asset_dynamic_data_object& a ) {
          a.asset_id = next_asset_id.instance();
-         a.current_supply = 0;
+         a.current_supply = initial_supply;
       });
 
    const asset_object& new_asset =
-     db().create<asset_object>( [&]( asset_object& a ) {
+     d.create<asset_object>( [&op,next_asset_id,&dyn_asset]( asset_object& a ) {
          a.issuer = op.issuer;
          a.symbol = op.symbol;
          a.precision = op.precision;
@@ -95,6 +101,9 @@ object_id_type asset_create_evaluator::do_apply( const asset_create_operation& o
 
    FC_ASSERT( new_asset.id == next_asset_id );
 
+   if( initial_supply > 0 )
+      d.adjust_balance( op.issuer, new_asset.amount( initial_supply ) );
+
    return new_asset.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -104,13 +113,16 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_issue after HARDFORK_0_3_TIME" );
 
    const asset_object& a = d.get_asset_by_aid( o.asset_to_issue.asset_id );
-   FC_ASSERT( o.issuer == a.issuer );
+   FC_ASSERT( o.issuer == a.issuer, "only asset issuer can issue asset" );
+
+   FC_ASSERT( a.can_issue_new_asset(), "'issue_new_asset' flag is disabled for this asset" );
 
    to_account = &d.get_account_by_uid( o.issue_to_account );
    FC_ASSERT( is_authorized_asset( d, *to_account, a ) );
 
    asset_dyn_data = &a.dynamic_asset_data_id(d);
-   FC_ASSERT( (asset_dyn_data->current_supply + o.asset_to_issue.amount) <= a.options.max_supply );
+   FC_ASSERT( (asset_dyn_data->current_supply + o.asset_to_issue.amount) <= a.options.max_supply,
+              "can not create more than max supply" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -173,15 +185,22 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
    a_copy.options = o.new_options;
    a_copy.validate();
 
-   if( o.new_issuer )
+   if( !a.can_change_max_supply() && !a_copy.can_change_max_supply() )
    {
-      FC_ASSERT(d.find_account_by_uid(*o.new_issuer));
+      FC_ASSERT( a.options.max_supply == o.new_options.max_supply, "'change_max_supply' flag is disabled for this asset" );
+   }
+
+   if( o.new_precision.valid() )
+   {
+      FC_ASSERT( *o.new_precision != a.precision, "new precision should not be equal to current precision" );
    }
 
    bool for_testnet_and_before_hf = ( d.head_block_num() <= 7500000 ); // TESTNET ONLY
 
    if( a.dynamic_asset_data_id(d).current_supply != 0 )
    {
+      FC_ASSERT( !o.new_precision.valid(), "Cannot change asset precision when current supply is not zero" );
+
       // new issuer_permissions must be subset of old issuer permissions
       if( for_testnet_and_before_hf )
          FC_ASSERT(!(o.new_options.issuer_permissions & ~a.options.issuer_permissions),
@@ -219,8 +238,8 @@ void_result asset_update_evaluator::do_apply(const asset_update_operation& o)
    database& d = db();
 
    d.modify(*asset_to_update, [&](asset_object& a) {
-      if( o.new_issuer )
-         a.issuer = *o.new_issuer;
+      if( o.new_precision.valid() )
+         a.precision = *o.new_precision;
       a.options = o.new_options;
    });
 

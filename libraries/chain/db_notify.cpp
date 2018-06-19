@@ -194,12 +194,18 @@ struct get_impacted_account_uid_visitor
    void operator()( const asset_create_operation& op ) 
    {
       _impacted.insert( op.issuer ); // fee payer
+      for( auto uid : op.common_options.whitelist_authorities )
+         _impacted.insert( uid );
+      for( auto uid : op.common_options.blacklist_authorities )
+         _impacted.insert( uid );
    }
    void operator()( const asset_update_operation& op )
    {
       _impacted.insert( op.issuer ); // fee payer
-      if( op.new_issuer )
-         _impacted.insert( *(op.new_issuer) );
+      for( auto uid : op.new_options.whitelist_authorities )
+         _impacted.insert( uid );
+      for( auto uid : op.new_options.blacklist_authorities )
+         _impacted.insert( uid );
    }
 
    void operator()( const asset_issue_operation& op )
