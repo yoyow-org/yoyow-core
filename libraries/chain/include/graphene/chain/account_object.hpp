@@ -401,6 +401,9 @@ namespace graphene { namespace chain {
             return !is_basic_account(now);
          }
 
+         /// @return true if the account has enabled allowed_assets; false otherwise.
+         bool enabled_allowed_assets()const { return allowed_assets.valid(); }
+
          account_id_type get_id()const { return id; }
          account_uid_type get_uid()const { return uid; }
    };

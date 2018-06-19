@@ -27,6 +27,7 @@
 #include <graphene/chain/csaf_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
+#include <graphene/chain/content_object.hpp>
 
 namespace graphene { namespace app {
    using namespace graphene::chain;
@@ -38,9 +39,7 @@ namespace graphene { namespace app {
       string                           registrar_name;
       string                           referrer_name;
       string                           lifetime_referrer_name;
-      vector<account_balance_object>   balances;
       vector<proposal_object>          proposals;
-      vector<asset_id_type>            assets;
       vector<csaf_lease_object>        csaf_leases_in;
       vector<csaf_lease_object>        csaf_leases_out;
       optional<voter_object>           voter;
@@ -48,6 +47,10 @@ namespace graphene { namespace app {
       vector<account_uid_type>         witness_votes;
       optional<committee_member_object>    committee_member;
       vector<account_uid_type>         committee_member_votes;
+      optional<platform_object>        platform;
+      vector<account_uid_type>         platform_votes;
+      vector<asset_aid_type>           assets;
+      vector<account_balance_object>   balances;
    };
 
 } }
@@ -58,9 +61,7 @@ FC_REFLECT( graphene::app::full_account,
             //(registrar_name)
             //(referrer_name)
             //(lifetime_referrer_name)
-            //(balances)
             //(proposals)
-            //(assets)
             (csaf_leases_in)
             (csaf_leases_out)
             (voter)
@@ -68,4 +69,8 @@ FC_REFLECT( graphene::app::full_account,
             (witness_votes)
             (committee_member)
             (committee_member_votes)
+            (platform)
+            (platform_votes)
+            (assets)
+            (balances)
           )

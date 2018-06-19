@@ -65,6 +65,52 @@ bool _is_authorized_asset(
    return false;
 }
 
+void _validate_authorized_asset( const database& d,
+                                 const account_object& acct,
+                                 const asset_object& asset_obj,
+                                 const string& account_desc_prefix )
+{
+   if( acct.allowed_assets.valid() )
+   {
+      bool is_allowed_asset = ( acct.allowed_assets->find( asset_obj.asset_id ) != acct.allowed_assets->end() );
+      FC_ASSERT( is_allowed_asset,
+                 "Asset '${asset}' is not allowed by ${prefix}account ${acc}",
+                 ("asset", asset_obj.symbol)
+                 ("prefix", account_desc_prefix)
+                 ("acc", acct.uid) );
+   }
+
+   if( !( asset_obj.enabled_whitelist() ) ) // pass if not enabled whitelisting
+      return;
+
+   for( const auto id : acct.blacklisting_accounts )
+   {
+      bool is_blacklisted = ( asset_obj.options.blacklist_authorities.find(id) != asset_obj.options.blacklist_authorities.end() );
+      FC_ASSERT( !is_blacklisted,
+                 "${prefix}account ${acc} is blacklisted for asset '${asset}'",
+                 ("prefix", account_desc_prefix)
+                 ("acc", acct.uid)
+                 ("asset", asset_obj.symbol) );
+   }
+
+   if( asset_obj.options.whitelist_authorities.size() == 0 ) // pass if no whitelist authority configured
+      return;
+
+   for( const auto id : acct.whitelisting_accounts )
+   {
+      // pass if whitelisted by any one of whitelist authorities
+      if( asset_obj.options.whitelist_authorities.find(id) != asset_obj.options.whitelist_authorities.end() )
+         return;
+   }
+
+   bool is_whitelisted = false;
+   FC_ASSERT( is_whitelisted,
+              "${prefix}account ${acc} is not whitelisted for asset '${asset}'",
+              ("prefix", account_desc_prefix)
+              ("acc", acct.uid)
+              ("asset", asset_obj.symbol) );
+}
+
 } // detail
 
 } } // graphene::chain
