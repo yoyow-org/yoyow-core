@@ -44,6 +44,9 @@ bool _is_authorized_asset(
       // must still pass other checks even if it is in allowed_assets
    }
 
+   if( !( asset_obj.enabled_whitelist() ) ) // pass if not enabled whitelisting
+      return true;
+
    for( const auto id : acct.blacklisting_accounts )
    {
       if( asset_obj.options.blacklist_authorities.find(id) != asset_obj.options.blacklist_authorities.end() )

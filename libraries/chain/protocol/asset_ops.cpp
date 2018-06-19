@@ -141,6 +141,10 @@ void asset_issue_operation::validate()const
 
 void asset_options::validate()const
 {
+   // TODO move to evaluator when enabling market
+   FC_ASSERT( market_fee_percent == 0 );
+   FC_ASSERT( max_market_fee == 0 );
+
    FC_ASSERT( max_supply > 0 );
    FC_ASSERT( max_supply <= GRAPHENE_MAX_SHARE_SUPPLY );
    FC_ASSERT( market_fee_percent <= GRAPHENE_100_PERCENT );
@@ -153,6 +157,12 @@ void asset_options::validate()const
    //FC_ASSERT( !(flags & global_settle) );
    // the witness_fed and committee_fed flags cannot be set simultaneously
    //FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
+
+   // TODO move to evaluator when enabling account whitelisting feature with a hard fork
+   FC_ASSERT( whitelist_authorities.empty() && blacklist_authorities.empty() );
+
+   // TODO move to evaluator when enabling market whitelisting feature with a hard fork
+   FC_ASSERT( whitelist_markets.empty() && blacklist_markets.empty() );
 
    if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
       FC_ASSERT( flags & white_list );
