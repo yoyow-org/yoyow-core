@@ -138,7 +138,7 @@ void_result override_transfer_evaluator::do_evaluate( const override_transfer_op
 { try {
    const database& d = db();
 
-   const asset_object&   asset_type      = asset_id_type(op.amount.asset_id)(d);
+   const asset_object& asset_type = d.get_asset_by_aid( op.amount.asset_id );
    GRAPHENE_ASSERT(
       asset_type.can_override(),
       override_transfer_not_permitted,
@@ -163,9 +163,8 @@ void_result override_transfer_evaluator::do_evaluate( const override_transfer_op
 
 void_result override_transfer_evaluator::do_apply( const override_transfer_operation& o )
 { try {
-   // TODO review
-   //db().adjust_balance( o.from, -o.amount );
-   //db().adjust_balance( o.to, o.amount );
+   db().adjust_balance( o.from, -o.amount );
+   db().adjust_balance( o.to, o.amount );
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 

@@ -428,7 +428,7 @@ namespace graphene { namespace chain {
           * This is utilized to restrict buyback accounts to the assets that trade in their markets.
           * In the future we may expand this to allow accounts to e.g. voluntarily restrict incoming transfers.
           */
-         optional< flat_set<asset_id_type> > allowed_assets;
+         optional< flat_set<asset_aid_type> > allowed_assets;
 
          bool has_special_authority()const
          {

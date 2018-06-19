@@ -451,13 +451,13 @@ class database_api
       ////////////
 
       /**
-       * @brief Get a list of assets by ID
+       * @brief Get a list of assets by AID
        * @param asset_ids IDs of the assets to retrieve
-       * @return The assets corresponding to the provided IDs
+       * @return The assets corresponding to the provided AIDs
        *
        * This function has semantics identical to @ref get_objects
        */
-      vector<optional<asset_object>> get_assets(const vector<asset_id_type>& asset_ids)const;
+      vector<optional<asset_object>> get_assets(const vector<asset_aid_type>& asset_ids)const;
 
       /**
        * @brief Get assets alphabetically by symbol name
