@@ -161,6 +161,8 @@ struct exported_keys
 
 struct approval_delta
 {
+   vector<string> secondary_approvals_to_add;
+   vector<string> secondary_approvals_to_remove;
    vector<string> active_approvals_to_add;
    vector<string> active_approvals_to_remove;
    vector<string> owner_approvals_to_add;
@@ -426,6 +428,23 @@ class wallet_api
          uint32_t review_period_seconds = 0,
          bool broadcast = true
         );
+
+        /** Approve or disapprove a proposal.
+       *
+       * @param fee_paying_account The account paying the fee for the op.
+       * @param proposal_id The proposal to modify.
+       * @param delta Members contain approvals to create or remove.  In JSON you can leave empty members undefined.
+       * @param broadcast true if you wish to broadcast the transaction
+       * @return the signed version of the transaction
+       */
+      signed_transaction approve_proposal(
+         const string& fee_paying_account,
+         const string& proposal_id,
+         const approval_delta& delta,
+         bool broadcast /* = false */
+         );
+
+      vector<proposal_object> list_proposals( string account_name_or_id );
 
       /**
        * @ingroup Transaction Builder API
@@ -1439,38 +1458,6 @@ class wallet_api
        */
       operation get_prototype_operation(string operation_type);
 
-      /** Creates a transaction to propose a parameter change.
-       *
-       * Multiple parameters can be specified if an atomic change is
-       * desired.
-       *
-       * @param proposing_account The account paying the fee to propose the tx
-       * @param expiration_time Timestamp specifying when the proposal will either take effect or expire.
-       * @param changed_values The values to change; all other chain parameters are filled in with default values
-       * @param broadcast true if you wish to broadcast the transaction
-       * @return the signed version of the transaction
-       */
-      signed_transaction propose_parameter_change(
-         const string& proposing_account,
-         fc::time_point_sec expiration_time,
-         const variant_object& changed_values,
-         bool broadcast = false);
-
-      /** Propose a fee change.
-       * 
-       * @param proposing_account The account paying the fee to propose the tx
-       * @param expiration_time Timestamp specifying when the proposal will either take effect or expire.
-       * @param changed_values Map of operation type to new fee.  Operations may be specified by name or ID.
-       *    The "scale" key changes the scale.  All other operations will maintain current values.
-       * @param broadcast true if you wish to broadcast the transaction
-       * @return the signed version of the transaction
-       */
-      signed_transaction propose_fee_change(
-         const string& proposing_account,
-         fc::time_point_sec expiration_time,
-         const variant_object& changed_values,
-         bool broadcast = false);
-
       /** create a committee proposal
        * 
        * @param committee_member_account The committee member
@@ -1507,20 +1494,7 @@ class wallet_api
          bool broadcast = false
          );
 
-       /** Approve or disapprove a proposal.
-       *
-       * @param fee_paying_account The account paying the fee for the op.
-       * @param proposal_id The proposal to modify.
-       * @param delta Members contain approvals to create or remove.  In JSON you can leave empty members undefined.
-       * @param broadcast true if you wish to broadcast the transaction
-       * @return the signed version of the transaction
-       */
-      signed_transaction approve_proposal(
-         const string& fee_paying_account,
-         const string& proposal_id,
-         const approval_delta& delta,
-         bool broadcast /* = false */
-         );
+       
          
       order_book get_order_book( const string& base, const string& quote, unsigned limit = 50);
 
@@ -1608,9 +1582,11 @@ FC_API( graphene::wallet::wallet_api,
         (set_fees_on_builder_transaction)
         (preview_builder_transaction)
         (sign_builder_transaction)
-        //(propose_builder_transaction)
-        //(propose_builder_transaction2)
+        (propose_builder_transaction)
+        (propose_builder_transaction2)
         (remove_builder_transaction)
+        (approve_proposal)
+        (list_proposals)
         (is_new)
         (is_locked)
         (lock)(unlock)(set_password)
@@ -1695,9 +1671,6 @@ FC_API( graphene::wallet::wallet_api,
         (sign_transaction)
         //(sign_transaction_old)
         (get_prototype_operation)
-        //(propose_parameter_change)
-        //(propose_fee_change)
-        //(approve_proposal)
         //(dbg_make_uia)
         //(dbg_push_blocks)
         //(dbg_generate_blocks)

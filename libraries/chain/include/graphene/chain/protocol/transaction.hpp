@@ -160,7 +160,7 @@ namespace graphene { namespace chain {
        *          the second set contains more potential keys required,
        *          the third set contains redundant signatures need to be removed.
        */
-      std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signature_type>> get_required_signatures(
+      std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<public_key_type>> get_required_signatures(
          const chain_id_type& chain_id,
          const flat_set<public_key_type>& available_keys,
          const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
@@ -198,7 +198,7 @@ namespace graphene { namespace chain {
          ) const;
       */
 
-      flat_map<public_key_type,signature_type> get_signature_keys( const chain_id_type& chain_id )const;
+      flat_set<public_key_type> get_signature_keys( const chain_id_type& chain_id )const;
 
       vector<signature_type> signatures;
 
@@ -206,7 +206,7 @@ namespace graphene { namespace chain {
       void clear() { operations.clear(); signatures.clear(); }
    };
 
-   void verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
+   void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
                           const std::function<const authority*(account_id_type)>& get_active,
                           const std::function<const authority*(account_id_type)>& get_owner,
                           uint32_t max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH,
@@ -214,7 +214,7 @@ namespace graphene { namespace chain {
                           const flat_set<account_id_type>& active_aprovals = flat_set<account_id_type>(),
                           const flat_set<account_id_type>& owner_approvals = flat_set<account_id_type>());
 
-   void verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
+   void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
                           const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_active_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,

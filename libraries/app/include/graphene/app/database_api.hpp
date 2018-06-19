@@ -664,7 +664,7 @@ class database_api
        *  This API will take a partially signed transaction and a set of public keys that the owner has the ability to sign for
        *  and return the minimal subset of public keys that should add signatures to the transaction.
        */
-      std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<public_key_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
       set<public_key_type> get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
 
       /**
@@ -713,7 +713,7 @@ class database_api
       /**
        *  @return the set of proposed transactions relevant to the specified account id.
        */
-      vector<proposal_object> get_proposed_transactions( account_id_type id )const;
+      vector<proposal_object> get_proposed_transactions( account_uid_type uid )const;
 
    private:
       std::shared_ptr< database_api_impl > my;
