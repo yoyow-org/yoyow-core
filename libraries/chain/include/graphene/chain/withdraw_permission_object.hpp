@@ -45,9 +45,9 @@ namespace graphene { namespace chain {
         static const uint8_t type_id  = withdraw_permission_object_type;
 
         /// The account authorizing @ref authorized_account to withdraw from it
-        account_id_type    withdraw_from_account;
+        account_uid_type    withdraw_from_account;
         /// The account authorized to make withdrawals from @ref withdraw_from_account
-        account_id_type    authorized_account;
+        account_uid_type    authorized_account;
         /// The maximum amount which may be withdrawn per period. All withdrawals must be of this asset type
         asset              withdrawal_limit;
         /// The duration of a withdrawal period in seconds
@@ -81,13 +81,13 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
          ordered_unique< tag<by_from>,
             composite_key< withdraw_permission_object,
-               member<withdraw_permission_object, account_id_type, &withdraw_permission_object::withdraw_from_account>,
+               member<withdraw_permission_object, account_uid_type, &withdraw_permission_object::withdraw_from_account>,
                member< object, object_id_type, &object::id >
             >
          >,
          ordered_unique< tag<by_authorized>,
             composite_key< withdraw_permission_object,
-               member<withdraw_permission_object, account_id_type, &withdraw_permission_object::authorized_account>,
+               member<withdraw_permission_object, account_uid_type, &withdraw_permission_object::authorized_account>,
                member< object, object_id_type, &object::id >
             >
          >,

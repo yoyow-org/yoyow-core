@@ -95,6 +95,13 @@ struct genesis_state_type {
       share_type amount;
    };
    struct initial_account_balance_type {
+     initial_account_balance_type(const account_uid_type _uid = 0,
+                                  const string _asset_symbol = GRAPHENE_SYMBOL,
+                                  const share_type _amount = 0)
+                      :uid(_uid),
+                      asset_symbol(_asset_symbol),
+                      amount(_amount)
+     {}
       account_uid_type uid;
       string asset_symbol;
       share_type amount;

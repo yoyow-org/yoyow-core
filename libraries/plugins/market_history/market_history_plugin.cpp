@@ -89,8 +89,8 @@ struct operation_process_fill_order
       auto time = db.head_block_time();
 
       history_key hkey;
-      hkey.base = asset_id_type(o.pays.asset_id);
-      hkey.quote = asset_id_type(o.receives.asset_id);
+      hkey.base = o.pays.asset_id;
+      hkey.quote = o.receives.asset_id;
       if( hkey.base > hkey.quote ) 
          std::swap( hkey.base, hkey.quote );
       hkey.sequence = std::numeric_limits<int64_t>::min();
@@ -129,8 +129,8 @@ struct operation_process_fill_order
           auto cutoff      = (fc::time_point() + fc::seconds( bucket * max_history));
 
           bucket_key key;
-          key.base    = asset_id_type(o.pays.asset_id);
-          key.quote   = asset_id_type(o.receives.asset_id);
+          key.base    = o.pays.asset_id;
+          key.quote   = o.receives.asset_id;
 
 
           /** for every matched order there are two fill order operations created, one for

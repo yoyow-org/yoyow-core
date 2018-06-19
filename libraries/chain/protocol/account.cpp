@@ -118,6 +118,17 @@ void validate_new_authority( const authority& au, const string& object_name = ""
    FC_ASSERT( !au.is_impossible(), "cannot use an imposible ${o}authority threshold", ("o", object_name) );
 }
 
+void is_special_account( const account_uid_type uid, const string& object_name = "" )
+{
+   bool is_special_account = ( uid == GRAPHENE_COMMITTEE_ACCOUNT_UID ||
+                               uid == GRAPHENE_WITNESS_ACCOUNT_UID ||
+                               uid == GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID ||
+                               uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID ||
+                               uid == GRAPHENE_NULL_ACCOUNT_UID ||
+                               uid == GRAPHENE_TEMP_ACCOUNT_UID );
+   FC_ASSERT( !is_special_account, "Can not update this account ${uid}: ${o}", ("uid", uid)("o", object_name) );
+}
+
 /**
  * Names must comply with the following grammar (RFC 1035):
  * <domain> ::= <subdomain> | " "
@@ -344,13 +355,7 @@ void account_update_auth_operation::validate()const
 {
    validate_op_fee( fee, "account authority update " );
    validate_account_uid( uid, "target " );
-   bool is_special_account = ( uid == GRAPHENE_COMMITTEE_ACCOUNT_UID ||
-                               uid == GRAPHENE_WITNESS_ACCOUNT_UID ||
-                               uid == GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID ||
-                               uid == GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID ||
-                               uid == GRAPHENE_NULL_ACCOUNT_UID ||
-                               uid == GRAPHENE_TEMP_ACCOUNT_UID );
-   FC_ASSERT( !is_special_account, "Can not update this account" );
+   is_special_account( uid );
    FC_ASSERT( owner.valid() || active.valid() || secondary.valid() || memo_key.valid(), "Should update something" );
    if( owner.valid() )
       validate_new_authority( *owner, "new owner " );
@@ -358,6 +363,22 @@ void account_update_auth_operation::validate()const
       validate_new_authority( *active, "new active " );
    if( secondary.valid() )
       validate_new_authority( *secondary, "new secondary " );
+}
+
+void account_auth_platform_operation::validate()const
+{
+   validate_op_fee( fee, "account authority platform " );
+   validate_account_uid( uid, "target " );
+   is_special_account( uid );
+   validate_account_uid( platform, "platform " );
+}
+
+void account_cancel_auth_platform_operation::validate()const
+{
+   validate_op_fee( fee, "cancel account authority platform " );
+   validate_account_uid( uid, "target " );
+   is_special_account( uid );
+   validate_account_uid( platform, "platform " );
 }
 
 void account_update_proxy_operation::validate() const

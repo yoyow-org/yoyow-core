@@ -30,7 +30,6 @@
 
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/account_object.hpp>
-#include <graphene/chain/fba_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/market_evaluator.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
@@ -67,25 +66,17 @@ database& generic_evaluator::db()const { return trx_state->db(); }
       const database& d = db();
       fee_from_account = fee;
       FC_ASSERT( fee.amount >= 0 );
+      FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID, "Must use core assets as a fee" );
 
       fee_paying_account_statistics = &fee_paying_account->statistics(d);
 
-      fee_asset = &asset_id_type(fee.asset_id)(d);
+      fee_asset = d.find_asset_by_aid( fee.asset_id );
       fee_asset_dyn_data = &fee_asset->dynamic_asset_data_id(d);
 
       FC_ASSERT( is_authorized_asset( d, *fee_paying_account, *fee_asset ), "Account ${acct} '${name}' attempted to pay fee by using asset ${a} '${sym}', which is unauthorized due to whitelist / blacklist",
             ("acct", fee_paying_account->id)("name", fee_paying_account->name)("a", fee_asset->id)("sym", fee_asset->symbol) );
 
-      if( fee_from_account.asset_id == GRAPHENE_CORE_ASSET_AID )
-         core_fee_paid = fee_from_account.amount;
-      else
-      {
-         asset fee_from_pool = fee_from_account * fee_asset->options.core_exchange_rate;
-         FC_ASSERT( fee_from_pool.asset_id == GRAPHENE_CORE_ASSET_AID );
-         core_fee_paid = fee_from_pool.amount;
-         FC_ASSERT( core_fee_paid <= fee_asset_dyn_data->fee_pool, "Fee pool balance of '${b}' is less than the ${r} required to convert ${c}",
-                    ("r", db().to_pretty_string( fee_from_pool))("b",db().to_pretty_string(fee_asset_dyn_data->fee_pool))("c",db().to_pretty_string(fee)) );
-      }
+      core_fee_paid = fee_from_account.amount;
    }
 
    void generic_evaluator::prepare_fee(account_uid_type account_uid, const fee_type& fee)
@@ -97,6 +88,8 @@ database& generic_evaluator::db()const { return trx_state->db(); }
    void generic_evaluator::prepare_fee(const fee_type& fee)
    {
       const database& d = db();
+      FC_ASSERT( fee_from_account.asset_id == GRAPHENE_CORE_ASSET_AID, "Must use core assets as a fee" );
+
       fee_paying_account_statistics = &fee_paying_account->statistics(d);
 
       if( !fee.options.valid() )
@@ -138,33 +131,26 @@ database& generic_evaluator::db()const { return trx_state->db(); }
          }
       }
 
-      fee_asset = &asset_id_type(fee_from_account.asset_id)(d);
+      
+
+      fee_asset = d.find_asset_by_aid( fee_from_account.asset_id );
       fee_asset_dyn_data = &fee_asset->dynamic_asset_data_id(d);
 
       FC_ASSERT( is_authorized_asset( d, *fee_paying_account, *fee_asset ), "Account ${acct} '${name}' attempted to pay fee by using asset ${a} '${sym}', which is unauthorized due to whitelist / blacklist",
             ("acct", fee_paying_account->id)("name", fee_paying_account->name)("a", fee_asset->id)("sym", fee_asset->symbol) );
 
-      if( fee_from_account.asset_id == GRAPHENE_CORE_ASSET_AID )
-         core_fee_paid = fee_from_account.amount;
-      else
-      {
-         asset fee_from_pool = fee_from_account * fee_asset->options.core_exchange_rate;
-         FC_ASSERT( fee_from_pool.asset_id == GRAPHENE_CORE_ASSET_AID );
-         core_fee_paid = fee_from_pool.amount;
-         FC_ASSERT( core_fee_paid <= fee_asset_dyn_data->fee_pool, "Fee pool balance of '${b}' is less than the ${r} required to convert ${c}",
-                    ("r", db().to_pretty_string( fee_from_pool))("b",db().to_pretty_string(fee_asset_dyn_data->fee_pool))("c",db().to_pretty_string(fee_from_account)) );
-      }
+      core_fee_paid = fee_from_account.amount;
    }
 
    void generic_evaluator::convert_fee()
    {
       if( !trx_state->skip_fee ) {
-         if( fee_asset->get_id() != asset_id_type() )
+         if( fee_asset->asset_id != GRAPHENE_CORE_ASSET_AID )
          {
-            db().modify(*fee_asset_dyn_data, [this](asset_dynamic_data_object& d) {
-               d.accumulated_fees += fee_from_account.amount;
-               d.fee_pool -= core_fee_paid;
-            });
+            // no pool, no accumulate
+            // db().modify(*fee_asset_dyn_data, [this](asset_dynamic_data_object& d) {
+            //    d.accumulated_fees += fee_from_account.amount;
+            // });
          }
       }
    }
@@ -180,21 +166,6 @@ database& generic_evaluator::db()const { return trx_state->db(); }
          });
       }
    } FC_CAPTURE_AND_RETHROW() }
-
-   void generic_evaluator::pay_fba_fee( uint64_t fba_id )
-   {
-      database& d = db();
-      const fba_accumulator_object& fba = d.get< fba_accumulator_object >( fba_accumulator_id_type( fba_id ) );
-      if( !fba.is_configured(d) )
-      {
-         generic_evaluator::pay_fee();
-         return;
-      }
-      d.modify( fba, [&]( fba_accumulator_object& _fba )
-      {
-         _fba.accumulated_fba_fees += core_fee_paid;
-      } );
-   }
 
    void generic_evaluator::process_fee_options()
    { try {
@@ -217,7 +188,8 @@ database& generic_evaluator::db()const { return trx_state->db(); }
             if( from_prepaid         > 0 ) s.prepaid         -= from_prepaid;
             if( from_csaf            > 0 ) s.csaf            -= from_csaf;
          });
-         d.modify( asset_id_type()(d).dynamic_data(d), [&]( asset_dynamic_data_object& o )
+         
+         d.modify( d.get_core_asset().dynamic_data(d), [&]( asset_dynamic_data_object& o )
          {
             o.current_supply -= (from_prepaid + from_balance);
          });

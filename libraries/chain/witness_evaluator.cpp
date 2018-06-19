@@ -556,7 +556,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       // adjust balance, should be ok, and will take care of votes
       d.adjust_balance( op.first_block.witness, -total );
       // adjust total supply
-      d.modify( asset_id_type()(d).dynamic_data(d), [&]( asset_dynamic_data_object& o )
+      d.modify( d.get_core_asset().dynamic_data(d), [&]( asset_dynamic_data_object& o )
       {
          o.current_supply -= total;
       });

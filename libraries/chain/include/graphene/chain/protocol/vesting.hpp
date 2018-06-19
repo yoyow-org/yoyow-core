@@ -68,12 +68,12 @@ namespace graphene { namespace chain {
       struct fee_parameters_type { uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION; };
 
       asset                       fee;
-      account_id_type             creator; ///< Who provides funds initially
-      account_id_type             owner; ///< Who is able to withdraw the balance
+      account_uid_type            creator; ///< Who provides funds initially
+      account_uid_type            owner; ///< Who is able to withdraw the balance
       asset                       amount;
       vesting_policy_initializer  policy;
 
-      account_id_type   fee_payer()const { return creator; }
+      account_uid_type   fee_payer_uid()const { return creator; }
       void              validate()const
       {
          FC_ASSERT( fee.amount >= 0 );
@@ -96,10 +96,10 @@ namespace graphene { namespace chain {
 
       asset                   fee;
       vesting_balance_id_type vesting_balance;
-      account_id_type         owner; ///< Must be vesting_balance.owner
+      account_uid_type         owner; ///< Must be vesting_balance.owner
       asset                   amount;
 
-      account_id_type   fee_payer()const { return owner; }
+      account_uid_type  fee_payer_uid()const { return owner; }
       void              validate()const
       {
          FC_ASSERT( fee.amount >= 0 );

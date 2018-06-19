@@ -99,8 +99,6 @@ namespace graphene { namespace chain {
 
    //GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( limit_order_create );
    //GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( limit_order_cancel );
-   GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( call_order_update );
-   GRAPHENE_DECLARE_OP_EVALUATE_EXCEPTION( unfilled_margin_call, call_order_update, 1, "Updating call order would trigger a margin call that cannot be fully filled" )
 
    GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( account_create );
    GRAPHENE_DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, account_create, 1, "Exceeds max authority fan-out" )
@@ -157,9 +155,6 @@ namespace graphene { namespace chain {
 
    GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( override_transfer );
    GRAPHENE_DECLARE_OP_EVALUATE_EXCEPTION( not_permitted, override_transfer, 1, "not permitted" )
-
-   GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( blind_transfer );
-   GRAPHENE_DECLARE_OP_EVALUATE_EXCEPTION( unknown_commitment, blind_transfer, 1, "Attempting to claim an unknown prior commitment" );
 
    /*
    FC_DECLARE_DERIVED_EXCEPTION( addition_overflow,                 graphene::chain::chain_exception, 30002, "addition overflow" )

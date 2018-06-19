@@ -109,7 +109,7 @@ class worker_object : public abstract_object<worker_object>
       static const uint8_t type_id =  worker_object_type;
 
       /// ID of the account which owns this worker
-      account_id_type worker_account;
+      account_uid_type worker_account;
       /// Time at which this worker begins receiving pay, if elected
       time_point_sec work_begin_date;
       /// Time at which this worker will cease to receive pay. Worker will be deleted at this time
@@ -147,7 +147,7 @@ typedef multi_index_container<
    worker_object,
    indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-      ordered_non_unique< tag<by_account>, member< worker_object, account_id_type, &worker_object::worker_account > >,
+      ordered_non_unique< tag<by_account>, member< worker_object, account_uid_type, &worker_object::worker_account > >,
       ordered_unique< tag<by_vote_for>, member< worker_object, vote_id_type, &worker_object::vote_for > >,
    ordered_unique< tag<by_vote_against>, member< worker_object, vote_id_type, &worker_object::vote_against > >
    >

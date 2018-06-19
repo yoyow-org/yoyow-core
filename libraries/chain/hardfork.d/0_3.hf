@@ -1,0 +1,4 @@
+// add create asset op
+#ifndef HARDFORK_0_3_TIME
+#define HARDFORK_0_3_TIME (fc::time_point_sec( 1520611200 ))  //2018-03-10 00:00:00
+#endif

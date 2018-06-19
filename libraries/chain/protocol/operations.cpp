@@ -196,10 +196,12 @@ void validate_account_uid( const account_uid_type uid, const string& object_name
 }
 void validate_asset_id( asset a, const string& object_name )
 {
-   FC_ASSERT( a.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of ${o} should be 0.", ("o", object_name) );
+   //TODO: add other asset id
+   //FC_ASSERT( a.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of ${o} should be 0.", ("o", object_name) );
 }
 void validate_op_fee( asset fee, const string& op_name )
 {
+   FC_ASSERT( fee.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of ${o} must use core asset as a fee.", ("o", op_name) );
    validate_non_negative_asset( fee, op_name + "fee" );
 }
 void validate_op_fee( const fee_type& fee, const string& op_name )

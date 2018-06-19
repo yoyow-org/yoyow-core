@@ -45,7 +45,10 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
 {
    try
    {
-      const asset_object& core = asset_id_type()(db);
+       account_uid_type sam_account_id = graphene::chain::calc_account_uid( 2018001 );
+       account_uid_type alice_account_id = graphene::chain::calc_account_uid( 2018002 );
+
+      const asset_object& core = db.get_core_asset();
       uint32_t skip_flags =
           database::skip_transaction_dupe_check
         | database::skip_witness_signature
@@ -71,7 +74,7 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
       //
       // and assert that all four cases were tested at least once
       //
-      account_object sam_account_object = create_account( "sam", sam_key );
+      account_object sam_account_object = create_account(sam_account_id "sam", sam_key );
 
       //Get a sane head block time
       generate_block( skip_flags );
@@ -83,7 +86,7 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
       transaction tx;
       processed_transaction ptx;
 
-      account_object committee_account_object = committee_account(db);
+      account_object committee_account_object = db.get_account_by_uid( committee_account );
       // transfer from committee account to Sam account
       transfer(committee_account_object, sam_account_object, core.amount(100000));
 
@@ -151,6 +154,7 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
 
                   trx.clear();
                   account_create_operation create_op;
+                  create_op.uid = alice_account_id;
                   create_op.name = "alice";
 
                   for( int owner_index=0; owner_index<num_owner_keys; owner_index++ )
@@ -168,8 +172,17 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
                   // size() < num_active_keys is possible when some keys are duplicates
                   create_op.active.weight_threshold = create_op.active.key_auths.size();
 
-                  create_op.options.memo_key = key_ids[ *(it++) ] ;
-                  create_op.registrar = sam_account_object.id;
+                  create_op.memo_key = key_ids[ *(it++) ] ;
+                  
+
+                  account_reg_info reg;
+
+                  reg.allowance_per_article = asset(10000);
+                  reg.max_share_per_article = asset(5000);
+                  reg.max_share_total = asset(1000);
+                  reg.registrar = committee_account;
+                  create_op.reg_info = reg;
+
                   trx.operations.push_back( create_op );
                   // trx.sign( sam_key );
                   wdump( (trx) );
@@ -179,9 +192,6 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
                      database::skip_transaction_signatures |
                      database::skip_authority_check
                       );
-                  account_id_type alice_account_id =
-                     ptx_create.operation_results[0]
-                     .get< object_id_type >();
 
                   generate_block( skip_flags );
                   for( const vector< int >& key_sched_after : possible_key_sched )
@@ -193,7 +203,7 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
                      update_op.account = alice_account_id;
                      update_op.owner = authority();
                      update_op.active = authority();
-                     update_op.new_options = create_op.options;
+                     update_op.secondary = authority();
 
                      for( int owner_index=0; owner_index<num_owner_keys; owner_index++ )
                         update_op.owner->key_auths[ key_ids[ *(it++) ] ] = 1;
@@ -204,7 +214,7 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
                      // size() < num_active_keys is possible when some keys are duplicates
                      update_op.active->weight_threshold = update_op.active->key_auths.size();
                      FC_ASSERT( update_op.new_options.valid() );
-                     update_op.new_options->memo_key = key_ids[ *(it++) ] ;
+                     update_op.memo_key = key_ids[ *(it++) ] ;
 
                      trx.operations.push_back( update_op );
                      for( int i=0; i<int(create_op.owner.weight_threshold); i++)
@@ -242,92 +252,14 @@ BOOST_FIXTURE_TEST_CASE( update_account_keys, database_fixture )
    }
 }
 
-/**
- *  To have a secure random number we need to ensure that the same
- *  witness does not get to produce two blocks in a row.  There is
- *  always a chance that the last witness of one round will be the
- *  first witness of the next round.
- *
- *  This means that when we shuffle witness we need to make sure
- *  that there is at least N/2 witness between consecutive turns
- *  of the same witness.    This means that durring the random
- *  shuffle we need to restrict the placement of witness to maintain
- *  this invariant.
- *
- *  This test checks the requirement using Monte Carlo approach
- *  (produce lots of blocks and check the invariant holds).
- */
-BOOST_FIXTURE_TEST_CASE( witness_order_mc_test, database_fixture )
-{
-   try {
-      size_t num_witnesses = db.get_global_properties().active_witnesses.size();
-      size_t dmin = num_witnesses >> 1;
-
-      vector< witness_id_type > cur_round;
-      vector< witness_id_type > full_schedule;
-      // if we make the maximum witness count testable,
-      // we'll need to enlarge this.
-      std::bitset< 0x40 > witness_seen;
-      size_t total_blocks = 1000000;
-
-      cur_round.reserve( num_witnesses );
-      full_schedule.reserve( total_blocks );
-      cur_round.push_back( db.get_dynamic_global_properties().current_witness );
-
-      // we assert so the test doesn't continue, which would
-      // corrupt memory
-      assert( num_witnesses <= witness_seen.size() );
-
-      while( full_schedule.size() < total_blocks )
-      {
-         if( (db.head_block_num() & 0x3FFF) == 0 )
-         {
-             wdump( (db.head_block_num()) );
-         }
-         witness_id_type wid = db.get_scheduled_witness( 1 );
-         full_schedule.push_back( wid );
-         cur_round.push_back( wid );
-         if( cur_round.size() == num_witnesses )
-         {
-            // check that the current round contains exactly 1 copy
-            // of each witness
-            witness_seen.reset();
-            for( const witness_id_type& w : cur_round )
-            {
-               uint64_t inst = w.instance.value;
-               BOOST_CHECK( !witness_seen.test( inst ) );
-               assert( !witness_seen.test( inst ) );
-               witness_seen.set( inst );
-            }
-            cur_round.clear();
-         }
-         generate_block();
-      }
-
-      for( size_t i=0,m=full_schedule.size(); i<m; i++ )
-      {
-         for( size_t j=i+1,n=std::min( m, i+dmin ); j<n; j++ )
-         {
-            BOOST_CHECK( full_schedule[i] != full_schedule[j] );
-            assert( full_schedule[i] != full_schedule[j] );
-         }
-      }
-
-   } catch (fc::exception& e) {
-      edump((e.to_detail_string()));
-      throw;
-   }
-}
-
-
 BOOST_FIXTURE_TEST_CASE( tapos_rollover, database_fixture )
 {
    try
    {
-      ACTORS((alice)(bob));
+      ACTORS((2018003)(2018004));
 
       BOOST_TEST_MESSAGE( "Give Alice some money" );
-      transfer(committee_account, alice_id, asset(10000));
+      transfer(committee_account, u_2018003_id, asset(10000));
       generate_block();
 
       BOOST_TEST_MESSAGE( "Generate up to block 0xFF00" );
@@ -336,8 +268,8 @@ BOOST_FIXTURE_TEST_CASE( tapos_rollover, database_fixture )
 
       BOOST_TEST_MESSAGE( "Transfer money at/about 0xFF00" );
       transfer_operation xfer_op;
-      xfer_op.from = alice_id;
-      xfer_op.to = bob_id;
+      xfer_op.from = u_2018003_id;
+      xfer_op.to = u_2018004_id;
       xfer_op.amount = asset(1000);
 
       xfer_tx.operations.push_back( xfer_op );
@@ -367,46 +299,5 @@ BOOST_FIXTURE_TEST_CASE( tapos_rollover, database_fixture )
       throw;
    }
 }
-
-BOOST_FIXTURE_TEST_CASE(bulk_discount, database_fixture)
-{ try {
-   ACTOR(nathan);
-   // Give nathan ALLLLLL the money!
-   transfer(GRAPHENE_COMMITTEE_ACCOUNT, nathan_id, db.get_balance(GRAPHENE_COMMITTEE_ACCOUNT, asset_id_type()));
-   enable_fees();//GRAPHENE_BLOCKCHAIN_PRECISION*10);
-   upgrade_to_lifetime_member(nathan_id);
-   share_type new_fees;
-   while( nathan_id(db).statistics(db).lifetime_fees_paid + new_fees < GRAPHENE_DEFAULT_BULK_DISCOUNT_THRESHOLD_MIN )
-   {
-      transfer(nathan_id, GRAPHENE_COMMITTEE_ACCOUNT, asset(1));
-      new_fees += db.current_fee_schedule().calculate_fee(transfer_operation()).amount;
-   }
-   generate_blocks(db.get_dynamic_global_properties().next_maintenance_time);
-   enable_fees();//GRAPHENE_BLOCKCHAIN_PRECISION*10);
-   auto old_cashback = nathan_id(db).cashback_balance(db).balance;
-
-   transfer(nathan_id, GRAPHENE_COMMITTEE_ACCOUNT, asset(1));
-   generate_blocks(db.get_dynamic_global_properties().next_maintenance_time);
-   enable_fees();//GRAPHENE_BLOCKCHAIN_PRECISION*10);
-
-   BOOST_CHECK_EQUAL(nathan_id(db).cashback_balance(db).balance.amount.value,
-                     old_cashback.amount.value + GRAPHENE_BLOCKCHAIN_PRECISION * 8);
-
-   new_fees = 0;
-   while( nathan_id(db).statistics(db).lifetime_fees_paid + new_fees < GRAPHENE_DEFAULT_BULK_DISCOUNT_THRESHOLD_MAX )
-   {
-      transfer(nathan_id, GRAPHENE_COMMITTEE_ACCOUNT, asset(1));
-      new_fees += db.current_fee_schedule().calculate_fee(transfer_operation()).amount;
-   }
-   generate_blocks(db.get_dynamic_global_properties().next_maintenance_time);
-   enable_fees();//GRAPHENE_BLOCKCHAIN_PRECISION*10);
-   old_cashback = nathan_id(db).cashback_balance(db).balance;
-
-   transfer(nathan_id, GRAPHENE_COMMITTEE_ACCOUNT, asset(1));
-   generate_blocks(db.get_dynamic_global_properties().next_maintenance_time);
-
-   BOOST_CHECK_EQUAL(nathan_id(db).cashback_balance(db).balance.amount.value,
-                     old_cashback.amount.value + GRAPHENE_BLOCKCHAIN_PRECISION * 9);
-} FC_LOG_AND_RETHROW() }
 
 BOOST_AUTO_TEST_SUITE_END()

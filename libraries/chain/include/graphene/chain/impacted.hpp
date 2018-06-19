@@ -22,26 +22,32 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/protocol/base.hpp>
+
+#include <fc/container/flat.hpp>
+
+#include <graphene/chain/database.hpp>
+#include <graphene/chain/protocol/authority.hpp>
+#include <graphene/chain/protocol/operations.hpp>
+#include <graphene/chain/protocol/transaction.hpp>
+#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/withdraw_permission_object.hpp>
+#include <graphene/chain/worker_object.hpp>
+#include <graphene/chain/market_object.hpp>
+#include <graphene/chain/committee_member_object.hpp>
 
 namespace graphene { namespace chain {
 
-struct fba_distribute_operation : public base_operation
-{
-   struct fee_parameters_type {};
+using namespace graphene::db;
 
-   asset fee;   // always zero
-   account_id_type account_id;
-   fba_accumulator_id_type fba_id;
-   share_type amount;
+void operation_get_impacted_account_uids(
+   const operation& op,
+   flat_set<account_uid_type>& result );
 
-   account_id_type fee_payer()const { return account_id; }
-   void validate()const { FC_ASSERT( false ); }
-   share_type calculate_fee(const fee_parameters_type& k)const { return 0; }
-};
+void transaction_get_impacted_account_uids(
+   const transaction& tx,
+   flat_set<account_uid_type>& result
+   );
 
-} }
+void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accounts );
 
-FC_REFLECT( graphene::chain::fba_distribute_operation::fee_parameters_type,  )
-
-FC_REFLECT( graphene::chain::fba_distribute_operation, (fee)(account_id)(fba_id)(amount) )
+} } // graphene::app

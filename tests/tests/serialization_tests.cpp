@@ -40,10 +40,10 @@ BOOST_FIXTURE_TEST_SUITE( operation_unit_tests, database_fixture )
 BOOST_AUTO_TEST_CASE( serialization_raw_test )
 {
    try {
-      make_account();
+      make_account_seed();
       transfer_operation op;
-      op.from = account_id_type(1);
-      op.to = account_id_type(2);
+      op.from = graphene::chain::calc_account_uid( 1 );
+      op.to = graphene::chain::calc_account_uid( 2 );
       op.amount = asset(100);
       trx.operations.push_back( op );
       auto packed = fc::raw::pack( trx );
@@ -58,10 +58,10 @@ BOOST_AUTO_TEST_CASE( serialization_raw_test )
 BOOST_AUTO_TEST_CASE( serialization_json_test )
 {
    try {
-      make_account();
+      make_account_seed();
       transfer_operation op;
-      op.from = account_id_type(1);
-      op.to = account_id_type(2);
+      op.from = graphene::chain::calc_account_uid(1);
+      op.to = graphene::chain::calc_account_uid(2);
       op.amount = asset(100);
       trx.operations.push_back( op );
       fc::variant packed(trx);
@@ -116,32 +116,6 @@ BOOST_AUTO_TEST_CASE( extended_public_key_type_test )
       extended_public_key_type unpacked = extended_public_key_type( packed );
       BOOST_CHECK( type == unpacked );
    } catch ( const fc::exception& e )
-   {
-      edump((e.to_detail_string()));
-      throw;
-   }
-}
-
-BOOST_AUTO_TEST_CASE( extension_serialization_test )
-{
-   try
-   {
-      buyback_account_options bbo;
-      bbo.asset_to_buy = asset_id_type(1000);
-      bbo.asset_to_buy_issuer = account_id_type(2000);
-      bbo.markets.emplace( asset_id_type() );
-      bbo.markets.emplace( asset_id_type(777) );
-      account_create_operation create_op = make_account( "rex" );
-      create_op.registrar = account_id_type(1234);
-      create_op.extensions.value.buyback_options = bbo;
-
-      auto packed = fc::raw::pack( create_op );
-      account_create_operation unpacked = fc::raw::unpack<account_create_operation>(packed);
-
-      ilog( "original: ${x}", ("x", create_op) );
-      ilog( "unpacked: ${x}", ("x", unpacked) );
-   }
-   catch ( const fc::exception& e )
    {
       edump((e.to_detail_string()));
       throw;

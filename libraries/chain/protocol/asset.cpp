@@ -139,45 +139,6 @@ namespace graphene { namespace chain {
          FC_ASSERT( base.asset_id != quote.asset_id );
       } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
 
-      void price_feed::validate() const
-      { try {
-         if( !settlement_price.is_null() )
-            settlement_price.validate();
-         FC_ASSERT( maximum_short_squeeze_ratio >= GRAPHENE_MIN_COLLATERAL_RATIO );
-         FC_ASSERT( maximum_short_squeeze_ratio <= GRAPHENE_MAX_COLLATERAL_RATIO );
-         FC_ASSERT( maintenance_collateral_ratio >= GRAPHENE_MIN_COLLATERAL_RATIO );
-         FC_ASSERT( maintenance_collateral_ratio <= GRAPHENE_MAX_COLLATERAL_RATIO );
-         max_short_squeeze_price(); // make sure that it doesn't overflow
-
-         //FC_ASSERT( maintenance_collateral_ratio >= maximum_short_squeeze_ratio );
-      } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
-      bool price_feed::is_for( asset_id_type asset_id ) const
-      {
-         try
-         {
-            if( !settlement_price.is_null() )
-               return (asset_id_type(settlement_price.base.asset_id) == asset_id);
-            if( !core_exchange_rate.is_null() )
-               return (asset_id_type(core_exchange_rate.base.asset_id) == asset_id);
-            // (null, null) is valid for any feed
-            return true;
-         }
-         FC_CAPTURE_AND_RETHROW( (*this) )
-      }
-
-      price price_feed::max_short_squeeze_price()const
-      {
-         boost::rational<int128_t> sp( settlement_price.base.amount.value, settlement_price.quote.amount.value ); //debt.amount.value,collateral.amount.value);
-         boost::rational<int128_t> ratio( GRAPHENE_COLLATERAL_RATIO_DENOM, maximum_short_squeeze_ratio );
-         auto cp = sp * ratio;
-
-         while( cp.numerator() > GRAPHENE_MAX_SHARE_SUPPLY || cp.denominator() > GRAPHENE_MAX_SHARE_SUPPLY )
-            cp = boost::rational<int128_t>( (cp.numerator() >> 1)+(cp.numerator()&1), (cp.denominator() >> 1)+(cp.denominator()&1) );
-
-         return (asset( cp.numerator().convert_to<int64_t>(), settlement_price.base.asset_id ) / asset( cp.denominator().convert_to<int64_t>(), settlement_price.quote.asset_id ));
-      }
-
 // compile-time table of powers of 10 using template metaprogramming
 
 template< int N >
