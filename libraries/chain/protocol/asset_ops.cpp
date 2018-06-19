@@ -72,12 +72,15 @@ bool is_valid_symbol( const string& symbol )
 
 share_type asset_issue_operation::calculate_fee(const fee_parameters_type& k)const
 {
-   return k.fee + calculate_data_fee( fc::raw::pack_size(memo), k.price_per_kbyte );
+   share_type core_fee_required = k.fee;
+   if( memo )
+      core_fee_required += calculate_data_fee( fc::raw::pack_size(memo), k.price_per_kbyte );
+   return core_fee_required;
 }
 
 share_type asset_create_operation::calculate_fee(const asset_create_operation::fee_parameters_type& param)const
 {
-   auto core_fee_required = param.long_symbol;
+   share_type core_fee_required = param.long_symbol;
 
    switch(symbol.size()) {
       case 3: core_fee_required = param.symbol3;
@@ -131,7 +134,7 @@ void asset_update_operation::validate()const
 
 share_type asset_update_operation::calculate_fee(const asset_update_operation::fee_parameters_type& param)const
 {
-   return param.fee + calculate_data_fee( new_options.data_size_for_fee(), param.price_per_kbyte );
+   return share_type( param.fee ) + calculate_data_fee( new_options.data_size_for_fee(), param.price_per_kbyte );
 }
 
 void asset_reserve_operation::validate()const

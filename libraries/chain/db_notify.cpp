@@ -107,6 +107,16 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.proxy );
    }
 
+   void operator()( const account_enable_allowed_assets_operation& op )
+   {
+      _impacted.insert( op.account ); // fee payer
+   }
+
+   void operator()( const account_update_allowed_assets_operation& op )
+   {
+      _impacted.insert( op.account ); // fee payer
+   }
+
    void operator()( const witness_create_operation& op )
    {
       _impacted.insert( op.account ); // fee payer

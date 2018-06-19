@@ -131,6 +131,8 @@ void database::initialize_evaluators()
    register_evaluator<account_update_proxy_evaluator>();
    register_evaluator<account_auth_platform_evaluator>();
    register_evaluator<account_cancel_auth_platform_evaluator>();
+   register_evaluator<account_enable_allowed_assets_evaluator>();
+   register_evaluator<account_update_allowed_assets_evaluator>();
    register_evaluator<account_whitelist_evaluator>();
    register_evaluator<committee_member_create_evaluator>();
    register_evaluator<committee_member_update_evaluator>();

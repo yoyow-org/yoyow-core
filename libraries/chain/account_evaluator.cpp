@@ -496,6 +496,78 @@ void_result account_update_proxy_evaluator::do_apply( const account_update_proxy
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
+void_result account_enable_allowed_assets_evaluator::do_evaluate( const account_enable_allowed_assets_operation& o )
+{ try {
+   database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME,
+              "Can only use account_enable_allowed_assets_operation after HARDFORK_0_3_TIME" );
+
+   acnt = &d.get_account_by_uid( o.account );
+
+   FC_ASSERT( o.enable != acnt->allowed_assets.valid(), "Should change something" );
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_enable_allowed_assets_evaluator::do_apply( const account_enable_allowed_assets_operation& o )
+{ try {
+   database& d = db();
+
+   d.modify( *acnt, [&d](account_object& a){
+      if( a.allowed_assets.valid() )
+         a.allowed_assets.reset();
+      else
+      {
+         a.allowed_assets = flat_set<asset_aid_type>();
+         a.allowed_assets->insert( GRAPHENE_CORE_ASSET_AID );
+      }
+      a.last_update_time = d.head_block_time();
+   });
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_update_allowed_assets_evaluator::do_evaluate( const account_update_allowed_assets_operation& o )
+{ try {
+   database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME,
+              "Can only use account_update_allowed_assets_operation after HARDFORK_0_3_TIME" );
+
+   acnt = &d.get_account_by_uid( o.account );
+
+   FC_ASSERT( acnt->allowed_assets.valid(), "Account did not enable allowed_assets, can not update" );
+
+   for( const auto aid : o.assets_to_remove )
+   {
+      FC_ASSERT( acnt->allowed_assets->find( aid ) != acnt->allowed_assets->end(),
+                 "Account did not allow asset ${a}, can not remove", ("a",aid) );
+      //get_asset_by_aid( aid ); // no need to check
+   }
+   for( const auto aid : o.assets_to_add )
+   {
+      FC_ASSERT( acnt->allowed_assets->find( aid ) == acnt->allowed_assets->end(),
+                 "Account already allowed asset ${a}, can not add", ("a",aid) );
+      d.get_asset_by_aid( aid );
+   }
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_update_allowed_assets_evaluator::do_apply( const account_update_allowed_assets_operation& o )
+{ try {
+   database& d = db();
+
+   d.modify( *acnt, [&d,&o](account_object& a){
+      for( const auto aid : o.assets_to_remove )
+         a.allowed_assets->erase( aid );
+      for( const auto aid : o.assets_to_add )
+         a.allowed_assets->insert( aid );
+      a.last_update_time = d.head_block_time();
+   });
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
 void_result account_whitelist_evaluator::do_evaluate(const account_whitelist_operation& o)
 { try {
    database& d = db();

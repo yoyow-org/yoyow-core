@@ -67,10 +67,10 @@ void committee_member_vote_update_operation::validate() const
 
 share_type committee_proposal_create_operation::calculate_fee( const fee_parameters_type& k )const
 {
-   auto core_fee_required = k.basic_fee;
+   share_type core_fee_required = k.basic_fee;
 
    auto total_size = items.size();
-   core_fee_required += ( k.price_per_item * total_size );
+   core_fee_required += ( share_type( k.price_per_item ) * total_size );
 
    return core_fee_required;
 }
