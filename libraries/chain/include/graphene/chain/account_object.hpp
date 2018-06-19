@@ -591,7 +591,7 @@ namespace graphene { namespace chain {
                member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>
             >
          >,
-         
+         // TODO remove it? seems used by FBA only
          ordered_unique< tag<by_asset_balance>,
             composite_key<
                account_balance_object,
@@ -635,7 +635,6 @@ namespace graphene { namespace chain {
 
 
    struct by_uid_seq;
-   struct by_uid_valid;
    struct by_votes_next_update;
    struct by_last_vote;
    struct by_valid;
@@ -689,13 +688,6 @@ namespace graphene { namespace chain {
                member< voter_object, uint32_t, &voter_object::proxy_sequence>,
                member< voter_object, account_uid_type, &voter_object::uid>,
                member< voter_object, uint32_t, &voter_object::sequence>
-            >
-         >,
-         ordered_non_unique< tag<by_uid_valid>, // for API
-            composite_key<
-               voter_object,
-               member< voter_object, account_uid_type, &voter_object::uid>,
-               member< voter_object, bool, &voter_object::is_valid>
             >
          >
       >

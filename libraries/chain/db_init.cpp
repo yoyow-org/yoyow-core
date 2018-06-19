@@ -683,8 +683,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
    // Enable fees
    modify(get_global_properties(), [&genesis_state](global_property_object& p) {
-      //p.parameters.current_fees = genesis_state.initial_parameters.current_fees;
-      auto fees = fee_schedule::get_default();
+      p.parameters.current_fees = genesis_state.initial_parameters.current_fees;
+
+      /* auto fees = fee_schedule::get_default();
       auto& cp = fees.parameters;
       for( const auto& f : genesis_state.initial_parameters.current_fees->parameters )
       {
@@ -693,7 +694,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          if( itr != cp.end() )
             *itr = f;
       }
-      p.parameters.current_fees = fees;
+      p.parameters.current_fees = fees; */
       //idump((p.parameters.current_fees));
    });
 
