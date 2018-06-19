@@ -43,5 +43,6 @@ object_database/*
 *.pyo
 
 build
+lbuild
 .vscode
 .DS_Store
