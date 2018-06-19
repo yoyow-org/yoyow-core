@@ -48,6 +48,16 @@ namespace graphene { namespace app {
 
 class database_api_impl;
 
+signed_block_with_info::signed_block_with_info( const signed_block& block )
+   : signed_block( block )
+{
+   block_id = id();
+   signing_key = signee();
+   transaction_ids.reserve( transactions.size() );
+   for( const processed_transaction& tx : transactions )
+      transaction_ids.push_back( tx.id() );
+}
+
 
 class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 {
@@ -67,7 +77,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // Blocks and transactions
       optional<block_header> get_block_header(uint32_t block_num)const;
       map<uint32_t, optional<block_header>> get_block_header_batch(const vector<uint32_t> block_nums)const;
-      optional<signed_block> get_block(uint32_t block_num)const;
+      optional<signed_block_with_info> get_block(uint32_t block_num)const;
       processed_transaction get_transaction( uint32_t block_num, uint32_t trx_in_block )const;
 
       // Globals
@@ -411,12 +421,12 @@ map<uint32_t, optional<block_header>> database_api_impl::get_block_header_batch(
    return results;
 }
 
-optional<signed_block> database_api::get_block(uint32_t block_num)const
+optional<signed_block_with_info> database_api::get_block(uint32_t block_num)const
 {
    return my->get_block( block_num );
 }
 
-optional<signed_block> database_api_impl::get_block(uint32_t block_num)const
+optional<signed_block_with_info> database_api_impl::get_block(uint32_t block_num)const
 {
    return _db.fetch_block_by_number(block_num);
 }

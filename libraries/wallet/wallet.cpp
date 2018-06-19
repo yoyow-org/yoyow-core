@@ -4265,16 +4265,6 @@ order_book wallet_api::get_order_book( const string& base, const string& quote, 
    return( my->_remote_db->get_order_book( base, quote, limit ) );
 }
 
-signed_block_with_info::signed_block_with_info( const signed_block& block )
-   : signed_block( block )
-{
-   block_id = id();
-   signing_key = signee();
-   transaction_ids.reserve( transactions.size() );
-   for( const processed_transaction& tx : transactions )
-      transaction_ids.push_back( tx.id() );
-}
-
 vesting_balance_object_with_info::vesting_balance_object_with_info( const vesting_balance_object& vbo, fc::time_point_sec now )
    : vesting_balance_object( vbo )
 {
