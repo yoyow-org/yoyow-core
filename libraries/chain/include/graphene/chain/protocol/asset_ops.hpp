@@ -87,7 +87,7 @@ namespace graphene { namespace chain {
          uint64_t symbol3        = 500000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t symbol4        = 300000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t long_symbol    = 5000   * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t price_per_kbyte = 10; /// only required for large memos.
+         uint32_t price_per_kbyte = 10; 
       };
 
       fee_type                fee;

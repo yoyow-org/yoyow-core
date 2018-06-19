@@ -206,7 +206,7 @@ namespace graphene { namespace chain {
 
       optional< uint64_t            > platform_min_pledge                 ;
       optional< uint32_t            > platform_pledge_release_delay       ;
-      optional< uint16_t             > platform_max_vote_per_account       ;
+      optional< uint16_t            > platform_max_vote_per_account       ;
       optional< uint64_t            > platform_max_pledge_seconds         ;
       optional< uint32_t            > platform_avg_pledge_update_interval ;
 

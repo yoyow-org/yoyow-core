@@ -25,11 +25,11 @@
 
 namespace graphene { namespace chain {
 
+
 void_result balance_claim_evaluator::do_evaluate(const balance_claim_operation& op)
 {
    database& d = db();
    balance = &op.balance_to_claim(d);
-
    GRAPHENE_ASSERT(
              address(op.balance_owner_key) == balance->owner ||
              pts_address(op.balance_owner_key, false, 56) == balance->owner ||
@@ -62,7 +62,6 @@ void_result balance_claim_evaluator::do_evaluate(const balance_claim_operation& 
          );
       return {};
    }
-
    FC_ASSERT(op.total_claimed == balance->balance);
    return {};
 }

@@ -110,7 +110,7 @@ namespace graphene { namespace chain {
     */
    struct price
    {
-      explicit price(const asset& base = asset(), const asset quote = asset())
+      price(const asset& base = asset(), const asset quote = asset())
          : base(base),quote(quote){}
 
       asset base;

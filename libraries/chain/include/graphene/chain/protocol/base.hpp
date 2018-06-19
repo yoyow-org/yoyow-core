@@ -29,6 +29,8 @@
 #include <graphene/chain/protocol/ext.hpp>
 #include <boost/tti/has_member_data.hpp>
 
+
+
 namespace graphene { namespace chain {
 
    /**

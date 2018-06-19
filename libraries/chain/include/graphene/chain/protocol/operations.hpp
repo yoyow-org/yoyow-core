@@ -82,18 +82,11 @@ namespace graphene { namespace chain {
             balance_claim_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
-            //call_order_update_operation,
             fill_order_operation,           // VIRTUAL
             account_update_operation,
             account_whitelist_operation,
             account_upgrade_operation,
             account_transfer_operation,
-            //asset_update_bitasset_operation,
-            //asset_update_feed_producers_operation,
-            //asset_fund_fee_pool_operation,
-            //asset_settle_operation,
-            //asset_global_settle_operation,
-            //asset_publish_feed_operation,
             proposal_create_operation,
             proposal_update_operation,
             proposal_delete_operation,
@@ -107,8 +100,6 @@ namespace graphene { namespace chain {
             worker_create_operation,
             custom_operation,
             assert_operation
-            //asset_settle_cancel_operation,  // VIRTUAL
-            //fba_distribute_operation        // VIRTUAL
          > operation;
 
    /// @} // operations group
