@@ -396,5 +396,4 @@ void database::adjust_witness_votes( const witness_object& witness, share_type d
    } );
 }
 
-
 } }

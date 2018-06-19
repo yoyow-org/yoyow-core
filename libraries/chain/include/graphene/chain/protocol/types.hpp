@@ -86,7 +86,6 @@ namespace graphene { namespace chain {
 
    typedef uint64_t                    account_uid_type;
    typedef uint64_t                    asset_aid_type;
-   typedef uint32_t                    platform_pid_type;
    typedef uint64_t                    post_pid_type;
    typedef uint64_t                    committee_proposal_number_type;
 
@@ -177,6 +176,7 @@ namespace graphene { namespace chain {
       impl_blinded_balance_object_type,
       impl_chain_property_object_type,
       impl_witness_schedule_object_type,
+      impl_platform_vote_object_type,
       impl_budget_record_object_type,
       impl_special_authority_object_type,
       impl_buyback_object_type,
@@ -231,6 +231,7 @@ namespace graphene { namespace chain {
    class account_statistics_object;
    class voter_object;
    class witness_vote_object;
+   class platform_vote_object;
    class committee_member_vote_object;
    class registrar_takeover_object;
    class csaf_lease_object;
@@ -263,6 +264,7 @@ namespace graphene { namespace chain {
                       account_transaction_history_object>       account_transaction_history_id_type;
    typedef object_id< implementation_ids, impl_chain_property_object_type,   chain_property_object>                     chain_property_id_type;
    typedef object_id< implementation_ids, impl_witness_schedule_object_type, witness_schedule_object>                   witness_schedule_id_type;
+   typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
    typedef object_id< implementation_ids, impl_budget_record_object_type, budget_record_object >                        budget_record_id_type;
    typedef object_id< implementation_ids, impl_blinded_balance_object_type, blinded_balance_object >                    blinded_balance_id_type;
    typedef object_id< implementation_ids, impl_special_authority_object_type, special_authority_object >                special_authority_id_type;
@@ -396,6 +398,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_account_statistics_object_type)
                  (impl_voter_object_type)
                  (impl_witness_vote_object_type)
+                 (impl_platform_vote_object_type)
                  (impl_committee_member_vote_object_type)
                  (impl_registrar_takeover_object_type)
                  (impl_csaf_lease_object_type)
@@ -438,6 +441,7 @@ FC_REFLECT_TYPENAME( graphene::chain::account_balance_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::account_statistics_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::voter_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::witness_vote_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::platform_vote_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::registrar_takeover_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::csaf_lease_id_type )

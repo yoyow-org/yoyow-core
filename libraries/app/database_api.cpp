@@ -102,18 +102,19 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
 
       // Platforms and posts
-      optional<post_object> get_post( const platform_pid_type platform_pid,
+      vector<optional<platform_object>> get_platforms( const vector<account_uid_type>& platform_uids )const;
+      fc::optional<platform_object> get_platform_by_account( account_uid_type account )const;
+      vector<platform_object> lookup_platforms( const account_uid_type lower_bound_uid,
+                                               uint32_t limit,
+                                               data_sorting_type order_by )const;
+      uint64_t get_platform_count()const;
+      optional<post_object> get_post( const account_uid_type platform_owner,
                                       const account_uid_type poster_uid,
                                       const post_pid_type post_pid )const;
-      vector<post_object> get_posts_by_platform_poster( const platform_pid_type platform_pid,
+      vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;
-      vector<post_object> get_posts_by_parent( const platform_pid_type platform_pid,
-                                      const optional<std::pair<account_uid_type, post_pid_type>> parent,
-                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
-                                      const uint32_t limit )const;
-
 
       // Balances
       vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
@@ -991,33 +992,142 @@ vector<csaf_lease_object> database_api_impl::get_csaf_leases_by_to( const accoun
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-optional<post_object> database_api::get_post( const platform_pid_type platform_pid,
+vector<optional<platform_object>> database_api::get_platforms( const vector<account_uid_type>& account_uids )const
+{
+    return my->get_platforms( account_uids );
+}
+
+vector<optional<platform_object>> database_api_impl::get_platforms(const vector<account_uid_type>& platform_uids)const
+{
+   vector<optional<platform_object>> result; result.reserve(platform_uids.size());
+   std::transform(platform_uids.begin(), platform_uids.end(), std::back_inserter(result),
+                  [this](account_uid_type uid) -> optional<platform_object> {
+                    if( auto o = _db.find_platform_by_owner( uid ) )
+                        return *o;
+                    return {};
+                });
+   return result;
+}
+
+      
+fc::optional<platform_object> database_api::get_platform_by_account( account_uid_type account )const
+{
+    return my->get_platform_by_account( account );
+}
+
+fc::optional<platform_object> database_api_impl::get_platform_by_account(account_uid_type account) const
+{
+   const auto& idx = _db.get_index_type<platform_index>().indices().get<by_valid>();
+   auto itr = idx.find( std::make_tuple( true, account ) );
+   if( itr != idx.end() )
+      return *itr;
+   return {};
+}
+
+      
+vector<platform_object> database_api::lookup_platforms( const account_uid_type lower_bound_uid,
+                                              uint32_t limit, data_sorting_type order_by )const
+{
+    return my->lookup_platforms( lower_bound_uid, limit, order_by );
+}
+
+vector<platform_object> database_api_impl::lookup_platforms( const account_uid_type lower_bound_uid, 
+                                                            uint32_t limit,
+                                                            data_sorting_type order_by )const
+{
+   FC_ASSERT( limit <= 100 );
+   vector<platform_object> result;
+
+   if( order_by == order_by_uid )
+   {
+      const auto& idx = _db.get_index_type<platform_index>().indices().get<by_valid>();
+      auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_uid ) );
+      while( itr != idx.end() && limit > 0 ) // assume false < true
+      {
+         result.push_back( *itr );
+         ++itr;
+         --limit;
+      }
+   }
+   else
+   {
+      account_uid_type new_lower_bound_uid = lower_bound_uid;
+      const platform_object* lower_bound_obj = _db.find_platform_by_owner( lower_bound_uid );
+      uint64_t lower_bound_shares = -1;
+      if( lower_bound_obj == nullptr )
+         new_lower_bound_uid = 0;
+      else
+      {
+         if( order_by == order_by_votes )
+            lower_bound_shares = lower_bound_obj->total_votes;
+         else // by pledge
+            lower_bound_shares = lower_bound_obj->pledge;
+      }
+
+      if( order_by == order_by_votes )
+      {
+         const auto& idx = _db.get_index_type<platform_index>().indices().get<by_platform_votes>();
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
+         while( itr != idx.end() && limit > 0 ) // assume false < true
+         {
+            result.push_back( *itr );
+            ++itr;
+            --limit;
+         }
+      }
+      else // by pledge
+      {
+         const auto& idx = _db.get_index_type<platform_index>().indices().get<by_platform_pledge>();
+         auto itr = idx.lower_bound( std::make_tuple( true, lower_bound_shares, new_lower_bound_uid ) );
+         while( itr != idx.end() && limit > 0 ) // assume false < true
+         {
+            result.push_back( *itr );
+            ++itr;
+            --limit;
+         }
+      }
+   }
+
+   return result;
+}
+
+uint64_t database_api::get_platform_count()const
+{
+    return my->get_platform_count();
+}
+
+uint64_t database_api_impl::get_platform_count()const
+{
+   return _db.get_index_type< platform_index >().indices().get< by_valid >().count( true );
+}
+
+optional<post_object> database_api::get_post( const account_uid_type platform_owner,
                                               const account_uid_type poster_uid,
                                               const post_pid_type post_pid )const
 {
-   return my->get_post( platform_pid, poster_uid, post_pid );
+   return my->get_post( platform_owner, poster_uid, post_pid );
 }
 
-optional<post_object> database_api_impl::get_post( const platform_pid_type platform_pid,
+optional<post_object> database_api_impl::get_post( const account_uid_type platform_owner,
                                                    const account_uid_type poster_uid,
                                                    const post_pid_type post_pid )const
 {
-   if( auto o = _db.find_post_by_pid( platform_pid, poster_uid, post_pid ) )
+   if( auto o = _db.find_post_by_platform( platform_owner, poster_uid, post_pid ) )
    {
       return *o;
    }
    return {};
 }
 
-vector<post_object> database_api::get_posts_by_platform_poster( const platform_pid_type platform_pid,
+vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const
 {
-   return my->get_posts_by_platform_poster( platform_pid, poster, create_time_range, limit );
+   return my->get_posts_by_platform_poster( platform_owner, poster, create_time_range, limit );
 }
 
-vector<post_object> database_api_impl::get_posts_by_platform_poster( const platform_pid_type platform_pid,
+vector<post_object> database_api_impl::get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const
@@ -1036,8 +1146,8 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const platf
       const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_poster_create_time>();
 
       // index is latest first, query range is ( earliest, latest ]
-      auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, *poster, max_time ) );
-      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, *poster, min_time ) );
+      auto itr = post_idx.lower_bound( std::make_tuple( platform_owner, *poster, max_time ) );
+      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_owner, *poster, min_time ) );
 
       while( itr != itr_end && count < limit )
       {
@@ -1051,8 +1161,8 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const platf
       const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_create_time>();
 
       // index is latest first, query range is ( earliest, latest ]
-      auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, max_time ) );
-      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, min_time ) );
+      auto itr = post_idx.lower_bound( std::make_tuple( platform_owner, max_time ) );
+      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_owner, min_time ) );
 
       while( itr != itr_end && count < limit )
       {
@@ -1064,53 +1174,6 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const platf
 
    return result;
 }
-
-vector<post_object> database_api::get_posts_by_parent( const platform_pid_type platform_pid,
-                                      const optional<std::pair<account_uid_type, post_pid_type>> parent,
-                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
-                                      const uint32_t limit )const
-{
-   return my->get_posts_by_parent( platform_pid, parent, create_time_range, limit );
-}
-
-vector<post_object> database_api_impl::get_posts_by_parent( const platform_pid_type platform_pid,
-                                      const optional<std::pair<account_uid_type, post_pid_type>> parent,
-                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
-                                      const uint32_t limit )const
-{
-   FC_ASSERT( limit <= 100 );
-
-   vector<post_object> result;
-
-   const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_parent_create_time>();
-
-   optional<account_uid_type> parent_poster;
-   optional<post_pid_type> parent_post_pid;
-   if( parent.valid() )
-   {
-      parent_poster = parent->first;
-      parent_post_pid = parent->second;
-   }
-
-   const time_point_sec max_time = std::max( create_time_range.first, create_time_range.second );
-   const time_point_sec min_time = std::min( create_time_range.first, create_time_range.second );
-
-   uint32_t count = 0;
-   // index is latest first, query range is ( earliest, latest ]
-   auto itr = post_idx.lower_bound( std::make_tuple( platform_pid, parent_poster, parent_post_pid, max_time ) );
-   auto itr_end = post_idx.lower_bound( std::make_tuple( platform_pid, parent_poster, parent_post_pid, min_time ) );
-
-   while( itr != itr_end && count < limit )
-   {
-      result.push_back(*itr);
-      ++itr;
-      ++count;
-   }
-
-   return result;
-}
-
-
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
@@ -1623,6 +1686,8 @@ vector<market_trade> database_api_impl::get_trade_history( const string& base,
 
    return result;
 }
+
+
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //

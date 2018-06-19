@@ -58,6 +58,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 
+
 namespace graphene { namespace app {
 using net::item_hash_t;
 using net::item_id;
@@ -118,7 +119,7 @@ namespace detail {
       //                                          GRAPHENE_SYMBOL,
       //                                          GRAPHENE_MAX_SHARE_SUPPLY});
 
-      initial_state.initial_platforms.push_back({0,calc_account_uid(90),"YoYoW", "https://yoyow.org/"});
+      initial_state.initial_platforms.push_back({calc_account_uid(90),"YoYoW", "https://yoyow.org/"});
       initial_state.initial_chain_id = fc::sha256::hash( "YOYOW" );
 
       return initial_state;
@@ -179,30 +180,10 @@ namespace detail {
          }
          else
          {
-            // https://bitsharestalk.org/index.php/topic,23715.0.html
             vector<string> seeds = {
-               "seed01.yoyow.org:2018"//,               // aws ubuntu mainnet
-               //"54.224.246.177:2018"//,               // aws win mainnet
-               //"47.90.105.247:2017"               // aliyun test
-/*
-               "104.236.144.84:1777",               // puppies      (USA)
-               "128.199.143.47:2015",               // Harvey       (Singapore)
-               "212.47.249.84:50696",               // iHashFury    (France)
-               "23.92.53.182:1776",                 // sahkan       (USA)
-               "51.15.61.160:1776",                 // lafona       (France)
-               "bts-seed1.abit-more.com:62015",     // abit         (China)
-               "node.blckchnd.com:4243",            // blckchnd     (Germany)
-               "seed.bitsharesnodes.com:1776",      // wackou       (Netherlands)
-               "seed.blocktrades.us:1776",          // BlockTrades  (USA)
-               "seed.cubeconnex.com:1777",          // cube         (USA)
-               "seed.roelandp.nl:1776",             // roelandp     (Canada)
-               "seed04.bts-nodes.net:1776",         // Thom         (Australia)
-               "seed05.bts-nodes.net:1776",	        // Thom         (USA)
-               "seed06.bts-nodes.net:1776",	        // Thom         (USA)
-               "seed07.bts-nodes.net:1776",	        // Thom         (Singapore)
-               "seeds.bitshares.eu:1776"            // pc           (http://seeds.quisquis.de/bitshares.html)
-*/
+               "seed01.yoyow.org:2018"  // yoyow mainnet
             };
+
             for( const string& endpoint_string : seeds )
             {
                try {
