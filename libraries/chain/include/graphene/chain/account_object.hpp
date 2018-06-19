@@ -51,7 +51,10 @@ namespace graphene { namespace chain {
           * Keep the most recent operation as a root pointer to a linked list of the transaction history.
           */
          account_transaction_history_id_type most_recent_op;
+         /** Total operations related to this account. */
          uint32_t                            total_ops = 0;
+         /** Total operations related to this account that has been removed from the database. */
+         uint32_t                            removed_ops = 0;
 
          /**
           * When calculating votes it is necessary to know how much is stored in orders (and thus unavailable for
@@ -215,6 +218,31 @@ namespace graphene { namespace chain {
           */
          uint32_t last_voter_sequence = 0;
 
+         /**
+          * Record how many times the platform object has been created (the latest platform serial number)
+          */
+         uint32_t last_platform_sequence = 0;
+         
+         /**
+          * Platform total deposit
+          */
+         share_type total_platform_pledge;
+
+         /**
+          * To refund the platform deposit
+          */
+         share_type releasing_platform_pledge;
+
+         /**
+          * block number that releasing platform pledge will be finally unlocked.
+          */
+         uint32_t platform_pledge_release_block_number = -1;
+
+         /**
+          * Record the last published article number
+          */
+         post_pid_type last_post_sequence = 0;
+
          /// @brief Split up and pay out @ref pending_fees and @ref pending_vested_fees
          void process_fees(const account_object& a, database& d) const;
 
@@ -330,11 +358,11 @@ namespace graphene { namespace chain {
 
          account_reg_info reg_info;
 
-         bool can_post = false;
+         bool can_post = true;      //Default to the user posting permissions
          bool can_reply = false;
          bool can_rate = false;
 
-         bool is_full_member = false;
+         bool is_full_member = false;     //Currently mainly used for referral tags, that is, = true to refer other people; currently there is only a platform
          bool is_registrar = false;
          bool is_admin = false;
 
@@ -474,6 +502,7 @@ namespace graphene { namespace chain {
          uint32_t            effective_last_vote_block; // effective value, due to proxied voting
 
          uint16_t            number_of_witnesses_voted = 0; // directly voted
+         uint16_t            number_of_platform_voted = 0;         // Direct investment platform number
          uint16_t            number_of_committee_members_voted = 0; // directly voted
 
          uint64_t total_votes() const
@@ -704,6 +733,7 @@ namespace graphene { namespace chain {
 
    struct by_witness_pledge_release;
    struct by_committee_member_pledge_release;
+   struct by_platform_pledge_release;
 
    /**
     * @ingroup object_index
@@ -724,6 +754,13 @@ namespace graphene { namespace chain {
             composite_key<
                account_statistics_object,
                member<account_statistics_object, uint32_t, &account_statistics_object::committee_member_pledge_release_block_number>,
+               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
+            >
+         >,
+         ordered_unique< tag<by_platform_pledge_release>,
+            composite_key<
+               account_statistics_object,
+               member<account_statistics_object, uint32_t, &account_statistics_object::platform_pledge_release_block_number>,
                member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
             >
          >
@@ -765,6 +802,7 @@ FC_REFLECT_DERIVED( graphene::chain::voter_object,
                     (proxied_voters)(proxied_votes)(proxy_last_vote_block)
                     (effective_last_vote_block)
                     (number_of_witnesses_voted)
+                    (number_of_platform_voted)
                     (number_of_committee_members_voted)
                   )
 
@@ -781,6 +819,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (owner)
                     //(most_recent_op)
                     (total_ops)
+                    (removed_ops)
                     //(total_core_in_orders)
                     //(lifetime_fees_paid)
                     //(pending_fees)(pending_vested_fees)
@@ -799,5 +838,10 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (total_committee_member_pledge)(releasing_committee_member_pledge)(committee_member_pledge_release_block_number)
                     (last_committee_member_sequence)
                     (can_vote)(is_voter)(last_voter_sequence)
+                    (last_platform_sequence)
+                    (total_platform_pledge)
+                    (releasing_platform_pledge)
+                    (platform_pledge_release_block_number)
+                    (last_post_sequence)
                   )
 

@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 #pragma once
+#include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/protocol/operations.hpp>
 #include <graphene/db/generic_index.hpp>
 #include <boost/multi_index/composite_key.hpp>

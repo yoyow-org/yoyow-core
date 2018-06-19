@@ -103,6 +103,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
          auto available_balance = account_stats.core_balance
                                 - account_stats.core_leased_out
                                 - account_stats.total_witness_pledge
+                                - account_stats.total_platform_pledge
                                 - account_stats.total_committee_member_pledge;
          FC_ASSERT( available_balance >= -delta.amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",

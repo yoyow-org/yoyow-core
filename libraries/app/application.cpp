@@ -58,6 +58,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 
+
 namespace graphene { namespace app {
 using net::item_hash_t;
 using net::item_id;
@@ -118,7 +119,7 @@ namespace detail {
       //                                          GRAPHENE_SYMBOL,
       //                                          GRAPHENE_MAX_SHARE_SUPPLY});
 
-      initial_state.initial_platforms.push_back({0,calc_account_uid(90),"YoYoW", "https://yoyow.org/"});
+      initial_state.initial_platforms.push_back({calc_account_uid(90),"YoYoW", "https://yoyow.org/"});
       initial_state.initial_chain_id = fc::sha256::hash( "YOYOW" );
 
       return initial_state;
@@ -179,28 +180,10 @@ namespace detail {
          }
          else
          {
-            // https://bitsharestalk.org/index.php/topic,23715.0.html
             vector<string> seeds = {
-               "testseed01.yoyow.org:3017"//,               // testnet
-/*
-               "104.236.144.84:1777",               // puppies      (USA)
-               "128.199.143.47:2015",               // Harvey       (Singapore)
-               "212.47.249.84:50696",               // iHashFury    (France)
-               "23.92.53.182:1776",                 // sahkan       (USA)
-               "51.15.61.160:1776",                 // lafona       (France)
-               "bts-seed1.abit-more.com:62015",     // abit         (China)
-               "node.blckchnd.com:4243",            // blckchnd     (Germany)
-               "seed.bitsharesnodes.com:1776",      // wackou       (Netherlands)
-               "seed.blocktrades.us:1776",          // BlockTrades  (USA)
-               "seed.cubeconnex.com:1777",          // cube         (USA)
-               "seed.roelandp.nl:1776",             // roelandp     (Canada)
-               "seed04.bts-nodes.net:1776",         // Thom         (Australia)
-               "seed05.bts-nodes.net:1776",	        // Thom         (USA)
-               "seed06.bts-nodes.net:1776",	        // Thom         (USA)
-               "seed07.bts-nodes.net:1776",	        // Thom         (Singapore)
-               "seeds.bitshares.eu:1776"            // pc           (http://seeds.quisquis.de/bitshares.html)
-*/
+               "testseed01.yoyow.org:3017"  // yoyow testnet
             };
+
             for( const string& endpoint_string : seeds )
             {
                try {
@@ -917,7 +900,8 @@ namespace detail {
       std::shared_ptr<fc::http::websocket_server>      _websocket_server;
       std::shared_ptr<fc::http::websocket_tls_server>  _websocket_tls_server;
 
-      std::map<string, std::shared_ptr<abstract_plugin>> _plugins;
+      std::map<string, std::shared_ptr<abstract_plugin>> _active_plugins;
+      std::map<string, std::shared_ptr<abstract_plugin>> _available_plugins;
 
       bool _is_finished_syncing = false;
    };
@@ -956,6 +940,7 @@ void application::set_program_options(boost::program_options::options_descriptio
          ("genesis-json", bpo::value<boost::filesystem::path>(), "File to read Genesis State from")
          ("dbg-init-key", bpo::value<string>(), "Block signing key to use for init witnesses, overrides genesis file")
          ("api-access", bpo::value<boost::filesystem::path>(), "JSON file specifying API permissions")
+         ("plugins", bpo::value<string>(), "Space-separated list of plugins to activate")
          ;
    command_line_options.add(configuration_file_options);
    command_line_options.add_options()
@@ -1001,6 +986,22 @@ void application::initialize(const fc::path& data_dir, const boost::program_opti
 
       std::exit(EXIT_SUCCESS);
    }
+
+   std::vector<string> wanted;
+   if( options.count("plugins") )
+   {
+      boost::split(wanted, options.at("plugins").as<std::string>(), [](char c){return c == ' ';});
+   }
+   else
+   {
+      wanted.push_back("witness");
+      wanted.push_back("account_history");
+      //wanted.push_back("market_history"); TODO review
+   }
+   for (auto& it : wanted)
+   {
+      if (!it.empty()) enable_plugin(it);
+   }
 }
 
 void application::startup()
@@ -1018,7 +1019,7 @@ void application::startup()
 
 std::shared_ptr<abstract_plugin> application::get_plugin(const string& name) const
 {
-   return my->_plugins[name];
+   return my->_active_plugins[name];
 }
 
 net::node_ptr application::p2p_node()
@@ -1051,14 +1052,21 @@ bool application::is_finished_syncing() const
    return my->_is_finished_syncing;
 }
 
-void graphene::app::application::add_plugin(const string& name, std::shared_ptr<graphene::app::abstract_plugin> p)
+void graphene::app::application::enable_plugin(const string& name)
 {
-   my->_plugins[name] = p;
+   FC_ASSERT(my->_available_plugins[name], "Unknown plugin '" + name + "'");
+   my->_active_plugins[name] = my->_available_plugins[name];
+   my->_active_plugins[name]->plugin_set_app(this);
+}
+
+void graphene::app::application::add_available_plugin(std::shared_ptr<graphene::app::abstract_plugin> p)
+{
+   my->_available_plugins[p->plugin_name()] = p;
 }
 
 void application::shutdown_plugins()
 {
-   for( auto& entry : my->_plugins )
+   for( auto& entry : my->_active_plugins )
       entry.second->plugin_shutdown();
    return;
 }
@@ -1075,14 +1083,14 @@ void application::shutdown()
 
 void application::initialize_plugins( const boost::program_options::variables_map& options )
 {
-   for( auto& entry : my->_plugins )
+   for( auto& entry : my->_active_plugins )
       entry.second->plugin_initialize( options );
    return;
 }
 
 void application::startup_plugins()
 {
-   for( auto& entry : my->_plugins )
+   for( auto& entry : my->_active_plugins )
       entry.second->plugin_startup();
    return;
 }

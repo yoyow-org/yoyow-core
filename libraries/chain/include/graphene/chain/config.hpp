@@ -29,6 +29,9 @@
 #define GRAPHENE_MIN_ACCOUNT_NAME_LENGTH 2
 #define GRAPHENE_MAX_ACCOUNT_NAME_LENGTH 63
 
+#define GRAPHENE_MAX_PLATFORM_NAME_LENGTH 100
+#define GRAPHENE_MAX_PLATFORM_EXTRA_DATA_LENGTH 1000
+
 #define GRAPHENE_MIN_ASSET_SYMBOL_LENGTH 3
 #define GRAPHENE_MAX_ASSET_SYMBOL_LENGTH 16
 
@@ -147,6 +150,7 @@
 #define GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK         (10000)
 #define GRAPHENE_MAX_RESIGNED_COMMITTEE_VOTES_PER_BLOCK       (10000)
 #define GRAPHENE_MAX_CSAF_COLLECTING_TIME_OFFSET              (300) // 5 minutes
+#define GRAPHENE_MAX_RESIGNED_PLATFORM_VOTES_PER_BLOCK        (10000)
 
 #define GRAPHENE_DEFAULT_BY_VOTE_TOP_WITNESS_PAY_PER_BLOCK    (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1))
 #define GRAPHENE_DEFAULT_BY_VOTE_REST_WITNESS_PAY_PER_BLOCK   (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1))
@@ -207,6 +211,12 @@
 #define GRAPHENE_CPPT_PARAM_WITNESS_REPORT_ALLOW_PRE_LAST_BLOCK   (uint16_t(6500))
 #define GRAPHENE_CPPT_PARAM_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT (uint16_t(6500))
 
+#define GRAPHENE_CPPT_PARAM_PLATFORM_MIN_PLEDGE                    (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_PLATFORM_PLEDGE_RELEASE_DELAY          (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_PLATFORM_MAX_VOTE_PER_ACCOUNT          (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_PLATFORM_MAX_PLEDGE_SECONDS            (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL    (uint16_t(6500))
+
 
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex
@@ -239,7 +249,7 @@
 #define GRAPHENE_RECENTLY_MISSED_COUNT_INCREMENT             4
 #define GRAPHENE_RECENTLY_MISSED_COUNT_DECREMENT             3
 
-#define GRAPHENE_CURRENT_DB_VERSION                          "BTS2.9"
+#define GRAPHENE_CURRENT_DB_VERSION                          "YYW1.0"
 
 #define GRAPHENE_IRREVERSIBLE_THRESHOLD                      (75 * GRAPHENE_1_PERCENT)
 
@@ -276,3 +286,20 @@
 ///@}
 
 #define GRAPHENE_FBA_STEALTH_DESIGNATED_ASSET (asset_id_type(743))
+
+/**
+ * Platform configuration
+ */
+///@{
+/// Minimum platform deposit
+#define GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000)) 
+/// The platform calculates the average deposit duration. The initial value of 1 week
+#define GRAPHENE_DEFAULT_PLATFORM_MAX_PLEDGE_SECONDS (60*60*24*7)
+/// Platform average deposit update interval. The initial value is 1 hour, that is, the average deposit is automatically updated once an hour, and if the deposit amount changes, the average deposit is updated in real time.
+#define GRAPHENE_DEFAULT_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL 1200 // blocks, one hour if 3 seconds per block
+/// Platform deposit refund time (block)
+#define GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY 28800 // blocks, one day if 3 seconds per block
+/// The maximum number of voting platforms per account
+#define GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT (uint16_t(10))
+
+///@}
