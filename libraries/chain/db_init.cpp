@@ -121,6 +121,9 @@ const uint8_t operation_history_object::type_id;
 const uint8_t platform_object::space_id;
 const uint8_t platform_object::type_id;
 
+const uint8_t platform_vote_object::space_id;
+const uint8_t platform_vote_object::type_id;
+
 const uint8_t post_object::space_id;
 const uint8_t post_object::type_id;
 
@@ -173,7 +176,11 @@ void database::initialize_evaluators()
    register_evaluator<committee_proposal_update_evaluator>();
    register_evaluator<committee_member_update_global_parameters_evaluator>();
    register_evaluator<custom_evaluator>();
+   register_evaluator<platform_create_evaluator>();
+   register_evaluator<platform_update_evaluator>();
+   register_evaluator<platform_vote_update_evaluator>();
    register_evaluator<post_evaluator>();
+   register_evaluator<post_update_evaluator>();
    register_evaluator<csaf_collect_evaluator>();
    register_evaluator<csaf_lease_evaluator>();
    register_evaluator<asset_create_evaluator>();
@@ -255,6 +262,7 @@ void database::initialize_indexes()
    add_index< primary_index<voter_index                                   > >();
    add_index< primary_index<registrar_takeover_index                      > >();
    add_index< primary_index<witness_vote_index                            > >();
+   add_index< primary_index<platform_vote_index                           > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();
@@ -756,12 +764,11 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    std::for_each(genesis_state.initial_platforms.begin(), genesis_state.initial_platforms.end(),
                  [&](const genesis_state_type::initial_platform_type& platform) {
       const auto owner = get_account_by_uid(platform.owner);
-      create<platform_object>([&platform](platform_object& p) {
-         p.pid = platform.pid;
-         p.owner = platform.owner;
-         p.name = platform.name;
-         p.url = platform.url;
-      });
+      platform_create_operation op;
+      op.account = platform.owner;
+      op.name = platform.name;
+      op.url = platform.url;
+      apply_operation(genesis_eval_state, op);
    });
 
    // Set active witnesses

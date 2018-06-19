@@ -1381,6 +1381,76 @@ class wallet_api
                                       fc::time_point_sec time,
                                       bool broadcast = false);
 
+
+      /** Returns information about the given platform.
+       * @param owner_account the name or id of the platform account owner, or the id of the platform
+       * @returns the information about the platform stored in the block chain
+       */
+      platform_object get_platform(string owner_account);
+
+      /** Creates a platform object owned by the given account.
+       *
+       * An account can have at most one platform object.
+       *
+       * @param owner_account the name or uid of the account which is creating the platform
+       * @param name The platform's name.
+       * @param pledge_amount The amount to set as pledge.
+       * @param pledge_asset_symbol The symbol of the asset to set as pledge.
+       * @param url a URL to include in the platform record in the blockchain.  Clients may
+       *            display this when showing a list of platforms.  May be blank.
+       * @param extra_data a string json format,Including api_url, platform introduction
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction registering a platform
+       */
+      signed_transaction create_platform(string owner_account,
+                                        string name,
+                                        string pledge_amount,
+                                        string pledge_asset_symbol,
+                                        string url,
+                                        string extra_data = "{}",
+                                        bool broadcast = false);
+
+      /**
+       * Update a platform object owned by the given account.
+       *
+       * @param platform_account The UID or name of the platform's owner account.
+       * @param name The platform's name.
+       * @param pledge_amount The amount to set as pledge. Do not set if want to remain the same.
+       * @param pledge_asset_symbol The symbol of the asset to set as pledge. Do not set if want to remain the same.
+       * @param url a URL to include in the platform record in the blockchain.  Clients may
+       *            display this when showing a list of platforms.  May be blank. Do not set if want to remain the same.
+       * @param extra_data a string json format,Including api_url, platform introduction
+       * @param broadcast true if you wish to broadcast the transaction.
+       */
+      signed_transaction update_platform(string platform_account,
+                                        optional<string> name,
+                                        optional<string> pledge_amount,
+                                        optional<string> pledge_asset_symbol,
+                                        optional<string> url,
+                                        optional<string> extra_data,
+                                        bool broadcast = false);
+
+      /** Update platform voting options.
+       *
+       * An account can publish a list of all platforms they approve of.  This
+       * command allows you to add and/or remove platforms from this list.
+       * Each account's vote is weighted according to the number of shares of the
+       * core asset owned by that account at the time the votes are tallied.
+       *
+       * @note you cannot vote against a platform, you can only vote for the platform
+       *       or not vote for the platform.
+       *
+       * @param voting_account the name or uid of the account who is voting with their shares
+       * @param platforms_to_add a list of name or uid of platforms that to be voted for
+       * @param platforms_to_remove a list of name or uid of platforms that to revoke votes from
+       * @param broadcast true if you wish to broadcast the transaction
+       * @return the signed transaction changing your vote for the given platforms
+       */
+      signed_transaction update_platform_votes(string voting_account,
+                                          flat_set<string> platforms_to_add,
+                                          flat_set<string> platforms_to_remove,
+                                          bool broadcast = false);
+
       /**
        * Create a worker object.
        *
@@ -1834,6 +1904,10 @@ FC_API( graphene::wallet::wallet_api,
         (collect_witness_pay)
         (collect_csaf)
         (collect_csaf_with_time)
+        (get_platform)
+        (create_platform)
+        (update_platform)
+        (update_platform_votes)
         //(create_worker)
         //(update_worker_votes)
         //(get_vesting_balances)

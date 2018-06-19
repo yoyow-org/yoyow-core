@@ -42,15 +42,28 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id  = platform_object_type;
 
-         /// The platform's pid.
-         platform_pid_type pid = 0;
+         
          /// The owner account's uid.
          account_uid_type owner = 0;
          /// The platform's name.
          string name;
+         //序号（当前账号第几次创建平台）
+         uint32_t sequence;
+
+         //是否有效（“无效”为短暂的中间状态） 
+         bool is_valid = true;
+         //获得票数
+         uint64_t total_votes = 0;
          /// The platform's main url.
          string url;
 
+         uint64_t pledge;
+         fc::time_point_sec  pledge_last_update;
+         uint64_t            average_pledge = 0;
+         fc::time_point_sec  average_pledge_last_update;
+         uint32_t            average_pledge_next_update_block;
+
+         //其他信息（api接口地址，其他URL，平台介绍等）
          string extra_data = "{}";
 
          time_point_sec create_time;
@@ -60,8 +73,10 @@ namespace graphene { namespace chain {
    };
 
 
-   struct by_pid{};
    struct by_owner{};
+   struct by_valid{};
+   struct by_platform_pledge;
+   struct by_platform_votes;
 
    /**
     * @ingroup object_index
@@ -70,7 +85,51 @@ namespace graphene { namespace chain {
       platform_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_pid>, member<platform_object, platform_pid_type, &platform_object::pid> >
+         ordered_unique< tag<by_owner>,
+            composite_key<
+               platform_object,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_valid>,
+            composite_key<
+               platform_object,
+               member<platform_object, bool, &platform_object::is_valid>,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+            >
+         >,
+         ordered_unique< tag<by_platform_votes>, // for API
+            composite_key<
+               platform_object,
+               member<platform_object, bool, &platform_object::is_valid>,
+               member<platform_object, uint64_t, &platform_object::total_votes>,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+            >,
+            composite_key_compare<
+               std::less< bool >,
+               std::greater< uint64_t >,
+               std::less< account_uid_type >,
+               std::less< uint32_t >
+            >
+         >,
+         ordered_unique< tag<by_platform_pledge>, // for API
+            composite_key<
+               platform_object,
+               member<platform_object, bool, &platform_object::is_valid>,
+               member<platform_object, uint64_t, &platform_object::pledge>,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+            >,
+            composite_key_compare<
+               std::less< bool >,
+               std::greater< uint64_t >,
+               std::less< account_uid_type >,
+               std::less< uint32_t >
+            >
+         >
       >
    > platform_multi_index_type;
 
@@ -78,6 +137,59 @@ namespace graphene { namespace chain {
     * @ingroup object_index
     */
    typedef generic_index<platform_object, platform_multi_index_type> platform_index;
+
+   /**
+    * @brief This class represents a platform voting on the object graph
+    * @ingroup object
+    * @ingroup protocol
+    */
+   class platform_vote_object : public graphene::db::abstract_object<platform_vote_object>
+   {
+      public:
+         static const uint8_t space_id = implementation_ids;
+         static const uint8_t type_id  = impl_platform_vote_object_type;
+
+         account_uid_type    voter_uid = 0;
+         uint32_t            voter_sequence;
+         account_uid_type    platform_owner = 0;
+         uint32_t            platform_sequence;
+   };
+
+   struct by_platform_voter_seq{};
+   struct by_platform_owner_seq{};
+
+   /**
+    * @ingroup object_index
+    */
+   typedef multi_index_container<
+      platform_vote_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+         ordered_unique< tag<by_platform_voter_seq>,
+            composite_key<
+               platform_vote_object,
+               member< platform_vote_object, account_uid_type, &platform_vote_object::voter_uid>,
+               member< platform_vote_object, uint32_t, &platform_vote_object::voter_sequence>,
+               member< platform_vote_object, account_uid_type, &platform_vote_object::platform_owner>,
+               member< platform_vote_object, uint32_t, &platform_vote_object::platform_sequence>
+            >
+         >,
+         ordered_unique< tag<by_platform_owner_seq>,
+            composite_key<
+               platform_vote_object,
+               member< platform_vote_object, account_uid_type, &platform_vote_object::platform_owner>,
+               member< platform_vote_object, uint32_t, &platform_vote_object::platform_sequence>,
+               member< platform_vote_object, account_uid_type, &platform_vote_object::voter_uid>,
+               member< platform_vote_object, uint32_t, &platform_vote_object::voter_sequence>
+            >
+         >
+      >
+   > platform_vote_multi_index_type;
+
+    /**
+    * @ingroup object_index
+    */
+   typedef generic_index<platform_vote_object, platform_vote_multi_index_type> platform_vote_index;
 
    /**
     * @brief This class represents a post on the object graph
@@ -93,16 +205,19 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = post_object_type;
 
          /// The platform's pid.
-         platform_pid_type            platform;
+         account_uid_type             platform;
          /// The poster's uid.
          account_uid_type             poster;
          /// The post's pid.
          post_pid_type                post_pid;
-         /// The post's parent poster uid if it's not root post.
-         optional<account_uid_type>   parent_poster;
-         /// The post's parent post pid if it's not root post.
-         optional<post_pid_type>      parent_post_pid;
+         /// 如果是转文，此值要求为源文作者uid
+         optional<account_uid_type>   origin_poster;
+         /// 如果是转文，此值要求为源文id
+         optional<post_pid_type>      origin_post_pid;
+         /// 如果是转文，此值要求为源文所在平台
+         optional<account_uid_type>   origin_platform;
 
+         /// 文章扩展信息：标签（TAG）、引用（链接、图片、视频、广告）、管理信息（置顶、高亮）等
          post_options                 options;
 
          string                       hash_value;
@@ -120,7 +235,6 @@ namespace graphene { namespace chain {
    struct by_post_pid{};
    struct by_platform_create_time{};
    struct by_platform_poster_create_time{};
-   struct by_parent_create_time{};
 
    /**
     * @ingroup object_index
@@ -132,7 +246,7 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_post_pid>,
             composite_key<
                post_object,
-               member< post_object, platform_pid_type, &post_object::platform >,
+               member< post_object, account_uid_type, &post_object::platform >,
                member< post_object, account_uid_type,  &post_object::poster >,
                member< post_object, post_pid_type,     &post_object::post_pid >
             >
@@ -141,11 +255,11 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_platform_create_time>,
             composite_key<
                post_object,
-               member< post_object, platform_pid_type, &post_object::platform >,
+               member< post_object, account_uid_type, &post_object::platform >,
                member< post_object, time_point_sec,    &post_object::create_time >,
                member< object,      object_id_type,    &post_object::id>
             >,
-            composite_key_compare< std::less<platform_pid_type>,
+            composite_key_compare< std::less<account_uid_type>,
                                    std::greater<time_point_sec>,
                                    std::greater<object_id_type> >
 
@@ -153,31 +267,16 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_platform_poster_create_time>,
             composite_key<
                post_object,
-               member< post_object, platform_pid_type, &post_object::platform >,
+               member< post_object, account_uid_type, &post_object::platform >,
                member< post_object, account_uid_type,  &post_object::poster >,
                member< post_object, time_point_sec,    &post_object::create_time >,
                member< object,      object_id_type,    &post_object::id>
             >,
-            composite_key_compare< std::less<platform_pid_type>,
+            composite_key_compare< std::less<account_uid_type>,
                                    std::less<account_uid_type>,
                                    std::greater<time_point_sec>,
                                    std::greater<object_id_type> >
 
-         >,
-         ordered_unique< tag<by_parent_create_time>,
-            composite_key<
-               post_object,
-               member< post_object, platform_pid_type,           &post_object::platform >,
-               member< post_object, optional<account_uid_type>,  &post_object::parent_poster >,
-               member< post_object, optional<post_pid_type>,     &post_object::parent_post_pid >,
-               member< post_object, time_point_sec,              &post_object::create_time >,
-               member< object,      object_id_type,              &post_object::id>
-            >,
-            composite_key_compare< std::less<platform_pid_type>,
-                                   std::less<optional<account_uid_type>>,
-                                   std::less<optional<post_pid_type>>,
-                                   std::greater<time_point_sec>,
-                                   std::greater<object_id_type> >
          >
       >
    > post_multi_index_type;
@@ -191,13 +290,20 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::platform_object,
                     (graphene::db::object),
-                    (pid)(owner)(name)(url)(extra_data)
+                    (owner)(name)(sequence)(is_valid)(total_votes)(url)(extra_data)
                     (create_time)(last_update_time)
+                  )
+
+FC_REFLECT_DERIVED( graphene::chain::platform_vote_object, (graphene::db::object),
+                    (voter_uid)
+                    (voter_sequence)
+                    (platform_owner)
+                    (platform_sequence)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
-                    (platform)(poster)(post_pid)(parent_poster)(parent_post_pid)
+                    (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
                     (options)
                     (hash_value)(extra_data)(title)(body)
                     (create_time)(last_update_time)

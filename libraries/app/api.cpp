@@ -409,6 +409,8 @@ namespace graphene { namespace app {
                   //result.push_back( aobj->voter_uid );
                   //result.push_back( aobj->witness_uid );
                   break;
+               } case impl_platform_vote_object_type:{
+                 // TODO review
                } case impl_committee_member_vote_object_type:{
                   // TODO review
                   //const auto& aobj = dynamic_cast<const committee_member_vote_object*>(obj);
