@@ -214,6 +214,8 @@
 #define GRAPHENE_CPPT_PARAM_PLATFORM_MIN_PLEDGE                    (uint16_t(6500))
 #define GRAPHENE_CPPT_PARAM_PLATFORM_PLEDGE_RELEASE_DELAY          (uint16_t(6500))
 #define GRAPHENE_CPPT_PARAM_PLATFORM_MAX_VOTE_PER_ACCOUNT          (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_PLATFORM_MAX_PLEDGE_SECONDS            (uint16_t(6500))
+#define GRAPHENE_CPPT_PARAM_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL    (uint16_t(6500))
 
 
 // counter initialization values used to derive near and far future seeds for shuffling witnesses

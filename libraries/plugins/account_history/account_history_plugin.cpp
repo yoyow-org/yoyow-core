@@ -64,6 +64,12 @@ class account_history_plugin_impl
 
       account_history_plugin& _self;
       flat_set<account_uid_type> _tracked_accounts;
+      bool _partial_operations = false;
+      primary_index< operation_history_index >* _oho_index;
+      uint32_t _max_ops_per_account = -1;
+   private:
+      /** add one history record, then check and remove the earliest history record */
+      void add_account_history( const account_uid_type account_uid, const operation_history_id_type op_id, uint16_t op_type );
 };
 
 account_history_plugin_impl::~account_history_plugin_impl()
@@ -77,19 +83,25 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
    const vector<optional< operation_history_object > >& hist = db.get_applied_operations();
    for( const optional< operation_history_object >& o_op : hist )
    {
-      // add to the operation history index
-      const auto& oho = db.create<operation_history_object>( [&]( operation_history_object& h )
-      {
-         if( o_op.valid() )
-            h = *o_op;
-      } );
+      optional<operation_history_object> oho;
 
-      if( !o_op.valid() )
+      auto create_oho = [&]() {
+         return optional<operation_history_object>( db.create<operation_history_object>( [&]( operation_history_object& h )
+         {
+            if( o_op.valid() )
+               h = *o_op;
+         } ) );
+      };
+
+      if( !o_op.valid() || ( _max_ops_per_account == 0 && _partial_operations ) )
       {
-         ilog( "removing failed operation with ID: ${id}", ("id", oho.id) );
-         db.remove( oho );
+         // Note: the 2nd and 3rd checks above are for better performance, when the db is not clean,
+         //       they will break consistency of account_stats.total_ops and removed_ops and most_recent_op
+         _oho_index->use_next_id();
          continue;
       }
+      else if( !_partial_operations )  // add to the operation history index
+         oho = create_oho();
 
       const operation_history_object& op = *o_op;
 
@@ -107,52 +119,110 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
       // for each operation this account applies to that is in the config link it into the history
       if( _tracked_accounts.size() == 0 )
       {
-         for( auto& account_uid : impacted_uids )
-         {
-            // we don't do index_account_keys here anymore, because
-            // that indexing now happens in observers' post_evaluate()
+            // if tracking all accounts, when impacted_uids is not empty (although it will always be),
+            //    still need to create oho if _max_ops_per_account > 0 and _partial_operations == true
+            //    so always need to create oho if not done
+            if (!impacted_uids.empty() && !oho.valid()) { oho = create_oho(); }
 
-            // add history
-            const auto& account_obj = db.get_account_by_uid(account_uid);
-            const auto& stats_obj = account_obj.statistics(db);
-            const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
-                obj.operation_id = oho.id;
-                obj.operation_type = oho.op.which();
-                obj.account = account_obj.uid;
-                obj.sequence = stats_obj.total_ops+1;
-                obj.next = stats_obj.most_recent_op;
-            });
-            db.modify( stats_obj, [&]( account_statistics_object& obj ){
-                obj.most_recent_op = ath.id;
-                obj.total_ops = ath.sequence;
-            });
+            // Note: the check above is for better performance, when the db is not clean,
+            //       it breaks consistency of account_stats.total_ops and removed_ops and most_recent_op,
+            //       but it ensures it's safe to remove old entries in add_account_history(...)
+            for( auto& account_uid : impacted_uids )
+            {
+                // we don't do index_account_keys here anymore, because
+                // that indexing now happens in observers' post_evaluate()
+
+                // add history
+                add_account_history( account_uid, oho->id, oho->op.which() );
+            }
+      }
+      else   // tracking a subset of accounts
+      {
+         // whether need to create oho if _max_ops_per_account > 0 and _partial_operations == true ?
+         // the answer: only need to create oho if a tracked account is impacted and need to save history
+
+         if( _max_ops_per_account > 0 )
+         {
+            // Note: the check above is for better performance, when the db is not clean,
+            //       it breaks consistency of account_stats.total_ops and removed_ops and most_recent_op,
+            //       but it ensures it's safe to remove old entries in add_account_history(...)
+            for( auto account_uid : _tracked_accounts )
+            {
+               if( impacted_uids.find( account_uid ) != impacted_uids.end() )
+               {
+                  if (!oho.valid()) { oho = create_oho(); }
+                  // add history
+                  add_account_history( account_uid, oho->id, oho->op.which() );
+               }
+            }
          }
       }
-      else
+      if ( _partial_operations && !oho.valid() )
+         _oho_index->use_next_id();
+   }
+}
+
+void account_history_plugin_impl::add_account_history( const account_uid_type account_uid, const operation_history_id_type op_id, uint16_t op_type )
+{
+   graphene::chain::database& db = database();
+   const auto& account_obj = db.get_account_by_uid(account_uid);
+   const auto& stats_obj = account_obj.statistics(db);
+   // add new entry
+   const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
+       obj.operation_id = op_id;
+       obj.operation_type = op_type;
+       obj.account = account_uid;
+       obj.sequence = stats_obj.total_ops + 1;
+       obj.next = stats_obj.most_recent_op;
+   });
+   db.modify( stats_obj, [&]( account_statistics_object& obj ){
+       obj.most_recent_op = ath.id;
+       obj.total_ops = ath.sequence;
+   });
+   // remove the earliest account history entry if too many
+   // _max_ops_per_account is guaranteed to be non-zero outside
+   if( stats_obj.total_ops - stats_obj.removed_ops > _max_ops_per_account )
+   {
+      // look for the earliest entry
+      const auto& his_idx = db.get_index_type<account_transaction_history_index>();
+      const auto& by_seq_idx = his_idx.indices().get<by_seq>();
+      auto itr = by_seq_idx.lower_bound( boost::make_tuple( account_uid, 0 ) );
+      // make sure don't remove the one just added
+      if( itr != by_seq_idx.end() && itr->account == account_uid && itr->id != ath.id )
       {
-         for( auto account_uid : _tracked_accounts )
+         // if found, remove the entry, and adjust account stats object
+         const auto remove_op_id = itr->operation_id;
+         const auto itr_remove = itr;
+         ++itr;
+         db.remove( *itr_remove );
+         db.modify( stats_obj, [&]( account_statistics_object& obj ){
+             obj.removed_ops = obj.removed_ops + 1;
+         });
+         // modify previous node's next pointer
+         // this should be always true, but just have a check here
+         if( itr != by_seq_idx.end() && itr->account == account_uid )
          {
-            if( impacted_uids.find( account_uid ) != impacted_uids.end() )
+            db.modify( *itr, [&]( account_transaction_history_object& obj ){
+               obj.next = account_transaction_history_id_type();
+            });
+         }
+         // else need to modify the head pointer, but it shouldn't be true
+
+         // remove the operation history entry if configured and no reference left
+         if( _partial_operations )
+         {
+            // check for references
+            const auto& by_opid_idx = his_idx.indices().get<by_opid>();
+            if( by_opid_idx.find( remove_op_id ) == by_opid_idx.end() )
             {
-               // add history
-               const auto& account_obj = db.get_account_by_uid(account_uid);
-               const auto& stats_obj = account_obj.statistics(db);
-               const auto& ath = db.create<account_transaction_history_object>( [&]( account_transaction_history_object& obj ){
-                   obj.operation_id = oho.id;
-                   obj.operation_type = oho.op.which();
-                   obj.account = account_obj.uid;
-                   obj.sequence = stats_obj.total_ops+1;
-                   obj.next = stats_obj.most_recent_op;
-               });
-               db.modify( stats_obj, [&]( account_statistics_object& obj ){
-                   obj.most_recent_op = ath.id;
-                   obj.total_ops = ath.sequence;
-               });
+               // if no reference, remove
+               db.remove( remove_op_id(db) );
             }
          }
       }
    }
 }
+
 } // end namespace detail
 
 
@@ -181,6 +251,8 @@ void account_history_plugin::plugin_set_program_options(
 {
    cli.add_options()
          ("track-account", boost::program_options::value<std::vector<std::string>>()->composing()->multitoken(), "Account ID to track history for (may specify multiple times)")
+         ("partial-operations", boost::program_options::value<bool>(), "Keep only those operations in memory that are related to account history tracking")
+         ("max-ops-per-account", boost::program_options::value<uint32_t>(), "Maximum number of operations per account will be kept in memory")
          ;
    cfg.add(cli);
 }
@@ -192,6 +264,12 @@ void account_history_plugin::plugin_initialize(const boost::program_options::var
    database().add_index< primary_index< account_transaction_history_index > >();
 
    LOAD_VALUE_SET(options, "track-account", my->_tracked_accounts, graphene::chain::account_uid_type);
+   if (options.count("partial-operations")) {
+       my->_partial_operations = options["partial-operations"].as<bool>();
+   }
+   if (options.count("max-ops-per-account")) {
+       my->_max_ops_per_account = options["max-ops-per-account"].as<uint32_t>();
+   }
 }
 
 void account_history_plugin::plugin_startup()
