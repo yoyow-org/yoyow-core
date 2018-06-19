@@ -70,7 +70,7 @@ void _validate_authorized_asset( const database& d,
                                  const asset_object& asset_obj,
                                  const string& account_desc_prefix )
 {
-   if( acct.allowed_assets.valid() )
+   if( d.head_block_num() > 7785000 && acct.allowed_assets.valid() ) // TESTNET only: check head block num
    {
       bool is_allowed_asset = ( acct.allowed_assets->find( asset_obj.asset_id ) != acct.allowed_assets->end() );
       FC_ASSERT( is_allowed_asset,
