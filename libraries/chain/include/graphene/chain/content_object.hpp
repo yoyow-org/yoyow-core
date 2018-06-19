@@ -57,7 +57,7 @@ namespace graphene { namespace chain {
          /// The platform's main url.
          string url;
 
-         uint64_t pledge;
+         uint64_t pledge = 0;
          fc::time_point_sec  pledge_last_update;
          uint64_t            average_pledge = 0;
          fc::time_point_sec  average_pledge_last_update;
@@ -287,7 +287,9 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::platform_object,
                     (graphene::db::object),
-                    (owner)(name)(sequence)(is_valid)(total_votes)(url)(extra_data)
+                    (owner)(name)(sequence)(is_valid)(total_votes)(url)
+                    (pledge)(pledge_last_update)(average_pledge)(average_pledge_last_update)(average_pledge_next_update_block)
+                    (extra_data)
                     (create_time)(last_update_time)
                   )
 

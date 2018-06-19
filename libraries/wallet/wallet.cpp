@@ -1665,6 +1665,48 @@ signed_transaction update_platform(string platform_account,
    } FC_CAPTURE_AND_RETHROW( (platform_account)(name)(pledge_amount)(pledge_asset_symbol)(url)(extra_data)(broadcast) )
 }
 
+signed_transaction account_auth_platform(string account,
+                                            string platform_owner,
+                                            bool broadcast = false)
+{
+   try {
+      account_object user = get_account( account );
+      account_object platform_account = get_account( platform_owner );
+      auto pa = _remote_db->get_platform_by_account( platform_account.uid );
+      FC_ASSERT( pa.valid(), "Account ${platform_owner} is not a platform", ("platform_owner",platform_owner) );
+      account_auth_platform_operation op;
+      op.uid = user.uid;
+      op.platform = pa->owner;
+      
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(platform_owner)(broadcast) )
+}
+
+signed_transaction account_cancel_auth_platform(string account,
+                                            string platform_owner,
+                                            bool broadcast = false)
+{
+   try {
+      account_object user = get_account( account );
+      account_object platform_account = get_account( platform_owner );
+
+      account_cancel_auth_platform_operation op;
+      op.uid = user.uid;
+      op.platform = platform_account.uid;
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(platform_owner)(broadcast) )
+}
+
    signed_transaction update_committee_member(
                                         string committee_member_account,
                                         optional<string> pledge_amount,
@@ -3934,6 +3976,16 @@ signed_transaction wallet_api::update_platform_votes(string voting_account,
                                           bool broadcast )
 {
    return my->update_platform_votes( voting_account, platforms_to_add, platforms_to_remove, broadcast );
+}
+
+signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, bool broadcast )
+{
+   return my->account_auth_platform( account, platform_owner, broadcast );
+}
+
+signed_transaction wallet_api::account_cancel_auth_platform(string account, string platform_owner, bool broadcast )
+{
+   return my->account_cancel_auth_platform( account, platform_owner, broadcast );
 }
 
 signed_transaction wallet_api::create_worker(

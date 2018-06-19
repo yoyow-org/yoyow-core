@@ -1470,6 +1470,26 @@ class wallet_api
                                           bool broadcast = false);
 
       /**
+       * auth of account to platform
+       * 
+       * @param account the name or uid of the account which is auth to platform
+       * @param platform_owner the platform owner uid
+       */ 
+      signed_transaction account_auth_platform(string account,
+                                            string platform_owner,
+                                            bool broadcast = false);
+
+      /**
+       * cancel auth of account to platform
+       * 
+       * @param account the name or uid of the account which is auth to platform
+       * @param platform_owner the platform owner uid
+       */ 
+      signed_transaction account_cancel_auth_platform(string account,
+                                                  string platform_owner,
+                                                  bool broadcast = false);
+
+      /**
        * Create a worker object.
        *
        * @param owner_account The account which owns the worker and will be paid
@@ -1928,6 +1948,8 @@ FC_API( graphene::wallet::wallet_api,
         (create_platform)
         (update_platform)
         (update_platform_votes)
+        (account_auth_platform)
+        (account_cancel_auth_platform)
         //(create_worker)
         //(update_worker_votes)
         //(get_vesting_balances)
