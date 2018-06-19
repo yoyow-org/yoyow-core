@@ -170,7 +170,6 @@ namespace graphene { namespace chain {
       impl_transaction_object_type,
       impl_block_summary_object_type,
       impl_account_transaction_history_object_type,
-      impl_blinded_balance_object_type,
       impl_chain_property_object_type,
       impl_witness_schedule_object_type,
       impl_platform_vote_object_type,
@@ -196,7 +195,6 @@ namespace graphene { namespace chain {
    class vesting_balance_object;
    class worker_object;
    class balance_object;
-   class blinded_balance_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -255,7 +253,6 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_witness_schedule_object_type, witness_schedule_object>                   witness_schedule_id_type;
    typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
    typedef object_id< implementation_ids, impl_budget_record_object_type, budget_record_object >                        budget_record_id_type;
-   typedef object_id< implementation_ids, impl_blinded_balance_object_type, blinded_balance_object >                    blinded_balance_id_type;
    typedef object_id< implementation_ids, impl_special_authority_object_type, special_authority_object >                special_authority_id_type;
    typedef object_id< implementation_ids, impl_buyback_object_type, buyback_object >                                    buyback_id_type;
 
@@ -390,7 +387,6 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_transaction_object_type)
                  (impl_block_summary_object_type)
                  (impl_account_transaction_history_object_type)
-                 (impl_blinded_balance_object_type)
                  (impl_chain_property_object_type)
                  (impl_witness_schedule_object_type)
                  (impl_budget_record_object_type)

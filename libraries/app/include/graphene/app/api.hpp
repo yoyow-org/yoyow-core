@@ -26,7 +26,6 @@
 #include <graphene/app/database_api.hpp>
 
 #include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/protocol/confidential.hpp>
 
 #include <graphene/market_history/market_history_plugin.hpp>
 
@@ -419,7 +418,7 @@ FC_API(graphene::app::crypto_api,
      )
 FC_API(graphene::app::asset_api,
        (get_asset_holders)
-	   (get_asset_holders_count)
+	     (get_asset_holders_count)
        (get_all_asset_holders)
      )
 FC_API(graphene::app::login_api,

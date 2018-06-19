@@ -83,6 +83,7 @@ object_id_type asset_create_evaluator::do_apply( const asset_create_operation& o
          a.precision = op.precision;
          a.options = op.common_options;
          a.asset_id = next_asset_id.instance();
+         a.dynamic_asset_data_id = dyn_asset.id;
       });
    assert( new_asset.id == next_asset_id );
 

@@ -24,8 +24,7 @@
 
 #include <graphene/account_history/account_history_plugin.hpp>
 
-#include <graphene/app/impacted.hpp>
-
+#include <graphene/chain/impacted.hpp>
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/config.hpp>
@@ -110,7 +109,7 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
       vector<authority> other;
       operation_get_required_uid_authorities( op.op, impacted_uids, impacted_uids, impacted_uids, other );
 
-      graphene::app::operation_get_impacted_account_uids( op.op, impacted_uids );
+      graphene::chain::operation_get_impacted_account_uids( op.op, impacted_uids );
 
       for( auto& a : other )
          for( auto& item : a.account_uid_auths )

@@ -111,7 +111,7 @@ namespace graphene { namespace chain {
          uint32_t price_per_kbyte = 10; /// only required for large memos.
       };
 
-      asset           fee;
+      fee_type         fee;
       account_uid_type issuer;
       /// Account to transfer asset from
       account_uid_type from;

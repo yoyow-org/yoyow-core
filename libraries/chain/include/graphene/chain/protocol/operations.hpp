@@ -28,7 +28,6 @@
 #include <graphene/chain/protocol/asset_ops.hpp>
 #include <graphene/chain/protocol/balance.hpp>
 #include <graphene/chain/protocol/committee_member.hpp>
-#include <graphene/chain/protocol/confidential.hpp>
 #include <graphene/chain/protocol/content.hpp>
 #include <graphene/chain/protocol/csaf.hpp>
 #include <graphene/chain/protocol/custom.hpp>
@@ -73,6 +72,12 @@ namespace graphene { namespace chain {
             platform_vote_update_operation,
             account_auth_platform_operation,
             account_cancel_auth_platform_operation,
+            asset_create_operation,
+            asset_update_operation,
+            asset_issue_operation,
+            asset_reserve_operation,
+            asset_claim_fees_operation,
+            override_transfer_operation,
             // the operations below are not supported
             balance_claim_operation,
             limit_order_create_operation,
@@ -83,12 +88,8 @@ namespace graphene { namespace chain {
             account_whitelist_operation,
             account_upgrade_operation,
             account_transfer_operation,
-            asset_create_operation,
-            asset_update_operation,
             //asset_update_bitasset_operation,
             //asset_update_feed_producers_operation,
-            asset_issue_operation,
-            asset_reserve_operation,
             //asset_fund_fee_pool_operation,
             //asset_settle_operation,
             //asset_global_settle_operation,
@@ -105,13 +106,8 @@ namespace graphene { namespace chain {
             vesting_balance_withdraw_operation,
             worker_create_operation,
             custom_operation,
-            assert_operation,
-            override_transfer_operation,
-            transfer_to_blind_operation,
-            blind_transfer_operation,
-            transfer_from_blind_operation,
+            assert_operation
             //asset_settle_cancel_operation,  // VIRTUAL
-            asset_claim_fees_operation
             //fba_distribute_operation        // VIRTUAL
          > operation;
 

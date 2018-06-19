@@ -22,42 +22,32 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/evaluator.hpp>
+
+#include <fc/container/flat.hpp>
+
+#include <graphene/chain/database.hpp>
+#include <graphene/chain/protocol/authority.hpp>
+#include <graphene/chain/protocol/operations.hpp>
+#include <graphene/chain/protocol/transaction.hpp>
+#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/withdraw_permission_object.hpp>
+#include <graphene/chain/worker_object.hpp>
+#include <graphene/chain/market_object.hpp>
+#include <graphene/chain/committee_member_object.hpp>
 
 namespace graphene { namespace chain {
 
-struct transfer_to_blind_operation;
-struct transfer_from_blind_operation;
-struct blind_transfer_operation;
+using namespace graphene::db;
 
-class transfer_to_blind_evaluator : public evaluator<transfer_to_blind_evaluator>
-{
-   public:
-      typedef transfer_to_blind_operation operation_type;
+void operation_get_impacted_account_uids(
+   const operation& op,
+   flat_set<account_uid_type>& result );
 
-      void_result do_evaluate( const transfer_to_blind_operation& o );
-      void_result do_apply( const transfer_to_blind_operation& o ) ;
+void transaction_get_impacted_account_uids(
+   const transaction& tx,
+   flat_set<account_uid_type>& result
+   );
 
-};
+void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accounts );
 
-class transfer_from_blind_evaluator : public evaluator<transfer_from_blind_evaluator>
-{
-   public:
-      typedef transfer_from_blind_operation operation_type;
-
-      void_result do_evaluate( const transfer_from_blind_operation& o );
-      void_result do_apply( const transfer_from_blind_operation& o ) ;
-
-};
-
-class blind_transfer_evaluator : public evaluator<blind_transfer_evaluator>
-{
-   public:
-      typedef blind_transfer_operation operation_type;
-
-      void_result do_evaluate( const blind_transfer_operation& o );
-      void_result do_apply( const blind_transfer_operation& o ) ;
-
-};
-
-} } // namespace graphene::chain
+} } // graphene::app

@@ -147,9 +147,10 @@ database& generic_evaluator::db()const { return trx_state->db(); }
       if( !trx_state->skip_fee ) {
          if( fee_asset->asset_id != GRAPHENE_CORE_ASSET_AID )
          {
-            db().modify(*fee_asset_dyn_data, [this](asset_dynamic_data_object& d) {
-               d.accumulated_fees += fee_from_account.amount;
-            });
+            // no pool, no accumulate
+            // db().modify(*fee_asset_dyn_data, [this](asset_dynamic_data_object& d) {
+            //    d.accumulated_fees += fee_from_account.amount;
+            // });
          }
       }
    }
