@@ -919,7 +919,7 @@ public:
    {
       FC_ASSERT(_builder_transactions.count(handle));
       proposal_create_operation op;
-      op.fee_paying_account = get_account(account_name_or_id).get_id();
+      op.fee_paying_account = get_account(account_name_or_id).get_uid();
       op.expiration_time = expiration;
       signed_transaction& trx = _builder_transactions[handle];
       std::transform(trx.operations.begin(), trx.operations.end(), std::back_inserter(op.proposed_ops),
@@ -2129,41 +2129,35 @@ signed_transaction account_cancel_auth_platform(string account,
             const auto& new_result = _remote_db->get_required_signatures( tx, available_keys );
             const auto& required_keys_subset = new_result.first.first;
             //const auto& missed_keys = new_result.first.second;
-            const auto& unused_signatures = new_result.second;
+            const auto& unused_keys = new_result.second;
 
             // unused signatures can be removed safely
-            for( const auto& sig : unused_signatures )
-               tx.signatures.erase( std::remove( tx.signatures.begin(), tx.signatures.end(), sig), tx.signatures.end() );
+            for( const auto& key : unused_keys )
+            {
+               available_keys.erase( key );
+               available_keys_map.erase( key );
+            }
+               
 
-            bool no_sig = tx.signatures.empty();
             auto dyn_props = get_dynamic_global_properties();
 
-            // if no signature is included in the trx, reset the tapos data; otherwise keep the tapos data
-            if( no_sig )
-               tx.set_reference_block( dyn_props.head_block_id );
+            tx.set_reference_block( dyn_props.head_block_id );
 
             // if no signature is included in the trx, reset expiration time; otherwise keep it
-            if( no_sig )
-            {
                // first, some bookkeeping, expire old items from _recently_generated_transactions
                // since transactions include the head block id, we just need the index for keeping transactions unique
                // when there are multiple transactions in the same block.  choose a time period that should be at
                // least one block long, even in the worst case.  2 minutes ought to be plenty.
-               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
-               auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
-               auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
-               _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
-
-            }
+            fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
+            auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
+            auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
+            _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
 
             uint32_t expiration_time_offset = 0;
             for (;;)
             {
-               if( no_sig )
-               {
-                  tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
-                  tx.signatures.clear();
-               }
+               tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
+               tx.signatures.clear();
 
                idump((required_keys_subset)(available_keys));
                // TODO: for better performance, sign after dupe check
@@ -2187,8 +2181,6 @@ signed_transaction account_cancel_auth_platform(string account,
                   _recently_generated_transactions.insert(this_transaction_record);
                   break;
                }
-
-               if( !no_sig ) break;
 
                // if we've generated a dupe, increment expiration time and re-sign it
                ++expiration_time_offset;
@@ -2594,122 +2586,6 @@ signed_transaction account_cancel_auth_platform(string account,
       return m;
    }
 
-   signed_transaction propose_parameter_change(
-      const string& proposing_account,
-      fc::time_point_sec expiration_time,
-      const variant_object& changed_values,
-      bool broadcast = false)
-   {
-      FC_ASSERT( !changed_values.contains("current_fees") );
-
-      const chain_parameters& current_params = get_global_properties().parameters;
-      chain_parameters new_params = current_params;
-      fc::reflector<chain_parameters>::visit(
-         fc::from_variant_visitor<chain_parameters>( changed_values, new_params, GRAPHENE_MAX_NESTED_OBJECTS )
-         );
-
-      committee_member_update_global_parameters_operation update_op;
-      update_op.new_parameters = new_params;
-
-      proposal_create_operation prop_op;
-
-      prop_op.expiration_time = expiration_time;
-      prop_op.review_period_seconds = current_params.committee_proposal_review_period;
-      prop_op.fee_paying_account = get_account(proposing_account).id;
-
-      prop_op.proposed_ops.emplace_back( update_op );
-      current_params.current_fees->set_fee( prop_op.proposed_ops.back().op );
-
-      signed_transaction tx;
-      tx.operations.push_back(prop_op);
-      set_operation_fees(tx, current_params.current_fees);
-      tx.validate();
-
-      return sign_transaction(tx, broadcast);
-   }
-
-   signed_transaction propose_fee_change(
-      const string& proposing_account,
-      fc::time_point_sec expiration_time,
-      const variant_object& changed_fees,
-      bool broadcast = false)
-   {
-      const chain_parameters& current_params = get_global_properties().parameters;
-      const fee_schedule_type& current_fees = *(current_params.current_fees);
-
-      flat_map< int, fee_parameters > fee_map;
-      fee_map.reserve( current_fees.parameters.size() );
-      for( const fee_parameters& op_fee : current_fees.parameters )
-         fee_map[ op_fee.which() ] = op_fee;
-      uint32_t scale = current_fees.scale;
-
-      for( const auto& item : changed_fees )
-      {
-         const string& key = item.key();
-         if( key == "scale" )
-         {
-            int64_t _scale = item.value().as_int64();
-            FC_ASSERT( _scale >= 0 );
-            FC_ASSERT( _scale <= std::numeric_limits<uint32_t>::max() );
-            scale = uint32_t( _scale );
-            continue;
-         }
-         // is key a number?
-         auto is_numeric = [&key]() -> bool
-         {
-            size_t n = key.size();
-            for( size_t i=0; i<n; i++ )
-            {
-               if( !isdigit( key[i] ) )
-                  return false;
-            }
-            return true;
-         };
-
-         int which;
-         if( is_numeric() )
-            which = std::stoi( key );
-         else
-         {
-            const auto& n2w = _operation_which_map.name_to_which;
-            auto it = n2w.find( key );
-            FC_ASSERT( it != n2w.end(), "unknown operation" );
-            which = it->second;
-         }
-
-         fee_parameters fp = from_which_variant< fee_parameters >( which, item.value(), GRAPHENE_MAX_NESTED_OBJECTS );
-         fee_map[ which ] = fp;
-      }
-
-      fee_schedule_type new_fees;
-
-      for( const std::pair< int, fee_parameters >& item : fee_map )
-         new_fees.parameters.insert( item.second );
-      new_fees.scale = scale;
-
-      chain_parameters new_params = current_params;
-      new_params.current_fees = new_fees;
-
-      committee_member_update_global_parameters_operation update_op;
-      update_op.new_parameters = new_params;
-
-      proposal_create_operation prop_op;
-
-      prop_op.expiration_time = expiration_time;
-      prop_op.review_period_seconds = current_params.committee_proposal_review_period;
-      prop_op.fee_paying_account = get_account(proposing_account).id;
-
-      prop_op.proposed_ops.emplace_back( update_op );
-      current_params.current_fees->set_fee( prop_op.proposed_ops.back().op );
-
-      signed_transaction tx;
-      tx.operations.push_back(prop_op);
-      set_operation_fees(tx, current_params.current_fees);
-      tx.validate();
-
-      return sign_transaction(tx, broadcast);
-   }
-
    signed_transaction committee_proposal_create(
          const string committee_member_account,
          const vector<committee_proposal_item_type> items,
@@ -2765,19 +2641,23 @@ signed_transaction account_cancel_auth_platform(string account,
    {
       proposal_update_operation update_op;
 
-      update_op.fee_paying_account = get_account(fee_paying_account).id;
+      update_op.fee_paying_account = get_account(fee_paying_account).uid;
       update_op.proposal = fc::variant(proposal_id).as<proposal_id_type>( 1 );
       // make sure the proposal exists
       get_object( update_op.proposal );
 
+      for( const std::string& name : delta.secondary_approvals_to_add )
+         update_op.secondary_approvals_to_add.insert( get_account( name ).uid );
+      for( const std::string& name : delta.secondary_approvals_to_remove )
+         update_op.secondary_approvals_to_remove.insert( get_account( name ).uid );
       for( const std::string& name : delta.active_approvals_to_add )
-         update_op.active_approvals_to_add.insert( get_account( name ).id );
+         update_op.active_approvals_to_add.insert( get_account( name ).uid );
       for( const std::string& name : delta.active_approvals_to_remove )
-         update_op.active_approvals_to_remove.insert( get_account( name ).id );
+         update_op.active_approvals_to_remove.insert( get_account( name ).uid );
       for( const std::string& name : delta.owner_approvals_to_add )
-         update_op.owner_approvals_to_add.insert( get_account( name ).id );
+         update_op.owner_approvals_to_add.insert( get_account( name ).uid );
       for( const std::string& name : delta.owner_approvals_to_remove )
-         update_op.owner_approvals_to_remove.insert( get_account( name ).id );
+         update_op.owner_approvals_to_remove.insert( get_account( name ).uid );
       for( const std::string& k : delta.key_approvals_to_add )
          update_op.key_approvals_to_add.insert( public_key_type( k ) );
       for( const std::string& k : delta.key_approvals_to_remove )
@@ -3883,26 +3763,6 @@ void wallet_api::flood_network(string prefix, uint32_t number_of_transactions)
    my->flood_network(prefix, number_of_transactions);
 }
 
-signed_transaction wallet_api::propose_parameter_change(
-   const string& proposing_account,
-   fc::time_point_sec expiration_time,
-   const variant_object& changed_values,
-   bool broadcast /* = false */
-   )
-{
-   return my->propose_parameter_change( proposing_account, expiration_time, changed_values, broadcast );
-}
-
-signed_transaction wallet_api::propose_fee_change(
-   const string& proposing_account,
-   fc::time_point_sec expiration_time,
-   const variant_object& changed_fees,
-   bool broadcast /* = false */
-   )
-{
-   return my->propose_fee_change( proposing_account, expiration_time, changed_fees, broadcast );
-}
-
 signed_transaction wallet_api::committee_proposal_create(
          const string committee_member_account,
          const vector<committee_proposal_item_type> items,
@@ -3940,6 +3800,12 @@ signed_transaction wallet_api::approve_proposal(
    )
 {
    return my->approve_proposal( fee_paying_account, proposal_id, delta, broadcast );
+}
+
+vector<proposal_object> wallet_api::list_proposals( string account_name_or_id )
+{
+   auto acc = my->get_account( account_name_or_id );
+   return my->_remote_db->get_proposed_transactions( acc.uid );
 }
 
 global_property_object wallet_api::get_global_properties() const
@@ -4027,7 +3893,7 @@ string wallet_api::gethelp(const string& method)const
       ss << "\n\nitem[1].parameters:\n\n";
       ss << fc::json::to_pretty_string( fee_schedule::get_default().parameters );
       ss << "\n\nitem[2]:\n\n";
-      ss << "see graphene::chain::committee_updatable_parameters or Calling \“get_global_properties\" to see";
+      ss << "see graphene::chain::committee_updatable_parameters or Calling \"get_global_properties\" to see";
       ss << "\n\n";
       ss << "[[0,{\"account\":28182,\"new_priviledges\": {\"can_vote\":true}}],[1,{\"parameters\": ";
       ss << "[[16,{\"fee\":10000,\"min_real_fee\":0,\"min_rf_percent\":0}]]}],[2,{\"governance_voting_expiration_blocks\":150000}]]";

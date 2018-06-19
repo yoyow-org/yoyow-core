@@ -42,35 +42,6 @@ void_result proposal_create_evaluator::do_evaluate(const proposal_create_operati
    FC_ASSERT( !o.review_period_seconds || fc::seconds(*o.review_period_seconds) < (o.expiration_time - d.head_block_time()),
               "Proposal review period must be less than its overall lifetime." );
 
-   {
-      // If we're dealing with the committee authority, make sure this transaction has a sufficient review period.
-      flat_set<account_id_type> auths;
-      vector<authority> other;
-      for( auto& op : o.proposed_ops )
-      {
-         operation_get_required_authorities(op.op, auths, auths, other);
-      }
-
-      FC_ASSERT( other.size() == 0 ); // TODO: what about other??? 
-
-      if( auths.find(GRAPHENE_COMMITTEE_ACCOUNT) != auths.end() )
-      {
-         GRAPHENE_ASSERT(
-            o.review_period_seconds.valid(),
-            proposal_create_review_period_required,
-            "Review period not given, but at least ${min} required",
-            ("min", global_parameters.committee_proposal_review_period)
-         );
-         GRAPHENE_ASSERT(
-            *o.review_period_seconds >= global_parameters.committee_proposal_review_period,
-            proposal_create_review_period_insufficient,
-            "Review period of ${t} specified, but at least ${min} required",
-            ("t", *o.review_period_seconds)
-            ("min", global_parameters.committee_proposal_review_period)
-         );
-      }
-   }
-
    for( const op_wrapper& op : o.proposed_ops )
       _proposed_trx.operations.push_back(op.op);
    _proposed_trx.validate();
@@ -90,18 +61,27 @@ object_id_type proposal_create_evaluator::do_apply(const proposal_create_operati
          proposal.review_period_time = o.expiration_time - *o.review_period_seconds;
 
       //Populate the required approval sets
-      flat_set<account_id_type> required_active;
+      flat_set<account_uid_type> required_active;
+      flat_set<account_uid_type> required_secondary;
       vector<authority> other;
       
       // TODO: consider caching values from evaluate?
       for( auto& op : _proposed_trx.operations )
-         operation_get_required_authorities(op, required_active, proposal.required_owner_approvals, other);
+         operation_get_required_uid_authorities(op,
+                                                proposal.required_owner_approvals,
+                                                required_active,
+                                                required_secondary,
+                                                other);
 
       //All accounts which must provide both owner and active authority should be omitted from the active authority set;
       //owner authority approval implies active authority approval.
       std::set_difference(required_active.begin(), required_active.end(),
                           proposal.required_owner_approvals.begin(), proposal.required_owner_approvals.end(),
                           std::inserter(proposal.required_active_approvals, proposal.required_active_approvals.begin()));
+
+      std::set_difference(required_secondary.begin(), required_secondary.end(),
+                          proposal.required_active_approvals.begin(), proposal.required_active_approvals.end(),
+                          std::inserter(proposal.required_secondary_approvals, proposal.required_secondary_approvals.begin()));
    });
 
    return proposal.id;
@@ -114,18 +94,24 @@ void_result proposal_update_evaluator::do_evaluate(const proposal_update_operati
    _proposal = &o.proposal(d);
 
    if( _proposal->review_period_time && d.head_block_time() >= *_proposal->review_period_time )
-      FC_ASSERT( o.active_approvals_to_add.empty() && o.owner_approvals_to_add.empty(),
+      FC_ASSERT( o.active_approvals_to_add.empty() && 
+                  o.owner_approvals_to_add.empty() && o.secondary_approvals_to_add.empty(),
                  "This proposal is in its review period. No new approvals may be added." );
 
-   for( account_id_type id : o.active_approvals_to_remove )
+   for( account_uid_type uid : o.secondary_approvals_to_remove )
    {
-      FC_ASSERT( _proposal->available_active_approvals.find(id) != _proposal->available_active_approvals.end(),
-                 "", ("id", id)("available", _proposal->available_active_approvals) );
+      FC_ASSERT( _proposal->available_secondary_approvals.find(uid) != _proposal->available_secondary_approvals.end(),
+                 "", ("uid", uid)("available", _proposal->available_secondary_approvals) );
    }
-   for( account_id_type id : o.owner_approvals_to_remove )
+   for( account_uid_type uid : o.active_approvals_to_remove )
    {
-      FC_ASSERT( _proposal->available_owner_approvals.find(id) != _proposal->available_owner_approvals.end(),
-                 "", ("id", id)("available", _proposal->available_owner_approvals) );
+      FC_ASSERT( _proposal->available_active_approvals.find(uid) != _proposal->available_active_approvals.end(),
+                 "", ("uid", uid)("available", _proposal->available_active_approvals) );
+   }
+   for( account_uid_type uid : o.owner_approvals_to_remove )
+   {
+      FC_ASSERT( _proposal->available_owner_approvals.find(uid) != _proposal->available_owner_approvals.end(),
+                 "", ("uid", uid)("available", _proposal->available_owner_approvals) );
    }
 
    /*  All authority checks happen outside of evaluators
@@ -153,12 +139,15 @@ void_result proposal_update_evaluator::do_apply(const proposal_update_operation&
    // signature checks. This isn't done now because I just wrote all the proposals code, and I'm not yet 100% sure the
    // required approvals are sufficient to authorize the transaction.
    d.modify(*_proposal, [&o, &d](proposal_object& p) {
+      p.available_secondary_approvals.insert(o.secondary_approvals_to_add.begin(), o.secondary_approvals_to_add.end());
       p.available_active_approvals.insert(o.active_approvals_to_add.begin(), o.active_approvals_to_add.end());
       p.available_owner_approvals.insert(o.owner_approvals_to_add.begin(), o.owner_approvals_to_add.end());
-      for( account_id_type id : o.active_approvals_to_remove )
-         p.available_active_approvals.erase(id);
-      for( account_id_type id : o.owner_approvals_to_remove )
-         p.available_owner_approvals.erase(id);
+      for( account_uid_type uid : o.secondary_approvals_to_remove )
+         p.available_secondary_approvals.erase(uid);
+      for( account_uid_type uid : o.active_approvals_to_remove )
+         p.available_active_approvals.erase(uid);
+      for( account_uid_type uid : o.owner_approvals_to_remove )
+         p.available_owner_approvals.erase(uid);
       for( const auto& id : o.key_approvals_to_add )
          p.available_key_approvals.insert(id);
       for( const auto& id : o.key_approvals_to_remove )
