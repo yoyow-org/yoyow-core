@@ -3878,6 +3878,17 @@ platform_object wallet_api::get_platform(string owner_account)
    return my->get_platform(owner_account);
 }
 
+vector<platform_object> wallet_api::list_platforms(const account_uid_type lowerbound, uint32_t limit,
+                                                  data_sorting_type order_by)
+{
+   return my->_remote_db->lookup_platforms(lowerbound, limit, order_by);
+}
+
+uint64_t wallet_api::get_platform_count()
+{
+   return my->_remote_db->get_platform_count();
+}
+
 committee_member_object wallet_api::get_committee_member(string owner_account)
 {
    return my->get_committee_member(owner_account);

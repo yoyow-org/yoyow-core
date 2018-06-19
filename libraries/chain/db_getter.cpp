@@ -233,8 +233,8 @@ const registrar_takeover_object* database::find_registrar_takeover_object( accou
 
 const platform_object& database::get_platform_by_owner( account_uid_type owner )const
 {
-   const auto& platforms_by_owner = get_index_type<platform_index>().indices().get<by_owner>();
-   auto itr = platforms_by_owner.find(owner);
+   const auto& platforms_by_owner = get_index_type<platform_index>().indices().get<by_valid>();
+   auto itr = platforms_by_owner.find( std::make_tuple( true, owner ) );
    FC_ASSERT( itr != platforms_by_owner.end(), "platform ${owner} not found.", ("owner",owner) );
    return *itr;
 }

@@ -47,12 +47,12 @@ namespace graphene { namespace chain {
          account_uid_type owner = 0;
          /// The platform's name.
          string name;
-         //序号（当前账号第几次创建平台）
+         // Serial number (current account number of times to create a platform)
          uint32_t sequence;
 
-         //是否有效（“无效”为短暂的中间状态） 
+         // Is valid ("invalid" for short intermediate state)
          bool is_valid = true;
-         //获得票数
+         // Get the votes
          uint64_t total_votes = 0;
          /// The platform's main url.
          string url;
@@ -63,7 +63,7 @@ namespace graphene { namespace chain {
          fc::time_point_sec  average_pledge_last_update;
          uint32_t            average_pledge_next_update_block;
 
-         //其他信息（api接口地址，其他URL，平台介绍等）
+         // Other information (api interface address, other URL, platform introduction, etc.)
          string extra_data = "{}";
 
          time_point_sec create_time;
@@ -210,15 +210,12 @@ namespace graphene { namespace chain {
          account_uid_type             poster;
          /// The post's pid.
          post_pid_type                post_pid;
-         /// 如果是转文，此值要求为源文作者uid
+         /// If it is a transcript, this value is requested as the source author uid
          optional<account_uid_type>   origin_poster;
-         /// 如果是转文，此值要求为源文id
+         /// If it is a transcript, this value is required for the source id
          optional<post_pid_type>      origin_post_pid;
-         /// 如果是转文，此值要求为源文所在平台
+         /// If it is a transcript, this value is required for the source platform
          optional<account_uid_type>   origin_platform;
-
-         /// 文章扩展信息：标签（TAG）、引用（链接、图片、视频、广告）、管理信息（置顶、高亮）等
-         post_options                 options;
 
          string                       hash_value;
          string                       extra_data; ///< category, tags and etc
@@ -304,7 +301,6 @@ FC_REFLECT_DERIVED( graphene::chain::platform_vote_object, (graphene::db::object
 FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
                     (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
-                    (options)
                     (hash_value)(extra_data)(title)(body)
                     (create_time)(last_update_time)
                   )

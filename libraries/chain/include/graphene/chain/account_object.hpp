@@ -216,17 +216,17 @@ namespace graphene { namespace chain {
          uint32_t last_voter_sequence = 0;
 
          /**
-          * 记录创建过多少次平台对象(最新平台序号)
+          * Record how many times the platform object has been created (the latest platform serial number)
           */
          uint32_t last_platform_sequence = 0;
          
          /**
-          * 平台总押金
+          * Platform total deposit
           */
          share_type total_platform_pledge;
 
          /**
-          * 待退平台押金
+          * To refund the platform deposit
           */
          share_type releasing_platform_pledge;
 
@@ -236,7 +236,7 @@ namespace graphene { namespace chain {
          uint32_t platform_pledge_release_block_number = -1;
 
          /**
-          * 记录最后发布的文章编号
+          * Record the last published article number
           */
          post_pid_type last_post_sequence = 0;
 
@@ -355,11 +355,11 @@ namespace graphene { namespace chain {
 
          account_reg_info reg_info;
 
-         bool can_post = true;      //默认给用户发帖权限
+         bool can_post = true;      //Default to the user posting permissions
          bool can_reply = false;
          bool can_rate = false;
 
-         bool is_full_member = false;     //目前主要用于引荐标记，即 =true才能引荐他人；目前只有平台
+         bool is_full_member = false;     //Currently mainly used for referral tags, that is, = true to refer other people; currently there is only a platform
          bool is_registrar = false;
          bool is_admin = false;
 
@@ -499,7 +499,7 @@ namespace graphene { namespace chain {
          uint32_t            effective_last_vote_block; // effective value, due to proxied voting
 
          uint16_t            number_of_witnesses_voted = 0; // directly voted
-         uint16_t            number_of_platform_voted = 0;         // 直投平台数
+         uint16_t            number_of_platform_voted = 0;         // Direct investment platform number
          uint16_t            number_of_committee_members_voted = 0; // directly voted
 
          uint64_t total_votes() const
@@ -838,5 +838,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (total_platform_pledge)
                     (releasing_platform_pledge)
                     (platform_pledge_release_block_number)
+                    (last_post_sequence)
                   )
 

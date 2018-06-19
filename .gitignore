@@ -41,8 +41,8 @@ object_database/*
 
 *.pyc
 *.pyo
-
+.DS_Store
 build
 lbuild
+wbuild
 .vscode
-.DS_Store

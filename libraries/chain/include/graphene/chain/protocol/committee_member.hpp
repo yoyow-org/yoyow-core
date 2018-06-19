@@ -204,9 +204,12 @@ namespace graphene { namespace chain {
       optional< bool                  > witness_report_allow_pre_last_block      ;
       optional< share_type            > witness_report_pledge_deduction_amount   ;
 
-      optional< uint64_t            > platform_min_pledge             ;
-      optional< uint32_t            > platform_pledge_release_delay   ;
-      optional< uint8_t             > platform_max_vote_per_account   ;
+      optional< uint64_t            > platform_min_pledge                 ;
+      optional< uint32_t            > platform_pledge_release_delay       ;
+      optional< uint16_t             > platform_max_vote_per_account       ;
+      optional< uint64_t            > platform_max_pledge_seconds         ;
+      optional< uint32_t            > platform_avg_pledge_update_interval ;
+
 
       void validate()const;
    };
@@ -395,6 +398,8 @@ FC_REFLECT( graphene::chain::committee_updatable_parameters,
             (platform_min_pledge)
             (platform_pledge_release_delay)
             (platform_max_vote_per_account)
+            (platform_max_pledge_seconds)
+            (platform_avg_pledge_update_interval)
           )
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )

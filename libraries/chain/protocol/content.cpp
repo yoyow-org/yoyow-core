@@ -23,16 +23,49 @@
  */
 #include <graphene/chain/protocol/content.hpp>
 
+#include "../utf8/checked.h"
+
 namespace graphene { namespace chain {
+
+void validate_platform_string( const string& str, const string& object_name = "", const int maxlen = GRAPHENE_MAX_PLATFORM_NAME_LENGTH )
+{
+   bool str_is_utf8 = true;
+   bool str_too_long = false;
+   uint32_t len = 0;
+   uint32_t last_char = 0;
+
+   auto itr = str.begin();
+   while( itr != str.end() )
+   {
+      try
+      {
+         last_char = utf8::next( itr, str.end() );
+         ++len;
+         if( len > maxlen )
+         {
+            str_too_long = true;
+            break;
+         }
+      }
+      catch( utf8::invalid_utf8 e )
+      {
+         str_is_utf8 = false;
+         break;
+      }
+   }
+
+   FC_ASSERT( str_is_utf8, "platform ${o}should be in UTF-8", ("o", object_name) );
+   FC_ASSERT( !str_too_long, "platform ${o}is too long", ("o", object_name)("length", len) );
+}
 
 void platform_create_operation::validate() const
 {
    validate_op_fee( fee, "platform creation " );
    validate_account_uid( account, "platform " );
-   validate_non_negative_asset( pledge, "pledge" );
-   FC_ASSERT( url.size() < GRAPHENE_MAX_URL_LENGTH, "url is too long" );
-   FC_ASSERT( name.size() < GRAPHENE_MAX_PLATFORM_NAME_LENGTH, "name is too long" );
-   FC_ASSERT( extra_data.size() < GRAPHENE_MAX_PLATFORM_EXTRA_DATA_LENGTH, "extra_data is too long" );
+   validate_non_negative_asset( pledge, "pledge " );
+   validate_platform_string( name, "name " );
+   validate_platform_string( url, "url ", GRAPHENE_MAX_URL_LENGTH );
+   validate_platform_string( extra_data, "extra_data ", GRAPHENE_MAX_PLATFORM_EXTRA_DATA_LENGTH );
 }
 
 share_type platform_create_operation::calculate_fee(const fee_parameters_type& k)const
@@ -52,11 +85,11 @@ void platform_update_operation::validate() const
    if( new_pledge.valid() )
       validate_non_negative_asset( *new_pledge, "new pledge" );
    if( new_url.valid() )
-      FC_ASSERT( new_url->size() < GRAPHENE_MAX_URL_LENGTH, "new url is too long" );
+      validate_platform_string( *new_url, "new url ", GRAPHENE_MAX_URL_LENGTH );
    if( new_name.valid() )
-      FC_ASSERT( new_name->size() < GRAPHENE_MAX_PLATFORM_NAME_LENGTH, "new name is too long" );
+      validate_platform_string( *new_name, "new name " );
    if( new_extra_data.valid() )
-      FC_ASSERT( new_extra_data->size() < GRAPHENE_MAX_PLATFORM_EXTRA_DATA_LENGTH, "new extra_data is too long" );
+      validate_platform_string( *new_extra_data, "new extra_data ", GRAPHENE_MAX_PLATFORM_EXTRA_DATA_LENGTH );
 }
 
 share_type platform_update_operation::calculate_fee(const fee_parameters_type& k)const
@@ -118,26 +151,32 @@ void post_operation::validate()const
    validate_account_uid( platform, "platform" );
    bool flag = origin_poster.valid() == origin_post_pid.valid();
    bool flag2 = origin_poster.valid() == origin_platform.valid();
-   FC_ASSERT( flag == flag2, "origin poster and origin post pid and origin platform should be both presented or both not" );
+   FC_ASSERT( flag && flag2, "origin poster and origin post pid and origin platform should be all presented or all not " );
    if( origin_poster.valid() )
       validate_account_uid( *origin_poster, "origin poster " );
    if( origin_platform.valid() )
       validate_account_uid( *origin_platform, "origin platform " );
+   if( origin_post_pid.valid() )
+      FC_ASSERT( *origin_post_pid > uint64_t( 0 ), "origin_post_pid must be greater than 0 ");
 }
 
 void post_update_operation::validate()const
 {
-   validate_op_fee( fee, "post " );
+   validate_op_fee( fee, "post update " );
    validate_account_uid( poster, "poster " );
-   validate_account_uid( platform, "platform" );
+   validate_account_uid( platform, "platform " );
+   FC_ASSERT( post_pid > uint64_t( 0 ), "post_pid must be greater than 0 ");
 }
 
 share_type post_update_operation::calculate_fee( const fee_parameters_type& schedule )const
 {
     share_type core_fee_required = schedule.fee;
-    core_fee_required += calculate_data_fee( fc::raw::pack_size(extra_data), schedule.price_per_kbyte );
-    core_fee_required += calculate_data_fee( fc::raw::pack_size(title), schedule.price_per_kbyte );
-    core_fee_required += calculate_data_fee( fc::raw::pack_size(body), schedule.price_per_kbyte );
+    if( extra_data.valid() )
+       core_fee_required += calculate_data_fee( fc::raw::pack_size(extra_data), schedule.price_per_kbyte );
+    if( title.valid() )
+       core_fee_required += calculate_data_fee( fc::raw::pack_size(title), schedule.price_per_kbyte );
+    if( body.valid() )
+       core_fee_required += calculate_data_fee( fc::raw::pack_size(body), schedule.price_per_kbyte );
     return core_fee_required;
 }
 
