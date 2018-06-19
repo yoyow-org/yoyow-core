@@ -297,6 +297,69 @@ void_result account_update_auth_evaluator::do_apply( const account_update_auth_o
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
+void_result account_auth_platform_evaluator::do_evaluate( const account_auth_platform_operation& o )
+{ try {
+   database& d = db();
+
+   acnt = &d.get_account_by_uid( o.uid );
+   for( const auto& uid_auth : acnt->secondary.account_uid_auths )
+   {
+      FC_ASSERT( uid_auth.first.uid != o.platform, "platform ${p} is already in secondary authority", ("p", o.platform) );
+   }
+   authority auth = acnt->secondary;
+   authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
+   //auat.uid = o.platform;
+   //auat.auth_type = authority::secondary_auth;
+   auth.add_authority( auat, 1 );
+
+   try
+   {
+      verify_authority_accounts( d, auth );
+   }
+   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
+   GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_auth_platform_evaluator::do_apply( const account_auth_platform_operation& o )
+{ try {
+   database& d = db();
+   authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
+   d.modify( *acnt, [&](account_object& a){
+      a.secondary.add_authority( auat, 1 );
+      a.last_update_time = d.head_block_time();
+   });
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_cancel_auth_platform_operation& o )
+{ try {
+   database& d = db();
+
+   acnt = &d.get_account_by_uid( o.uid );
+   auto& ka = acnt->secondary.account_uid_auths;
+   auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
+   bool found = ( itr != ka.end() );
+   FC_ASSERT( found, "platform ${p} is not in secondary authority", ("p", o.platform) );
+   
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_cancel_auth_platform_evaluator::do_apply( const account_cancel_auth_platform_operation& o )
+{ try {
+   database& d = db();
+   auto& ka = acnt->secondary.account_uid_auths;
+   auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
+   d.modify( *acnt, [&](account_object& a){
+      a.secondary.account_uid_auths.erase(itr);
+      a.last_update_time = d.head_block_time();
+   });
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
 void_result account_update_proxy_evaluator::do_evaluate( const account_update_proxy_operation& op )
 { try {
    database& d = db();

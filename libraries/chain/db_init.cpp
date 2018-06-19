@@ -181,6 +181,8 @@ void database::initialize_evaluators()
    register_evaluator<platform_vote_update_evaluator>();
    register_evaluator<post_evaluator>();
    register_evaluator<post_update_evaluator>();
+   register_evaluator<account_auth_platform_evaluator>();
+   register_evaluator<account_cancel_auth_platform_evaluator>();
    register_evaluator<csaf_collect_evaluator>();
    register_evaluator<csaf_lease_evaluator>();
    register_evaluator<asset_create_evaluator>();

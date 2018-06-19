@@ -89,6 +89,14 @@ struct get_impacted_account_visitor
    {
    }
 
+   void operator()( const account_auth_platform_operation& op )
+   {
+   }
+
+   void operator()( const account_cancel_auth_platform_operation& op )
+   {
+   }
+
    void operator()( const account_update_proxy_operation& op )
    {
    }
