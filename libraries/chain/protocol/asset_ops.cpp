@@ -28,45 +28,44 @@ namespace graphene { namespace chain {
 /**
  *  Valid symbols can contain [A-Z0-9], and '.'
  *  They must start with [A, Z]
+ *  They must not end with '.'
  *  They can contain a maximum of one '.'
  */
-bool is_valid_symbol( const string& symbol )
+void validate_asset_symbol( const string& symbol )
 {
-    if( symbol.size() < GRAPHENE_MIN_ASSET_SYMBOL_LENGTH )
-        return false;
+   FC_ASSERT( symbol.size() >= GRAPHENE_MIN_ASSET_SYMBOL_LENGTH,
+              "Asset symbol should not be shorter than ${min}",
+              ("min", GRAPHENE_MIN_ASSET_SYMBOL_LENGTH) );
 
-    if( symbol.size() > GRAPHENE_MAX_ASSET_SYMBOL_LENGTH )
-        return false;
+   FC_ASSERT( symbol.size() <= GRAPHENE_MAX_ASSET_SYMBOL_LENGTH,
+              "Asset symbol should not be longer than ${max}",
+              ("max", GRAPHENE_MAX_ASSET_SYMBOL_LENGTH) );
 
-    if( symbol.back() == '.' )
-        return false;
+   FC_ASSERT( symbol.back() != '.',
+              "Asset symbol should not end with a dot" );
 
-    if( symbol.front() < 'A' || symbol.front() > 'Z' )
-        return false;
+   FC_ASSERT( symbol.front() >= 'A' && symbol.front() <= 'Z',
+              "Asset symbol should start with an uppercase letter in the ISO basic Latin alphabet" );
 
-    auto symb4 = symbol.substr( 0, 4 );
-    if( symb4 == "YOYO" || symb4 == "YOY0" || symb4 == "Y0YO" || symb4 == "Y0Y0" )
-       return false;
+   auto symb4 = symbol.substr( 0, 4 );
+   FC_ASSERT( symb4 != "YOYO" && symb4 != "YOY0" && symb4 != "Y0YO" && symb4 != "Y0Y0",
+              "Asset symbol should not start with 'YOYO' or alike" );
 
-    bool dot_already_present = false;
-    for( const auto c : symbol )
-    {
-        if( ( c >= 'A' && c <= 'Z' ) || ( c >= '0' && c <= '9' ) )
-            continue;
-
-        if( c == '.' )
-        {
-            if( dot_already_present )
-                return false;
-
-            dot_already_present = true;
-            continue;
-        }
-
-        return false;
-    }
-
-    return true;
+   bool dot_already_present = false;
+   for( const auto c : symbol )
+   {
+      if( c == '.' )
+      {
+         FC_ASSERT( !dot_already_present,
+                    "Asset symbol should not contain more than one dot" );
+         dot_already_present = true;
+      }
+      else
+      {
+         FC_ASSERT( ( c >= 'A' && c <= 'Z' ) || ( c >= '0' && c <= '9' ),
+                    "Asset symbol should only contain [A-Z0-9.]" );
+      }
+   }
 }
 
 share_type asset_issue_operation::calculate_fee(const fee_parameters_type& k)const
@@ -100,7 +99,7 @@ void  asset_create_operation::validate()const
 {
    validate_op_fee( fee, "asset create " );
    validate_account_uid( issuer, "asset create ");
-   FC_ASSERT( is_valid_symbol(symbol) );
+   validate_asset_symbol( symbol );
    common_options.validate();
 
    FC_ASSERT( precision <= 12, "precision should be no more than 12" );

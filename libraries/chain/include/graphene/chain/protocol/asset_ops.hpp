@@ -28,7 +28,9 @@
 
 namespace graphene { namespace chain { 
 
-   bool is_valid_symbol( const string& symbol );
+   /// Checks whether a ticker symbol is valid.
+   /// @param symbol a ticker symbol
+   void validate_asset_symbol( const string& symbol );
 
    /**
     * @brief The asset_options struct contains options available on all assets in the network
