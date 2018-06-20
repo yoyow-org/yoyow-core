@@ -36,11 +36,17 @@ namespace graphene { namespace chain {
 void_result asset_create_evaluator::do_evaluate( const asset_create_operation& op )
 { try {
    database& d = db();
-   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_create after HARDFORK_0_3_TIME" );
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only use asset_create after HARDFORK_0_3_TIME" );
 
    const auto& chain_parameters = d.get_global_properties().parameters;
-   FC_ASSERT( op.common_options.whitelist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities );
-   FC_ASSERT( op.common_options.blacklist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities );
+   FC_ASSERT( op.common_options.whitelist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities,
+              "Number of whitelist authorities (${num}) should not be more than maximum allowed value (${max})",
+              ("num", op.common_options.whitelist_authorities.size())
+              ("max", chain_parameters.maximum_asset_whitelist_authorities) );
+   FC_ASSERT( op.common_options.blacklist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities,
+              "Number of blacklist authorities (${num}) should not be more than maximum allowed value (${max})",
+              ("num", op.common_options.blacklist_authorities.size())
+              ("max", chain_parameters.maximum_asset_whitelist_authorities) );
 
    // TESTNET only
    if( d.head_block_num() > 7785000 )
@@ -55,20 +61,22 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
    for( auto id : op.common_options.blacklist_authorities )
       d.get_account_by_uid(id);
 
-   auto& asset_indx = d.get_index_type<asset_index>().indices().get<by_symbol>();
+   const auto& asset_indx = d.get_index_type<asset_index>().indices().get<by_symbol>();
    auto asset_symbol_itr = asset_indx.find( op.symbol );
-   FC_ASSERT( asset_symbol_itr == asset_indx.end() );
+   FC_ASSERT( asset_symbol_itr == asset_indx.end(), "Asset symbol '${sym}' already exists", ("sym", op.symbol) );
 
-      auto dotpos = op.symbol.rfind( '.' );
-      if( dotpos != std::string::npos )
-      {
-            auto prefix = op.symbol.substr( 0, dotpos );
-            auto asset_symbol_itr = asset_indx.find( prefix );
-            FC_ASSERT( asset_symbol_itr != asset_indx.end(), "Asset ${s} may only be created by issuer of ${p}, but ${p} has not been registered",
-                        ("s",op.symbol)("p",prefix) );
-            FC_ASSERT( asset_symbol_itr->issuer == op.issuer, "Asset ${s} may only be created by issuer of ${p}, ${i}",
-                        ("s",op.symbol)("p",prefix)("i", d.get_account_by_uid( op.issuer ).name) );
-      }
+   auto dotpos = op.symbol.rfind( '.' );
+   if( dotpos != std::string::npos )
+   {
+      auto prefix = op.symbol.substr( 0, dotpos );
+      asset_symbol_itr = asset_indx.find( prefix );
+      FC_ASSERT( asset_symbol_itr != asset_indx.end(),
+                 "Asset ${s} may only be created by issuer of ${p}, but ${p} has not been registered",
+                 ("s",op.symbol)("p",prefix) );
+      FC_ASSERT( asset_symbol_itr->issuer == op.issuer,
+                 "Asset ${s} may only be created by issuer of ${p} (uid = ${i})",
+                 ("s",op.symbol)("p",prefix)("i", asset_symbol_itr->issuer) );
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -99,7 +107,7 @@ object_id_type asset_create_evaluator::do_apply( const asset_create_operation& o
          a.dynamic_asset_data_id = dyn_asset.id;
       });
 
-   FC_ASSERT( new_asset.id == next_asset_id );
+   FC_ASSERT( new_asset.id == next_asset_id, "Internal error" );
 
    if( initial_supply > 0 )
       d.adjust_balance( op.issuer, new_asset.amount( initial_supply ) );
@@ -110,7 +118,7 @@ object_id_type asset_create_evaluator::do_apply( const asset_create_operation& o
 void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
 { try {
    const database& d = db();
-   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_issue after HARDFORK_0_3_TIME" );
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only use asset_issue after HARDFORK_0_3_TIME" );
 
    const asset_object& a = d.get_asset_by_aid( o.asset_to_issue.asset_id );
    FC_ASSERT( o.issuer == a.issuer, "only asset issuer can issue asset" );
@@ -130,7 +138,7 @@ void_result asset_issue_evaluator::do_evaluate( const asset_issue_operation& o )
 
 void_result asset_issue_evaluator::do_apply( const asset_issue_operation& o )
 { try {
-   
+
    db().adjust_balance( o.issue_to_account, o.asset_to_issue );
 
    db().modify( *asset_dyn_data, [&]( asset_dynamic_data_object& data ){
@@ -143,7 +151,7 @@ void_result asset_issue_evaluator::do_apply( const asset_issue_operation& o )
 void_result asset_reserve_evaluator::do_evaluate( const asset_reserve_operation& o )
 { try {
    const database& d = db();
-   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_reserve after HARDFORK_0_3_TIME" );
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only use asset_reserve after HARDFORK_0_3_TIME" );
 
    const asset_object& a = d.get_asset_by_aid( o.amount_to_reserve.asset_id );
 
@@ -151,14 +159,15 @@ void_result asset_reserve_evaluator::do_evaluate( const asset_reserve_operation&
    validate_authorized_asset( d, *from_account, a );
 
    asset_dyn_data = &a.dynamic_asset_data_id(d);
-   FC_ASSERT( (asset_dyn_data->current_supply - o.amount_to_reserve.amount) >= 0 );
+   FC_ASSERT( (asset_dyn_data->current_supply - o.amount_to_reserve.amount) >= 0,
+              "Can not reserve more than current supply" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 void_result asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
 { try {
-   
+
    db().adjust_balance( o.payer, -o.amount_to_reserve );
 
    db().modify( *asset_dyn_data, [&]( asset_dynamic_data_object& data ){
@@ -172,7 +181,7 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
 { try {
 
    database& d = db();
-   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_update after HARDFORK_0_3_TIME" );
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only use asset_update after HARDFORK_0_3_TIME" );
 
    // TESTNET only
    if( d.head_block_num() > 7785000 )
@@ -223,14 +232,21 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
                 "Flag change is forbidden by issuer permissions");
 
    asset_to_update = &a;
-   FC_ASSERT( o.issuer == a.issuer, "", ("o.issuer", o.issuer)("a.issuer", a.issuer) );
+   FC_ASSERT( o.issuer == a.issuer, "only asset issuer can update asset", ("o.issuer", o.issuer)("a.issuer", a.issuer) );
 
    const auto& chain_parameters = d.get_global_properties().parameters;
 
-   FC_ASSERT( o.new_options.whitelist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities );
+   FC_ASSERT( o.new_options.whitelist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities,
+              "Number of whitelist authorities (${num}) should not be more than maximum allowed value (${max})",
+              ("num", o.new_options.whitelist_authorities.size())
+              ("max", chain_parameters.maximum_asset_whitelist_authorities) );
+   FC_ASSERT( o.new_options.blacklist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities,
+              "Number of blacklist authorities (${num}) should not be more than maximum allowed value (${max})",
+              ("num", o.new_options.blacklist_authorities.size())
+              ("max", chain_parameters.maximum_asset_whitelist_authorities) );
+
    for( auto id : o.new_options.whitelist_authorities )
       d.get_account_by_uid(id);
-   FC_ASSERT( o.new_options.blacklist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities );
    for( auto id : o.new_options.blacklist_authorities )
       d.get_account_by_uid(id);
 
@@ -253,8 +269,8 @@ void_result asset_update_evaluator::do_apply(const asset_update_operation& o)
 void_result asset_claim_fees_evaluator::do_evaluate( const asset_claim_fees_operation& o )
 { try {
    database& d = db();
-   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only be asset_claim after HARDFORK_0_3_TIME" );
-   
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only use asset_claim after HARDFORK_0_3_TIME" );
+
    const asset_object& asset = d.get_asset_by_aid( o.amount_to_claim.asset_id );
    FC_ASSERT( asset.issuer == o.issuer, "Asset fees may only be claimed by the issuer" );
    return void_result();

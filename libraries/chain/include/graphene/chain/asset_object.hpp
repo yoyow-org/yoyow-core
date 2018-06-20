@@ -81,11 +81,6 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id  = asset_object_type;
 
-         /// This function does not check if any registered asset has this symbol or not; it simply checks whether the
-         /// symbol would be valid.
-         /// @return true if symbol is a valid ticker symbol; false otherwise.
-         static bool is_valid_symbol( const string& symbol );
-
          /// @return true if this is a market-issued asset; false otherwise.
          //bool is_market_issued()const { return bitasset_data_id.valid(); }
          /// @return true if users may request force-settlement of this market-issued asset; false otherwise
