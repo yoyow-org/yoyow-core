@@ -139,8 +139,8 @@ void asset_reserve_operation::validate()const
 {
    validate_op_fee( fee, "asset reserve " );
    validate_account_uid( payer, "asset reserve ");
-   FC_ASSERT( amount_to_reserve.amount.value <= GRAPHENE_MAX_SHARE_SUPPLY );
-   FC_ASSERT( amount_to_reserve.amount.value > 0 );
+   FC_ASSERT( amount_to_reserve.amount.value <= GRAPHENE_MAX_SHARE_SUPPLY, "Can not reserve more than max supply" );
+   FC_ASSERT( amount_to_reserve.amount.value > 0, "Can only reserve positive amount" );
 }
 
 void asset_issue_operation::validate()const
@@ -148,52 +148,59 @@ void asset_issue_operation::validate()const
    validate_op_fee( fee, "asset issue " );
    validate_account_uid( issuer, "asset issue ");
    validate_account_uid( issue_to_account, "asset issue ");
-   FC_ASSERT( asset_to_issue.amount.value <= GRAPHENE_MAX_SHARE_SUPPLY );
-   FC_ASSERT( asset_to_issue.amount.value > 0 );
-   FC_ASSERT( asset_to_issue.asset_id != GRAPHENE_CORE_ASSET_AID );
+   FC_ASSERT( asset_to_issue.amount.value <= GRAPHENE_MAX_SHARE_SUPPLY, "Can not issue more than max supply" );
+   FC_ASSERT( asset_to_issue.amount.value > 0, "Can only issue positive amount" );
+   FC_ASSERT( asset_to_issue.asset_id != GRAPHENE_CORE_ASSET_AID, "Can not issue CORE asset" );
 }
 
 void asset_options::validate()const
 {
    // TODO move to evaluator when enabling market
-   FC_ASSERT( market_fee_percent == 0 );
-   FC_ASSERT( max_market_fee == 0 );
+   FC_ASSERT( market_fee_percent == 0, "market_fee_percent need to be 0" );
+   FC_ASSERT( max_market_fee == 0, "max_market_fee need to be 0" );
 
-   FC_ASSERT( max_supply > 0 );
-   FC_ASSERT( max_supply <= GRAPHENE_MAX_SHARE_SUPPLY );
-   FC_ASSERT( market_fee_percent <= GRAPHENE_100_PERCENT );
-   FC_ASSERT( max_market_fee >= 0 && max_market_fee <= GRAPHENE_MAX_SHARE_SUPPLY );
-   // There must be no high bits in permissions whose meaning is not known.
-   FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
-   // There must be no high bits in flags whose meaning is not known.
-   FC_ASSERT( !(flags & ~ASSET_ISSUER_PERMISSION_MASK) );
+   FC_ASSERT( max_supply > 0, "max_supply should be positive" );
+   FC_ASSERT( max_supply <= GRAPHENE_MAX_SHARE_SUPPLY,
+              "max_supply should be no more than ${max}", ("max", GRAPHENE_MAX_SHARE_SUPPLY) );
+   FC_ASSERT( market_fee_percent <= GRAPHENE_100_PERCENT, "max_fee_percent should be no more than 100%" );
+   FC_ASSERT( max_market_fee >= 0 && max_market_fee <= GRAPHENE_MAX_SHARE_SUPPLY,
+              "max_market_fee should be non-negative and no more than ${max}",
+              ("max", GRAPHENE_MAX_SHARE_SUPPLY) );
+   FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK),
+              "There must be no bit in issuer_permissions whose meaning is not known" );
+   FC_ASSERT( !(flags & ~ASSET_ISSUER_PERMISSION_MASK),
+              "There must be no bit in flags whose meaning is not known" );
    // The global_settle flag may never be set (this is a permission only)
    //FC_ASSERT( !(flags & global_settle) );
    // the witness_fed and committee_fed flags cannot be set simultaneously
    //FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
 
    // TODO move to evaluator when enabling account whitelisting feature with a hard fork
-   FC_ASSERT( whitelist_authorities.empty() && blacklist_authorities.empty() );
+   FC_ASSERT( whitelist_authorities.empty() && blacklist_authorities.empty(),
+              "White-listing and black-listing authorities are not supported yet, they should be empty" );
 
    // TODO move to evaluator when enabling market whitelisting feature with a hard fork
-   FC_ASSERT( whitelist_markets.empty() && blacklist_markets.empty() );
+   FC_ASSERT( whitelist_markets.empty() && blacklist_markets.empty(),
+              "whitelist_markets and blacklist_markets should be empty" );
 
    if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
-      FC_ASSERT( flags & white_list );
+      FC_ASSERT( flags & white_list, "Should enable white_list flag if to set whitelist or blacklist authorities" );
    for( auto item : whitelist_markets )
    {
-      FC_ASSERT( blacklist_markets.find(item) == blacklist_markets.end() );
+      FC_ASSERT( blacklist_markets.find(item) == blacklist_markets.end(),
+                 "Can not white-list and black-list same market at same time" );
    }
    for( auto item : blacklist_markets )
    {
-      FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end() );
+      FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end(),
+                 "Can not white-list and black-list same market at same time" );
    }
 }
 
 void asset_claim_fees_operation::validate()const {
    validate_op_fee( fee, "asset claim fees " );
    validate_account_uid( issuer, "asset claim fees ");
-   FC_ASSERT( amount_to_claim.amount > 0 );
+   FC_ASSERT( amount_to_claim.amount > 0, "Should claim a positive amount" );
 }
 
 } } // namespace graphene::chain
