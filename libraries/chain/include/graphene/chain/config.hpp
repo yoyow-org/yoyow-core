@@ -295,7 +295,7 @@
  */
 ///@{
 /// Minimum platform deposit
-#define GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000)) 
+#define GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000))
 /// The platform calculates the average deposit duration. The initial value of 1 week
 #define GRAPHENE_DEFAULT_PLATFORM_MAX_PLEDGE_SECONDS (60*60*24*7)
 /// Platform average deposit update interval. The initial value is 1 hour, that is, the average deposit is automatically updated once an hour, and if the deposit amount changes, the average deposit is updated in real time.

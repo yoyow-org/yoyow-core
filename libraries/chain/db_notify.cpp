@@ -39,13 +39,13 @@ struct get_impacted_account_uid_visitor
    void operator()( const post_operation& op )
    {
       _impacted.insert( op.poster ); // fee payer
-      
+
       _impacted.insert( op.platform );
       if( op.origin_platform.valid() )
           _impacted.insert( *(op.origin_platform) );
       if( op.origin_poster.valid() )
           _impacted.insert( *(op.origin_poster) );
-      
+
    }
 
    void operator()( const post_update_operation& op )
@@ -201,7 +201,7 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.account ); // fee payer
    }
 
-   void operator()( const asset_create_operation& op ) 
+   void operator()( const asset_create_operation& op )
    {
       _impacted.insert( op.issuer ); // fee payer
       for( auto uid : op.common_options.whitelist_authorities )
@@ -224,7 +224,7 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.issue_to_account );
    }
 
-   void operator()( const asset_reserve_operation& op ) 
+   void operator()( const asset_reserve_operation& op )
    {
       _impacted.insert( op.payer ); // fee payer
    }
@@ -410,7 +410,7 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
 
 void database::notify_changed_objects()
 { try {
-   if( _undo_db.enabled() ) 
+   if( _undo_db.enabled() )
    {
       const auto& head_undo = _undo_db.head();
 

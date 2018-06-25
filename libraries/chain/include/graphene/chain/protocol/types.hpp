@@ -113,7 +113,7 @@ namespace graphene { namespace chain {
       change_max_supply    = 0x400, /**< allow the issuer to change the asset's max supply */
    };
    //const static uint32_t ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_force_settle|global_settle|disable_confidential|witness_fed_asset|committee_fed_asset;
-   
+
    //const static uint32_t UIA_ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_confidential;
 
    const static asset_flags_type ASSET_ISSUER_PERMISSION_MASK = white_list|override_authority|transfer_restricted|issue_asset|change_max_supply;
@@ -275,9 +275,9 @@ namespace graphene { namespace chain {
          uint32_t                   check = 0;
          fc::ecc::extended_key_data data;
       };
-      
+
       fc::ecc::extended_key_data key_data;
-       
+
       extended_public_key_type();
       extended_public_key_type( const fc::ecc::extended_key_data& data );
       extended_public_key_type( const fc::ecc::extended_public_key& extpubkey );
@@ -288,7 +288,7 @@ namespace graphene { namespace chain {
       friend bool operator == ( const extended_public_key_type& p1, const extended_public_key_type& p2);
       friend bool operator != ( const extended_public_key_type& p1, const extended_public_key_type& p2);
    };
-   
+
    struct extended_private_key_type
    {
       struct binary_key
@@ -297,9 +297,9 @@ namespace graphene { namespace chain {
          uint32_t                   check = 0;
          fc::ecc::extended_key_data data;
       };
-      
+
       fc::ecc::extended_key_data key_data;
-       
+
       extended_private_key_type();
       extended_private_key_type( const fc::ecc::extended_key_data& data );
       extended_private_key_type( const fc::ecc::extended_private_key& extprivkey );

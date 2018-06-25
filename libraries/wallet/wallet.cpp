@@ -296,7 +296,7 @@ private:
             if( it != n.end() ) {
                claim_registered_account(name);
             }
-         } 
+         }
       }
 
       if (!_wallet.pending_witness_registrations.empty())
@@ -312,7 +312,7 @@ private:
                if (witness_obj)
                   claim_registered_witness(name);
             }
-         } 
+         }
       }
    }
 
@@ -836,7 +836,7 @@ public:
       asset total_fee = fee_asset_obj.amount(0);
 
       FC_ASSERT(fee_asset_obj.asset_id == GRAPHENE_CORE_ASSET_AID, "Must use core assets as a fee");
-      
+
 
       auto gprops = _remote_db->get_global_properties().parameters;
       for( auto& op : _builder_transactions[handle].operations )
@@ -1460,7 +1460,7 @@ signed_transaction account_auth_platform(string account,
       account_auth_platform_operation op;
       op.uid = user.uid;
       op.platform = pa->owner;
-      
+
       signed_transaction tx;
       tx.operations.push_back( op );
       set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
@@ -3171,9 +3171,9 @@ signed_transaction wallet_api::committee_proposal_create(
          bool broadcast
       )
 {
-   return my->committee_proposal_create( committee_member_account, 
-                                         items, 
-                                         voting_closing_block_num, 
+   return my->committee_proposal_create( committee_member_account,
+                                         items,
+                                         voting_closing_block_num,
                                          proposer_opinion,
                                          execution_block_num,
                                          expiration_block_num,

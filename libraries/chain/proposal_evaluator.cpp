@@ -126,7 +126,7 @@ void_result proposal_update_evaluator::do_evaluate(const proposal_update_operati
    _proposal = &o.proposal(d);
 
    if( _proposal->review_period_time && d.head_block_time() >= *_proposal->review_period_time )
-      FC_ASSERT( o.active_approvals_to_add.empty() && 
+      FC_ASSERT( o.active_approvals_to_add.empty() &&
                   o.owner_approvals_to_add.empty() && o.secondary_approvals_to_add.empty(),
                  "This proposal is in its review period. No new approvals may be added." );
 

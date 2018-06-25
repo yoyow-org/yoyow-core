@@ -72,7 +72,7 @@ namespace graphene { namespace chain {
       {
          key_auths[k] = w;
       }
-      
+
       void add_authority( account_uid_auth_type& k, weight_type w )
       {
          account_uid_auths[k] = w;
@@ -110,7 +110,7 @@ namespace graphene { namespace chain {
       {
          return (a.weight_threshold == b.weight_threshold) &&
                 (a.account_uid_auths == b.account_uid_auths) &&
-                (a.key_auths == b.key_auths); 
+                (a.key_auths == b.key_auths);
       }
       uint32_t num_auths()const
       { return account_uid_auths.size() + key_auths.size(); }

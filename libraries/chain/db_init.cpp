@@ -399,7 +399,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
    // Helper function to get account ID by name
    const auto& accounts_by_name = get_index_type<account_index>().indices().get<by_name>();
-  
+
    auto get_account_uid = [&accounts_by_name](const string& name) {
       auto itr = accounts_by_name.find(name);
       FC_ASSERT(itr != accounts_by_name.end(),
@@ -410,7 +410,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
    // Helper function to get asset ID by symbol
    const auto& assets_by_symbol = get_index_type<asset_index>().indices().get<by_symbol>();
-   
+
    const auto get_asset_aid = [&assets_by_symbol](const string& symbol) {
       auto itr = assets_by_symbol.find(symbol);
       FC_ASSERT(itr != assets_by_symbol.end(),
