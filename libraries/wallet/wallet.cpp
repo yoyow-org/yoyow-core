@@ -3207,8 +3207,7 @@ signed_transaction wallet_api::approve_proposal(
 vector<proposal_object> wallet_api::list_proposals( string account_name_or_id )
 {
    auto acc = my->get_account( account_name_or_id );
-   //return my->_remote_db->get_proposed_transactions( acc.uid );
-   return {};
+   return my->_remote_db->get_proposed_transactions( acc.uid );
 }
 
 global_property_object wallet_api::get_global_properties() const

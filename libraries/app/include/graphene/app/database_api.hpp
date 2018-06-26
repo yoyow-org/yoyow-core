@@ -691,6 +691,6 @@ FC_API( graphene::app::database_api,
    (get_required_fee_data)
 
    // Proposed transactions
-   //(get_proposed_transactions)
+   (get_proposed_transactions)
 
 )
