@@ -29,6 +29,8 @@
 #include <graphene/chain/protocol/ext.hpp>
 #include <boost/tti/has_member_data.hpp>
 
+
+
 namespace graphene { namespace chain {
 
    /**
@@ -164,14 +166,18 @@ namespace graphene { namespace chain {
    typedef optional< extension< default_extension_type > > extensions_type;
 
    void validate_account_uid( const account_uid_type uid, const string& object_name = "" );
-   void validate_asset_id( asset a, const string& object_name = "asset" );
-   void validate_op_fee( asset fee, const string& op_name = "" );
+   void validate_asset_id( const asset& a, asset_aid_type aid, const string& object_name = "asset" );
+   void validate_core_asset_id( const asset& a, const string& object_name = "asset" );
+   void validate_non_core_asset_id( const asset& a, const string& object_name = "asset" );
+   void validate_op_fee( const asset& fee, const string& op_name = "" );
    void validate_op_fee( const fee_type& fee, const string& op_name = "" );
    void validate_percentage( uint16_t percent, const string& object_name = "percentage" );
    void validate_positive_amount( share_type amount, const string& object_name = "amount" );
    void validate_non_negative_amount( share_type amount, const string& object_name = "amount" );
-   void validate_positive_asset( asset a, const string& object_name = "amount" );
-   void validate_non_negative_asset( asset a, const string& object_name = "amount" );
+   void validate_positive_core_asset( const asset& a, const string& object_name = "amount" );
+   void validate_non_negative_core_asset( const asset& a, const string& object_name = "amount" );
+   void validate_positive_asset( const asset& a, const string& object_name = "amount" );
+   void validate_non_negative_asset( const asset& a, const string& object_name = "amount" );
 
    ///@}
 

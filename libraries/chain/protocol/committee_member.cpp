@@ -29,7 +29,7 @@ void committee_member_create_operation::validate()const
 {
    validate_op_fee( fee, "committee member creation " );
    validate_account_uid( account, "committee member " );
-   validate_non_negative_asset( pledge, "pledge" );
+   validate_non_negative_core_asset( pledge, "pledge" );
    FC_ASSERT( url.size() < GRAPHENE_MAX_URL_LENGTH, "url is too long" );
 }
 
@@ -39,7 +39,7 @@ void committee_member_update_operation::validate()const
    validate_account_uid( account, "committee member " );
    FC_ASSERT( new_pledge.valid() || new_url.valid(), "Should change something" );
    if( new_pledge.valid() )
-      validate_non_negative_asset( *new_pledge, "new pledge" );
+      validate_non_negative_core_asset( *new_pledge, "new pledge" );
    if( new_url.valid() )
       FC_ASSERT( new_url->size() < GRAPHENE_MAX_URL_LENGTH, "new url is too long" );
 }
@@ -67,10 +67,10 @@ void committee_member_vote_update_operation::validate() const
 
 share_type committee_proposal_create_operation::calculate_fee( const fee_parameters_type& k )const
 {
-   auto core_fee_required = k.basic_fee;
+   share_type core_fee_required = k.basic_fee;
 
    auto total_size = items.size();
-   core_fee_required += ( k.price_per_item * total_size );
+   core_fee_required += ( share_type( k.price_per_item ) * total_size );
 
    return core_fee_required;
 }
@@ -173,6 +173,17 @@ void committee_updatable_parameters::validate()const
    if( witness_report_pledge_deduction_amount.valid() )
       FC_ASSERT( *witness_report_pledge_deduction_amount >= 0,
                  "Witness pledge deduction amount should not be negative" );
+   // platform_min_pledge: no limitation so far
+   // platform_pledge_release_delay: no limitation so far
+   if( platform_max_vote_per_account.valid() )
+      FC_ASSERT( *platform_max_vote_per_account > 0,
+                 "Maximum platforms voted per account must be positive" );
+   if( platform_max_pledge_seconds.valid() )
+      FC_ASSERT( *platform_max_pledge_seconds > 0,
+                 "Maximum platform pledge accumulation seconds must be positive" );
+   if( platform_avg_pledge_update_interval.valid() )
+      FC_ASSERT( *platform_avg_pledge_update_interval > 0,
+                 "Platform average pledge update interval must be positive" );
 }
 
 void committee_proposal_create_operation::validate()const
@@ -221,12 +232,6 @@ void committee_proposal_update_operation::validate()const
 {
    validate_op_fee( fee, "committee proposal update " );
    validate_account_uid( account, "committee member " );
-}
-
-void committee_member_update_global_parameters_operation::validate() const
-{
-   FC_ASSERT( fee.amount >= 0 );
-   new_parameters.validate();
 }
 
 } } // graphene::chain

@@ -1,0 +1,9 @@
+// add create asset op
+#ifndef HARDFORK_0_3_TIME
+#define HARDFORK_0_3_TIME (fc::time_point_sec( 1530522000 ))  //2018-07-02 09:00:00 UTC
+#endif
+
+// add proposal op
+#ifndef HARDFORK_0_3_1_TIME
+#define HARDFORK_0_3_1_TIME (fc::time_point_sec( 2100000000 ))  //2036
+#endif

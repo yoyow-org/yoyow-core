@@ -31,18 +31,12 @@
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/asset_object.hpp>
-#include <graphene/chain/balance_object.hpp>
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
-#include <graphene/chain/confidential_object.hpp>
 #include <graphene/chain/csaf_object.hpp>
-#include <graphene/chain/market_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
-#include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/witness_object.hpp>
-
-#include <graphene/market_history/market_history_plugin.hpp>
 
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
@@ -60,53 +54,9 @@
 namespace graphene { namespace app {
 
 using namespace graphene::chain;
-using namespace graphene::market_history;
 using namespace std;
 
 class database_api_impl;
-
-struct order
-{
-   double                     price;
-   double                     quote;
-   double                     base;
-};
-
-struct order_book
-{
-  string                      base;
-  string                      quote;
-  vector< order >             bids;
-  vector< order >             asks;
-};
-
-struct market_ticker
-{
-   string                     base;
-   string                     quote;
-   double                     latest;
-   double                     lowest_ask;
-   double                     highest_bid;
-   double                     percent_change;
-   double                     base_volume;
-   double                     quote_volume;
-};
-
-struct market_volume
-{
-   string                     base;
-   string                     quote;
-   double                     base_volume;
-   double                     quote_volume;
-};
-
-struct market_trade
-{
-   fc::time_point_sec         date;
-   double                     price;
-   double                     amount;
-   double                     value;
-};
 
 struct required_fee_data
 {
@@ -126,6 +76,10 @@ struct full_account_query_options
    optional<bool> fetch_witness_votes;
    optional<bool> fetch_committee_member_object;
    optional<bool> fetch_committee_member_votes;
+   optional<bool> fetch_platform_object;
+   optional<bool> fetch_platform_votes;
+   optional<bool> fetch_assets;
+   optional<bool> fetch_balances;
 };
 
 enum data_sorting_type
@@ -133,6 +87,25 @@ enum data_sorting_type
    order_by_uid = 0,
    order_by_votes = 1,
    order_by_pledge = 2
+};
+
+struct signed_block_with_info : public signed_block
+{
+   signed_block_with_info(){}
+   signed_block_with_info( const signed_block& block );
+   signed_block_with_info( const signed_block_with_info& block ) = default;
+
+   block_id_type block_id;
+   public_key_type signing_key;
+   vector< transaction_id_type > transaction_ids;
+};
+
+struct asset_object_with_data : public asset_object
+{
+   asset_object_with_data() {}
+   asset_object_with_data( const asset_object& a ) : asset_object( a ) {}
+
+   asset_dynamic_data_object dynamic_asset_data;
 };
 
 /**
@@ -199,7 +172,7 @@ class database_api
        * @param block_num Height of the block to be returned
        * @return the referenced block, or null if no matching block was found
        */
-      optional<signed_block> get_block(uint32_t block_num)const;
+      optional<signed_block_with_info> get_block(uint32_t block_num)const;
 
       /**
        * @brief used to fetch an individual transaction.
@@ -246,7 +219,7 @@ class database_api
       // Keys //
       //////////
 
-      vector<vector<account_id_type>> get_key_references( vector<public_key_type> key )const;
+      vector<vector<account_uid_type>> get_key_references( vector<public_key_type> key )const;
 
      /**
       * Determine whether a textual representation of a public key
@@ -314,7 +287,7 @@ class database_api
       /**
        *  @return all accounts that referr to the key or account id in their owner or active authorities.
        */
-      vector<account_id_type> get_account_references( account_id_type account_id )const;
+      vector<account_uid_type> get_account_references( account_uid_type uid )const;
 
       /**
        * @brief Get a list of accounts by name
@@ -347,13 +320,6 @@ class database_api
 
       /// Semantically equivalent to @ref get_account_balances, but takes a name instead of an ID.
       vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const;
-
-      /** @return all unclaimed balance objects for a set of addresses */
-      vector<balance_object> get_balance_objects( const vector<address>& addrs )const;
-
-      vector<asset> get_vested_balances( const vector<balance_id_type>& objs )const;
-
-      vector<vesting_balance_object> get_vesting_balances( account_id_type account_id )const;
 
       /**
        * @brief Get the total number of accounts registered with the blockchain
@@ -408,7 +374,7 @@ class database_api
       /**
        * @brief Query for registered platforms
        * @param lower_bound_uid Lower bound of the first uid to return
-       * @param limit Maximum number of results to return -- must not exceed 100
+       * @param limit Maximum number of results to return -- must not exceed 101
        * @param order_by how the returned list will be sorted
        * @return A list of platform objects
        */
@@ -451,21 +417,21 @@ class database_api
       ////////////
 
       /**
-       * @brief Get a list of assets by ID
+       * @brief Get a list of assets by AID
        * @param asset_ids IDs of the assets to retrieve
-       * @return The assets corresponding to the provided IDs
+       * @return The assets corresponding to the provided AIDs
        *
        * This function has semantics identical to @ref get_objects
        */
-      vector<optional<asset_object>> get_assets(const vector<asset_id_type>& asset_ids)const;
+      vector<optional<asset_object_with_data>> get_assets(const vector<asset_aid_type>& asset_ids)const;
 
       /**
        * @brief Get assets alphabetically by symbol name
        * @param lower_bound_symbol Lower bound of symbol names to retrieve
-       * @param limit Maximum number of assets to fetch (must not exceed 100)
+       * @param limit Maximum number of assets to fetch (must not exceed 101)
        * @return The assets found
        */
-      vector<asset_object> list_assets(const string& lower_bound_symbol, uint32_t limit)const;
+      vector<asset_object_with_data> list_assets(const string& lower_bound_symbol, uint32_t limit)const;
 
       /**
        * @brief Get a list of assets by symbol
@@ -474,99 +440,7 @@ class database_api
        *
        * This function has semantics identical to @ref get_objects
        */
-      vector<optional<asset_object>> lookup_asset_symbols(const vector<string>& symbols_or_ids)const;
-
-      /////////////////////
-      // Markets / feeds //
-      /////////////////////
-
-      /**
-       * @brief Get limit orders in a given market
-       * @param a ID of asset being sold
-       * @param b ID of asset being purchased
-       * @param limit Maximum number of orders to retrieve
-       * @return The limit orders, ordered from least price to greatest
-       */
-      vector<limit_order_object> get_limit_orders(asset_id_type a, asset_id_type b, uint32_t limit)const;
-
-      /**
-       * @brief Get call orders in a given asset
-       * @param a ID of asset being called
-       * @param limit Maximum number of orders to retrieve
-       * @return The call orders, ordered from earliest to be called to latest
-       */
-      vector<call_order_object> get_call_orders(asset_id_type a, uint32_t limit)const;
-
-      /**
-       * @brief Get forced settlement orders in a given asset
-       * @param a ID of asset being settled
-       * @param limit Maximum number of orders to retrieve
-       * @return The settle orders, ordered from earliest settlement date to latest
-       */
-      vector<force_settlement_object> get_settle_orders(asset_id_type a, uint32_t limit)const;
-
-      /**
-       *  @return all open margin positions for a given account id.
-       */
-      vector<call_order_object> get_margin_positions( const account_id_type& id )const;
-
-      /**
-       * @brief Request notification when the active orders in the market between two assets changes
-       * @param callback Callback method which is called when the market changes
-       * @param a First asset ID
-       * @param b Second asset ID
-       *
-       * Callback will be passed a variant containing a vector<pair<operation, operation_result>>. The vector will
-       * contain, in order, the operations which changed the market, and their results.
-       */
-      void subscribe_to_market(std::function<void(const variant&)> callback,
-                   asset_aid_type a, asset_aid_type b);
-
-      /**
-       * @brief Unsubscribe from updates to a given market
-       * @param a First asset ID
-       * @param b Second asset ID
-       */
-      void unsubscribe_from_market( asset_aid_type a, asset_aid_type b );
-
-      /**
-       * @brief Returns the ticker for the market assetA:assetB
-       * @param a String name of the first asset
-       * @param b String name of the second asset
-       * @return The market ticker for the past 24 hours.
-       */
-      market_ticker get_ticker( const string& base, const string& quote )const;
-
-      /**
-       * @brief Returns the 24 hour volume for the market assetA:assetB
-       * @param a String name of the first asset
-       * @param b String name of the second asset
-       * @return The market volume over the past 24 hours
-       */
-      market_volume get_24_volume( const string& base, const string& quote )const;
-
-      /**
-       * @brief Returns the order book for the market base:quote
-       * @param base String name of the first asset
-       * @param quote String name of the second asset
-       * @param depth of the order book. Up to depth of each asks and bids, capped at 50. Prioritizes most moderate of each
-       * @return Order book of the market
-       */
-      order_book get_order_book( const string& base, const string& quote, unsigned limit = 50 )const;
-
-      /**
-       * @brief Returns recent trades for the market assetA:assetB
-       * Note: Currentlt, timezone offsets are not supported. The time must be UTC.
-       * @param a String name of the first asset
-       * @param b String name of the second asset
-       * @param stop Stop time as a UNIX timestamp
-       * @param limit Number of trasactions to retrieve, capped at 100
-       * @param start Start time as a UNIX timestamp
-       * @return Recent transactions in the market
-       */
-      vector<market_trade> get_trade_history( const string& base, const string& quote, fc::time_point_sec start, fc::time_point_sec stop, unsigned limit = 100 )const;
-
-
+      vector<optional<asset_object_with_data>> lookup_asset_symbols(const vector<string>& symbols_or_ids)const;
 
       ///////////////
       // Witnesses //
@@ -642,28 +516,6 @@ class database_api
       vector<committee_proposal_object> list_committee_proposals() const;
 
 
-      /// WORKERS
-
-      /**
-       * Return the worker objects associated with this account.
-       */
-      vector<worker_object> get_workers_by_account(account_id_type account)const;
-
-
-      ///////////
-      // Votes //
-      ///////////
-
-      /**
-       *  @brief Given a set of votes, return the objects they are voting for.
-       *
-       *  This will be a mixture of committee_member_object, witness_objects, and worker_objects
-       *
-       *  The results will be in the same order as the votes.  Null will be returned for
-       *  any vote ids that are not found.
-       */
-      vector<variant> lookup_vote_ids( const vector<vote_id_type>& votes )const;
-
       ////////////////////////////
       // Authority / validation //
       ////////////////////////////
@@ -676,7 +528,6 @@ class database_api
        *  and return the minimal subset of public keys that should add signatures to the transaction.
        */
       std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
-      set<public_key_type> get_required_signatures_old( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
 
       /**
        *  This method will return the set of all public keys that could possibly sign for a given transaction.  This call can
@@ -684,7 +535,6 @@ class database_api
        *  to get the minimum subset.
        */
       set<public_key_type> get_potential_signatures( const signed_transaction& trx )const;
-      set<address> get_potential_address_signatures( const signed_transaction& trx )const;
 
       /**
        * @return true of the @ref trx has all of the required signatures, otherwise throws an exception
@@ -708,11 +558,6 @@ class database_api
       vector< fc::variant > get_required_fees( const vector<operation>& ops, asset_id_type id )const;
 
       /**
-       *  For each operation calculate the required fee pair: minimum total fee required, minimum real fee required.
-       */
-      vector< std::pair< int64_t, int64_t > > get_required_fee_pairs( const vector<operation>& ops )const;
-
-      /**
        *  For each operation calculate the required fee data: payer, minimum total fee required, minimum real fee required.
        */
       vector< required_fee_data > get_required_fee_data( const vector<operation>& ops )const;
@@ -724,16 +569,7 @@ class database_api
       /**
        *  @return the set of proposed transactions relevant to the specified account id.
        */
-      vector<proposal_object> get_proposed_transactions( account_id_type id )const;
-
-      //////////////////////
-      // Blinded balances //
-      //////////////////////
-
-      /**
-       *  @return the set of blinded balance objects by commitment ID
-       */
-      vector<blinded_balance_object> get_blinded_balances( const flat_set<commitment_type>& commitments )const;
+      vector<proposal_object> get_proposed_transactions( account_uid_type uid )const;
 
    private:
       std::shared_ptr< database_api_impl > my;
@@ -741,12 +577,8 @@ class database_api
 
 } }
 
-FC_REFLECT( graphene::app::order, (price)(quote)(base) );
-FC_REFLECT( graphene::app::order_book, (base)(quote)(bids)(asks) );
-FC_REFLECT( graphene::app::market_ticker, (base)(quote)(latest)(lowest_ask)(highest_bid)(percent_change)(base_volume)(quote_volume) );
-FC_REFLECT( graphene::app::market_volume, (base)(quote)(base_volume)(quote_volume) );
-FC_REFLECT( graphene::app::market_trade, (date)(price)(amount)(value) );
 FC_REFLECT( graphene::app::required_fee_data, (fee_payer_uid)(min_fee)(min_real_fee) );
+
 FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_account_object)
             (fetch_statistics)
@@ -757,6 +589,10 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_witness_votes)
             (fetch_committee_member_object)
             (fetch_committee_member_votes)
+            (fetch_platform_object)
+            (fetch_platform_votes)
+            (fetch_assets)
+            (fetch_balances)
           );
 
 FC_REFLECT_ENUM( graphene::app::data_sorting_type,
@@ -764,6 +600,12 @@ FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_votes)
                  (order_by_pledge)
                );
+
+FC_REFLECT_DERIVED( graphene::app::signed_block_with_info, (graphene::chain::signed_block),
+   (block_id)(signing_key)(transaction_ids) )
+
+FC_REFLECT_DERIVED( graphene::app::asset_object_with_data, (graphene::chain::asset_object),
+   (dynamic_asset_data) )
 
 FC_API( graphene::app::database_api,
    // Objects
@@ -794,13 +636,13 @@ FC_API( graphene::app::database_api,
    (is_public_key_registered)
 
    // Accounts
-   (get_accounts)
+   //(get_accounts)
    (get_accounts_by_uid)
-   (get_full_accounts)
+   //(get_full_accounts)
    (get_full_accounts_by_uid)
    (get_account_by_name)
    (get_account_references)
-   (lookup_account_names)
+   //(lookup_account_names)
    (lookup_accounts_by_name)
    (get_account_count)
 
@@ -819,26 +661,11 @@ FC_API( graphene::app::database_api,
    // Balances
    (get_account_balances)
    (get_named_account_balances)
-   (get_balance_objects)
-   (get_vested_balances)
-   (get_vesting_balances)
 
    // Assets
    (get_assets)
    (list_assets)
    (lookup_asset_symbols)
-
-   // Markets / feeds
-   (get_order_book)
-   (get_limit_orders)
-   (get_call_orders)
-   (get_settle_orders)
-   (get_margin_positions)
-   (subscribe_to_market)
-   (unsubscribe_from_market)
-   (get_ticker)
-   (get_24_volume)
-   (get_trade_history)
 
    // Witnesses
    (get_witnesses)
@@ -853,27 +680,17 @@ FC_API( graphene::app::database_api,
    (get_committee_member_count)
    (list_committee_proposals)
 
-   // workers
-   //(get_workers_by_account)
-   // Votes
-   (lookup_vote_ids)
-
    // Authority / validation
    (get_transaction_hex)
    (get_required_signatures)
-   (get_required_signatures_old)
-   (get_potential_signatures)
-   (get_potential_address_signatures)
-   (verify_authority)
-   (verify_account_authority)
-   (validate_transaction)
-   (get_required_fees)
-   (get_required_fee_pairs)
+   //(get_potential_signatures)
+   //(verify_authority)
+   //(verify_account_authority)
+   //(validate_transaction)
+   //(get_required_fees)
    (get_required_fee_data)
 
    // Proposed transactions
-   (get_proposed_transactions)
+   //(get_proposed_transactions)
 
-   // Blinded balances
-   (get_blinded_balances)
 )

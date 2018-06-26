@@ -31,17 +31,24 @@ bool proposal_object::is_authorized_to_execute(database& db) const
 {
    transaction_evaluation_state dry_run_eval(&db);
 
-   // TODO review
    try {
-   //   verify_authority( proposed_transaction.operations, 
-   //                     available_key_approvals,
-   //                     [&]( account_id_type id ){ return &id(db).active; },
-   //                     [&]( account_id_type id ){ return &id(db).owner;  },
-   //                     db.get_global_properties().parameters.max_authority_depth,
-   //                     true, /* allow committeee */
-   //                     available_active_approvals,
-   //                     available_owner_approvals );
-   } 
+       flat_map<public_key_type,signature_type> map;
+       signature_type st;
+       for( const auto&  key : available_key_approvals )
+       {
+           map[key] = st;
+       }
+        verify_authority( proposed_transaction.operations,
+                       map,
+                       [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).owner); },
+                       [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).active); },
+                       [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).secondary); },
+                       db.get_global_properties().parameters.max_authority_depth,
+                       true, /* allow committeee */
+                       available_owner_approvals,
+                       available_active_approvals,
+                       available_secondary_approvals );
+   }
    catch ( const fc::exception& e )
    {
       //idump((available_active_approvals));
@@ -57,9 +64,13 @@ void required_approval_index::object_inserted( const object& obj )
     assert( dynamic_cast<const proposal_object*>(&obj) );
     const proposal_object& p = static_cast<const proposal_object&>(obj);
 
+    for( const auto& a : p.required_secondary_approvals )
+       _account_to_proposals[a].insert( p.id );
     for( const auto& a : p.required_active_approvals )
        _account_to_proposals[a].insert( p.id );
     for( const auto& a : p.required_owner_approvals )
+       _account_to_proposals[a].insert( p.id );
+    for( const auto& a : p.available_secondary_approvals )
        _account_to_proposals[a].insert( p.id );
     for( const auto& a : p.available_active_approvals )
        _account_to_proposals[a].insert( p.id );
@@ -67,7 +78,7 @@ void required_approval_index::object_inserted( const object& obj )
        _account_to_proposals[a].insert( p.id );
 }
 
-void required_approval_index::remove( account_id_type a, proposal_id_type p )
+void required_approval_index::remove( account_uid_type a, proposal_id_type p )
 {
     auto itr = _account_to_proposals.find(a);
     if( itr != _account_to_proposals.end() )
@@ -83,9 +94,13 @@ void required_approval_index::object_removed( const object& obj )
     assert( dynamic_cast<const proposal_object*>(&obj) );
     const proposal_object& p = static_cast<const proposal_object&>(obj);
 
+    for( const auto& a : p.required_secondary_approvals )
+       remove( a, p.id );
     for( const auto& a : p.required_active_approvals )
        remove( a, p.id );
     for( const auto& a : p.required_owner_approvals )
+       remove( a, p.id );
+    for( const auto& a : p.available_secondary_approvals )
        remove( a, p.id );
     for( const auto& a : p.available_active_approvals )
        remove( a, p.id );

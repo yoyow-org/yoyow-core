@@ -107,16 +107,19 @@ namespace graphene { namespace chain {
    struct override_transfer_operation : public base_operation
    {
       struct fee_parameters_type {
-         uint64_t fee       = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t price_per_kbyte = 10; /// only required for large memos.
+         uint64_t fee              = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
       };
 
-      asset           fee;
-      account_id_type issuer;
+      fee_type         fee;
+      account_uid_type issuer;
       /// Account to transfer asset from
-      account_id_type from;
+      account_uid_type from;
       /// Account to transfer asset to
-      account_id_type to;
+      account_uid_type to;
       /// The amount of asset to transfer from @ref from to @ref to
       asset amount;
 
@@ -124,7 +127,7 @@ namespace graphene { namespace chain {
       optional<memo_data> memo;
       extensions_type   extensions;
 
-      account_id_type fee_payer()const { return issuer; }
+      account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
    };
@@ -133,7 +136,8 @@ namespace graphene { namespace chain {
 
 FC_REFLECT( graphene::chain::transfer_operation::fee_parameters_type,
             (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
-FC_REFLECT( graphene::chain::override_transfer_operation::fee_parameters_type, (fee)(price_per_kbyte) )
+FC_REFLECT( graphene::chain::override_transfer_operation::fee_parameters_type,
+            (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 
 FC_REFLECT( graphene::chain::transfer_operation::ext, (from_balance)(from_prepaid)(to_balance)(to_prepaid) )
 FC_REFLECT( graphene::chain::transfer_operation, (fee)(from)(to)(amount)(memo)(extensions) )

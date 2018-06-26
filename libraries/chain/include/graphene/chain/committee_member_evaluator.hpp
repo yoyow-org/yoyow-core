@@ -89,13 +89,4 @@ namespace graphene { namespace chain {
          const committee_proposal_object* proposal_obj = nullptr;
    };
 
-   class committee_member_update_global_parameters_evaluator : public evaluator<committee_member_update_global_parameters_evaluator>
-   {
-      public:
-         typedef committee_member_update_global_parameters_operation operation_type;
-
-         void_result do_evaluate( const committee_member_update_global_parameters_operation& o );
-         void_result do_apply( const committee_member_update_global_parameters_operation& o );
-   };
-
 } } // graphene::chain

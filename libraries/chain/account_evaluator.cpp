@@ -25,15 +25,10 @@
 #include <fc/smart_ref_impl.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
-#include <graphene/chain/buyback.hpp>
-#include <graphene/chain/buyback_object.hpp>
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/internal_exceptions.hpp>
-#include <graphene/chain/special_authority.hpp>
-#include <graphene/chain/special_authority_object.hpp>
-#include <graphene/chain/worker_object.hpp>
 
 #include <algorithm>
 
@@ -46,13 +41,6 @@ void verify_authority_accounts( const database& db, const authority& a )
       a.num_auths() <= chain_params.maximum_authority_membership,
       internal_verify_auth_max_auth_exceeded,
       "Maximum authority membership exceeded" );
-   for( const auto& acnt : a.account_auths )
-   {
-      GRAPHENE_ASSERT( db.find_object( acnt.first ) != nullptr,
-         internal_verify_auth_account_not_found,
-         "Account ${a} specified in authority does not exist",
-         ("a", acnt.first) );
-   }
    for( const auto& uid_auth : a.account_uid_auths )
    {
       GRAPHENE_ASSERT( db.find_account_id_by_uid( uid_auth.first.uid ).valid(),
@@ -61,43 +49,6 @@ void verify_authority_accounts( const database& db, const authority& a )
          ("a", uid_auth.first.uid) );
    }
 }
-
-void verify_account_votes( const database& db, const account_options& options )
-{
-   // ensure account's votes satisfy requirements
-   // NB only the part of vote checking that requires chain state is here,
-   // the rest occurs in account_options::validate()
-
-   // TODO review
-   /*
-   const auto& gpo = db.get_global_properties();
-   const auto& chain_params = gpo.parameters;
-
-   FC_ASSERT( options.num_witness <= chain_params.maximum_witness_count,
-              "Voted for more witnesses than currently allowed (${c})", ("c", chain_params.maximum_witness_count) );
-   FC_ASSERT( options.num_committee <= chain_params.maximum_committee_count,
-              "Voted for more committee members than currently allowed (${c})", ("c", chain_params.maximum_committee_count) );
-
-   uint32_t max_vote_id = gpo.next_available_vote_id;
-   bool has_worker_votes = false;
-   for( auto id : options.votes )
-   {
-      FC_ASSERT( id < max_vote_id );
-      has_worker_votes |= (id.type() == vote_id_type::worker);
-   }
-
-      const auto& against_worker_idx = db.get_index_type<worker_index>().indices().get<by_vote_against>();
-      for( auto id : options.votes )
-      {
-         if( id.type() == vote_id_type::worker )
-         {
-            FC_ASSERT( against_worker_idx.find( id ) == against_worker_idx.end() );
-         }
-      }
-   */
-
-}
-
 
 void_result account_create_evaluator::do_evaluate( const account_create_operation& op )
 { try {
@@ -271,7 +222,7 @@ void_result account_update_auth_evaluator::do_evaluate( const account_update_aut
       if( o.active ) verify_authority_accounts( d, *o.active );
       if( o.secondary ) verify_authority_accounts( d, *o.secondary );
    }
-   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
+   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_auth_max_auth_exceeded )
    GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
 
    acnt = &d.get_account_by_uid( o.uid );
@@ -304,10 +255,12 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
 
    acnt = &d.get_account_by_uid( o.uid );
-   for( const auto& uid_auth : acnt->secondary.account_uid_auths )
-   {
-      FC_ASSERT( uid_auth.first.uid != o.platform, "platform ${p} is already in secondary authority", ("p", o.platform) );
-   }
+
+   auto& ka = acnt->secondary.account_uid_auths;
+   auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
+   bool found = ( itr != ka.end() );
+   FC_ASSERT( !found, "platform ${p} is already in secondary authority", ("p", o.platform) );
+
    authority auth = acnt->secondary;
    authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
    //auat.uid = o.platform;
@@ -318,7 +271,7 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    {
       verify_authority_accounts( d, auth );
    }
-   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
+   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_auth_max_auth_exceeded )
    GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
 
    return void_result();
@@ -540,42 +493,73 @@ void_result account_update_proxy_evaluator::do_apply( const account_update_proxy
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-void_result account_update_evaluator::do_evaluate( const account_update_operation& o )
+void_result account_enable_allowed_assets_evaluator::do_evaluate( const account_enable_allowed_assets_operation& o )
 { try {
    database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME,
+              "Can only use account_enable_allowed_assets_operation after HARDFORK_0_3_TIME" );
 
-   try
-   {
-      if( o.owner )  verify_authority_accounts( d, *o.owner );
-      if( o.active ) verify_authority_accounts( d, *o.active );
-   }
-   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_max_auth_exceeded )
-   GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
+   acnt = &d.get_account_by_uid( o.account );
 
-   acnt = &o.account(d);
-
-   if( o.new_options.valid() )
-      verify_account_votes( d, *o.new_options );
+   FC_ASSERT( o.enable != acnt->allowed_assets.valid(), "Should change something" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
-void_result account_update_evaluator::do_apply( const account_update_operation& o )
+void_result account_enable_allowed_assets_evaluator::do_apply( const account_enable_allowed_assets_operation& o )
 { try {
    database& d = db();
-   d.modify( *acnt, [&](account_object& a){
-      if( o.owner )
+
+   d.modify( *acnt, [&d](account_object& a){
+      if( a.allowed_assets.valid() )
+         a.allowed_assets.reset();
+      else
       {
-         a.owner = *o.owner;
-         a.top_n_control_flags = 0;
+         a.allowed_assets = flat_set<asset_aid_type>();
+         a.allowed_assets->insert( GRAPHENE_CORE_ASSET_AID );
       }
-      if( o.active )
-      {
-         a.active = *o.active;
-         a.top_n_control_flags = 0;
-      }
-      // TODO review
-      //if( o.new_options ) a.options = *o.new_options;
+      a.last_update_time = d.head_block_time();
+   });
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_update_allowed_assets_evaluator::do_evaluate( const account_update_allowed_assets_operation& o )
+{ try {
+   database& d = db();
+   FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME,
+              "Can only use account_update_allowed_assets_operation after HARDFORK_0_3_TIME" );
+
+   acnt = &d.get_account_by_uid( o.account );
+
+   FC_ASSERT( acnt->allowed_assets.valid(), "Account did not enable allowed_assets, can not update" );
+
+   for( const auto aid : o.assets_to_remove )
+   {
+      FC_ASSERT( acnt->allowed_assets->find( aid ) != acnt->allowed_assets->end(),
+                 "Account did not allow asset ${a}, can not remove", ("a",aid) );
+      //get_asset_by_aid( aid ); // no need to check
+   }
+   for( const auto aid : o.assets_to_add )
+   {
+      FC_ASSERT( acnt->allowed_assets->find( aid ) == acnt->allowed_assets->end(),
+                 "Account already allowed asset ${a}, can not add", ("a",aid) );
+      d.get_asset_by_aid( aid );
+   }
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result account_update_allowed_assets_evaluator::do_apply( const account_update_allowed_assets_operation& o )
+{ try {
+   database& d = db();
+
+   d.modify( *acnt, [&d,&o](account_object& a){
+      for( const auto aid : o.assets_to_remove )
+         a.allowed_assets->erase( aid );
+      for( const auto aid : o.assets_to_add )
+         a.allowed_assets->insert( aid );
+      a.last_update_time = d.head_block_time();
    });
 
    return void_result();
@@ -585,9 +569,9 @@ void_result account_whitelist_evaluator::do_evaluate(const account_whitelist_ope
 { try {
    database& d = db();
 
-   listed_account = &o.account_to_list(d);
+   listed_account = d.find_account_by_uid( o.account_to_list );
    if( !d.get_global_properties().parameters.allow_non_member_whitelists )
-      FC_ASSERT(o.authorizing_account(d).is_lifetime_member());
+      FC_ASSERT(d.get_account_by_uid( o.authorizing_account ).is_lifetime_member());
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -609,7 +593,7 @@ void_result account_whitelist_evaluator::do_apply(const account_whitelist_operat
    });
 
    /** for tracking purposes only, this state is not needed to evaluate */
-   d.modify( o.authorizing_account(d), [&]( account_object& a ) {
+   d.modify( d.get_account_by_uid( o.authorizing_account ), [&]( account_object& a ) {
      if( o.new_listing & o.white_listed )
         a.whitelisted_accounts.insert( o.account_to_list );
      else
@@ -623,34 +607,5 @@ void_result account_whitelist_evaluator::do_apply(const account_whitelist_operat
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
-
-void_result account_upgrade_evaluator::do_evaluate(const account_upgrade_evaluator::operation_type& o)
-{ try {
-   database& d = db();
-
-   account = &d.get(o.account_to_upgrade);
-   FC_ASSERT(!account->is_lifetime_member());
-
-   return {};
-//} FC_CAPTURE_AND_RETHROW( (o) ) }
-} FC_RETHROW_EXCEPTIONS( error, "Unable to upgrade account '${a}'", ("a",o.account_to_upgrade(db()).name) ) }
-
-void_result account_upgrade_evaluator::do_apply(const account_upgrade_evaluator::operation_type& o)
-{ try {
-   database& d = db();
-
-   d.modify(*account, [&](account_object& a) {
-      if( o.upgrade_to_lifetime_member )
-      {
-         // Upgrade to lifetime member. I don't care what the account was before.
-         a.statistics(d).process_fees(a, d);
-         a.membership_expiration_date = time_point_sec::maximum();
-         a.referrer = a.registrar = a.lifetime_referrer = a.get_id();
-         a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - a.network_fee_percentage;
-      }
-   });
-
-   return {};
-} FC_RETHROW_EXCEPTIONS( error, "Unable to upgrade account '${a}'", ("a",o.account_to_upgrade(db()).name) ) }
 
 } } // graphene::chain

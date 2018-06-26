@@ -26,16 +26,11 @@
 #include <graphene/app/api.hpp>
 #include <graphene/app/api_access.hpp>
 #include <graphene/app/application.hpp>
-#include <graphene/app/impacted.hpp>
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/get_config.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/confidential_object.hpp>
-#include <graphene/chain/market_object.hpp>
 #include <graphene/chain/transaction_object.hpp>
-#include <graphene/chain/withdraw_permission_object.hpp>
-#include <graphene/chain/worker_object.hpp>
 
 #include <fc/crypto/hex.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -146,7 +141,10 @@ namespace graphene { namespace app {
              {
                 auto block_num = b.block_num();
                 auto& callback = _callbacks.find(id)->second;
-                fc::async( [capture_this,this,id,block_num,trx_num,trx,callback](){ callback( fc::variant(transaction_confirmation{ id, block_num, trx_num, trx}) ); } );
+                auto v = fc::variant( transaction_confirmation{ id, block_num, trx_num, trx }, GRAPHENE_MAX_NESTED_OBJECTS );
+                fc::async( [capture_this,v,callback]() {
+                   callback(v);
+                } );
              }
           }
        }
@@ -156,13 +154,15 @@ namespace graphene { namespace app {
     {
        trx.validate();
        _app.chain_database()->push_transaction(trx);
-       _app.p2p_node()->broadcast_transaction(trx);
+       if( _app.p2p_node() != nullptr )
+          _app.p2p_node()->broadcast_transaction(trx);
     }
 
     void network_broadcast_api::broadcast_block( const signed_block& b )
     {
        _app.chain_database()->push_block(b);
-       _app.p2p_node()->broadcast( net::block_message( b ));
+       if( _app.p2p_node() != nullptr )
+          _app.p2p_node()->broadcast( net::block_message( b ));
     }
 
     void network_broadcast_api::broadcast_transaction_with_callback(confirmation_callback cb, const signed_transaction& trx)
@@ -170,7 +170,8 @@ namespace graphene { namespace app {
        trx.validate();
        _callbacks[trx.id()] = cb;
        _app.chain_database()->push_transaction(trx);
-       _app.p2p_node()->broadcast_transaction(trx);
+       if( _app.p2p_node() != nullptr )
+          _app.p2p_node()->broadcast_transaction(trx);
     }
 
     network_node_api::network_node_api( application& a ) : _app( a )
@@ -255,235 +256,6 @@ namespace graphene { namespace app {
     {
        FC_ASSERT(_debug_api);
        return *_debug_api;
-    }
-
-    vector<account_id_type> get_relevant_accounts( const object* obj )
-    {
-       vector<account_id_type> result;
-       if( obj->id.space() == protocol_ids )
-       {
-          switch( (object_type)obj->id.type() )
-          {
-            case null_object_type:
-            case base_object_type:
-            case OBJECT_TYPE_COUNT:
-               return result;
-            case account_object_type:{
-               result.push_back( obj->id );
-               break;
-            } case asset_object_type:{
-               const auto& aobj = dynamic_cast<const asset_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->issuer );
-               break;
-             } case platform_object_type:{
-               // TODO review
-               //const auto& aobj = dynamic_cast<const platform_object*>(obj);
-               //assert( aobj != nullptr );
-               //result.push_back( aobj->owner );
-               break;
-             } case post_object_type:{
-               // TODO review
-               //const auto& aobj = dynamic_cast<const post_object*>(obj);
-               //assert( aobj != nullptr );
-               //result.push_back( aobj->poster );
-               //if( aobj->parent_poster.valid() )
-               //   result.push_back( *(aobj->parent_poster) );
-               break;
-            } case force_settlement_object_type:{
-               const auto& aobj = dynamic_cast<const force_settlement_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->owner );
-               break;
-            } case committee_member_object_type:{
-               // TODO review
-               //const auto& aobj = dynamic_cast<const committee_member_object*>(obj);
-               //assert( aobj != nullptr );
-               //result.push_back( aobj->committee_member_account );
-               break;
-            } case witness_object_type:{
-               // TODO review
-               //const auto& aobj = dynamic_cast<const witness_object*>(obj);
-               //assert( aobj != nullptr );
-               //result.push_back( aobj->account );
-               break;
-            } case committee_proposal_object_type:{
-               // TODO review
-               //const auto& aobj = dynamic_cast<const committee_proposal_object*>(obj);
-               //assert( aobj != nullptr );
-               //result.push_back( aobj->committee_member_uid );
-               break;
-            } case limit_order_object_type:{
-               const auto& aobj = dynamic_cast<const limit_order_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->seller );
-               break;
-            } case call_order_object_type:{
-               const auto& aobj = dynamic_cast<const call_order_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->borrower );
-               break;
-            } case custom_object_type:{
-              break;
-            } case proposal_object_type:{
-               const auto& aobj = dynamic_cast<const proposal_object*>(obj);
-               assert( aobj != nullptr );
-               flat_set<account_id_type> impacted;
-               transaction_get_impacted_accounts( aobj->proposed_transaction, impacted );
-               result.reserve( impacted.size() );
-               for( auto& item : impacted ) result.emplace_back(item);
-               break;
-            } case operation_history_object_type:{
-               const auto& aobj = dynamic_cast<const operation_history_object*>(obj);
-               assert( aobj != nullptr );
-               flat_set<account_id_type> impacted;
-               operation_get_impacted_accounts( aobj->op, impacted );
-               result.reserve( impacted.size() );
-               for( auto& item : impacted ) result.emplace_back(item);
-               break;
-            } case withdraw_permission_object_type:{
-               const auto& aobj = dynamic_cast<const withdraw_permission_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->withdraw_from_account );
-               result.push_back( aobj->authorized_account );
-               break;
-            } case vesting_balance_object_type:{
-               const auto& aobj = dynamic_cast<const vesting_balance_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->owner );
-               break;
-            } case worker_object_type:{
-               const auto& aobj = dynamic_cast<const worker_object*>(obj);
-               assert( aobj != nullptr );
-               result.push_back( aobj->worker_account );
-               break;
-            } case balance_object_type:{
-               /** these are free from any accounts */
-               break;
-            }
-          }
-       }
-       else if( obj->id.space() == implementation_ids )
-       {
-          switch( (impl_object_type)obj->id.type() )
-          {
-                 case impl_global_property_object_type:
-                  break;
-                 case impl_dynamic_global_property_object_type:
-                  break;
-                 case impl_reserved0_object_type:
-                  break;
-                 case impl_asset_dynamic_data_type:
-                  break;
-                 case impl_asset_bitasset_data_type:
-                  break;
-                 case impl_account_balance_object_type:{
-                  // TODO review
-                  //const auto& aobj = dynamic_cast<const account_balance_object*>(obj);
-                  //assert( aobj != nullptr );
-                  //result.push_back( aobj->owner );
-                  break;
-               } case impl_account_statistics_object_type:{
-                  // TODO review
-                  //const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
-                  //assert( aobj != nullptr );
-                  //result.push_back( aobj->owner );
-                  break;
-               } case impl_csaf_lease_object_type:{
-                  // TODO review
-                  //const auto& aobj = dynamic_cast<const csaf_lease_object*>(obj);
-                  //assert( aobj != nullptr );
-                  //result.push_back( aobj->from );
-                  //result.push_back( aobj->to );
-                  break;
-               } case impl_voter_object_type:{
-                  // TODO review
-                  //const auto& aobj = dynamic_cast<const voter_object*>(obj);
-                  //assert( aobj != nullptr );
-                  //result.push_back( aobj->uid );
-                  break;
-               } case impl_witness_vote_object_type:{
-                  // TODO review
-                  //const auto& aobj = dynamic_cast<const witness_vote_object*>(obj);
-                  //assert( aobj != nullptr );
-                  //result.push_back( aobj->voter_uid );
-                  //result.push_back( aobj->witness_uid );
-                  break;
-               } case impl_platform_vote_object_type:{
-                 // TODO review
-               } case impl_committee_member_vote_object_type:{
-                  // TODO review
-                  //const auto& aobj = dynamic_cast<const committee_member_vote_object*>(obj);
-                  //assert( aobj != nullptr );
-                  //result.push_back( aobj->voter_uid );
-                  //result.push_back( aobj->committee_member_uid );
-                  break;
-               } case impl_registrar_takeover_object_type:{
-                  // TODO review
-                  //const auto& aobj = dynamic_cast<const registrar_takeover_object*>(obj);
-                  //assert( aobj != nullptr );
-                  //result.push_back( aobj->original_registrar );
-                  //result.push_back( aobj->takeover_registrar );
-                  break;
-               } case impl_transaction_object_type:{
-                  const auto& aobj = dynamic_cast<const transaction_object*>(obj);
-                  assert( aobj != nullptr );
-                  flat_set<account_id_type> impacted;
-                  transaction_get_impacted_accounts( aobj->trx, impacted );
-                  result.reserve( impacted.size() );
-                  for( auto& item : impacted ) result.emplace_back(item);
-                  break;
-               } case impl_blinded_balance_object_type:{
-                  const auto& aobj = dynamic_cast<const blinded_balance_object*>(obj);
-                  assert( aobj != nullptr );
-                  result.reserve( aobj->owner.account_auths.size() );
-                  for( const auto& a : aobj->owner.account_auths )
-                     result.push_back( a.first );
-                  break;
-               } case impl_block_summary_object_type:
-                  break;
-                 case impl_account_transaction_history_object_type:
-                  break;
-                 case impl_chain_property_object_type:
-                  break;
-                 case impl_witness_schedule_object_type:
-                  break;
-                 case impl_budget_record_object_type:
-                  break;
-                 case impl_special_authority_object_type:
-                  break;
-                 case impl_buyback_object_type:
-                  break;
-                 case impl_fba_accumulator_object_type:
-                  break;
-          }
-       }
-       return result;
-    } // end get_relevant_accounts( obj )
-
-    vector<order_history_object> history_api::get_fill_order_history( asset_id_type a, asset_id_type b, uint32_t limit  )const
-    {
-       FC_ASSERT(_app.chain_database());
-       const auto& db = *_app.chain_database();
-       if( a > b ) std::swap(a,b);
-       const auto& history_idx = db.get_index_type<graphene::market_history::history_index>().indices().get<by_key>();
-       history_key hkey;
-       hkey.base = a;
-       hkey.quote = b;
-       hkey.sequence = std::numeric_limits<int64_t>::min();
-
-       uint32_t count = 0;
-       auto itr = history_idx.lower_bound( hkey );
-       vector<order_history_object> result;
-       while( itr != history_idx.end() && count < limit)
-       {
-          if( itr->key.base != a || itr->key.quote != b ) break;
-          result.push_back( *itr );
-          ++itr;
-          ++count;
-       }
-
-       return result;
     }
 
     vector<operation_history_object> history_api::get_account_history( account_id_type account, 
@@ -600,39 +372,6 @@ namespace graphene { namespace app {
        return result;
     }
 
-    flat_set<uint32_t> history_api::get_market_history_buckets()const
-    {
-       auto hist = _app.get_plugin<market_history_plugin>( "market_history" );
-       FC_ASSERT( hist );
-       return hist->tracked_buckets();
-    }
-
-    vector<bucket_object> history_api::get_market_history( asset_id_type a, asset_id_type b,
-                                                           uint32_t bucket_seconds, fc::time_point_sec start, fc::time_point_sec end )const
-    { try {
-       FC_ASSERT(_app.chain_database());
-       const auto& db = *_app.chain_database();
-       vector<bucket_object> result;
-       result.reserve(200);
-
-       if( a > b ) std::swap(a,b);
-
-       const auto& bidx = db.get_index_type<bucket_index>();
-       const auto& by_key_idx = bidx.indices().get<by_key>();
-
-       auto itr = by_key_idx.lower_bound( bucket_key( a, b, bucket_seconds, start ) );
-       while( itr != by_key_idx.end() && itr->key.open <= end && result.size() < 200 )
-       {
-          if( !(itr->key.base == a && itr->key.quote == b && itr->key.seconds == bucket_seconds) )
-          {
-            return result;
-          }
-          result.push_back(*itr);
-          ++itr;
-       }
-       return result;
-    } FC_CAPTURE_AND_RETHROW( (a)(b)(bucket_seconds)(start)(end) ) }
-    
     crypto_api::crypto_api(){};
     
     blind_signature crypto_api::blind_sign( const extended_private_key_type& key, const blinded_hash& hash, int i )
@@ -710,7 +449,7 @@ namespace graphene { namespace app {
     vector<account_asset_balance> asset_api::get_asset_holders( asset_aid_type asset_id ) const {
 
       const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
-      auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
+      auto range = bal_idx.equal_range( asset_id );
 
       vector<account_asset_balance> result;
 
@@ -728,12 +467,12 @@ namespace graphene { namespace app {
       return result;
     }
     // get number of asset holders.
-    int asset_api::get_asset_holders_count( asset_aid_type asset_id ) const {
+    uint64_t asset_api::get_asset_holders_count( asset_aid_type asset_id ) const {
 
       const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
-      auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
+      auto range = bal_idx.equal_range( asset_id );
       // TODO FIXME filter out accounts with balance == 0
-      int count = boost::distance(range) - 1;
+      uint64_t count = boost::distance(range) - 1;
 
       return count;
     }
@@ -742,21 +481,15 @@ namespace graphene { namespace app {
             
       vector<asset_holders> result;
             
-      vector<asset_id_type> total_assets;
       for( const asset_object& asset_obj : _db.get_index_type<asset_index>().indices() )
       {
-        const auto& dasset_obj = asset_obj.dynamic_asset_data_id(_db);
-
-        asset_aid_type asset_id;
-        asset_id = object_id_type(dasset_obj.id).instance();
-
         const auto& bal_idx = _db.get_index_type< account_balance_index >().indices().get< by_asset_balance >();
-        auto range = bal_idx.equal_range( boost::make_tuple( asset_id ) );
+        auto range = bal_idx.equal_range( asset_obj.asset_id );
         // TODO FIXME filter out accounts with balance == 0
-        int count = boost::distance(range) - 1;
+        uint64_t count = boost::distance(range) - 1;
                 
         asset_holders ah;
-        ah.asset_id  = asset_id;
+        ah.asset_id  = asset_obj.asset_id;
         ah.count     = count;
 
         result.push_back(ah);

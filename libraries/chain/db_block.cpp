@@ -494,9 +494,6 @@ void database::_apply_block( const signed_block& next_block )
    FC_ASSERT( (skip & skip_merkle_check) || next_block.transaction_merkle_root == next_block.calculate_merkle_root(), "", ("next_block.transaction_merkle_root",next_block.transaction_merkle_root)("calc",next_block.calculate_merkle_root())("next_block",next_block)("id",next_block.id()) );
 
    const witness_object& signing_witness = validate_block_header(skip, next_block);
-   const auto& global_props = get_global_properties();
-   const auto& dynamic_global_props = get<dynamic_global_property_object>(dynamic_global_property_id_type());
-   bool maint_needed = (dynamic_global_props.next_maintenance_time <= next_block.timestamp);
 
    _current_block_time   = next_block.timestamp;
    _current_block_num    = next_block_num;
@@ -523,18 +520,10 @@ void database::_apply_block( const signed_block& next_block )
    update_signing_witness(signing_witness, next_block);
    update_last_irreversible_block();
 
-   dlog("before perform_chain_maintenance");
-   // Are we at the maintenance interval?
-   if( maint_needed )
-      perform_chain_maintenance(next_block, global_props);
-
    dlog("after perform_chain_maintenance");
    create_block_summary(next_block);
    clear_expired_transactions();
    clear_expired_proposals();
-   clear_expired_orders();
-   update_expired_feeds();
-   update_withdraw_permissions();
 
    dlog("after update_withdraw_permissions");
    clear_expired_csaf_leases();
@@ -551,13 +540,7 @@ void database::_apply_block( const signed_block& next_block )
    update_committee();
    adjust_budgets();
 
-   dlog("before update_maintenance_flag");
-   // n.b., update_maintenance_flag() happens this late
-   // because get_slot_time() / get_slot_at_time() is needed above
-   // TODO:  figure out if we could collapse this function into
-   // update_global_dynamic_data() as perhaps these methods only need
-   // to be called for header validation?
-   update_maintenance_flag( maint_needed );
+   dlog("before update_witness_schedule");
    update_witness_schedule();
    if( !_node_property_object.debug_updates.empty() )
       apply_debug_updates();
@@ -565,9 +548,7 @@ void database::_apply_block( const signed_block& next_block )
    dlog("before check invariants");
    if( !( skip & skip_invariants_check ) )
    {
-      //if( next_block_num > 860000 && ( next_block_num % 5 == 0 ) )
-      if( next_block_num > 1350000 )
-         check_invariants();
+      check_invariants();
    }
 
    dlog("before notify applied block");
@@ -663,11 +644,6 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
       ++_current_op_in_trx;
    }
    ptrx.operation_results = std::move(eval_state.operation_results);
-
-   //Make sure the temp account has no non-zero balances
-   const auto& index = get_index_type<account_balance_index>().indices().get<by_account_asset>();
-   auto range = index.equal_range( boost::make_tuple( GRAPHENE_TEMP_ACCOUNT_UID ) );
-   std::for_each(range.first, range.second, [](const account_balance_object& b) { FC_ASSERT(b.balance == 0); });
 
    return ptrx;
 } FC_CAPTURE_AND_RETHROW( (trx) ) }

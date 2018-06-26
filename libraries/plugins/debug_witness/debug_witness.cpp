@@ -68,7 +68,7 @@ void debug_witness_plugin::plugin_initialize(const boost::program_options::varia
       const std::vector<std::string> key_id_to_wif_pair_strings = options["private-key"].as<std::vector<std::string>>();
       for (const std::string& key_id_to_wif_pair_string : key_id_to_wif_pair_strings)
       {
-         auto key_id_to_wif_pair = graphene::app::dejsonify<std::pair<chain::public_key_type, std::string> >(key_id_to_wif_pair_string);
+         auto key_id_to_wif_pair = graphene::app::dejsonify<std::pair<chain::public_key_type, std::string> >(key_id_to_wif_pair_string, GRAPHENE_MAX_NESTED_OBJECTS );
          idump((key_id_to_wif_pair));
          fc::optional<fc::ecc::private_key> private_key = graphene::utilities::wif_to_key(key_id_to_wif_pair.second);
          if (!private_key)
@@ -77,7 +77,7 @@ void debug_witness_plugin::plugin_initialize(const boost::program_options::varia
             // just here to ease the transition, can be removed soon
             try
             {
-               private_key = fc::variant(key_id_to_wif_pair.second).as<fc::ecc::private_key>();
+               private_key = fc::variant(key_id_to_wif_pair.second, GRAPHENE_MAX_NESTED_OBJECTS ).as<fc::ecc::private_key>( GRAPHENE_MAX_NESTED_OBJECTS );
             }
             catch (const fc::exception&)
             {
@@ -98,13 +98,13 @@ void debug_witness_plugin::plugin_startup()
    // connect needed signals
 
    _applied_block_conn  = db.applied_block.connect([this](const graphene::chain::signed_block& b){ on_applied_block(b); });
-   _changed_objects_conn = db.changed_objects.connect([this](const std::vector<graphene::db::object_id_type>& ids, const fc::flat_set<graphene::chain::account_id_type>& impacted_accounts){ on_changed_objects(ids, impacted_accounts); });
-   _removed_objects_conn = db.removed_objects.connect([this](const std::vector<graphene::db::object_id_type>& ids, const std::vector<const graphene::db::object*>& objs, const fc::flat_set<graphene::chain::account_id_type>& impacted_accounts){ on_removed_objects(ids, objs, impacted_accounts); });
+   _changed_objects_conn = db.changed_objects.connect([this](const std::vector<graphene::db::object_id_type>& ids, const fc::flat_set<graphene::chain::account_uid_type>& impacted_accounts){ on_changed_objects(ids, impacted_accounts); });
+   _removed_objects_conn = db.removed_objects.connect([this](const std::vector<graphene::db::object_id_type>& ids, const std::vector<const graphene::db::object*>& objs, const fc::flat_set<graphene::chain::account_uid_type>& impacted_accounts){ on_removed_objects(ids, objs, impacted_accounts); });
 
    return;
 }
 
-void debug_witness_plugin::on_changed_objects( const std::vector<graphene::db::object_id_type>& ids, const fc::flat_set<graphene::chain::account_id_type>& impacted_accounts )
+void debug_witness_plugin::on_changed_objects( const std::vector<graphene::db::object_id_type>& ids, const fc::flat_set<graphene::chain::account_uid_type>& impacted_accounts )
 {
    if( _json_object_stream && (ids.size() > 0) )
    {
@@ -120,7 +120,7 @@ void debug_witness_plugin::on_changed_objects( const std::vector<graphene::db::o
    }
 }
 
-void debug_witness_plugin::on_removed_objects( const std::vector<graphene::db::object_id_type>& ids, const std::vector<const graphene::db::object*> objs, const fc::flat_set<graphene::chain::account_id_type>& impacted_accounts )
+void debug_witness_plugin::on_removed_objects( const std::vector<graphene::db::object_id_type>& ids, const std::vector<const graphene::db::object*> objs, const fc::flat_set<graphene::chain::account_uid_type>& impacted_accounts )
 {
    if( _json_object_stream )
    {

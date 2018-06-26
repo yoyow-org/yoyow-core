@@ -32,34 +32,50 @@ namespace graphene { namespace chain {
 
 namespace detail {
 
-bool _is_authorized_asset(
-   const database& d,
-   const account_object& acct,
-   const asset_object& asset_obj)
+void _validate_authorized_asset( const database& d,
+                                 const account_object& acct,
+                                 const asset_object& asset_obj,
+                                 const string& account_desc_prefix )
 {
    if( acct.allowed_assets.valid() )
    {
-      if( acct.allowed_assets->find( asset_obj.id ) == acct.allowed_assets->end() )
-         return false;
-      // must still pass other checks even if it is in allowed_assets
+      bool is_allowed_asset = ( acct.allowed_assets->find( asset_obj.asset_id ) != acct.allowed_assets->end() );
+      FC_ASSERT( is_allowed_asset,
+                 "Asset '${asset}' is not allowed by ${prefix}account ${acc}",
+                 ("asset", asset_obj.symbol)
+                 ("prefix", account_desc_prefix)
+                 ("acc", acct.uid) );
    }
+
+   if( !( asset_obj.enabled_whitelist() ) ) // pass if not enabled whitelisting
+      return;
 
    for( const auto id : acct.blacklisting_accounts )
    {
-      if( asset_obj.options.blacklist_authorities.find(id) != asset_obj.options.blacklist_authorities.end() )
-         return false;
+      bool is_blacklisted = ( asset_obj.options.blacklist_authorities.find(id) != asset_obj.options.blacklist_authorities.end() );
+      FC_ASSERT( !is_blacklisted,
+                 "${prefix}account ${acc} is blacklisted for asset '${asset}'",
+                 ("prefix", account_desc_prefix)
+                 ("acc", acct.uid)
+                 ("asset", asset_obj.symbol) );
    }
 
-   if( asset_obj.options.whitelist_authorities.size() == 0 )
-      return true;
+   if( asset_obj.options.whitelist_authorities.size() == 0 ) // pass if no whitelist authority configured
+      return;
 
    for( const auto id : acct.whitelisting_accounts )
    {
+      // pass if whitelisted by any one of whitelist authorities
       if( asset_obj.options.whitelist_authorities.find(id) != asset_obj.options.whitelist_authorities.end() )
-         return true;
+         return;
    }
 
-   return false;
+   bool is_whitelisted = false;
+   FC_ASSERT( is_whitelisted,
+              "${prefix}account ${acc} is not whitelisted for asset '${asset}'",
+              ("prefix", account_desc_prefix)
+              ("acc", acct.uid)
+              ("asset", asset_obj.symbol) );
 }
 
 } // detail

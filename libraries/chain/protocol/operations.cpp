@@ -32,12 +32,6 @@ uint64_t base_operation::calculate_data_fee( uint64_t bytes, uint64_t price_per_
    return result.to_uint64();
 }
 
-void balance_claim_operation::validate()const
-{
-   FC_ASSERT( fee == asset() );
-   FC_ASSERT( balance_owner_key != public_key_type() );
-}
-
 /**
  * @brief Used to validate operations in a polymorphic manner
  */
@@ -46,29 +40,6 @@ struct operation_validator
    typedef void result_type;
    template<typename T>
    void operator()( const T& v )const { v.validate(); }
-};
-
-struct operation_get_required_auth
-{
-   typedef void result_type;
-
-   flat_set<account_id_type>& active;
-   flat_set<account_id_type>& owner;
-   vector<authority>&         other;
-
-
-   operation_get_required_auth( flat_set<account_id_type>& a,
-     flat_set<account_id_type>& own,
-     vector<authority>&  oth ):active(a),owner(own),other(oth){}
-
-   template<typename T>
-   void operator()( const T& v )const
-   {
-      active.insert( v.fee_payer() );
-      v.get_required_active_authorities( active );
-      v.get_required_owner_authorities( owner );
-      v.get_required_authorities( other );
-   }
 };
 
 struct operation_get_required_uid_auth
@@ -173,14 +144,6 @@ void operation_validate( const operation& op )
    op.visit( operation_validator() );
 }
 
-void operation_get_required_authorities( const operation& op,
-                                         flat_set<account_id_type>& active,
-                                         flat_set<account_id_type>& owner,
-                                         vector<authority>&  other )
-{
-   op.visit( operation_get_required_auth( active, owner, other ) );
-}
-
 void operation_get_required_uid_authorities( const operation& op,
                                          flat_set<account_uid_type>& owner_uids,
                                          flat_set<account_uid_type>& active_uids,
@@ -194,13 +157,21 @@ void validate_account_uid( const account_uid_type uid, const string& object_name
 {
    FC_ASSERT( is_valid_account_uid( uid ), "${o}account uid ${u} is not valid.", ("o", object_name)("u", uid) );
 }
-void validate_asset_id( asset a, const string& object_name )
+void validate_asset_id( const asset& a, asset_aid_type aid, const string& object_name )
 {
-   FC_ASSERT( a.asset_id == GRAPHENE_CORE_ASSET_AID, "asset_id of ${o} should be 0.", ("o", object_name) );
+   FC_ASSERT( a.asset_id == aid, "asset_id of ${o} should be ${aid}.", ("o", object_name)("aid", aid) );
 }
-void validate_op_fee( asset fee, const string& op_name )
+void validate_core_asset_id( const asset& a, const string& object_name )
 {
-   validate_non_negative_asset( fee, op_name + "fee" );
+   validate_asset_id( a, GRAPHENE_CORE_ASSET_AID, object_name );
+}
+void validate_non_core_asset_id( const asset& a, const string& object_name )
+{
+   FC_ASSERT( a.asset_id != GRAPHENE_CORE_ASSET_AID, "asset_id of ${o} should not be 0.", ("o", object_name) );
+}
+void validate_op_fee( const asset& fee, const string& op_name )
+{
+   validate_non_negative_core_asset( fee, op_name + "fee" );
 }
 void validate_op_fee( const fee_type& fee, const string& op_name )
 {
@@ -208,7 +179,7 @@ void validate_op_fee( const fee_type& fee, const string& op_name )
    if( fee.options.valid() )
    {
       const auto& fov = fee.options->value;
-      asset total;
+      asset total; // 0 CORE
       if( fov.from_balance.valid() )
       {
          validate_op_fee( *fov.from_balance, op_name + "from_balance " );
@@ -239,14 +210,22 @@ void validate_non_negative_amount( share_type amount, const string& object_name 
 {
    FC_ASSERT( amount >= 0, "${o} should not be negative.", ("o", object_name) );
 }
-void validate_positive_asset( asset a, const string& object_name )
+void validate_positive_core_asset( const asset& a, const string& object_name )
 {
-   validate_asset_id( a, object_name );
+   validate_core_asset_id( a, object_name );
    validate_positive_amount( a.amount, object_name + " amount" );
 }
-void validate_non_negative_asset( asset a, const string& object_name )
+void validate_positive_asset( const asset& a, const string& object_name )
 {
-   validate_asset_id( a, object_name );
+   validate_positive_amount( a.amount, object_name + " amount" );
+}
+void validate_non_negative_core_asset( const asset& a, const string& object_name )
+{
+   validate_core_asset_id( a, object_name );
+   validate_non_negative_amount( a.amount, object_name + " amount" );
+}
+void validate_non_negative_asset( const asset& a, const string& object_name )
+{
    validate_non_negative_amount( a.amount, object_name + " amount" );
 }
 

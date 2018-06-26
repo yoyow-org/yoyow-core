@@ -36,29 +36,17 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
    from_account    = &d.get_account_by_uid( op.from );
    to_account      = &d.get_account_by_uid( op.to );
 
-   const asset_object&   transfer_asset_object      = asset_id_type(op.amount.asset_id)(d);
+   const asset_object&   transfer_asset_object      = d.get_asset_by_aid( op.amount.asset_id );
+
+   validate_authorized_asset( d, *from_account, transfer_asset_object, "'from' " );
+   validate_authorized_asset( d, *to_account,   transfer_asset_object, "'to' " );
 
    try {
-
-      GRAPHENE_ASSERT(
-         is_authorized_asset( d, *from_account, transfer_asset_object ),
-         transfer_from_account_not_whitelisted,
-         "'from' account ${from} is not whitelisted for asset ${asset}.",
-         ("from",op.from)
-         ("asset",op.amount.asset_id)
-         );
-      GRAPHENE_ASSERT(
-         is_authorized_asset( d, *to_account, transfer_asset_object ),
-         transfer_to_account_not_whitelisted,
-         "'to' account ${to} is not whitelisted for asset ${asset}.",
-         ("to",op.to)
-         ("asset",op.amount.asset_id)
-         );
 
       if( transfer_asset_object.is_transfer_restricted() )
       {
          GRAPHENE_ASSERT(
-            from_account->id == transfer_asset_object.issuer || to_account->id == transfer_asset_object.issuer,
+            from_account->uid == transfer_asset_object.issuer || to_account->uid == transfer_asset_object.issuer,
             transfer_restricted_transfer_asset,
             "Asset {asset} has transfer_restricted flag enabled.",
             ("asset", op.amount.asset_id)
@@ -138,22 +126,20 @@ void_result override_transfer_evaluator::do_evaluate( const override_transfer_op
 { try {
    const database& d = db();
 
-   const asset_object&   asset_type      = asset_id_type(op.amount.asset_id)(d);
+   const asset_object& asset_type = d.get_asset_by_aid( op.amount.asset_id );
    GRAPHENE_ASSERT(
       asset_type.can_override(),
       override_transfer_not_permitted,
       "override_transfer not permitted for asset ${asset}",
       ("asset", op.amount.asset_id)
       );
-   FC_ASSERT( asset_type.issuer == op.issuer );
+   FC_ASSERT( asset_type.issuer == op.issuer, "only asset issuer can override-transfer asset" );
 
-   const account_object& from_account    = op.from(d);
-   const account_object& to_account      = op.to(d);
+   const account_object& from_account    = d.get_account_by_uid( op.from );
+   const account_object& to_account      = d.get_account_by_uid( op.to );
 
-   FC_ASSERT( is_authorized_asset( d, to_account, asset_type ) );
-   FC_ASSERT( is_authorized_asset( d, from_account, asset_type ) );
-
-   // the above becomes no-op after hardfork because this check will then be performed in evaluator
+   // only check 'to', because issuer should always be able to override-transfer from any account
+   validate_authorized_asset( d, to_account, asset_type, "'to' " );
 
    FC_ASSERT( d.get_balance( from_account, asset_type ).amount >= op.amount.amount,
               "", ("total_transfer",op.amount)("balance",d.get_balance(from_account, asset_type).amount) );
@@ -163,9 +149,8 @@ void_result override_transfer_evaluator::do_evaluate( const override_transfer_op
 
 void_result override_transfer_evaluator::do_apply( const override_transfer_operation& o )
 { try {
-   // TODO review
-   //db().adjust_balance( o.from, -o.amount );
-   //db().adjust_balance( o.to, o.amount );
+   db().adjust_balance( o.from, -o.amount );
+   db().adjust_balance( o.to, o.amount );
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 

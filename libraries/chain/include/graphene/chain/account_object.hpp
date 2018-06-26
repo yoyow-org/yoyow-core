@@ -57,33 +57,6 @@ namespace graphene { namespace chain {
          uint32_t                            removed_ops = 0;
 
          /**
-          * When calculating votes it is necessary to know how much is stored in orders (and thus unavailable for
-          * transfers). Rather than maintaining an index of [asset,owner,order_id] we will simply maintain the running
-          * total here and update it every time an order is created or modified.
-          */
-         share_type total_core_in_orders;
-
-         /**
-          * Tracks the total fees paid by this account for the purpose of calculating bulk discounts.
-          */
-         share_type lifetime_fees_paid;
-
-         /**
-          * Tracks the fees paid by this account which have not been disseminated to the various parties that receive
-          * them yet (registrar, referrer, lifetime referrer, network, etc). This is used as an optimization to avoid
-          * doing massive amounts of uint128 arithmetic on each and every operation.
-          *
-          * These fees will be paid out as vesting cash-back, and this counter will reset during the maintenance
-          * interval.
-          */
-         share_type pending_fees;
-         /**
-          * Same as @ref pending_fees, except these fees will be paid out as pre-vested cash-back (immediately
-          * available for withdrawal) rather than requiring the normal vesting period.
-          */
-         share_type pending_vested_fees;
-
-         /**
           * Prepaid fee.
           */
          share_type prepaid;
@@ -243,14 +216,6 @@ namespace graphene { namespace chain {
           */
          post_pid_type last_post_sequence = 0;
 
-         /// @brief Split up and pay out @ref pending_fees and @ref pending_vested_fees
-         void process_fees(const account_object& a, database& d) const;
-
-         /**
-          * Core fees are paid into the account_statistics_object by this method
-          */
-         void pay_fee( share_type core_fee, share_type cashback_vesting_threshold );
-
          /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds
@@ -321,11 +286,11 @@ namespace graphene { namespace chain {
          time_point_sec membership_expiration_date;
 
          ///The account that paid the fee to register this account. Receives a percentage of referral rewards.
-         account_id_type registrar;
+         account_uid_type registrar;
          /// The account credited as referring this account. Receives a percentage of referral rewards.
-         account_id_type referrer;
+         account_uid_type referrer;
          /// The lifetime member at the top of the referral tree. Receives a percentage of referral rewards.
-         account_id_type lifetime_referrer;
+         account_uid_type lifetime_referrer;
 
          /// Percentage of fee which should go to network.
          uint16_t network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
@@ -382,7 +347,7 @@ namespace graphene { namespace chain {
           * account cannot update this set, except by transferring ownership of the account, which will clear it. Other
           * accounts may add or remove their IDs from this set.
           */
-         flat_set<account_id_type> whitelisting_accounts;
+         flat_set<account_uid_type> whitelisting_accounts;
 
          /**
           * Optionally track all of the accounts this account has whitelisted or blacklisted, these should
@@ -394,8 +359,8 @@ namespace graphene { namespace chain {
           * then every time someone fetches this account object they will get the full list of 2000 accounts.
           */
          ///@{
-         set<account_id_type> whitelisted_accounts;
-         set<account_id_type> blacklisted_accounts;
+         set<account_uid_type> whitelisted_accounts;
+         set<account_uid_type> blacklisted_accounts;
          ///@}
 
 
@@ -405,43 +370,14 @@ namespace graphene { namespace chain {
           * account cannot update this set, and it will be preserved even if the account is transferred. Other accounts
           * may add or remove their IDs from this set.
           */
-         flat_set<account_id_type> blacklisting_accounts;
-
-         /**
-          * Vesting balance which receives cashback_reward deposits.
-          */
-         optional<vesting_balance_id_type> cashback_vb;
-
-         special_authority owner_special_authority = no_special_authority();
-         special_authority active_special_authority = no_special_authority();
-
-         /**
-          * This flag is set when the top_n logic sets both authorities,
-          * and gets reset when authority or special_authority is set.
-          */
-         uint8_t top_n_control_flags = 0;
-         static const uint8_t top_n_control_owner  = 1;
-         static const uint8_t top_n_control_active = 2;
+         flat_set<account_uid_type> blacklisting_accounts;
 
          /**
           * This is a set of assets which the account is allowed to have.
           * This is utilized to restrict buyback accounts to the assets that trade in their markets.
           * In the future we may expand this to allow accounts to e.g. voluntarily restrict incoming transfers.
           */
-         optional< flat_set<asset_id_type> > allowed_assets;
-
-         bool has_special_authority()const
-         {
-            return (owner_special_authority.which() != special_authority::tag< no_special_authority >::value)
-                || (active_special_authority.which() != special_authority::tag< no_special_authority >::value);
-         }
-
-         template<typename DB>
-         const vesting_balance_object& cashback_balance(const DB& db)const
-         {
-            FC_ASSERT(cashback_vb);
-            return db.get(*cashback_vb);
-         }
+         optional< flat_set<asset_aid_type> > allowed_assets;
 
          /// @return true if this is a lifetime member account; false otherwise.
          bool is_lifetime_member()const
@@ -464,6 +400,9 @@ namespace graphene { namespace chain {
          {
             return !is_basic_account(now);
          }
+
+         /// @return true if the account has enabled allowed_assets; false otherwise.
+         bool enabled_allowed_assets()const { return allowed_assets.valid(); }
 
          account_id_type get_id()const { return id; }
          account_uid_type get_uid()const { return uid; }
@@ -545,20 +484,16 @@ namespace graphene { namespace chain {
 
 
          /** given an account or key, map it to the set of accounts that reference it in an active or owner authority */
-         map< account_id_type, set<account_id_type> > account_to_account_memberships;
-         map< public_key_type, set<account_id_type> > account_to_key_memberships;
-         /** some accounts use address authorities in the genesis block */
-         map< address, set<account_id_type> >         account_to_address_memberships;
+         map< account_uid_type, set<account_uid_type> > account_to_account_memberships;
+         map< public_key_type, set<account_uid_type> > account_to_key_memberships;
 
 
       protected:
-         set<account_id_type>  get_account_members( const account_object& a )const;
+         set<account_uid_type>  get_account_members( const account_object& a )const;
          set<public_key_type>  get_key_members( const account_object& a )const;
-         set<address>          get_address_members( const account_object& a )const;
 
-         set<account_id_type>  before_account_members;
+         set<account_uid_type>  before_account_members;
          set<public_key_type>  before_key_members;
-         set<address>          before_address_members;
    };
 
 
@@ -575,7 +510,7 @@ namespace graphene { namespace chain {
          virtual void object_modified( const object& after  ) override;
 
          /** maps the referrer to the set of accounts that they have referred */
-         map< account_id_type, set<account_id_type> > referred_by;
+         map< account_uid_type, set<account_uid_type> > referred_by;
    };
 
    struct by_account_asset;
@@ -594,8 +529,7 @@ namespace graphene { namespace chain {
                member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>
             >
          >,
-         // TODO remove it? seems used by FBA only
-         ordered_unique< tag<by_asset_balance>,
+         ordered_unique< tag<by_asset_balance>, // used by asset_api
             composite_key<
                account_balance_object,
                member<account_balance_object, asset_aid_type, &account_balance_object::asset_type>,
@@ -786,10 +720,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (statistics)
                     //(whitelisting_accounts)(blacklisting_accounts)
                     //(whitelisted_accounts)(blacklisted_accounts)
-                    //(cashback_vb)
-                    //(owner_special_authority)(active_special_authority)
-                    //(top_n_control_flags)
-                    //(allowed_assets)
+                    (allowed_assets)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::voter_object,
@@ -820,9 +751,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     //(most_recent_op)
                     (total_ops)
                     (removed_ops)
-                    //(total_core_in_orders)
-                    //(lifetime_fees_paid)
-                    //(pending_fees)(pending_vested_fees)
                     (prepaid)(csaf)
                     (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)

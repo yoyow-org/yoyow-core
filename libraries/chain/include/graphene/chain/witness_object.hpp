@@ -56,8 +56,6 @@ namespace graphene { namespace chain {
          fc::time_point_sec  average_pledge_last_update;
          uint32_t            average_pledge_next_update_block;
 
-         vote_id_type        vote_id;                   // TODO remove
-
          uint64_t            total_votes = 0;
 
          fc::uint128_t       by_pledge_position;
@@ -240,7 +238,6 @@ FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (average_pledge)
                     (average_pledge_last_update)
                     (average_pledge_next_update_block)
-                    //(vote_id)
                     (total_votes)
                     (by_pledge_position)
                     (by_pledge_position_last_update)

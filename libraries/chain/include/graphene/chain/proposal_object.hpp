@@ -45,10 +45,12 @@ class proposal_object : public abstract_object<proposal_object>
       time_point_sec                expiration_time;
       optional<time_point_sec>      review_period_time;
       transaction                   proposed_transaction;
-      flat_set<account_id_type>     required_active_approvals;
-      flat_set<account_id_type>     available_active_approvals;
-      flat_set<account_id_type>     required_owner_approvals;
-      flat_set<account_id_type>     available_owner_approvals;
+      flat_set<account_uid_type>     required_secondary_approvals;
+      flat_set<account_uid_type>     available_secondary_approvals;
+      flat_set<account_uid_type>     required_active_approvals;
+      flat_set<account_uid_type>     available_active_approvals;
+      flat_set<account_uid_type>     required_owner_approvals;
+      flat_set<account_uid_type>     available_owner_approvals;
       flat_set<public_key_type>     available_key_approvals;
 
       bool is_authorized_to_execute(database& db)const;
@@ -73,9 +75,9 @@ class required_approval_index : public secondary_index
       virtual void about_to_modify( const object& before ) override{};
       virtual void object_modified( const object& after  ) override{};
 
-      void remove( account_id_type a, proposal_id_type p );
+      void remove( account_uid_type a, proposal_id_type p );
 
-      map<account_id_type, set<proposal_id_type> > _account_to_proposals;
+      map<account_uid_type, set<proposal_id_type> > _account_to_proposals;
 };
 
 struct by_expiration{};
@@ -83,7 +85,13 @@ typedef boost::multi_index_container<
    proposal_object,
    indexed_by<
       ordered_unique< tag< by_id >, member< object, object_id_type, &object::id > >,
-      ordered_non_unique< tag< by_expiration >, member< proposal_object, time_point_sec, &proposal_object::expiration_time > >
+      //ordered_non_unique< tag< by_expiration >, member< proposal_object, time_point_sec, &proposal_object::expiration_time > >
+      ordered_unique<tag<by_expiration>,
+         composite_key<proposal_object,
+            member<proposal_object, time_point_sec, &proposal_object::expiration_time>,
+            member< object, object_id_type, &object::id >
+         >
+      >
    >
 > proposal_multi_index_container;
 typedef generic_index<proposal_object, proposal_multi_index_container> proposal_index;
@@ -91,6 +99,11 @@ typedef generic_index<proposal_object, proposal_multi_index_container> proposal_
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::proposal_object, (graphene::chain::object),
-                    (expiration_time)(review_period_time)(proposed_transaction)(required_active_approvals)
-                    (available_active_approvals)(required_owner_approvals)(available_owner_approvals)
+                    (expiration_time)(review_period_time)(proposed_transaction)
+                    (required_secondary_approvals)
+                    (available_secondary_approvals)
+                    (required_active_approvals)
+                    (available_active_approvals)
+                    (required_owner_approvals)
+                    (available_owner_approvals)
                     (available_key_approvals) )

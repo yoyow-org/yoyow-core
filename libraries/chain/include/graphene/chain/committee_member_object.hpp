@@ -23,7 +23,6 @@
  */
 #pragma once
 #include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/protocol/vote.hpp>
 #include <graphene/chain/protocol/committee_member.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
@@ -57,7 +56,6 @@ namespace graphene { namespace chain {
          uint32_t            sequence;
          bool                is_valid = true;
          uint64_t            pledge;
-         vote_id_type        vote_id; // TODO remove
          uint64_t            total_votes = 0;
          string              url;
    };
@@ -265,7 +263,6 @@ FC_REFLECT_DERIVED( graphene::chain::committee_member_object, (graphene::db::obj
                     (sequence)
                     (is_valid)
                     (pledge)
-                    //(vote_id)
                     (total_votes)
                     (url)
                   )

@@ -97,10 +97,10 @@ BOOST_AUTO_TEST_CASE( valid_name_test )
    BOOST_CHECK( is_valid_name( "aaa.bbb.ccc" ) );
 
    BOOST_CHECK(  is_valid_name( "aaa--bbb--ccc" ) );
-   BOOST_CHECK( !is_valid_name( "xn--sandmnnchen-p8a.de" ) );
-   BOOST_CHECK(  is_valid_name( "xn--sandmnnchen-p8a.dex" ) );
-   BOOST_CHECK( !is_valid_name( "xn-sandmnnchen-p8a.de" ) );
-   BOOST_CHECK(  is_valid_name( "xn-sandmnnchen-p8a.dex" ) );
+   BOOST_CHECK( !is_valid_name( "xn--sandmnnchen-p8a.d" ) );
+   BOOST_CHECK(  is_valid_name( "xn--sandmnnchen-p8a.de" ) );
+   BOOST_CHECK( !is_valid_name( "xn-sandmnnchen-p8a.d" ) );
+   BOOST_CHECK(  is_valid_name( "xn-sandmnnchen-p8a.de" ) );
 
    BOOST_CHECK(  is_valid_name( "this-label-has-less-than-64-char.acters-63-to-be-really-precise" ) );
    BOOST_CHECK( !is_valid_name( "this-label-has-more-than-63-char.act.ers-64-to-be-really-precise" ) );
@@ -134,48 +134,6 @@ BOOST_AUTO_TEST_CASE( valid_symbol_test )
    BOOST_CHECK( !is_valid_symbol( "A.AAAAAAAAAAAA.A" ) );
 
    BOOST_CHECK( is_valid_symbol( "AAA000AAA" ) );
-}
-
-BOOST_AUTO_TEST_CASE( price_test )
-{
-    auto price_max = []( uint32_t a, uint32_t b )
-    {   return price::max( asset_id_type(a), asset_id_type(b) );   };
-    auto price_min = []( uint32_t a, uint32_t b )
-    {   return price::min( asset_id_type(a), asset_id_type(b) );   };
-
-    BOOST_CHECK( price_max(0,1) > price_min(0,1) );
-    BOOST_CHECK( price_max(1,0) > price_min(1,0) );
-    BOOST_CHECK( price_max(0,1) >= price_min(0,1) );
-    BOOST_CHECK( price_max(1,0) >= price_min(1,0) );
-    BOOST_CHECK( price_max(0,1) >= price_max(0,1) );
-    BOOST_CHECK( price_max(1,0) >= price_max(1,0) );
-    BOOST_CHECK( price_min(0,1) < price_max(0,1) );
-    BOOST_CHECK( price_min(1,0) < price_max(1,0) );
-    BOOST_CHECK( price_min(0,1) <= price_max(0,1) );
-    BOOST_CHECK( price_min(1,0) <= price_max(1,0) );
-    BOOST_CHECK( price_min(0,1) <= price_min(0,1) );
-    BOOST_CHECK( price_min(1,0) <= price_min(1,0) );
-    BOOST_CHECK( price_min(1,0) != price_max(1,0) );
-    BOOST_CHECK( ~price_max(0,1) != price_min(0,1) );
-    BOOST_CHECK( ~price_min(0,1) != price_max(0,1) );
-    BOOST_CHECK( ~price_max(0,1) == price_min(1,0) );
-    BOOST_CHECK( ~price_min(0,1) == price_max(1,0) );
-    BOOST_CHECK( ~price_max(0,1) < ~price_min(0,1) );
-    BOOST_CHECK( ~price_max(0,1) <= ~price_min(0,1) );
-    price a(asset(1), asset(2,asset_id_type(1)));
-    price b(asset(2), asset(2,asset_id_type(1)));
-    price c(asset(1), asset(2,asset_id_type(1)));
-    BOOST_CHECK(a < b);
-    BOOST_CHECK(b > a);
-    BOOST_CHECK(a == c);
-    BOOST_CHECK(!(b == c));
-
-    price_feed dummy;
-    dummy.maintenance_collateral_ratio = 1002;
-    dummy.maximum_short_squeeze_ratio = 1234;
-    dummy.settlement_price = price(asset(1000), asset(2000, asset_id_type(1)));
-    price_feed dummy2 = dummy;
-    BOOST_CHECK(dummy == dummy2);
 }
 
 BOOST_AUTO_TEST_CASE( memo_test )

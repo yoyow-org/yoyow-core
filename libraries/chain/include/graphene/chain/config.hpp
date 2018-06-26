@@ -250,7 +250,7 @@
 #define GRAPHENE_RECENTLY_MISSED_COUNT_INCREMENT             4
 #define GRAPHENE_RECENTLY_MISSED_COUNT_DECREMENT             3
 
-#define GRAPHENE_CURRENT_DB_VERSION                          "YYW1.0"
+#define GRAPHENE_CURRENT_DB_VERSION                          "YYW1.1"
 
 #define GRAPHENE_IRREVERSIBLE_THRESHOLD                      (75 * GRAPHENE_1_PERCENT)
 
@@ -288,12 +288,14 @@
 
 #define GRAPHENE_FBA_STEALTH_DESIGNATED_ASSET (asset_id_type(743))
 
+#define GRAPHENE_MAX_NESTED_OBJECTS (200)
+
 /**
  * Platform configuration
  */
 ///@{
 /// Minimum platform deposit
-#define GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000)) 
+#define GRAPHENE_DEFAULT_PLATFORM_MIN_PLEDGE (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(10000))
 /// The platform calculates the average deposit duration. The initial value of 1 week
 #define GRAPHENE_DEFAULT_PLATFORM_MAX_PLEDGE_SECONDS (60*60*24*7)
 /// Platform average deposit update interval. The initial value is 1 hour, that is, the average deposit is automatically updated once an hour, and if the deposit amount changes, the average deposit is updated in real time.

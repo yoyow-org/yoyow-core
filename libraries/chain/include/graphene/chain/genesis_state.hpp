@@ -71,12 +71,6 @@ struct genesis_state_type {
       bool is_full_member = false;
    };
    struct initial_asset_type {
-      struct initial_collateral_position {
-         address owner;
-         share_type collateral;
-         share_type debt;
-      };
-
       string symbol;
       string issuer_name;
 
@@ -85,27 +79,18 @@ struct genesis_state_type {
 
       share_type max_supply;
       share_type accumulated_fees;
-
-      bool is_bitasset = false;
-      vector<initial_collateral_position> collateral_records;
-   };
-   struct initial_balance_type {
-      address owner;
-      string asset_symbol;
-      share_type amount;
    };
    struct initial_account_balance_type {
+     initial_account_balance_type(const account_uid_type _uid = 0,
+                                  const string _asset_symbol = GRAPHENE_SYMBOL,
+                                  const share_type _amount = 0)
+                      :uid(_uid),
+                      asset_symbol(_asset_symbol),
+                      amount(_amount)
+     {}
       account_uid_type uid;
       string asset_symbol;
       share_type amount;
-   };
-   struct initial_vesting_balance_type {
-      address owner;
-      string asset_symbol;
-      share_type amount;
-      time_point_sec begin_timestamp;
-      uint32_t vesting_duration_seconds = 0;
-      share_type begin_balance;
    };
    struct initial_witness_type {
       /// Must correspond to one of the initial accounts
@@ -115,11 +100,6 @@ struct genesis_state_type {
    struct initial_committee_member_type {
       /// Must correspond to one of the initial accounts
       string owner_name;
-   };
-   struct initial_worker_type {
-      /// Must correspond to one of the initial accounts
-      string owner_name;
-      share_type daily_pay;
    };
    struct initial_platform_type {
       /// Must correspond to one of the initial accounts
@@ -134,13 +114,10 @@ struct genesis_state_type {
    immutable_chain_parameters               immutable_parameters;
    vector<initial_account_type>             initial_accounts;
    vector<initial_asset_type>               initial_assets;
-   vector<initial_balance_type>             initial_balances;
    vector<initial_account_balance_type>     initial_account_balances;
-   vector<initial_vesting_balance_type>     initial_vesting_balances;
    uint64_t                                 initial_active_witnesses = GRAPHENE_DEFAULT_MIN_WITNESS_COUNT;
    vector<initial_witness_type>             initial_witness_candidates;
    vector<initial_committee_member_type>    initial_committee_candidates;
-   vector<initial_worker_type>              initial_worker_candidates;
    vector<initial_platform_type>            initial_platforms;
 
    /**
@@ -162,33 +139,22 @@ FC_REFLECT(graphene::chain::genesis_state_type::initial_account_type,
            (uid)(name)(registrar)(owner_key)(active_key)(secondary_key)(memo_key)(is_lifetime_member)(is_registrar)(is_full_member))
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_asset_type,
-           (symbol)(issuer_name)(description)(precision)(max_supply)(accumulated_fees)(is_bitasset)(collateral_records))
-
-FC_REFLECT(graphene::chain::genesis_state_type::initial_asset_type::initial_collateral_position,
-           (owner)(collateral)(debt))
-
-FC_REFLECT(graphene::chain::genesis_state_type::initial_balance_type,
-           (owner)(asset_symbol)(amount))
+           (symbol)(issuer_name)(description)(precision)(max_supply)(accumulated_fees))
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_account_balance_type,
            (uid)(asset_symbol)(amount))
-
-FC_REFLECT(graphene::chain::genesis_state_type::initial_vesting_balance_type,
-           (owner)(asset_symbol)(amount)(begin_timestamp)(vesting_duration_seconds)(begin_balance))
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_witness_type, (owner_name)(block_signing_key))
 
 FC_REFLECT(graphene::chain::genesis_state_type::initial_committee_member_type, (owner_name))
 
-FC_REFLECT(graphene::chain::genesis_state_type::initial_worker_type, (owner_name)(daily_pay))
-
 FC_REFLECT(graphene::chain::genesis_state_type::initial_platform_type, (owner)(name)(url))
 
 FC_REFLECT(graphene::chain::genesis_state_type,
-           (initial_timestamp)(max_core_supply)(initial_parameters)(initial_accounts)(initial_assets)(initial_balances)
+           (initial_timestamp)(max_core_supply)(initial_parameters)(initial_accounts)(initial_assets)
            (initial_account_balances)
-           (initial_vesting_balances)(initial_active_witnesses)(initial_witness_candidates)
-           (initial_committee_candidates)(initial_worker_candidates)
+           (initial_active_witnesses)(initial_witness_candidates)
+           (initial_committee_candidates)
            (initial_platforms)
            (initial_chain_id)
            (immutable_parameters))

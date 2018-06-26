@@ -25,7 +25,6 @@
 
 #include <graphene/witness/witness.hpp>
 #include <graphene/account_history/account_history_plugin.hpp>
-#include <graphene/market_history/market_history_plugin.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
@@ -184,7 +183,6 @@ int main(int argc, char** argv) {
 
       auto witness_plug = node->register_plugin<witness_plugin::witness_plugin>();
       auto history_plug = node->register_plugin<account_history::account_history_plugin>();
-      auto market_history_plug = node->register_plugin<market_history::market_history_plugin>();
 
       try
       {
@@ -335,8 +333,8 @@ fc::optional<fc::logging_config> load_logging_config_from_ini_file(const fc::pat
             console_appender_config.level_colors.emplace_back(
                fc::console_appender::level_color(fc::log_level::error, 
                                                  fc::console_appender::color::cyan));
-            console_appender_config.stream = fc::variant(stream_name).as<fc::console_appender::stream::type>();
-            logging_config.appenders.push_back(fc::appender_config(console_appender_name, "console", fc::variant(console_appender_config)));
+            console_appender_config.stream = fc::variant(stream_name).as<fc::console_appender::stream::type>( GRAPHENE_MAX_NESTED_OBJECTS );
+            logging_config.appenders.push_back(fc::appender_config(console_appender_name, "console", fc::variant( console_appender_config, GRAPHENE_MAX_NESTED_OBJECTS )));
             found_logging_config = true;
          }
          else if (boost::starts_with(section_name, file_appender_section_prefix))
@@ -355,7 +353,7 @@ fc::optional<fc::logging_config> load_logging_config_from_ini_file(const fc::pat
             file_appender_config.rotate = true;
             file_appender_config.rotation_interval = fc::hours(1);
             file_appender_config.rotation_limit = fc::days(1);
-            logging_config.appenders.push_back(fc::appender_config(file_appender_name, "file", fc::variant(file_appender_config)));
+            logging_config.appenders.push_back(fc::appender_config(file_appender_name, "file", fc::variant( file_appender_config, GRAPHENE_MAX_NESTED_OBJECTS )));
             found_logging_config = true;
          }
          else if (boost::starts_with(section_name, logger_section_prefix))
@@ -364,7 +362,7 @@ fc::optional<fc::logging_config> load_logging_config_from_ini_file(const fc::pat
             std::string level_string = section_tree.get<std::string>("level");
             std::string appenders_string = section_tree.get<std::string>("appenders");
             fc::logger_config logger_config(logger_name);
-            logger_config.level = fc::variant(level_string).as<fc::log_level>();
+            logger_config.level = fc::variant(level_string).as<fc::log_level>( 5 );
             boost::split(logger_config.appenders, appenders_string, 
                          boost::is_any_of(" ,"), 
                          boost::token_compress_on);

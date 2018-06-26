@@ -44,7 +44,7 @@ public:
    void_result do_evaluate( const operation_type& o );
    void_result do_apply( const operation_type& o ) ;
 
-   const account_object* acnt;
+   const account_object* acnt = nullptr;
 };
 
 class account_update_key_evaluator : public evaluator<account_update_key_evaluator>
@@ -55,7 +55,7 @@ public:
    void_result do_evaluate( const operation_type& o );
    void_result do_apply( const operation_type& o ) ;
 
-   const account_object* acnt;
+   const account_object* acnt = nullptr;
    flat_map<public_key_type,weight_type>::const_iterator itr_active;
    flat_map<public_key_type,weight_type>::const_iterator itr_secondary;
    weight_type active_weight = 0;
@@ -70,7 +70,7 @@ public:
    void_result do_evaluate( const operation_type& o );
    void_result do_apply( const operation_type& o ) ;
 
-   const account_object* acnt;
+   const account_object* acnt = nullptr;
 };
 
 class account_auth_platform_evaluator : public evaluator<account_auth_platform_evaluator>
@@ -81,7 +81,7 @@ public:
    void_result do_evaluate( const operation_type& o );
    void_result do_apply( const operation_type& o ) ;
 
-   const account_object* acnt;
+   const account_object* acnt = nullptr;
 };
 
 class account_cancel_auth_platform_evaluator : public evaluator<account_cancel_auth_platform_evaluator>
@@ -92,7 +92,7 @@ public:
    void_result do_evaluate( const operation_type& o );
    void_result do_apply( const operation_type& o ) ;
 
-   const account_object* acnt;
+   const account_object* acnt = nullptr;
 };
 
 class account_update_proxy_evaluator : public evaluator<account_update_proxy_evaluator>
@@ -111,26 +111,26 @@ class account_update_proxy_evaluator : public evaluator<account_update_proxy_eva
       const voter_object* proxy_voter_obj = nullptr;
 };
 
-class account_update_evaluator : public evaluator<account_update_evaluator>
+class account_enable_allowed_assets_evaluator : public evaluator<account_enable_allowed_assets_evaluator>
 {
 public:
-   typedef account_update_operation operation_type;
+   typedef account_enable_allowed_assets_operation operation_type;
 
-   void_result do_evaluate( const account_update_operation& o );
-   void_result do_apply( const account_update_operation& o );
+   void_result do_evaluate( const operation_type& o );
+   void_result do_apply( const operation_type& o ) ;
 
-   const account_object* acnt;
+   const account_object* acnt = nullptr;
 };
 
-class account_upgrade_evaluator : public evaluator<account_upgrade_evaluator>
+class account_update_allowed_assets_evaluator : public evaluator<account_update_allowed_assets_evaluator>
 {
 public:
-   typedef account_upgrade_operation operation_type;
+   typedef account_update_allowed_assets_operation operation_type;
 
-   void_result do_evaluate(const operation_type& o);
-   void_result do_apply(const operation_type& o);
+   void_result do_evaluate( const operation_type& o );
+   void_result do_apply( const operation_type& o ) ;
 
-   const account_object* account;
+   const account_object* acnt = nullptr;
 };
 
 class account_whitelist_evaluator : public evaluator<account_whitelist_evaluator>
@@ -141,7 +141,7 @@ public:
    void_result do_evaluate( const account_whitelist_operation& o);
    void_result do_apply( const account_whitelist_operation& o);
 
-   const account_object* listed_account;
+   const account_object* listed_account = nullptr;
 };
 
 } } // graphene::chain

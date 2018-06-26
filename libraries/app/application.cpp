@@ -35,7 +35,6 @@
 #include <graphene/net/exceptions.hpp>
 
 #include <graphene/utilities/key_conversion.hpp>
-#include <graphene/chain/worker_evaluator.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 
@@ -162,7 +161,7 @@ namespace detail {
          if( _options->count("seed-nodes") )
          {
             auto seeds_str = _options->at("seed-nodes").as<string>();
-            auto seeds = fc::json::from_string(seeds_str).as<vector<string>>();
+            auto seeds = fc::json::from_string(seeds_str).as<vector<string>>(2);
             for( const string& endpoint_string : seeds )
             {
                try {
@@ -242,7 +241,7 @@ namespace detail {
 
       void new_connection( const fc::http::websocket_connection_ptr& c )
       {
-         auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(*c);
+         auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(*c, GRAPHENE_NET_MAX_NESTED_OBJECTS);
          auto login = std::make_shared<graphene::app::login_api>( std::ref(*_self) );
          login->enable_api("database_api");
 
@@ -305,7 +304,7 @@ namespace detail {
          _websocket_tls_server->start_accept();
       } FC_CAPTURE_AND_RETHROW() }
 
-      application_impl(application* self)
+      explicit application_impl(application* self)
          : _self(self),
            _chain_db(std::make_shared<chain::database>())
       {
@@ -321,20 +320,19 @@ namespace detail {
          public_key_type init_pubkey( init_key );
          for( uint64_t i=0; i<genesis.initial_active_witnesses; i++ )
             genesis.initial_witness_candidates[i].block_signing_key = init_pubkey;
-         return;
       }
 
       void startup()
       { try {
          fc::create_directories(_data_dir / "blockchain");
 
-         auto initial_state = [&] {
+         auto initial_state = [this] {
             ilog("Initializing database...");
             if( _options->count("genesis-json") )
             {
                std::string genesis_str;
                fc::read_file_contents( _options->at("genesis-json").as<boost::filesystem::path>(), genesis_str );
-               genesis_state_type genesis = fc::json::from_string( genesis_str ).as<genesis_state_type>();
+               genesis_state_type genesis = fc::json::from_string( genesis_str ).as<genesis_state_type>( 20 );
                bool modified_genesis = false;
                if( _options->count("genesis-timestamp") )
                {
@@ -367,7 +365,7 @@ namespace detail {
                graphene::egenesis::compute_egenesis_json( egenesis_json );
                FC_ASSERT( egenesis_json != "" );
                FC_ASSERT( graphene::egenesis::get_egenesis_json_hash() == fc::sha256::hash( egenesis_json ) );
-               auto genesis = fc::json::from_string( egenesis_json ).as<genesis_state_type>();
+               auto genesis = fc::json::from_string( egenesis_json ).as<genesis_state_type>( 20 );
                genesis.initial_chain_id = fc::sha256::hash( egenesis_json );
                return genesis;
             }
@@ -383,14 +381,11 @@ namespace detail {
             loaded_checkpoints.reserve( cps.size() );
             for( auto cp : cps )
             {
-               auto item = fc::json::from_string(cp).as<std::pair<uint32_t,block_id_type> >();
+               auto item = fc::json::from_string(cp).as<std::pair<uint32_t,block_id_type> >( 2 );
                loaded_checkpoints[item.first] = item.second;
             }
          }
          _chain_db->add_checkpoints( loaded_checkpoints );
-
-         bool replay = false;
-         std::string replay_reason = "reason not provided";
 
          if( _options->count("replay-blockchain") )
             _chain_db->wipe( _data_dir / "blockchain", false );
@@ -415,7 +410,7 @@ namespace detail {
 
             if(fc::exists(_options->at("api-access").as<boost::filesystem::path>()))
             {
-               _apiaccess = fc::json::from_file( _options->at("api-access").as<boost::filesystem::path>() ).as<api_access>();
+               _apiaccess = fc::json::from_file( _options->at("api-access").as<boost::filesystem::path>() ).as<api_access>( 20 );
                ilog("Using api access file from ${path}",
                   ("path", _options->at("api-access").as<boost::filesystem::path>().string()));
             }
@@ -515,7 +510,6 @@ namespace detail {
             // when the net code sees that, it will stop trying to push blocks from that chain, but
             // leave that peer connected so that they can get sync blocks from us
             bool result = _chain_db->push_block(blk_msg.block, (_is_block_producer | _force_validate) ? database::skip_nothing : ( database::skip_transaction_signatures | database::skip_invariants_check ) );
-
             // the block was accepted, so we now know all of the transactions contained in the block
             if (!sync_mode)
             {
@@ -969,7 +963,7 @@ void application::initialize(const fc::path& data_dir, const boost::program_opti
       if( fc::exists(genesis_out) )
       {
          try {
-            genesis_state = fc::json::from_file(genesis_out).as<genesis_state_type>();
+            genesis_state = fc::json::from_file(genesis_out).as<genesis_state_type>( 20 );
          } catch(const fc::exception& e) {
             std::cerr << "Unable to parse existing genesis file:\n" << e.to_string()
                       << "\nWould you like to replace it? [y/N] ";
@@ -996,7 +990,6 @@ void application::initialize(const fc::path& data_dir, const boost::program_opti
    {
       wanted.push_back("witness");
       wanted.push_back("account_history");
-      //wanted.push_back("market_history"); TODO review
    }
    for (auto& it : wanted)
    {

@@ -28,10 +28,8 @@
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/hardfork.hpp>
-#include <graphene/chain/market_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/transaction_object.hpp>
-#include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
@@ -120,7 +118,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    FC_ASSERT( itr != gpo.active_witnesses.end() );
    auto wit_type = itr->second;
 
-   const auto& core_asset = asset_id_type()(*this);
+   const auto& core_asset = get_core_asset();
    share_type budget_this_block = std::min( dpo.total_budget_per_block, core_asset.reserved( *this ) );
 
    share_type witness_pay;
@@ -237,270 +235,6 @@ void database::clear_expired_proposals()
    }
 }
 
-/**
- *  let HB = the highest bid for the collateral  (aka who will pay the most DEBT for the least collateral)
- *  let SP = current median feed's Settlement Price 
- *  let LC = the least collateralized call order's swan price (debt/collateral)
- *
- *  If there is no valid price feed or no bids then there is no black swan.
- *
- *  A black swan occurs if MAX(HB,SP) <= LC
- */
-bool database::check_for_blackswan( const asset_object& mia, bool enable_black_swan )
-{
-    if( !mia.is_market_issued() ) return false;
-
-    const asset_bitasset_data_object& bitasset = mia.bitasset_data(*this);
-    if( bitasset.has_settlement() ) return true; // already force settled
-    auto settle_price = bitasset.current_feed.settlement_price;
-    if( settle_price.is_null() ) return false; // no feed
-
-    const call_order_index& call_index = get_index_type<call_order_index>();
-    const auto& call_price_index = call_index.indices().get<by_price>();
-
-    const limit_order_index& limit_index = get_index_type<limit_order_index>();
-    const auto& limit_price_index = limit_index.indices().get<by_price>();
-
-    // looking for limit orders selling the most USD for the least CORE
-    auto highest_possible_bid = price::max( mia.id, bitasset.options.short_backing_asset );
-    // stop when limit orders are selling too little USD for too much CORE
-    auto lowest_possible_bid  = price::min( mia.id, bitasset.options.short_backing_asset );
-
-    assert( highest_possible_bid.base.asset_id == lowest_possible_bid.base.asset_id );
-    // NOTE limit_price_index is sorted from greatest to least
-    auto limit_itr = limit_price_index.lower_bound( highest_possible_bid );
-    auto limit_end = limit_price_index.upper_bound( lowest_possible_bid );
-
-    auto call_min = price::min( bitasset.options.short_backing_asset, mia.id );
-    auto call_max = price::max( bitasset.options.short_backing_asset, mia.id );
-    auto call_itr = call_price_index.lower_bound( call_min );
-    auto call_end = call_price_index.upper_bound( call_max );
-
-    if( call_itr == call_end ) return false;  // no call orders
-
-    price highest = settle_price;
-    if( limit_itr != limit_end ) {
-       assert( settle_price.base.asset_id == limit_itr->sell_price.base.asset_id );
-       highest = std::max( limit_itr->sell_price, settle_price );
-    }
-
-    auto least_collateral = call_itr->collateralization();
-    if( ~least_collateral >= highest  ) 
-    {
-       elog( "Black Swan detected: \n"
-             "   Least collateralized call: ${lc}  ${~lc}\n"
-           //  "   Highest Bid:               ${hb}  ${~hb}\n"
-             "   Settle Price:              ${sp}  ${~sp}\n"
-             "   Max:                       ${h}   ${~h}\n",
-            ("lc",least_collateral.to_real())("~lc",(~least_collateral).to_real())
-          //  ("hb",limit_itr->sell_price.to_real())("~hb",(~limit_itr->sell_price).to_real())
-            ("sp",settle_price.to_real())("~sp",(~settle_price).to_real())
-            ("h",highest.to_real())("~h",(~highest).to_real()) );
-       FC_ASSERT( enable_black_swan, "Black swan was detected during a margin update which is not allowed to trigger a blackswan" );
-       globally_settle_asset(mia, ~least_collateral );
-       return true;
-    } 
-    return false;
-}
-
-void database::clear_expired_orders()
-{ try {
-   detail::with_skip_flags( *this,
-      get_node_properties().skip_flags | skip_authority_check, [&](){
-         transaction_evaluation_state cancel_context(this);
-
-         //Cancel expired limit orders
-         auto& limit_index = get_index_type<limit_order_index>().indices().get<by_expiration>();
-         while( !limit_index.empty() && limit_index.begin()->expiration <= head_block_time() )
-         {
-            limit_order_cancel_operation canceler;
-            const limit_order_object& order = *limit_index.begin();
-            canceler.fee_paying_account = order.seller;
-            canceler.order = order.id;
-            canceler.fee = current_fee_schedule().calculate_fee( canceler );
-            if( canceler.fee.amount > order.deferred_fee )
-            {
-               // Cap auto-cancel fees at deferred_fee; see #549
-               wlog( "At block ${b}, fee for clearing expired order ${oid} was capped at deferred_fee ${fee}", ("b", head_block_num())("oid", order.id)("fee", order.deferred_fee) );
-               canceler.fee = asset( order.deferred_fee, asset_id_type() );
-            }
-            // we know the fee for this op is set correctly since it is set by the chain.
-            // this allows us to avoid a hung chain:
-            // - if #549 case above triggers
-            // - if the fee is incorrect, which may happen due to #435 (although since cancel is a fixed-fee op, it shouldn't)
-            cancel_context.skip_fee_schedule_check = true;
-            apply_operation(cancel_context, canceler);
-         }
-     });
-
-   //Process expired force settlement orders
-   auto& settlement_index = get_index_type<force_settlement_index>().indices().get<by_expiration>();
-   if( !settlement_index.empty() )
-   {
-      asset_id_type current_asset = settlement_index.begin()->settlement_asset_id();
-      asset max_settlement_volume;
-      bool extra_dump = false;
-
-      auto next_asset = [&current_asset, &settlement_index, &extra_dump] {
-         auto bound = settlement_index.upper_bound(current_asset);
-         if( bound == settlement_index.end() )
-         {
-            if( extra_dump )
-            {
-               ilog( "next_asset() returning false" );
-            }
-            return false;
-         }
-         if( extra_dump )
-         {
-            ilog( "next_asset returning true, bound is ${b}", ("b", *bound) );
-         }
-         current_asset = bound->settlement_asset_id();
-         return true;
-      };
-
-      uint32_t count = 0;
-
-      // At each iteration, we either consume the current order and remove it, or we move to the next asset
-      for( auto itr = settlement_index.lower_bound(current_asset);
-           itr != settlement_index.end();
-           itr = settlement_index.lower_bound(current_asset) )
-      {
-         ++count;
-         const force_settlement_object& order = *itr;
-         auto order_id = order.id;
-         current_asset = order.settlement_asset_id();
-         const asset_object& mia_object = get(current_asset);
-         const asset_bitasset_data_object& mia = mia_object.bitasset_data(*this);
-
-         extra_dump = ((count >= 1000) && (count <= 1020));
-
-         if( extra_dump )
-         {
-            wlog( "clear_expired_orders() dumping extra data for iteration ${c}", ("c", count) );
-            ilog( "head_block_num is ${hb} current_asset is ${a}", ("hb", head_block_num())("a", current_asset) );
-         }
-
-         if( mia.has_settlement() )
-         {
-            ilog( "Canceling a force settlement because of black swan" );
-            cancel_order( order );
-            continue;
-         }
-
-         // Has this order not reached its settlement date?
-         if( order.settlement_date > head_block_time() )
-         {
-            if( next_asset() )
-            {
-               if( extra_dump )
-               {
-                  ilog( "next_asset() returned true when order.settlement_date > head_block_time()" );
-               }
-               continue;
-            }
-            break;
-         }
-         // Can we still settle in this asset?
-         if( mia.current_feed.settlement_price.is_null() )
-         {
-            ilog("Canceling a force settlement in ${asset} because settlement price is null",
-                 ("asset", mia_object.symbol));
-            cancel_order(order);
-            continue;
-         }
-         if( asset_id_type(max_settlement_volume.asset_id) != current_asset )
-            max_settlement_volume = mia_object.amount(mia.max_force_settlement_volume(mia_object.dynamic_data(*this).current_supply));
-         if( mia.force_settled_volume >= max_settlement_volume.amount )
-         {
-            /*
-            ilog("Skipping force settlement in ${asset}; settled ${settled_volume} / ${max_volume}",
-                 ("asset", mia_object.symbol)("settlement_price_null",mia.current_feed.settlement_price.is_null())
-                 ("settled_volume", mia.force_settled_volume)("max_volume", max_settlement_volume));
-                 */
-            if( next_asset() )
-            {
-               if( extra_dump )
-               {
-                  ilog( "next_asset() returned true when mia.force_settled_volume >= max_settlement_volume.amount" );
-               }
-               continue;
-            }
-            break;
-         }
-
-         auto& pays = order.balance;
-         auto receives = (order.balance * mia.current_feed.settlement_price);
-         receives.amount = (fc::uint128_t(receives.amount.value) *
-                            (GRAPHENE_100_PERCENT - mia.options.force_settlement_offset_percent) / GRAPHENE_100_PERCENT).to_uint64();
-         assert(receives <= order.balance * mia.current_feed.settlement_price);
-
-         price settlement_price = pays / receives;
-
-         auto& call_index = get_index_type<call_order_index>().indices().get<by_collateral>();
-         asset settled = mia_object.amount(mia.force_settled_volume);
-         // Match against the least collateralized short until the settlement is finished or we reach max settlements
-         while( settled < max_settlement_volume && find_object(order_id) )
-         {
-            auto itr = call_index.lower_bound(boost::make_tuple(price::min(mia_object.bitasset_data(*this).options.short_backing_asset,
-                                                                           mia_object.get_id())));
-            // There should always be a call order, since asset exists!
-            assert(itr != call_index.end() && itr->debt_type() == mia_object.get_id());
-            asset max_settlement = max_settlement_volume - settled;
-
-            if( order.balance.amount == 0 )
-            {
-               wlog( "0 settlement detected" );
-               cancel_order( order );
-               break;
-            }
-            try {
-               settled += match(*itr, order, settlement_price, max_settlement);
-            } 
-            catch ( const black_swan_exception& e ) { 
-               wlog( "black swan detected: ${e}", ("e", e.to_detail_string() ) );
-               cancel_order( order );
-               break;
-            }
-         }
-         if( mia.force_settled_volume != settled.amount )
-         {
-            modify(mia, [settled](asset_bitasset_data_object& b) {
-               b.force_settled_volume = settled.amount;
-            });
-         }
-      }
-   }
-} FC_CAPTURE_AND_RETHROW() }
-
-void database::update_expired_feeds()
-{
-   auto& asset_idx = get_index_type<asset_index>().indices().get<by_type>();
-   auto itr = asset_idx.lower_bound( true /** market issued */ );
-   while( itr != asset_idx.end() )
-   {
-      const asset_object& a = *itr;
-      ++itr;
-      assert( a.is_market_issued() );
-
-      const asset_bitasset_data_object& b = a.bitasset_data(*this);
-      bool feed_is_expired;
-      feed_is_expired = b.feed_is_expired( head_block_time() );
-      if( feed_is_expired )
-      {
-         modify(b, [this](asset_bitasset_data_object& a) {
-            a.update_median_feeds(head_block_time());
-         });
-         check_call_orders(asset_id_type(b.current_feed.settlement_price.base.asset_id)(*this));
-      }
-      if( !b.current_feed.core_exchange_rate.is_null() &&
-          a.options.core_exchange_rate != b.current_feed.core_exchange_rate )
-         modify(a, [&b](asset_object& a) {
-            a.options.core_exchange_rate = b.current_feed.core_exchange_rate;
-         });
-   }
-}
-
 void database::update_maintenance_flag( bool new_maintenance_flag )
 {
    modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& dpo )
@@ -511,13 +245,6 @@ void database::update_maintenance_flag( bool new_maintenance_flag )
          | (new_maintenance_flag ? maintenance_flag : 0);
    } );
    return;
-}
-
-void database::update_withdraw_permissions()
-{
-   auto& permit_index = get_index_type<withdraw_permission_index>().indices().get<by_expiration>();
-   while( !permit_index.empty() && permit_index.begin()->expiration <= head_block_time() )
-      remove(*permit_index.begin());
 }
 
 void database::clear_expired_csaf_leases()
@@ -765,7 +492,7 @@ void database::adjust_budgets()
    if( head_block_num() >= dpo.next_budget_adjust_block )
    {
       const auto& gparams = gpo.parameters;
-      share_type core_reserved = asset_id_type()(*this).reserved(*this);
+      share_type core_reserved = get_core_asset().reserved(*this);
       // Normally shouldn't overflow
       uint32_t blocks_per_year = 86400 * 365 / gparams.block_interval
                                - 86400 * 365 * gparams.maintenance_skip_slots / gparams.maintenance_interval;
@@ -1172,9 +899,7 @@ void database::check_invariants()
    }
    FC_ASSERT( total_core_leased_in == total_core_leased_out );
 
-   share_type current_supply = asset_id_type()(*this).dynamic_data(*this).current_supply;
-   //if( head_block_num() >= 1285 )
-   //{ idump( (total_core_balance)(total_core_non_bal)(current_supply)( asset_id_type()(*this).dynamic_data(*this) ) ); }
+   share_type current_supply = get_core_asset().dynamic_data(*this).current_supply;
    FC_ASSERT( total_core_balance + total_core_non_bal  == current_supply );
 
    share_type total_core_leased = 0;
@@ -1301,7 +1026,7 @@ void database::check_invariants()
       }
    }
    FC_ASSERT( total_platform_pledges == total_core_platform_pledge );
-   FC_ASSERT( total_platform_received_votes == total_voter_platform_votes );
+   FC_ASSERT( total_platform_received_votes == total_voter_platform_votes, "t1:${t1}  t2:${t2}",("t1",total_platform_received_votes)("t2",total_voter_platform_votes) );
 
 
    uint64_t total_witness_vote_objects = 0;
@@ -1361,7 +1086,8 @@ void database::release_platform_pledges()
    }
 }
 
-void database::adjust_platform_votes( const platform_object& platform, share_type delta ){
+void database::adjust_platform_votes( const platform_object& platform, share_type delta )
+{
    if( delta == 0 || !platform.is_valid )
       return;
    modify( platform, [&]( platform_object& pla )
