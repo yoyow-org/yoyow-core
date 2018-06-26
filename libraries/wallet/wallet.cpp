@@ -296,7 +296,7 @@ private:
             if( it != n.end() ) {
                claim_registered_account(name);
             }
-         } 
+         }
       }
 
       if (!_wallet.pending_witness_registrations.empty())
@@ -312,7 +312,7 @@ private:
                if (witness_obj)
                   claim_registered_witness(name);
             }
-         } 
+         }
       }
    }
 
@@ -836,7 +836,7 @@ public:
       asset total_fee = fee_asset_obj.amount(0);
 
       FC_ASSERT(fee_asset_obj.asset_id == GRAPHENE_CORE_ASSET_AID, "Must use core assets as a fee");
-      
+
 
       auto gprops = _remote_db->get_global_properties().parameters;
       for( auto& op : _builder_transactions[handle].operations )
@@ -1460,7 +1460,7 @@ signed_transaction account_auth_platform(string account,
       account_auth_platform_operation op;
       op.uid = user.uid;
       op.platform = pa->owner;
-      
+
       signed_transaction tx;
       tx.operations.push_back( op );
       set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
@@ -1821,17 +1821,18 @@ signed_transaction account_cancel_auth_platform(string account,
             bool no_sig = tx.signatures.empty();
             auto dyn_props = get_dynamic_global_properties();
 
+            // if no signature is included in the trx, reset the tapos data; otherwise keep the tapos data
             if( no_sig )
                tx.set_reference_block( dyn_props.head_block_id );
 
             // if no signature is included in the trx, reset expiration time; otherwise keep it
             if( no_sig )
             {
-                // first, some bookkeeping, expire old items from _recently_generated_transactions
-                // since transactions include the head block id, we just need the index for keeping transactions unique
-                // when there are multiple transactions in the same block.  choose a time period that should be at
-                // least one block long, even in the worst case.  2 minutes ought to be plenty.
-               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(2));
+               // first, some bookkeeping, expire old items from _recently_generated_transactions
+               // since transactions include the head block id, we just need the index for keeping transactions unique
+               // when there are multiple transactions in the same block.  choose a time period that should be at
+               // least one block long, even in the worst case.  5 minutes ought to be plenty.
+               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
                auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
                auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
                _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
@@ -1843,11 +1844,11 @@ signed_transaction account_cancel_auth_platform(string account,
             {
                if( no_sig )
                {
-                  tx.set_expiration( dyn_props.time + fc::seconds(30 + expiration_time_offset) );
+                  tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
                   tx.signatures.clear();
                }
 
-               //idump((required_keys_subset)(available_keys_map));
+               //idump((required_keys_subset)(available_keys));
                // TODO: for better performance, sign after dupe check
                for( const auto& key : required_keys_subset )
                {
@@ -1870,6 +1871,9 @@ signed_transaction account_cancel_auth_platform(string account,
                   break;
                }
 
+               // if there was a signature included in the trx, we can not update expiration field
+               if( !no_sig ) break;
+
                // if we've generated a dupe, increment expiration time and re-sign it
                ++expiration_time_offset;
             }
@@ -1877,7 +1881,7 @@ signed_transaction account_cancel_auth_platform(string account,
          }
       }
 
-      wdump((tx));
+      //wdump((tx));
 
       if( broadcast )
       {
@@ -3171,9 +3175,9 @@ signed_transaction wallet_api::committee_proposal_create(
          bool broadcast
       )
 {
-   return my->committee_proposal_create( committee_member_account, 
-                                         items, 
-                                         voting_closing_block_num, 
+   return my->committee_proposal_create( committee_member_account,
+                                         items,
+                                         voting_closing_block_num,
                                          proposer_opinion,
                                          execution_block_num,
                                          expiration_block_num,
@@ -3203,7 +3207,8 @@ signed_transaction wallet_api::approve_proposal(
 vector<proposal_object> wallet_api::list_proposals( string account_name_or_id )
 {
    auto acc = my->get_account( account_name_or_id );
-   return my->_remote_db->get_proposed_transactions( acc.uid );
+   //return my->_remote_db->get_proposed_transactions( acc.uid );
+   return {};
 }
 
 global_property_object wallet_api::get_global_properties() const
