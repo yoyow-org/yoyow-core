@@ -298,39 +298,36 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
            accounts.insert( ((account_object*)obj)->uid );
            break;
         } case asset_object_type:{
-           // TODO review
-           //const auto& aobj = dynamic_cast<const asset_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->issuer );
+           const auto& aobj = dynamic_cast<const asset_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->issuer );
            break;
         } case platform_object_type:{
-           // TODO review
-           //const auto& aobj = dynamic_cast<const platform_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->owner );
+           const auto& aobj = dynamic_cast<const platform_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->owner );
            break;
         } case post_object_type:{
-           // TODO review
-           //const auto& aobj = dynamic_cast<const post_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->poster );
-           //if( aobj->parent_poster.valid() )
-           //   accounts.insert( *(aobj->parent_poster) );
+           const auto& aobj = dynamic_cast<const post_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->poster );
+           if( aobj->origin_poster.valid() )
+              accounts.insert( *(aobj->origin_poster) );
            break;
         } case committee_member_object_type:{
-           // TODO review
-           //const auto& aobj = dynamic_cast<const committee_member_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->committee_member_account );
+           const auto& aobj = dynamic_cast<const committee_member_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->account );
            break;
         } case committee_proposal_object_type:{
-           // TODO review
+           const auto& aobj = dynamic_cast<const committee_proposal_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->proposer );
            break;
         } case witness_object_type:{
-           // TODO review
-           //const auto& aobj = dynamic_cast<const witness_object*>(obj);
-           //assert( aobj != nullptr );
-           //accounts.insert( aobj->account );
+           const auto& aobj = dynamic_cast<const witness_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->account );
            break;
         } case proposal_object_type:{
            const auto& aobj = dynamic_cast<const proposal_object*>(obj);
@@ -358,16 +355,14 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
              case impl_asset_dynamic_data_type:
               break;
              case impl_account_balance_object_type:{
-              // TODO review
-              //const auto& aobj = dynamic_cast<const account_balance_object*>(obj);
-              //assert( aobj != nullptr );
-              //accounts.insert( aobj->owner );
+              const auto& aobj = dynamic_cast<const account_balance_object*>(obj);
+              assert( aobj != nullptr );
+              accounts.insert( aobj->owner );
               break;
            } case impl_account_statistics_object_type:{
-              // TODO review
-              //const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
-              //assert( aobj != nullptr );
-              //accounts.insert( aobj->owner );
+              const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
+              assert( aobj != nullptr );
+              accounts.insert( aobj->owner );
               break;
             } case impl_voter_object_type:{
                // TODO review
@@ -385,11 +380,10 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
                // TODO review
               break;
             } case impl_csaf_lease_object_type:{
-               // TODO review
-               //const auto& aobj = dynamic_cast<const csaf_lease_object*>(obj);
-               //assert( aobj != nullptr );
-               //result.push_back( aobj->from );
-               //result.push_back( aobj->to );
+               const auto& aobj = dynamic_cast<const csaf_lease_object*>(obj);
+               assert( aobj != nullptr );
+               accounts.insert( aobj->from );
+               accounts.insert( aobj->to );
                break;
            } case impl_transaction_object_type:{
               const auto& aobj = dynamic_cast<const transaction_object*>(obj);
