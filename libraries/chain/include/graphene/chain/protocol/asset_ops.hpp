@@ -204,7 +204,7 @@ namespace graphene { namespace chain {
    struct asset_reserve_operation : public base_operation
    {
       struct fee_parameters_type {
-         uint64_t fee              = uint64_t(10)*10000*10000 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t fee              = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t min_real_fee     = 0;
          uint16_t min_rf_percent   = 0;
          extensions_type   extensions;
