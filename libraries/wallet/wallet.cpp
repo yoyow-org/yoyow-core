@@ -1821,17 +1821,18 @@ signed_transaction account_cancel_auth_platform(string account,
             bool no_sig = tx.signatures.empty();
             auto dyn_props = get_dynamic_global_properties();
 
+            // if no signature is included in the trx, reset the tapos data; otherwise keep the tapos data
             if( no_sig )
                tx.set_reference_block( dyn_props.head_block_id );
 
             // if no signature is included in the trx, reset expiration time; otherwise keep it
             if( no_sig )
             {
-                // first, some bookkeeping, expire old items from _recently_generated_transactions
-                // since transactions include the head block id, we just need the index for keeping transactions unique
-                // when there are multiple transactions in the same block.  choose a time period that should be at
-                // least one block long, even in the worst case.  2 minutes ought to be plenty.
-               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(2));
+               // first, some bookkeeping, expire old items from _recently_generated_transactions
+               // since transactions include the head block id, we just need the index for keeping transactions unique
+               // when there are multiple transactions in the same block.  choose a time period that should be at
+               // least one block long, even in the worst case.  5 minutes ought to be plenty.
+               fc::time_point_sec oldest_transaction_ids_to_track(dyn_props.time - fc::minutes(5));
                auto oldest_transaction_record_iter = _recently_generated_transactions.get<timestamp_index>().lower_bound(oldest_transaction_ids_to_track);
                auto begin_iter = _recently_generated_transactions.get<timestamp_index>().begin();
                _recently_generated_transactions.get<timestamp_index>().erase(begin_iter, oldest_transaction_record_iter);
@@ -1843,7 +1844,7 @@ signed_transaction account_cancel_auth_platform(string account,
             {
                if( no_sig )
                {
-                  tx.set_expiration( dyn_props.time + fc::seconds(30 + expiration_time_offset) );
+                  tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
                   tx.signatures.clear();
                }
 
@@ -1869,6 +1870,9 @@ signed_transaction account_cancel_auth_platform(string account,
                   _recently_generated_transactions.insert(this_transaction_record);
                   break;
                }
+
+               // if there was a signature included in the trx, we can not update expiration field
+               if( !no_sig ) break;
 
                // if we've generated a dupe, increment expiration time and re-sign it
                ++expiration_time_offset;
