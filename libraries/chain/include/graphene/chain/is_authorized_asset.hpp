@@ -31,28 +31,10 @@ class database;
 
 namespace detail {
 
-bool _is_authorized_asset(const database& d, const account_object& acct, const asset_object& asset_obj);
-
 void _validate_authorized_asset( const database& d,
                                  const account_object& acct,
                                  const asset_object& asset_obj,
                                  const string& account_desc_prefix = "" );
-}
-
-/**
- * @return true if the account is whitelisted and not blacklisted to transact in the provided asset; false
- * otherwise.
- */
-inline bool is_authorized_asset(const database& d, const account_object& acct, const asset_object& asset_obj)
-{
-   bool fast_check = !( asset_obj.enabled_whitelist() );
-   fast_check &= !( acct.allowed_assets.valid() );
-
-   if( fast_check )
-      return true;
-
-   bool slow_check = detail::_is_authorized_asset( d, acct, asset_obj );
-   return slow_check;
 }
 
 /**

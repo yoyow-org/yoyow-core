@@ -207,8 +207,6 @@ int main( int argc, char** argv )
       if( options.count("rpc-endpoint") )
       {
          _websocket_server->on_connection([&wapi]( const fc::http::websocket_connection_ptr& c ){
-            std::cout << "here... \n";
-            wlog("." );
             auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(*c, GRAPHENE_MAX_NESTED_OBJECTS );
             wsc->register_api(wapi);
             c->set_session_data( wsc );

@@ -45,7 +45,7 @@ void proposal_update_operation::validate() const
 {
    validate_op_fee( fee, "proposal update " );
    validate_account_uid( fee_paying_account, "proposal update " );
-   FC_ASSERT(!(secondary_approvals_to_add.empty() && secondary_approvals_to_remove.empty() && 
+   FC_ASSERT(!(secondary_approvals_to_add.empty() && secondary_approvals_to_remove.empty() &&
                active_approvals_to_add.empty() && active_approvals_to_remove.empty() &&
                owner_approvals_to_add.empty() && owner_approvals_to_remove.empty() &&
                key_approvals_to_add.empty() && key_approvals_to_remove.empty()));

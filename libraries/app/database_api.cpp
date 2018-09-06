@@ -614,7 +614,7 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
           if (itr != idx.end())
              account = &*itr;
       }
-      
+
       if (account == nullptr)
          continue;
 
@@ -638,7 +638,7 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       auto lref = _db.find_account_by_uid( account->lifetime_referrer );
       if(lref != nullptr)
          acnt.lifetime_referrer_name = lref->name;
-      
+
       // Add the account's proposals
       const auto& proposal_idx = _db.get_index_type<proposal_index>();
       const auto& pidx = dynamic_cast<const primary_index<proposal_index>&>(proposal_idx);
@@ -953,7 +953,7 @@ vector<optional<platform_object>> database_api_impl::get_platforms(const vector<
    return result;
 }
 
-      
+
 fc::optional<platform_object> database_api::get_platform_by_account( account_uid_type account )const
 {
     return my->get_platform_by_account( account );
@@ -968,14 +968,14 @@ fc::optional<platform_object> database_api_impl::get_platform_by_account(account
    return {};
 }
 
-      
+
 vector<platform_object> database_api::lookup_platforms( const account_uid_type lower_bound_uid,
                                               uint32_t limit, data_sorting_type order_by )const
 {
     return my->lookup_platforms( lower_bound_uid, limit, order_by );
 }
 
-vector<platform_object> database_api_impl::lookup_platforms( const account_uid_type lower_bound_uid, 
+vector<platform_object> database_api_impl::lookup_platforms( const account_uid_type lower_bound_uid,
                                                             uint32_t limit,
                                                             data_sorting_type order_by )const
 {
@@ -1191,7 +1191,7 @@ vector<optional<asset_object_with_data>> database_api_impl::get_assets(const vec
          aod.dynamic_asset_data = itr->dynamic_data( _db );
          return aod;
       }
-         
+
       return {};
    });
    return result;

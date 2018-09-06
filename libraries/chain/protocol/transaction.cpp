@@ -385,7 +385,7 @@ void get_authority_uid( const account_uid_type uid,
          get_authority_uid( &acc.active, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid );
          get_authority_uid( &acc.secondary, get_acc_by_uid, owner_auth_uid, active_auth_uid, secondary_auth_uid );
       }
-    
+
 
 } FC_CAPTURE_AND_RETHROW() }
 

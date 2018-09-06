@@ -26,9 +26,11 @@
 #include <graphene/chain/protocol/ext.hpp>
 #include <graphene/chain/protocol/memo.hpp>
 
-namespace graphene { namespace chain { 
+namespace graphene { namespace chain {
 
-   bool is_valid_symbol( const string& symbol );
+   /// Checks whether a ticker symbol is valid.
+   /// @param symbol a ticker symbol
+   void validate_asset_symbol( const string& symbol );
 
    /**
     * @brief The asset_options struct contains options available on all assets in the network
@@ -100,7 +102,7 @@ namespace graphene { namespace chain {
          optional< share_type > initial_supply; ///< issue this amount to self immediately after the asset is created
       };
 
-      struct fee_parameters_type { 
+      struct fee_parameters_type {
          uint64_t symbol3          = 500000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t symbol4          = 300000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t long_symbol      = 5000   * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -120,7 +122,7 @@ namespace graphene { namespace chain {
 
       /// Options common to all assets.
       asset_options                common_options;
-      
+
       optional< extension< ext > > extensions;
 
       account_uid_type fee_payer_uid()const { return issuer; }
@@ -142,7 +144,7 @@ namespace graphene { namespace chain {
     */
    struct asset_update_operation : public base_operation
    {
-      struct fee_parameters_type { 
+      struct fee_parameters_type {
          uint64_t fee              = 500 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte  = 10; // TESTNET
          uint64_t min_real_fee     = 0;
@@ -170,8 +172,8 @@ namespace graphene { namespace chain {
     */
    struct asset_issue_operation : public base_operation
    {
-      struct fee_parameters_type { 
-         uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; 
+      struct fee_parameters_type {
+         uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION; ///< Only for memo
          uint64_t min_real_fee     = 0;
          uint16_t min_rf_percent   = 0;
