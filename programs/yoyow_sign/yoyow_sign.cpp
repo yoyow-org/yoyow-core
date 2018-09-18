@@ -41,3 +41,13 @@ string private_to_public(string wif)
    }
    return string("");
 }
+
+string base_transaction(string last_irreversible_block_id, string last_irreversible_block_time)
+{
+   block_id_type block_id(last_irreversible_block_id);
+   signed_transaction strx;
+   strx.set_reference_block(block_id);
+   time_point_sec time = time_point_sec::from_iso_string(last_irreversible_block_time);
+   strx.set_expiration( time + fc::seconds(30) );
+   return fc::json::to_string(strx);
+}

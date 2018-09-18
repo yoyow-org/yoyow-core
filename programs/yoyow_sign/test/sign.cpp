@@ -18,5 +18,8 @@ int main()
 
    printf("%s\n", private_to_public(pvkey).c_str());
 
+   string trx = base_transaction("01d2df3dc73f6f04072c117ca4dcae1d46876f44", "2018-09-18T01:51:06");
+   printf("%s\n", trx.c_str());
+
    return 0;
 }
