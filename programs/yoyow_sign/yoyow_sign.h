@@ -6,17 +6,17 @@ using namespace std;
 /*
 * Sign a transaction with "WIF" and "chain_id"
 */
-string signature(string tx, string wif, string chain_id);
+string signature( const string& tx, const string& wif, const string& chain_id);
 
 /*
 * Generate a private key with "brain_key"
 */
-string generate_key(string brain_key, int sequence_number = 0);
+string generate_key(const string& brain_key, int sequence_number = 0);
 
 /*
 * Generate a public key with a private key
 */
-string private_to_public(string wif);
+string private_to_public(const string& wif);
 
 /**
  * Generate an unsigned transfer transaction json string，For offline signature
@@ -46,3 +46,10 @@ string generate_transaction(const string& last_irreversible_block_id,
                             const string& current_fees_json,
                             const u_int64_t asset_id = 0
                             );
+
+/**
+ * decrypt memo msg
+ * @param memo_json the memo obj json
+ * @param memo_private_wif the my memo_key wif
+ */
+string decrypt_memo(const string& memo_json, const string& memo_private_wif );

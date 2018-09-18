@@ -29,5 +29,9 @@ int main()
                                      "{\"parameters\":[[0,{\"fee\":20000,\"price_per_kbyte\":100000,\"min_real_fee\":0,\"min_rf_percent\": 0}]]}");
    printf("generate_transaction:\n%s\n", trx.c_str());
 
+   string memo = decrypt_memo( "{\"from\":\"YYW5q8zUko5Evds7dnh486afwavF7oW8aje7DeusGABVMTfcChFvn\",\"to\":\"YYW6nBpB5aCTL84bA34qVwaskRtoz7XaTW66LzLy3pKP7ta5mZVrs\",\"nonce\":\"6558778315539393896\",\"message\":\"0437fc73cd356964784a3b169b9b6db3ac642fa278719a82acad1a4f3ae8ce16\"}", 
+                               "5JPTHdCy5QNhgKsTeQGxPRxM5FYj9MKDLoNLvTcrKQgg5GqAPa7");
+   printf("decrypt_memo:\n%s\n", memo.c_str());
+
    return 0;
 }

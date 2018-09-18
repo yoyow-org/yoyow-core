@@ -10,7 +10,7 @@ using namespace graphene::chain;
 using namespace graphene::utilities;
 using namespace fc::ecc;
 
-string signature(string tx, string wif, string chain_id)
+string signature(const string& tx, const string& wif, const string& chain_id)
 {
    fc::optional< private_key > privkey = wif_to_key( wif );
    if( privkey.valid() ) {
@@ -23,7 +23,7 @@ string signature(string tx, string wif, string chain_id)
    return string("");
 }
 
-string generate_key(string brain_key, int sequence_number)
+string generate_key(const string& brain_key, int sequence_number)
 {
    std::string sequence_string = std::to_string(sequence_number);
    fc::sha512 h = fc::sha512::hash(brain_key + " " + sequence_string);
@@ -31,7 +31,7 @@ string generate_key(string brain_key, int sequence_number)
    return key_to_wif(derived_key);
 }
 
-string private_to_public(string wif)
+string private_to_public(const string& wif)
 {
    fc::optional< private_key > privkey = wif_to_key( wif );
    if( privkey.valid() ) {
@@ -105,4 +105,16 @@ string generate_transaction(const string& last_irreversible_block_id,
       return fc::json::to_string(tx);
    }
    return string("");
+}
+
+string decrypt_memo(const string& memo_json, const string& memo_private_wif )
+{
+   string m_str;
+   fc::optional<memo_data> memo = fc::json::from_string( memo_json ).as<memo_data>(GRAPHENE_MAX_NESTED_OBJECTS);
+   fc::optional< private_key > memokey = wif_to_key( memo_private_wif );
+
+   if( memo.valid() && memokey.valid() ) {
+      m_str = memo->get_message( *memokey, memo->from );
+   }
+   return m_str;
 }
