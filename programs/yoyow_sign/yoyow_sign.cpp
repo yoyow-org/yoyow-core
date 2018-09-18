@@ -1,7 +1,7 @@
 #include "yoyow_sign.h"
 #include <fc/io/json.hpp>
 //#include <graphene/chain/protocol/fee_schedule.hpp>
-//#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/protocol/protocol.hpp>
 #include <graphene/chain/protocol/transaction.hpp>
 #include <graphene/utilities/key_conversion.hpp>
@@ -50,4 +50,59 @@ string base_transaction(string last_irreversible_block_id, string last_irreversi
    time_point_sec time = time_point_sec::from_iso_string(last_irreversible_block_time);
    strx.set_expiration( time + fc::seconds(30) );
    return fc::json::to_string(strx);
+}
+
+void set_operation_fees( signed_transaction& tx, const fee_schedule& s  )
+{
+   for( auto& op : tx.operations )
+      s.set_fee_with_csaf(op);
+}
+
+string generate_transaction(const string& last_irreversible_block_id, 
+                            const string& last_irreversible_block_time,
+                            const string& from, 
+                            const string& to, 
+                            const string& amount, 
+                            const string& memo,
+                            const string& from_memo_private_wif,
+                            const string& to_memo_public_key,
+                            const string& current_fees_json,
+                            const u_int64_t asset_id
+                            )
+{
+   block_id_type block_id(last_irreversible_block_id);
+   time_point_sec time = time_point_sec::from_iso_string(last_irreversible_block_time);
+   fc::optional<account_uid_type> u_from = fc::variant(from).as<account_uid_type>(1);
+   fc::optional<account_uid_type> u_to = fc::variant(to).as<account_uid_type>(1);
+   fc::optional<share_type> a_amount = fc::variant(amount).as<share_type>(1);
+   fc::optional<fee_schedule> fees = fc::json::from_string(current_fees_json).as<fee_schedule>( GRAPHENE_MAX_NESTED_OBJECTS );
+   
+   if( u_from.valid() && u_to.valid() && a_amount.valid() && fees.valid() ) {
+      transfer_operation xfer_op;
+
+      xfer_op.from = *u_from;
+      xfer_op.to = *u_to;
+      xfer_op.amount = asset(*a_amount, asset_id);
+
+      if( memo.size() )
+      {
+         fc::optional< private_key > from_memo_key = wif_to_key( from_memo_private_wif );
+         if( from_memo_key.valid() ) {
+            public_key_type to_memo_key(to_memo_public_key);
+            xfer_op.memo = memo_data();
+            xfer_op.memo->from = from_memo_key->get_public_key();
+            xfer_op.memo->to = to_memo_key;
+            xfer_op.memo->set_message(*from_memo_key, to_memo_key, memo);
+         }
+      }
+
+      signed_transaction tx;
+      tx.set_reference_block(block_id);
+      tx.set_expiration( time + fc::seconds(30) );
+      tx.operations.push_back(xfer_op);
+      set_operation_fees( tx, *fees);
+      tx.validate();
+      return fc::json::to_string(tx);
+   }
+   return string("");
 }

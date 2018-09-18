@@ -18,7 +18,31 @@ string generate_key(string brain_key, int sequence_number = 0);
 */
 string private_to_public(string wif);
 
-/*
-* Generate a transaction with an irreversible block ID and an irreversible block time
-*/
-string base_transaction(string last_irreversible_block_id, string last_irreversible_block_time);
+/**
+ * Generate an unsigned transfer transaction json string，For offline signature
+ * @param last_irreversible_block_id
+ * @param last_irreversible_block_time
+ * @param from the name or id of the account sending the funds
+ * @param to the name or id of the account receiving the funds
+ * @param amount the amount to send (in nominal units -- to send half of an asset, specify 0.5)
+ * @param memo a memo to attach to the transaction.  The memo will be encrypted in the
+ *             transaction and readable for the receiver.  There is no length limit
+ *             other than the limit imposed by maximum transaction size, but transaction fee
+ *             increase with transaction size
+ * @param current_fees_json a fee_schedule json obj.
+ * @param from_memo_private_wif
+ * @param to_memo_public_key
+ * @param asset_id the asset id, default 0
+ * @returns the unsigned transaction transferring funds
+ */ 
+string generate_transaction(const string& last_irreversible_block_id, 
+                            const string& last_irreversible_block_time,
+                            const string& from, 
+                            const string& to, 
+                            const string& amount, 
+                            const string& memo,
+                            const string& from_memo_private_wif,
+                            const string& to_memo_public_key,
+                            const string& current_fees_json,
+                            const u_int64_t asset_id = 0
+                            );
