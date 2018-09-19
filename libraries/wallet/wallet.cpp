@@ -1899,6 +1899,18 @@ signed_transaction account_cancel_auth_platform(string account,
       return tx;
    }
 
+   void broadcast_transaction( signed_transaction tx )
+   {
+      try {
+         _remote_net_broadcast->broadcast_transaction( tx );
+      }
+      catch (const fc::exception& e)
+      {
+         elog("Caught exception while broadcasting tx ${id}:  ${e}", ("id", tx.id().str())("e", e.to_detail_string()) );
+         throw;
+      }
+   }
+
    signed_transaction transfer(string from, string to, string amount,
                                string asset_symbol, string memo, bool broadcast = false)
    { try {
@@ -3116,6 +3128,11 @@ void wallet_api::set_wallet_filename(string wallet_filename)
 signed_transaction wallet_api::sign_transaction(signed_transaction tx, bool broadcast /* = false */)
 { try {
    return my->sign_transaction( tx, broadcast);
+} FC_CAPTURE_AND_RETHROW( (tx) ) }
+
+void wallet_api::broadcast_transaction(signed_transaction tx)
+{ try {
+   return my->broadcast_transaction( tx );
 } FC_CAPTURE_AND_RETHROW( (tx) ) }
 
 operation wallet_api::get_prototype_operation(string operation_name)
