@@ -1396,6 +1396,7 @@ FC_API( graphene::wallet::wallet_api,
         (save_wallet_file)
         (serialize_transaction)
         (sign_transaction)
+        (broadcast_transaction)
         (get_prototype_operation)
         //(dbg_make_uia)
         //(dbg_push_blocks)
