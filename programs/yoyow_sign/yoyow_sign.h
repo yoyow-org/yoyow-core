@@ -32,6 +32,7 @@ string private_to_public(const string& wif);
  * @param current_fees_json a fee_schedule json obj.
  * @param from_memo_private_wif
  * @param to_memo_public_key
+ * @param expiration default 30s
  * @param asset_id the asset id, default 0
  * @returns the unsigned transaction transferring funds
  */ 
@@ -44,6 +45,7 @@ string generate_transaction(const string& last_irreversible_block_id,
                             const string& from_memo_private_wif,
                             const string& to_memo_public_key,
                             const string& current_fees_json,
+                            const int64_t expiration = 30,
                             const u_int64_t asset_id = 0
                             );
 
