@@ -42,16 +42,6 @@ string private_to_public(const string& wif)
    return string("");
 }
 
-string base_transaction(string last_irreversible_block_id, string last_irreversible_block_time)
-{
-   block_id_type block_id(last_irreversible_block_id);
-   signed_transaction strx;
-   strx.set_reference_block(block_id);
-   time_point_sec time = time_point_sec::from_iso_string(last_irreversible_block_time);
-   strx.set_expiration( time + fc::seconds(30) );
-   return fc::json::to_string(strx);
-}
-
 void set_operation_fees( signed_transaction& tx, const fee_schedule& s  )
 {
    for( auto& op : tx.operations )
@@ -67,6 +57,7 @@ string generate_transaction(const string& last_irreversible_block_id,
                             const string& from_memo_private_wif,
                             const string& to_memo_public_key,
                             const string& current_fees_json,
+                            const int64_t expiration,
                             const u_int64_t asset_id
                             )
 {
@@ -98,7 +89,7 @@ string generate_transaction(const string& last_irreversible_block_id,
 
       signed_transaction tx;
       tx.set_reference_block(block_id);
-      tx.set_expiration( time + fc::seconds(30) );
+      tx.set_expiration( time + fc::seconds(expiration) );
       tx.operations.push_back(xfer_op);
       set_operation_fees( tx, *fees);
       tx.validate();
