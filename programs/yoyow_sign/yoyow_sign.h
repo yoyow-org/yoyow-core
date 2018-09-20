@@ -22,6 +22,16 @@ string private_to_public(const string& wif);
  * Generate an unsigned transfer transaction json string，For offline signature
  * @param last_irreversible_block_id
  * @param last_irreversible_block_time
+ * @param expiration default 30s
+ * @returns the unsigned transaction transferring funds
+ */ 
+string base_transaction(const string& last_irreversible_block_id, 
+                        const string& last_irreversible_block_time, 
+                        const int64_t expiration = 30);
+/**
+ * Generate an unsigned transfer transaction json string，For offline signature
+ * @param last_irreversible_block_id
+ * @param last_irreversible_block_time
  * @param from the name or id of the account sending the funds
  * @param to the name or id of the account receiving the funds
  * @param amount the amount to send (in nominal units -- to send half of an asset, specify 0.5)

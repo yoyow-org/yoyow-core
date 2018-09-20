@@ -48,6 +48,18 @@ void set_operation_fees( signed_transaction& tx, const fee_schedule& s  )
       s.set_fee_with_csaf(op);
 }
 
+string base_transaction(const string& last_irreversible_block_id, 
+                        const string& last_irreversible_block_time, 
+                        const int64_t expiration )
+{
+   block_id_type block_id(last_irreversible_block_id);
+   signed_transaction strx;
+   strx.set_reference_block(block_id);
+   time_point_sec time = time_point_sec::from_iso_string(last_irreversible_block_time);
+   strx.set_expiration( time + fc::seconds(expiration) );
+   return fc::json::to_string(strx);
+}
+
 string generate_transaction(const string& last_irreversible_block_id, 
                             const string& last_irreversible_block_time,
                             const string& from, 
