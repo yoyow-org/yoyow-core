@@ -12,7 +12,8 @@ using namespace fc::ecc;
 
 string signature(const string& tx, const string& wif, const string& chain_id)
 {
-   fc::optional< private_key > privkey = wif_to_key( wif );
+   string _w = wif.substr(0,51);
+   fc::optional< private_key > privkey = wif_to_key( _w );
    if( privkey.valid() ) {
       fc::optional<signed_transaction> trx = fc::json::from_string( tx ).as<signed_transaction>(GRAPHENE_MAX_NESTED_OBJECTS);
       if( trx.valid() ) {
