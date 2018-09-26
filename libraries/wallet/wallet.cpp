@@ -1899,7 +1899,7 @@ signed_transaction account_cancel_auth_platform(string account,
       return tx;
    }
 
-   void broadcast_transaction( signed_transaction tx )
+   transaction_id_type broadcast_transaction( signed_transaction tx )
    {
       try {
          _remote_net_broadcast->broadcast_transaction( tx );
@@ -1909,6 +1909,7 @@ signed_transaction account_cancel_auth_platform(string account,
          elog("Caught exception while broadcasting tx ${id}:  ${e}", ("id", tx.id().str())("e", e.to_detail_string()) );
          throw;
       }
+      return tx.id();
    }
 
    signed_transaction transfer(string from, string to, string amount,
@@ -3130,7 +3131,7 @@ signed_transaction wallet_api::sign_transaction(signed_transaction tx, bool broa
    return my->sign_transaction( tx, broadcast);
 } FC_CAPTURE_AND_RETHROW( (tx) ) }
 
-void wallet_api::broadcast_transaction(signed_transaction tx)
+transaction_id_type wallet_api::broadcast_transaction(signed_transaction tx)
 { try {
    return my->broadcast_transaction( tx );
 } FC_CAPTURE_AND_RETHROW( (tx) ) }

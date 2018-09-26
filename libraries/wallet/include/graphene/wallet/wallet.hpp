@@ -1188,7 +1188,7 @@ class wallet_api
        */
       signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false);
 
-      void broadcast_transaction( signed_transaction tx );
+      transaction_id_type broadcast_transaction( signed_transaction tx );
 
       /** Returns an uninitialized object representing a given blockchain operation.
        *
