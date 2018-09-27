@@ -977,6 +977,8 @@ class wallet_api
                                       fc::time_point_sec time,
                                       bool broadcast = false);
 
+      string compute_available_csaf(string account_name_or_uid);
+
 
       /** Returns information about the given platform.
        * @param owner_account the name or id of the platform account owner, or the id of the platform
@@ -1371,6 +1373,7 @@ FC_API( graphene::wallet::wallet_api,
         (collect_witness_pay)
         (collect_csaf)
         (collect_csaf_with_time)
+        (compute_available_csaf)
         (get_platform)
         (list_platforms)
         (get_platform_count)
