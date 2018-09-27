@@ -3083,6 +3083,21 @@ signed_transaction wallet_api::collect_csaf_with_time(string from,
    return my->collect_csaf(from, to, amount, asset_symbol, time, broadcast);
 }
 
+string wallet_api::compute_available_csaf(string account_name_or_uid)
+{
+   account_uid_type uid = my->get_account_uid( account_name_or_uid );
+   vector<account_uid_type> uids( 1, uid );
+   full_account_query_options opt = { true, true, false, false, false, false, false, false, false, false, false, false, false };
+   const auto& results = my->_remote_db->get_full_accounts_by_uid( uids, opt );
+   auto& account = results.at( uid );
+   const auto& global_params = my->get_global_properties().parameters;
+   auto csaf = account.statistics.compute_coin_seconds_earned( global_params.csaf_accumulate_window, time_point_sec(time_point::now()) ).first;
+   auto ao = my->get_asset( GRAPHENE_CORE_ASSET_AID );
+   auto s1 = global_params.max_csaf_per_account - account.statistics.csaf;
+   auto s2 = (csaf / global_params.csaf_rate).to_uint64();
+   return ao.amount_to_string(s1 > s2 ? s2 : s1);
+}
+
 signed_transaction wallet_api::update_witness_votes(string voting_account,
                                           flat_set<string> witnesses_to_add,
                                           flat_set<string> witnesses_to_remove,
