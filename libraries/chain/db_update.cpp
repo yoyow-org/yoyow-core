@@ -551,6 +551,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
       flat_map<account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
       const committee_update_fee_schedule_item_type* fee_item = nullptr;
       const committee_update_global_parameter_item_type* param_item = nullptr;
+			const committee_update_global_content_parameter_item_type* content_item = nullptr;
       for( const auto& item : proposal.items )
       {
          // account update item
@@ -652,6 +653,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
          {
             param_item = &item.get< committee_update_global_parameter_item_type >();
          }
+				 else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
+				 {
+					 content_item = &item.get< committee_update_global_content_parameter_item_type >();
+				 }
       }
 
       // apply changes : new takeover registrars
@@ -802,6 +807,42 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                o.platform_avg_pledge_update_interval = *pv.platform_avg_pledge_update_interval;
          });
       }
+			if (content_item != nullptr)
+			{
+				const auto& pv = content_item->value;
+				modify(get_global_properties(), [&](global_property_object& _gpo)
+				{
+					auto& o = _gpo.parameters;
+					bool found = false;
+					if (o.extensions.valid())
+					{
+						for (auto item = o.extensions->begin(); item != o.extensions->end(); item++)
+						{
+							if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+							{
+								auto& v = item->get< content_parameter_extension_type >();
+								if (pv.content_award_interval.valid())
+									v.content_award_interval = *pv.content_award_interval;
+								if (pv.max_csaf_per_approve.valid())
+									v.max_csaf_per_approve = *pv.max_csaf_per_approve;
+								found = true;
+								break;
+							}
+						}
+					}
+					else
+						o.extensions = flat_set<parameter_extension>();			
+					if (!found)
+					{
+						content_parameter_extension_type cp;
+						if (pv.content_award_interval.valid())
+							cp.content_award_interval = *pv.content_award_interval;
+						if (pv.max_csaf_per_approve.valid())
+							cp.max_csaf_per_approve = *pv.max_csaf_per_approve;
+						o.extensions->insert(cp);
+					}
+				});
+			}
 
       // remove the executed proposal
       remove( proposal );

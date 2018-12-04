@@ -287,4 +287,26 @@ namespace graphene { namespace chain {
                  "Committee proposal review period must be less than the maximum proposal lifetime" );
    }
 
+	 uint32_t chain_parameters::get_content_award_interval()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().content_award_interval;
+		 }
+		 return GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
+	 }
+
+	 uint64_t chain_parameters::get_max_csaf_per_approve()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().max_csaf_per_approve;
+		 }
+		 return GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVE;
+	 }
+
 } } // graphene::chain

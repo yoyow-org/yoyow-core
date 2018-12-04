@@ -305,4 +305,8 @@
 /// The maximum number of voting platforms per account
 #define GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT (uint16_t(10))
 
+#define GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL (uint32_t(60*60*7))//7 days for award content
+
+#define GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVE	(GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1000))
+
 ///@}
