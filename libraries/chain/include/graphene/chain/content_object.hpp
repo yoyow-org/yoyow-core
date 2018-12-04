@@ -263,6 +263,48 @@ namespace graphene { namespace chain {
     */
    typedef generic_index<post_object, post_multi_index_type> post_index;
 
+	 /**
+	 * @brief This class record rewards and approvals of a post
+	 * @ingroup object
+	 * @ingroup protocol
+	 *
+	 */
+	 class active_post_object : public graphene::db::abstract_object < active_post_object >
+	 {
+	 public:
+		 static const uint8_t space_id	= protocol_ids;
+		 static const uint8_t type_id		= active_post_object_type;
+
+		 /// The post's pid.
+		 post_pid_type													post_pid;
+		 /// detail information of approvals, csaf.
+		 flat_map<account_uid_type, share_type>	amount;
+		 /// approvals of a post, csaf.
+		 share_type															total_amount;
+		 /// rewards of a post.
+		 flat_map<asset_aid_type, share_type>		total_rewards;
+		 /// period sequence of a post.
+		 uint64_t															  period_sequence;
+	 };
+
+	 struct by_period_sequence{};
+
+	 /**
+	 * @ingroup object_index
+	 */
+	 typedef multi_index_container <
+		 active_post_object,
+		 indexed_by<
+				ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+				ordered_unique< tag<by_post_pid>, member< active_post_object, post_pid_type, &active_post_object::post_pid > >,
+				ordered_unique< tag<by_period_sequence>, member<active_post_object, uint64_t, &active_post_object::period_sequence> >
+		 >
+	 > active_post_multi_index_type;
+
+	 /**
+	 * @ingroup object_index
+	 */
+	 typedef generic_index<active_post_object, active_post_multi_index_type> active_post_index;
 }}
 
 FC_REFLECT_DERIVED( graphene::chain::platform_object,
@@ -287,4 +329,8 @@ FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (create_time)(last_update_time)
                   )
 
+FC_REFLECT_DERIVED( graphene::chain::active_post_object,
+										(graphene::db::object),
+										(post_pid)(amount)(total_amount)(total_rewards)(period_sequence)
+									)
 

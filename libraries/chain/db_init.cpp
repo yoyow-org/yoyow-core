@@ -100,6 +100,9 @@ const uint8_t platform_vote_object::type_id;
 const uint8_t post_object::space_id;
 const uint8_t post_object::type_id;
 
+const uint8_t active_post_object::space_id;
+const uint8_t active_post_object::type_id;
+
 const uint8_t proposal_object::space_id;
 const uint8_t proposal_object::type_id;
 
@@ -177,6 +180,7 @@ void database::initialize_indexes()
 
    add_index< primary_index<platform_index> >();
    add_index< primary_index<post_index> >();
+	 add_index< primary_index<active_post_index> >();
 
    add_index< primary_index<committee_member_index> >();
    add_index< primary_index<committee_proposal_index> >();
