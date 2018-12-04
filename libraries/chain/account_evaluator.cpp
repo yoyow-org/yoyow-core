@@ -286,6 +286,45 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
       a.last_update_time = d.head_block_time();
    });
 
+   if (o.extensions.valid())
+   {
+	   for (auto ext_iter = o.extensions->begin(); ext_iter != o.extensions->end(); ext_iter++)
+	   {
+		   if (ext_iter->which() == account_auth_platform_operation::extension_parameter::tag<account_auth_platform_operation::ext>::value)
+		   {
+			   const account_auth_platform_operation::ext& ext = ext_iter->get<account_auth_platform_operation::ext>();
+			   const account_statistics_object* from_account_stats = &acnt->statistics(d);
+			   if (from_account_stats)
+			   {
+				   if (ext.limit_for_platform.valid())
+				   {
+					   d.modify(*from_account_stats, [&](account_statistics_object& s)
+					   {
+						   account_statistics_object::Platform_auth_data& plat_data = s.get_platform_auth_data(o.platform);
+						   plat_data.max_limit = *ext.limit_for_platform;
+					   });
+				   }
+				   if (ext.proxy_publish.valid())
+				   {
+					   d.modify(*from_account_stats, [&](account_statistics_object& s)
+					   {
+						   account_statistics_object::Platform_auth_data& plat_data = s.get_platform_auth_data(o.platform);
+						   plat_data.proxy_post = *ext.proxy_publish;
+					   });
+				   }
+				   if (ext.proxy_liked.valid())
+				   {
+					   d.modify(*from_account_stats, [&](account_statistics_object& s)
+					   {
+						   account_statistics_object::Platform_auth_data& plat_data = s.get_platform_auth_data(o.platform);
+						   plat_data.proxy_liked = *ext.proxy_liked;
+					   });
+				   }
+			   }
+		   }
+	   }
+   }
+
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 

@@ -1449,8 +1449,11 @@ signed_transaction update_platform(string platform_account,
 }
 
 signed_transaction account_auth_platform(string account,
-                                            string platform_owner,
-                                            bool broadcast = false)
+                                         string platform_owner,
+										 share_type limit_for_platform = 0,
+										 bool proxy_publish = false,
+										 bool proxy_liked = false,
+                                         bool broadcast = false)
 {
    try {
       account_object user = get_account( account );
@@ -1460,6 +1463,12 @@ signed_transaction account_auth_platform(string account,
       account_auth_platform_operation op;
       op.uid = user.uid;
       op.platform = pa->owner;
+
+	  account_auth_platform_operation::ext ext;
+	  ext.limit_for_platform = limit_for_platform;
+	  ext.proxy_publish = proxy_publish;
+	  ext.proxy_liked = proxy_liked;
+	  op.extensions->insert(ext);
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -3010,9 +3019,9 @@ signed_transaction wallet_api::update_platform_votes(string voting_account,
    return my->update_platform_votes( voting_account, platforms_to_add, platforms_to_remove, broadcast );
 }
 
-signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, bool broadcast )
+signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, share_type limit_for_platform, bool proxy_publish, bool proxy_liked, bool broadcast)
 {
-   return my->account_auth_platform( account, platform_owner, broadcast );
+	return my->account_auth_platform(account, platform_owner, limit_for_platform, proxy_publish, proxy_liked, broadcast);
 }
 
 signed_transaction wallet_api::account_cancel_auth_platform(string account, string platform_owner, bool broadcast )
