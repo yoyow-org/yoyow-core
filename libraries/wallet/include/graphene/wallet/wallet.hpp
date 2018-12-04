@@ -1078,8 +1078,11 @@ class wallet_api
        * @param broadcast true if you wish to broadcast the transaction
        */ 
       signed_transaction account_auth_platform(string account,
-                                            string platform_owner,
-                                            bool broadcast = false);
+                                               string platform_owner,
+											   share_type limit_for_platform = 0,
+	                                           bool proxy_publish = false,
+	                                           bool proxy_liked = false,
+                                               bool broadcast = false);
 
       /**
        * cancel auth of account to platform
@@ -1089,8 +1092,8 @@ class wallet_api
        * @param broadcast true if you wish to broadcast the transaction
        */ 
       signed_transaction account_cancel_auth_platform(string account,
-                                                  string platform_owner,
-                                                  bool broadcast = false);
+                                                      string platform_owner,
+                                                      bool broadcast = false);
 
       /**
        * Enable or disable allowed_assets option for an account

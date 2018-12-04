@@ -42,6 +42,14 @@ namespace graphene { namespace chain {
    class account_statistics_object : public graphene::db::abstract_object<account_statistics_object>
    {
       public:
+		  struct Platform_auth_data
+		  {
+			  share_type    max_limit;   //max limit prepaid for platform
+			  share_type    cur_used;    //current prepaid used by platform 
+			  bool          proxy_post;  //publish or comment by proxy
+			  bool          proxy_liked; //liked by proxy
+		  };
+
          static const uint8_t space_id = implementation_ids;
          static const uint8_t type_id  = impl_account_statistics_object_type;
 
@@ -55,6 +63,9 @@ namespace graphene { namespace chain {
          uint32_t                            total_ops = 0;
          /** Total operations related to this account that has been removed from the database. */
          uint32_t                            removed_ops = 0;
+
+		 
+		 map<account_uid_type, Platform_auth_data> prepaids_for_platform; //prepaid fee limits for platforms
 
          /**
           * Prepaid fee.
@@ -216,6 +227,8 @@ namespace graphene { namespace chain {
           */
          post_pid_type last_post_sequence = 0;
 
+
+		 Platform_auth_data& get_platform_auth_data(account_uid_type platform_uid);
          /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds
@@ -745,12 +758,16 @@ FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (graphene::db::object),
                     (owner)(asset_type)(balance) )
 
+FC_REFLECT(graphene::chain::account_statistics_object::Platform_auth_data,
+                    (max_limit)(cur_used)(proxy_post)(proxy_liked))
+
 FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (graphene::chain::object),
                     (owner)
                     //(most_recent_op)
                     (total_ops)
                     (removed_ops)
+					(prepaids_for_platform)
                     (prepaid)(csaf)
                     (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)

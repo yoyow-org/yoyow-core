@@ -228,6 +228,15 @@ namespace graphene { namespace chain {
     */
    struct account_auth_platform_operation : public base_operation
    {
+	   struct ext
+	   {
+		   optional<share_type> limit_for_platform;
+		   optional<bool>       proxy_publish;
+		   optional<bool>       proxy_liked;
+	   };
+
+	   typedef static_variant< ext > extension_parameter;
+
       struct fee_parameters_type
       {
          uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -240,7 +249,8 @@ namespace graphene { namespace chain {
       account_uid_type           uid;
       account_uid_type           platform;
 
-      extensions_type   extensions;
+	  optional< flat_set<extension_parameter> > extensions;
+      //extensions_type   extensions;
 
       account_uid_type  fee_payer_uid()const { return uid; }
       void              validate()const;
@@ -492,3 +502,5 @@ FC_REFLECT( graphene::chain::account_update_allowed_assets_operation::fee_parame
 
 FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )
+
+FC_REFLECT(graphene::chain::account_auth_platform_operation::ext, (limit_for_platform)(proxy_publish)(proxy_liked))

@@ -226,6 +226,22 @@ void account_auth_platform_operation::validate()const
    validate_account_uid( uid, "target " );
    validate_non_special_account( uid );
    validate_account_uid( platform, "platform " );
+
+   if (extensions.valid())
+   {
+	   bool isfound = false;
+	   for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
+	   {
+		   if (ext_iter->which() == account_auth_platform_operation::extension_parameter::tag<account_auth_platform_operation::ext>::value)
+		   {
+			   isfound = true;
+			   const account_auth_platform_operation::ext& ext = ext_iter->get<account_auth_platform_operation::ext>();
+			   bool has_option = ext.limit_for_platform.valid() || ext.proxy_publish.valid() || ext.proxy_liked.valid();
+			   FC_ASSERT(has_option, "Should update something");
+		   }
+	   }
+	   FC_ASSERT(isfound, "Should update something");
+   }
 }
 
 void account_cancel_auth_platform_operation::validate()const
