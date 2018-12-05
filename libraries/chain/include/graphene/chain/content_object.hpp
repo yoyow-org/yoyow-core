@@ -208,6 +208,18 @@ namespace graphene { namespace chain {
 		 map<account_uid_type, int8_t> receiptors; //receiptors of the post
 
          post_id_type get_id()const { return id; }
+		 void validate()const
+		 {
+			 auto itor = receiptors.find(platform);
+			 FC_ASSERT(itor != receiptors.end(), "platform must be included by receiptors");
+			 FC_ASSERT(itor->second == 2500, "platform`s ratio must be 25%");  // platform`s ratio >= 25%  ???
+			 int8_t total = 0;
+			 for (auto iter : receiptors)
+			 {
+				 total += iter.second;
+			 }
+			 FC_ASSERT(total == 10000, "The sum of receiptors` ratio must be 100%");
+		 }
    };
 
 

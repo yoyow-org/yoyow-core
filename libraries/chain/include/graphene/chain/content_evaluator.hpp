@@ -85,4 +85,12 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 	   object_id_type do_apply(const operation_type& o);
    };
 
+   class reward_evaluator : public evaluator<reward_evaluator>
+   {
+   public:
+	   typedef reward_operation operation_type;
+
+	   void_result do_evaluate(const operation_type& o);
+	   void_result do_apply(const operation_type& o);
+   };
 } } // graphene::chain

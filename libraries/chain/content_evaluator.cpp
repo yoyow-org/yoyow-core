@@ -5,6 +5,8 @@
 #include <graphene/chain/content_object.hpp>
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/hardfork.hpp>
+#include <graphene/chain/is_authorized_asset.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 namespace graphene { namespace chain {
 
@@ -480,36 +482,6 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
    
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
-void_result score_create_evaluator::do_evaluate(const operation_type& op)
-{
-	try {
-		const database& d = db();
-		const auto& global_params = d.get_global_properties().parameters;
-		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
-		d.get_post_by_pid(op.post_pid);// make sure pid exists
-		FC_ASSERT(op.csaf <= global_params.get_max_csaf_per_approval(), "The score_create_operation`s csaf is over the maximum limit");
-		FC_ASSERT((op.score >= -5) && (op.score <= 5), "The score_create_operation`s score over range");
-	    return void_result();
-    }FC_CAPTURE_AND_RETHROW((op))
-}
-
-object_id_type score_create_evaluator::do_apply(const operation_type& op)
-{
-	try {
-		database& d = db();
-
-		const auto& new_score_object = d.create<score_object>([&](score_object& obj)
-		{
-			obj.from_account_uid = op.from_account_uid;
-			obj.post_pid = op.post_pid;
-			obj.score = op.score;
-			obj.csaf = op.csaf;
-			obj.create_time = d.head_block_time();
-		});
-		return new_score_object.id;
-	}FC_CAPTURE_AND_RETHROW((op))
-}
-
 void_result post_update_evaluator::do_evaluate( const operation_type& op )
 { try {
    const database& d = db();
@@ -549,5 +521,105 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
       return post->id;
 
 } FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result score_create_evaluator::do_evaluate(const operation_type& op)
+{
+	try {
+		const database& d = db();
+		const auto& global_params = d.get_global_properties().parameters;
+		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
+		d.get_post_by_pid(op.post_pid);// make sure pid exists
+		FC_ASSERT(op.csaf <= global_params.get_max_csaf_per_approval(), "The score_create_operation`s member points is over the maximum limit");
+		FC_ASSERT((op.score >= -5) && (op.score <= 5), "The score_create_operation`s score over range");
+		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+		FC_ASSERT(account_stats->csaf >= op.csaf, "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
+			                                      ("f",op.from_account_uid)("c",account_stats->csaf)("n",op.csaf));
+		return void_result();
+	}FC_CAPTURE_AND_RETHROW((op))
+}
+
+object_id_type score_create_evaluator::do_apply(const operation_type& op)
+{
+	try {
+		database& d = db();
+
+		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+		d.modify(*account_stats, [&](account_statistics_object& s) {
+			s.csaf -= op.csaf;
+		});
+		const auto& new_score_object = d.create<score_object>([&](score_object& obj)
+		{
+			obj.from_account_uid = op.from_account_uid;
+			obj.post_pid = op.post_pid;
+			obj.score = op.score;
+			obj.csaf = op.csaf;
+			obj.create_time = d.head_block_time();
+		});
+		return new_score_object.id;
+	}FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result reward_evaluator::do_evaluate(const operation_type& op)
+{
+	try {
+		const database& d = db();
+		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
+		d.get_post_by_pid(op.post_pid);// make sure pid exists
+		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+
+		const account_object* from_account = &d.get_account_by_uid(op.from_account_uid);
+		const asset_object&   transfer_asset_object = d.get_asset_by_aid(op.amount.asset_id);
+		validate_authorized_asset(d, *from_account, transfer_asset_object, "'from' ");
+
+		if (transfer_asset_object.is_transfer_restricted())
+		{
+			GRAPHENE_ASSERT(
+				from_account->uid == transfer_asset_object.issuer,
+				transfer_restricted_transfer_asset,
+				"Asset {asset} has transfer_restricted flag enabled.",
+				("asset", op.amount.asset_id)
+			);
+		}
+
+		if (op.amount.amount > 0)
+		{
+			const auto& from_balance = d.get_balance(*from_account, transfer_asset_object);
+			bool sufficient_balance = from_balance.amount >= op.amount.amount;
+			FC_ASSERT(sufficient_balance, "Insufficient balance: unable to reward, because account: ${f} `s balance [${c}] is less then needed [${n}]",
+				                          ("f", op.from_account_uid)("c", from_balance.amount)("n", op.amount.amount));
+		}
+		return void_result();
+	}FC_CAPTURE_AND_RETHROW((op))
+}
+
+typedef boost::multiprecision::uint128_t uint128_t;
+
+void_result reward_evaluator::do_apply(const operation_type& op)
+{
+	try {
+		database& d = db();
+
+		const account_object* from_account = &d.get_account_by_uid(op.from_account_uid);
+		d.adjust_balance(*from_account, -op.amount);
+
+		const post_object* post = &d.get_post_by_pid(op.post_pid);
+		uint128_t amount(op.amount.amount.value);
+		uint128_t surplus = amount;
+		asset ast(share_type(0), op.amount.asset_id);
+		for (auto iter : post->receiptors)
+		{
+			if (iter.first == post->platform)
+				continue;
+			uint128_t temp = (amount*iter.second) / 10000;
+			ast.amount = uint64_t(temp);
+			surplus -= temp;
+			d.adjust_balance(iter.first, ast);
+		}
+		ast.amount = surplus;
+		d.adjust_balance(post->platform, ast);
+
+		return void_result();
+	}FC_CAPTURE_AND_RETHROW((op))
+}
 
 } } // graphene::chain
