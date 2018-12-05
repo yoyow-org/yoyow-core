@@ -823,10 +823,20 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 								auto& v = item->get< content_parameter_extension_type >();
 								if (pv.content_award_interval.valid())
 									v.content_award_interval = *pv.content_award_interval;
+								if (pv.platform_award_interval.valid())
+									v.platform_award_interval = *pv.platform_award_interval;
 								if (pv.max_csaf_per_approval.valid())
 									v.max_csaf_per_approval = *pv.max_csaf_per_approval;
 								if (pv.approval_expiration.valid())
 									v.approval_expiration = *pv.approval_expiration;
+								if (pv.min_valid_csaf.valid())
+									v.min_valid_csaf = *pv.min_valid_csaf;
+								if (pv.total_content_award_amount.valid())
+									v.total_content_award_amount = *pv.total_content_award_amount;
+								if (pv.total_platform_content_award_amount.valid())
+									v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
+								if (pv.total_platform_voted_award_amount.valid())
+									v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
 								found = true;
 								break;
 							}
@@ -839,10 +849,20 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 						content_parameter_extension_type cp;
 						if (pv.content_award_interval.valid())
 							cp.content_award_interval = *pv.content_award_interval;
+						if (pv.platform_award_interval.valid())
+							cp.platform_award_interval = *pv.platform_award_interval;
 						if (pv.max_csaf_per_approval.valid())
 							cp.max_csaf_per_approval = *pv.max_csaf_per_approval;
 						if (pv.approval_expiration.valid())
 							cp.approval_expiration = *pv.approval_expiration;
+						if (pv.min_valid_csaf.valid())
+							cp.min_valid_csaf = *pv.min_valid_csaf;
+						if (pv.total_content_award_amount.valid())
+							cp.total_content_award_amount = *pv.total_content_award_amount;
+						if (pv.total_platform_content_award_amount.valid())
+							cp.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
+						if (pv.total_platform_voted_award_amount.valid())
+							cp.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
 						o.extensions->insert(cp);
 					}
 				});

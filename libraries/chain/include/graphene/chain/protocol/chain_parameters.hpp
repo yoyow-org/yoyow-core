@@ -38,9 +38,14 @@ namespace graphene { namespace chain {
 
 	 struct content_parameter_extension_type
 	 {
-		 uint32_t		content_award_interval	= GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
-		 uint64_t		max_csaf_per_approval		= GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
-		 uint32_t		approval_expiration			= GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
+		 uint32_t		content_award_interval							= GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
+		 uint32_t		platform_award_interval							= GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;
+		 uint64_t		max_csaf_per_approval								= GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
+		 uint32_t		approval_expiration									= GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
+		 share_type min_valid_csaf											= GRAPHENE_MIN_VALID_CSAF;
+		 share_type	total_content_award_amount					= GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;
+		 share_type total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;
+		 share_type	total_platform_voted_award_amount		= GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
 	 };
 	 typedef static_variant<content_parameter_extension_type>  parameter_extension;
 
@@ -117,13 +122,25 @@ namespace graphene { namespace chain {
       /** defined in fee_schedule.cpp */
       void validate()const;
 			uint32_t get_content_award_interval()const;
+			uint32_t get_platform_award_interval()const;
 			uint64_t get_max_csaf_per_approval()const;
 			uint32_t get_approval_expiration()const;
+			share_type get_min_valid_csaf()const;
+			share_type get_total_content_award()const;
+			share_type get_total_platform_content_award()const;
+			share_type get_total_platform_voted_award()const;
    };
 
 } }  // graphene::chain
 FC_REFLECT(	graphene::chain::content_parameter_extension_type, 
-						(content_award_interval)(max_csaf_per_approval))
+						(content_award_interval)
+						(platform_award_interval)
+						(max_csaf_per_approval)
+						(approval_expiration)
+						(min_valid_csaf)
+						(total_content_award_amount)
+						(total_platform_content_award_amount)
+						(total_platform_voted_award_amount))
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)
             (block_interval)

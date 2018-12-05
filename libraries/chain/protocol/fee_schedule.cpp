@@ -298,6 +298,17 @@ namespace graphene { namespace chain {
 		 return GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
 	 }
 
+	 uint32_t chain_parameters::get_platform_award_interval()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().content_award_interval;
+		 }
+		 return GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;
+	 }
+
 	 uint64_t chain_parameters::get_max_csaf_per_approval()const
 	 {
 		 if (extensions.valid())
@@ -317,7 +328,51 @@ namespace graphene { namespace chain {
 				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
 					 return item->get< content_parameter_extension_type >().approval_expiration;
 		 }
-		 return GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
+		 return GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
+	 }
+
+	 share_type chain_parameters::get_min_valid_csaf()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().min_valid_csaf;
+		 }
+		 return GRAPHENE_MIN_VALID_CSAF;
+	 }
+
+	 share_type chain_parameters::get_total_content_award()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().total_content_award_amount;
+		 }
+		 return GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;
+	 }
+
+	 share_type chain_parameters::get_total_platform_content_award()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().total_platform_content_award_amount;
+		 }
+		 return GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;
+	 }
+
+	 share_type chain_parameters::get_total_platform_voted_award()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().total_platform_voted_award_amount;
+		 }
+		 return GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
 	 }
 
 } } // graphene::chain
