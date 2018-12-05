@@ -304,7 +304,23 @@ const post_object* database::find_post_by_platform( account_uid_type platform,
       return nullptr;
 }
 
+const post_object& database::get_post_by_pid(post_pid_type post_pid)const
+{
+	const auto& posts_by_pid = get_index_type<post_index>().indices().get<by_post_pid>();
+	auto itr = posts_by_pid.find(post_pid);
+	FC_ASSERT(itr != posts_by_pid.end(),"post {post_pid} not found.",("post_pid", post_pid));
+	return *itr;
+}
 
+const post_object* database::find_post_by_pid(post_pid_type post_pid)const
+{
+	const auto& posts_by_pid = get_index_type<post_index>().indices().get<by_post_pid>();
+	auto itr = posts_by_pid.find(post_pid);
+	if (itr != posts_by_pid.end())
+		return &(*itr);
+	else
+		return nullptr;
+}
 
 
 } }

@@ -176,6 +176,7 @@ namespace graphene { namespace chain {
       impl_chain_property_object_type,
       impl_witness_schedule_object_type,
       impl_platform_vote_object_type,
+	  impl_score_object_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
    };
 
@@ -218,6 +219,7 @@ namespace graphene { namespace chain {
    class account_transaction_history_object;
    class chain_property_object;
    class witness_schedule_object;
+   class score_object;
 
    typedef object_id< implementation_ids, impl_global_property_object_type,  global_property_object>                    global_property_id_type;
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,  dynamic_global_property_object>    dynamic_global_property_id_type;
@@ -238,6 +240,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_chain_property_object_type,   chain_property_object>                     chain_property_id_type;
    typedef object_id< implementation_ids, impl_witness_schedule_object_type, witness_schedule_object>                   witness_schedule_id_type;
    typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
+   typedef object_id< implementation_ids, impl_score_object_type, score_object>                                         score_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -356,6 +359,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_voter_object_type)
                  (impl_witness_vote_object_type)
                  (impl_platform_vote_object_type)
+				 (impl_score_object_type)
                  (impl_committee_member_vote_object_type)
                  (impl_registrar_takeover_object_type)
                  (impl_csaf_lease_object_type)
@@ -388,6 +392,7 @@ FC_REFLECT_TYPENAME( graphene::chain::account_statistics_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::voter_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::witness_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::platform_vote_id_type)
+FC_REFLECT_TYPENAME(graphene::chain::score_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::registrar_takeover_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::csaf_lease_id_type )

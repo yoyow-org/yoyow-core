@@ -205,6 +205,8 @@ namespace graphene { namespace chain {
          time_point_sec create_time;
          time_point_sec last_update_time;
 
+		 map<account_uid_type, int8_t> receiptors; //receiptors of the post
+
          post_id_type get_id()const { return id; }
    };
 
@@ -305,6 +307,47 @@ namespace graphene { namespace chain {
 	 * @ingroup object_index
 	 */
 	 typedef generic_index<active_post_object, active_post_multi_index_type> active_post_index;
+
+   /**
+   * @brief This class represents scores for a post
+   * @ingroup object
+   * @ingroup protocol
+   */
+   class score_object : public graphene::db::abstract_object<score_object>
+   {
+   public:
+	   static const uint8_t space_id = implementation_ids;
+	   static const uint8_t type_id = impl_score_object_type;
+
+	   account_uid_type    from_account_uid;
+	   post_pid_type       post_pid;
+	   int8_t              score;
+	   int64_t             csaf;
+
+	   time_point_sec      create_time;
+   };
+
+   struct by_from_account_uid{};
+   struct by_posts_pid{};
+   struct by_create_time{};
+
+   /**
+   * @ingroup object_index
+   */
+   typedef multi_index_container<
+	   score_object,
+	   indexed_by<
+	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+		  ordered_unique< tag<by_from_account_uid>, member< score_object, account_uid_type, &score_object::from_account_uid> >,
+		  ordered_unique< tag<by_posts_pid>, member< score_object, post_pid_type, &score_object::post_pid> >,
+		  ordered_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
+       >
+   > score_multi_index_type;
+
+   /**
+   * @ingroup object_index
+   */
+   typedef generic_index<score_object, score_multi_index_type> score_index;
 }}
 
 FC_REFLECT_DERIVED( graphene::chain::platform_object,
@@ -326,7 +369,7 @@ FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
                     (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
                     (hash_value)(extra_data)(title)(body)
-                    (create_time)(last_update_time)
+					(create_time)(last_update_time)(receiptors)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::active_post_object,
@@ -334,3 +377,7 @@ FC_REFLECT_DERIVED( graphene::chain::active_post_object,
 										(post_pid)(amount)(total_amount)(total_rewards)(period_sequence)
 									)
 
+FC_REFLECT_DERIVED(graphene::chain::score_object,
+					(graphene::db::object),
+					(from_account_uid), (post_pid), (score), (csaf), (create_time)
+					)

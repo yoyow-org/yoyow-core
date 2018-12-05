@@ -270,6 +270,12 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.fee_payer_uid() ); // fee payer
    }
 
+   // TODO review
+   void operator()(const score_create_operation& op)
+   {
+	   _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
+
 };
 
 void operation_get_impacted_account_uids( const operation& op, flat_set<account_uid_type>& result )
@@ -373,6 +379,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
             } case impl_platform_vote_object_type:{
               // TODO review
               break;
+			} case impl_score_object_type:{
+				// TODO review
+				break;
             } case impl_committee_member_vote_object_type:{
                // TODO review
               break;

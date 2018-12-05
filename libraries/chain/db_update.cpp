@@ -235,6 +235,18 @@ void database::clear_expired_proposals()
    }
 }
 
+void database::clear_expired_scores()
+{
+	const auto& global_params = get_global_properties().parameters;
+	const auto& score_expiration_index = get_index_type<score_index>().indices().get<by_create_time>();
+
+	while (!score_expiration_index.empty() && score_expiration_index.begin()->create_time <= head_block_time()-global_params.get_approval_expiration())
+	{
+		const score_object& score = *score_expiration_index.begin();
+		remove(score);
+	}
+}
+
 void database::update_maintenance_flag( bool new_maintenance_flag )
 {
    modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& dpo )

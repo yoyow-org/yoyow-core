@@ -480,6 +480,36 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
    
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
+void_result score_create_evaluator::do_evaluate(const operation_type& op)
+{
+	try {
+		const database& d = db();
+		const auto& global_params = d.get_global_properties().parameters;
+		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
+		d.get_post_by_pid(op.post_pid);// make sure pid exists
+		FC_ASSERT(op.csaf <= global_params.get_max_csaf_per_approval(), "The score_create_operation`s csaf is over the maximum limit");
+		FC_ASSERT((op.score >= -5) && (op.score <= 5), "The score_create_operation`s score over range");
+	    return void_result();
+    }FC_CAPTURE_AND_RETHROW((op))
+}
+
+object_id_type score_create_evaluator::do_apply(const operation_type& op)
+{
+	try {
+		database& d = db();
+
+		const auto& new_score_object = d.create<score_object>([&](score_object& obj)
+		{
+			obj.from_account_uid = op.from_account_uid;
+			obj.post_pid = op.post_pid;
+			obj.score = op.score;
+			obj.csaf = op.csaf;
+			obj.create_time = d.head_block_time();
+		});
+		return new_score_object.id;
+	}FC_CAPTURE_AND_RETHROW((op))
+}
+
 void_result post_update_evaluator::do_evaluate( const operation_type& op )
 { try {
    const database& d = db();

@@ -170,6 +170,19 @@ share_type post_update_operation::calculate_fee( const fee_parameters_type& sche
    return core_fee_required;
 }
 
+void score_create_operation::validate()const
+{
+	//TODO
+	validate_op_fee(fee, "score ");
+	validate_account_uid(from_account_uid, "from account ");
 
+}
+
+share_type score_create_operation::calculate_fee(const fee_parameters_type& k)const
+{
+	//TODO
+	share_type core_fee_required;
+	return core_fee_required;
+}
 
 } } // graphene::chain

@@ -76,4 +76,13 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
          const post_object*    post = nullptr;
    };
 
+   class score_create_evaluator : public evaluator<score_create_evaluator>
+   {
+   public:
+	   typedef score_create_operation operation_type;
+
+	   void_result do_evaluate(const operation_type& o);
+	   object_id_type do_apply(const operation_type& o);
+   };
+
 } } // graphene::chain
