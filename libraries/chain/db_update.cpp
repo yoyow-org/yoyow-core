@@ -823,8 +823,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 								auto& v = item->get< content_parameter_extension_type >();
 								if (pv.content_award_interval.valid())
 									v.content_award_interval = *pv.content_award_interval;
-								if (pv.max_csaf_per_approve.valid())
-									v.max_csaf_per_approve = *pv.max_csaf_per_approve;
+								if (pv.max_csaf_per_approval.valid())
+									v.max_csaf_per_approval = *pv.max_csaf_per_approval;
+								if (pv.approval_expiration.valid())
+									v.approval_expiration = *pv.approval_expiration;
 								found = true;
 								break;
 							}
@@ -837,8 +839,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 						content_parameter_extension_type cp;
 						if (pv.content_award_interval.valid())
 							cp.content_award_interval = *pv.content_award_interval;
-						if (pv.max_csaf_per_approve.valid())
-							cp.max_csaf_per_approve = *pv.max_csaf_per_approve;
+						if (pv.max_csaf_per_approval.valid())
+							cp.max_csaf_per_approval = *pv.max_csaf_per_approval;
+						if (pv.approval_expiration.valid())
+							cp.approval_expiration = *pv.approval_expiration;
 						o.extensions->insert(cp);
 					}
 				});

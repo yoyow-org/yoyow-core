@@ -298,15 +298,26 @@ namespace graphene { namespace chain {
 		 return GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
 	 }
 
-	 uint64_t chain_parameters::get_max_csaf_per_approve()const
+	 uint64_t chain_parameters::get_max_csaf_per_approval()const
 	 {
 		 if (extensions.valid())
 		 {
 			 for (auto item = extensions->begin(); item != extensions->end(); item++)
 				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().max_csaf_per_approve;
+					 return item->get< content_parameter_extension_type >().max_csaf_per_approval;
 		 }
-		 return GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVE;
+		 return GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
+	 }
+
+	 uint64_t chain_parameters::get_approval_expiration()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().approval_expiration;
+		 }
+		 return GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
 	 }
 
 } } // graphene::chain

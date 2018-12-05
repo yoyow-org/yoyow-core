@@ -224,7 +224,8 @@ namespace graphene { namespace chain {
 	 struct committee_updatable_content_parameters
 	 {
 		 optional< uint32_t > content_award_interval;
-		 optional< uint64_t > max_csaf_per_approve;
+		 optional< uint64_t > max_csaf_per_approval;
+		 optional< uint64_t >	approval_expiration;
 	 };
 	 typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
 
@@ -385,7 +386,7 @@ FC_REFLECT( graphene::chain::committee_updatable_parameters,
             (platform_max_pledge_seconds)
             (platform_avg_pledge_update_interval)
           )
-FC_REFLECT(graphene::chain::committee_updatable_content_parameters, (content_award_interval)(max_csaf_per_approve))
+FC_REFLECT(graphene::chain::committee_updatable_content_parameters, (content_award_interval)(max_csaf_per_approval)(approval_expiration))
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )
