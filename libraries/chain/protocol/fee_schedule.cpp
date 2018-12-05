@@ -309,7 +309,7 @@ namespace graphene { namespace chain {
 		 return GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
 	 }
 
-	 uint64_t chain_parameters::get_approval_expiration()const
+	 uint32_t chain_parameters::get_approval_expiration()const
 	 {
 		 if (extensions.valid())
 		 {

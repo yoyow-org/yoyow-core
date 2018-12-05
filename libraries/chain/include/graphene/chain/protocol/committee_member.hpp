@@ -225,7 +225,7 @@ namespace graphene { namespace chain {
 	 {
 		 optional< uint32_t > content_award_interval;
 		 optional< uint64_t > max_csaf_per_approval;
-		 optional< uint64_t >	approval_expiration;
+		 optional< uint32_t >	approval_expiration;
 	 };
 	 typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
 

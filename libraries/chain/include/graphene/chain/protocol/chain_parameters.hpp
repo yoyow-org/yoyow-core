@@ -40,7 +40,7 @@ namespace graphene { namespace chain {
 	 {
 		 uint32_t		content_award_interval	= GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
 		 uint64_t		max_csaf_per_approval		= GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
-		 uint64_t		approval_expiration			= GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
+		 uint32_t		approval_expiration			= GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
 	 };
 	 typedef static_variant<content_parameter_extension_type>  parameter_extension;
 
@@ -118,7 +118,7 @@ namespace graphene { namespace chain {
       void validate()const;
 			uint32_t get_content_award_interval()const;
 			uint64_t get_max_csaf_per_approval()const;
-			uint64_t get_approval_expiration()const;
+			uint32_t get_approval_expiration()const;
    };
 
 } }  // graphene::chain
