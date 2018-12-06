@@ -223,7 +223,6 @@ namespace graphene { namespace chain {
    {
 	   struct fee_parameters_type {
 		   uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
-		   uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
 		   extensions_type   extensions;
@@ -235,6 +234,41 @@ namespace graphene { namespace chain {
 	   post_pid_type                post_pid; //post id
 	   int8_t                       score;
 	   int64_t                      csaf;
+
+	   extensions_type              extensions;
+
+	   account_uid_type fee_payer_uid()const { return from_account_uid; }
+	   void             validate()const;
+	   share_type       calculate_fee(const fee_parameters_type& k)const;
+	   void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
+	   {
+		   a.insert(from_account_uid);    // Requires authors to change the permissions
+	   }
+   };
+
+   /**
+   * @ingroup operations
+   *
+   * @brief Score an article or a reply
+   *
+   *  Fees are paid by the "from_account_uid" account
+   *
+   *  @return n/a
+   */
+   struct reward_operation : public base_operation
+   {
+	   struct fee_parameters_type {
+		   uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint64_t min_real_fee = 0;
+		   uint16_t min_rf_percent = 0;
+		   extensions_type   extensions;
+	   };
+
+	   fee_type                     fee;
+
+	   account_uid_type             from_account_uid;//from account
+	   post_pid_type                post_pid; //post id
+	   asset                        amount;
 
 	   extensions_type              extensions;
 
@@ -272,7 +306,8 @@ FC_REFLECT( graphene::chain::post_update_operation,
             (hash_value)(extra_data)(title)(body)
             (extensions) )
 
-FC_REFLECT(graphene::chain::score_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::score_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(post_pid)(score)(csaf)(extensions))
 
-
+FC_REFLECT(graphene::chain::reward_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(post_pid)(amount)(extensions))

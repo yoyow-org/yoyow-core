@@ -78,7 +78,8 @@ namespace graphene { namespace chain {
             account_update_allowed_assets_operation,
             // the operations below are not supported
             account_whitelist_operation,
-			score_create_operation
+			score_create_operation,
+			reward_operation
          > operation;
 
    /// @} // operations group
