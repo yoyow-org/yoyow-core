@@ -321,4 +321,5 @@
 #define GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES (uint64_t(10))
 #define GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK (uint32_t(100))
 
+#define GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO (int8_t(3000)) //the ratio of platform`s recerpts from post_object 3000 means 30.00%
 ///@}

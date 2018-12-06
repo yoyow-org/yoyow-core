@@ -205,18 +205,19 @@ namespace graphene { namespace chain {
          time_point_sec create_time;
          time_point_sec last_update_time;
 
-		 map<account_uid_type, int8_t> receiptors; //receiptors of the post
+		 map<account_uid_type, Recerptor_Parameter> receiptors; //receiptors of the post
+		 optional<share_type> forward_price;
 
          post_id_type get_id()const { return id; }
-		 void validate()const
+		 void receiptors_validate()const
 		 {
 			 auto itor = receiptors.find(platform);
 			 FC_ASSERT(itor != receiptors.end(), "platform must be included by receiptors");
-			 FC_ASSERT(itor->second == 2500, "platform`s ratio must be 25%");  // platform`s ratio >= 25%  ???
+			 FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 30%");  
 			 int8_t total = 0;
 			 for (auto iter : receiptors)
 			 {
-				 total += iter.second;
+				 total += iter.second.cur_ratio;
 			 }
 			 FC_ASSERT(total == 10000, "The sum of receiptors` ratio must be 100%");
 		 }
@@ -385,7 +386,7 @@ FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
                     (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
                     (hash_value)(extra_data)(title)(body)
-					(create_time)(last_update_time)(receiptors)
+					(create_time)(last_update_time)(receiptors)(forward_price)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::active_post_object,

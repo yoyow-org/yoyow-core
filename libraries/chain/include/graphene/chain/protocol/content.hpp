@@ -131,8 +131,30 @@ namespace graphene { namespace chain {
     *
     *  @return n/a
     */
+   struct Recerptor_Parameter
+   {
+	   int8_t      cur_ratio;
+	   bool        to_buyout;
+	   int8_t      buyout_ratio;
+	   share_type  buyout_price;
+
+	   void validate()const
+	   {
+		   if (to_buyout)
+			   FC_ASSERT(buyout_ratio <= cur_ratio, "forward_ratio must be less then cur_ratio");
+		   FC_ASSERT(cur_ratio <= (10000 - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "forward_ratio must be less then 75%");
+	   }
+   };
+
    struct post_operation : public base_operation
    {
+	   struct ext
+	   {
+		   optional<share_type> forward_price;
+		   optional< map<account_uid_type, Recerptor_Parameter> > receiptors;
+	   };
+	   typedef static_variant< ext > extension_parameter;
+
       struct fee_parameters_type {
          uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte  = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -156,7 +178,8 @@ namespace graphene { namespace chain {
       string                       title;
       string                       body;
 
-      extensions_type              extensions;
+	  optional< flat_set<extension_parameter> > extensions;
+      //extensions_type              extensions;
 
       account_uid_type fee_payer_uid()const { return poster; }
       void             validate()const;
@@ -179,6 +202,16 @@ namespace graphene { namespace chain {
     */
    struct post_update_operation : public base_operation
    {
+	   struct ext
+	   {
+		   optional<share_type>        forward_price;
+		   optional<account_uid_type>  receiptor;
+		   optional<bool>              to_buyout;
+		   optional<int8_t>            buyout_ratio;
+		   optional<share_type>        buyout_price;
+	   };
+	   typedef static_variant< ext > extension_parameter;
+
       struct fee_parameters_type {
          uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte  = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -198,15 +231,31 @@ namespace graphene { namespace chain {
       optional< string >           title;
       optional< string >           body;
 
-      extensions_type              extensions;
+	  optional< flat_set<extension_parameter> > extensions;
+      //extensions_type              extensions;
 
       account_uid_type fee_payer_uid()const { return poster; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
       {
-         a.insert( poster );    // Requires authors to change the permissions
-         a.insert( platform );  // Requires platform to change the permissions
+		  a.insert(platform);  // Requires platform to change the permissions
+		  if (hash_value.valid() || extra_data.valid() || title.valid() || body.valid())
+			  a.insert(poster);    // Requires authors to change the permissions
+		  if (extensions.valid())
+		  {
+			  for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
+			  {
+				  if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
+				  {
+					  const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
+					  if (ext.forward_price.valid() && a.find(poster) == a.end())
+					      a.insert(poster);
+					  if (ext.receiptor.valid() && a.find(*(ext.receiptor)) == a.end())
+						  a.insert(*(ext.receiptor));
+				  }
+			  }
+		  }
       }
    };
 
@@ -311,3 +360,8 @@ FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(post
 
 FC_REFLECT(graphene::chain::reward_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(post_pid)(amount)(extensions))
+
+FC_REFLECT(graphene::chain::post_operation::ext, (forward_price)(receiptors))
+FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price))
+
+FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price))

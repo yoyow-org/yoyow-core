@@ -142,6 +142,30 @@ void post_operation::validate()const
       validate_account_uid( *origin_platform, "origin platform " );
    if( origin_post_pid.valid() )
       FC_ASSERT( *origin_post_pid > uint64_t( 0 ), "origin_post_pid must be greater than 0 ");
+
+   if (extensions.valid())
+   {
+	   for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
+	   {
+		   if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
+		   {
+			   const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
+			   if (ext.receiptors.valid())
+			   {
+				   const map<account_uid_type, Recerptor_Parameter>& receiptor = *(ext.receiptors);
+				   auto itor = receiptor.find(platform);
+				   FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
+				   FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 30%");
+				   int8_t total = 0;
+				   for (auto iter : receiptor)
+				   {
+					   total += iter.second.cur_ratio;
+				   }
+				   FC_ASSERT(total == 10000, "The sum of receiptors` ratio must be 100%");
+			   }
+		   }
+	   }
+   }
 }
 
 void post_update_operation::validate()const
@@ -150,6 +174,25 @@ void post_update_operation::validate()const
    validate_account_uid( poster, "poster " );
    validate_account_uid( platform, "platform " );
    FC_ASSERT( post_pid > uint64_t( 0 ), "post_pid must be greater than 0 ");
+
+   if (extensions.valid())
+   {
+	   for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
+	   {
+		   if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
+		   {
+			   const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
+			   FC_ASSERT(ext.forward_price.valid() 
+				   || (ext.receiptor.valid() && (ext.to_buyout.valid() || ext.buyout_ratio.valid() || ext.buyout_price.valid())), "Should change something");
+			   if (ext.receiptor.valid())
+			   {
+				   FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
+				   if (ext.buyout_ratio.valid())
+					   FC_ASSERT(ext.buyout_ratio <= (10000 - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The sum of receiptors` ratio must be 100%");
+			   }
+		   }
+	   }
+   }
 }
 
 share_type post_update_operation::calculate_fee( const fee_parameters_type& schedule )const
@@ -175,6 +218,7 @@ void score_create_operation::validate()const
 	validate_op_fee(fee, "score ");
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
+	FC_ASSERT((score >= -5) && (score <= 5), "The score_create_operation`s score over range");
 }
 
 share_type score_create_operation::calculate_fee(const fee_parameters_type& k)const

@@ -477,6 +477,35 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             obj.body             = o.body;
             obj.create_time      = d.head_block_time();
             obj.last_update_time = d.head_block_time();
+
+			bool need_init_receiptors = true;
+			if (o.extensions.valid())
+			{
+				for (auto ext_iter = o.extensions->begin(); ext_iter != o.extensions->end(); ext_iter++)
+				{
+					if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
+					{
+						const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
+						if (ext.forward_price.valid())
+						    obj.forward_price = *ext.forward_price;
+						if (ext.receiptors.valid())
+						{
+							map<account_uid_type, Recerptor_Parameter> map_receiptor = *(ext.receiptors);
+							if (map_receiptor.size() > 0)
+							{
+								need_init_receiptors = false;
+								obj.receiptors = map_receiptor;
+							}	
+						}
+					}
+				}
+			}
+			if (need_init_receiptors){
+				map<account_uid_type, Recerptor_Parameter> map_receiptors;
+				map_receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+				map_receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ 10000 - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+				obj.receiptors = map_receiptors;
+			}
       } );
       return new_post_object.id;
    
@@ -490,13 +519,36 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
    const account_object* poster_account = &d.get_account_by_uid( op.poster );
    const account_statistics_object* account_stats = &d.get_account_statistics_by_uid( op.poster );
 
-   FC_ASSERT( ( poster_account != nullptr && poster_account->can_post ), "poster ${uid} is not allowed to post.", ("uid",op.poster) );
+   if (op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid())
+   {
+	   FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
 
-   FC_ASSERT( ( account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid ), "post_pid ${pid} is invalid.", ("pid", op.post_pid) );
+	   FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
 
-   post = d.find_post_by_platform( op.platform, op.poster, op.post_pid );
+	   post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
 
-   FC_ASSERT( post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid) );
+	   FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
+   }
+
+   if (op.extensions.valid())
+   {
+	   for (auto ext_iter = op.extensions->begin(); ext_iter != op.extensions->end(); ext_iter++)
+	   {
+		   if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
+		   {
+			   const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
+			   if (ext.receiptor.valid() && ext.buyout_ratio.valid())
+			   {
+				   post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
+				   FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
+				   auto iter = post->receiptors.find(*(ext.receiptor));
+				   FC_ASSERT(iter != post->receiptors.end(), "receiptor:${r} not found.", ("r", *(ext.receiptor)));
+				   FC_ASSERT(iter->second.cur_ratio >= *(ext.buyout_ratio), "the ratio ${r} of receiptor ${p} is less then sell ${sp} .",
+					                                                          ("r", iter->second.cur_ratio)("p", *(ext.receiptor))("sp", *(ext.buyout_ratio)));
+			   }
+		   }
+	   }
+   }
 
    return void_result();
 
@@ -516,6 +568,32 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
             obj.title            = *o.title;
          if( o.body.valid() )
             obj.body             = *o.body;
+
+		 if (o.extensions.valid())
+		 {
+			 for (auto ext_iter = o.extensions->begin(); ext_iter != o.extensions->end(); ext_iter++)
+			 {
+				 if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
+				 {
+					 const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
+					 if (ext.forward_price.valid())
+					 {
+						 obj.forward_price = *(ext.forward_price);
+					 }
+					 if (ext.receiptor.valid())
+					 {
+						 auto iter = obj.receiptors.find(*(ext.receiptor));
+						 if (ext.to_buyout.valid())
+							 iter->second.to_buyout = *(ext.to_buyout);
+						 if (ext.buyout_ratio.valid())
+							 iter->second.buyout_ratio = *(ext.buyout_ratio);
+						 if (ext.buyout_price.valid())
+							 iter->second.buyout_price = *(ext.buyout_price);
+					 }
+				 }
+			 }
+		 }
+
          obj.last_update_time = d.head_block_time();
       } );
       return post->id;
@@ -530,7 +608,6 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
 		d.get_post_by_pid(op.post_pid);// make sure pid exists
 		FC_ASSERT(op.csaf <= global_params.get_max_csaf_per_approval(), "The score_create_operation`s member points is over the maximum limit");
-		FC_ASSERT((op.score >= -5) && (op.score <= 5), "The score_create_operation`s score over range");
 		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 		FC_ASSERT(account_stats->csaf >= op.csaf, "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
 			                                      ("f",op.from_account_uid)("c",account_stats->csaf)("n",op.csaf));
@@ -610,7 +687,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 		{
 			if (iter.first == post->platform)
 				continue;
-			uint128_t temp = (amount*iter.second) / 10000;
+			uint128_t temp = (amount*iter.second.cur_ratio) / 10000;
 			ast.amount = uint64_t(temp);
 			surplus -= temp;
 			d.adjust_balance(iter.first, ast);
