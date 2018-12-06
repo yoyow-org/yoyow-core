@@ -227,10 +227,12 @@ namespace graphene { namespace chain {
 		 optional< uint32_t			>			platform_award_interval;
 		 optional< uint64_t			>			max_csaf_per_approval;
 		 optional< uint32_t			>			approval_expiration;
-		 optional< share_type		>			min_valid_csaf;
+		 optional< share_type		>			min_effective_csaf;
 		 optional< share_type		>			total_content_award_amount;
 		 optional< share_type		>			total_platform_content_award_amount;
 		 optional< share_type		>			total_platform_voted_award_amount;
+		 optional< uint64_t			>			platform_award_min_votes;
+		 optional< uint32_t			>			platform_award_requested_rank;
 	 };
 	 typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
 
@@ -396,10 +398,12 @@ FC_REFLECT(graphene::chain::committee_updatable_content_parameters,
 						(platform_award_interval)
 						(max_csaf_per_approval)
 						(approval_expiration)
-						(min_valid_csaf)
+						(min_effective_csaf)
 						(total_content_award_amount)
 						(total_platform_content_award_amount)
-						(total_platform_voted_award_amount))
+						(total_platform_voted_award_amount)
+						(platform_award_min_votes)
+						(platform_award_requested_rank))
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )

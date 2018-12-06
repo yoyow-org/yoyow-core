@@ -304,7 +304,7 @@ namespace graphene { namespace chain {
 		 {
 			 for (auto item = extensions->begin(); item != extensions->end(); item++)
 				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().content_award_interval;
+					 return item->get< content_parameter_extension_type >().platform_award_interval;
 		 }
 		 return GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;
 	 }
@@ -331,15 +331,15 @@ namespace graphene { namespace chain {
 		 return GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
 	 }
 
-	 share_type chain_parameters::get_min_valid_csaf()const
+	 share_type chain_parameters::get_min_effective_csaf()const
 	 {
 		 if (extensions.valid())
 		 {
 			 for (auto item = extensions->begin(); item != extensions->end(); item++)
 				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().min_valid_csaf;
+					 return item->get< content_parameter_extension_type >().min_effective_csaf;
 		 }
-		 return GRAPHENE_MIN_VALID_CSAF;
+		 return GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;
 	 }
 
 	 share_type chain_parameters::get_total_content_award()const
@@ -373,6 +373,28 @@ namespace graphene { namespace chain {
 					 return item->get< content_parameter_extension_type >().total_platform_voted_award_amount;
 		 }
 		 return GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
+	 }
+
+	 uint64_t chain_parameters::get_platform_award_min_votes()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().platform_award_min_votes;
+		 }
+		 return GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
+	 }
+
+	 uint32_t chain_parameters::get_platform_award_requested_rank()const
+	 {
+		 if (extensions.valid())
+		 {
+			 for (auto item = extensions->begin(); item != extensions->end(); item++)
+				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
+					 return item->get< content_parameter_extension_type >().platform_award_requested_rank;
+		 }
+		 return GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;
 	 }
 
 } } // graphene::chain

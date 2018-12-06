@@ -235,6 +235,17 @@ void database::clear_expired_proposals()
    }
 }
 
+void database::clear_active_post()
+{
+	const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_id>();
+	auto apt_itr = apt_idx.begin();
+	while (apt_itr != apt_idx.end())
+	{
+		remove(*apt_itr);
+		apt_itr = apt_idx.begin();
+	}
+}
+
 void database::clear_expired_scores()
 {
 	const auto& global_params = get_global_properties().parameters;
@@ -841,14 +852,19 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 									v.max_csaf_per_approval = *pv.max_csaf_per_approval;
 								if (pv.approval_expiration.valid())
 									v.approval_expiration = *pv.approval_expiration;
-								if (pv.min_valid_csaf.valid())
-									v.min_valid_csaf = *pv.min_valid_csaf;
+								if (pv.min_effective_csaf.valid())
+									v.min_effective_csaf = *pv.min_effective_csaf;
 								if (pv.total_content_award_amount.valid())
 									v.total_content_award_amount = *pv.total_content_award_amount;
 								if (pv.total_platform_content_award_amount.valid())
 									v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
 								if (pv.total_platform_voted_award_amount.valid())
 									v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
+								if (pv.platform_award_min_votes.valid())
+									v.platform_award_min_votes = *pv.platform_award_min_votes;
+								if (pv.platform_award_requested_rank.valid())
+									v.platform_award_requested_rank = *pv.platform_award_requested_rank;
+
 								found = true;
 								break;
 							}
@@ -867,14 +883,19 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 							cp.max_csaf_per_approval = *pv.max_csaf_per_approval;
 						if (pv.approval_expiration.valid())
 							cp.approval_expiration = *pv.approval_expiration;
-						if (pv.min_valid_csaf.valid())
-							cp.min_valid_csaf = *pv.min_valid_csaf;
+						if (pv.min_effective_csaf.valid())
+							cp.min_effective_csaf = *pv.min_effective_csaf;
 						if (pv.total_content_award_amount.valid())
 							cp.total_content_award_amount = *pv.total_content_award_amount;
 						if (pv.total_platform_content_award_amount.valid())
 							cp.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
 						if (pv.total_platform_voted_award_amount.valid())
 							cp.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
+						if (pv.platform_award_min_votes.valid())
+							cp.platform_award_min_votes = *pv.platform_award_min_votes;
+						if (pv.platform_award_requested_rank.valid())
+							cp.platform_award_requested_rank = *pv.platform_award_requested_rank;
+
 						o.extensions->insert(cp);
 					}
 				});
@@ -1275,6 +1296,159 @@ void database::clear_resigned_platform_votes()
 
       pla_itr = pla_idx.begin();
    }
+}
+
+void database::process_content_platform_awards()
+{
+	const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+	if (head_block_time() < dpo.next_content_award_time)
+		return;
+
+	const global_property_object& gpo = get_global_properties();
+	const auto& gparams = gpo.parameters;
+	const auto& total_content_award_amount = gparams.get_total_content_award();
+	const auto& total_platform_content_award_amount = gparams.get_total_platform_content_award();
+
+	if (total_content_award_amount.value == 0 && total_platform_content_award_amount.value == 0)
+	{
+		clear_active_post();
+		return;
+	}
+
+	share_type total_csaf_amount = 0;
+	map<account_uid_type, share_type> platform_csaf_amount;
+	map<account_uid_type, share_type> poster_casf_amount;
+
+	const auto& min_effective_csaf = gparams.get_min_effective_csaf();
+
+	const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_id>();
+	auto apt_itr = apt_idx.begin();
+	while (apt_itr != apt_idx.end())
+	{
+		if (apt_itr->total_amount >= min_effective_csaf)
+		{
+			//compute total effective csaf
+			total_csaf_amount += apt_itr->total_amount;
+			
+			//compute platform effective casf
+			account_uid_type pid = apt_itr->platform;
+			if (platform_csaf_amount.find(pid) != platform_csaf_amount.end())
+				platform_csaf_amount.at(pid) += apt_itr->total_amount;
+			else
+				platform_csaf_amount.emplace(pid, apt_itr->total_amount);
+
+			//compute poster effective casf
+			account_uid_type uid = apt_itr->poster;
+			if (poster_casf_amount.find(uid) != poster_casf_amount.end())
+				poster_casf_amount.at(uid) += apt_itr->total_amount;
+			else
+				poster_casf_amount.emplace(uid, apt_itr->total_amount);
+		}			
+		apt_itr++;
+	}
+
+	if (total_csaf_amount <= 0)
+	{
+		clear_active_post();
+		return;
+	}
+
+	share_type actual_awards = 0;
+
+	if (total_content_award_amount > 0)
+	{
+		auto avg_amount = total_content_award_amount / total_csaf_amount;
+		for (const auto& p : poster_casf_amount)
+		{
+			asset to_add(avg_amount*p.second);
+			adjust_balance(p.first, to_add);
+			actual_awards += to_add.amount;
+		}	
+	}
+	if (total_platform_content_award_amount > 0)
+	{
+		auto avg_amount = total_platform_content_award_amount / total_csaf_amount;
+		for (const auto& p : platform_csaf_amount)
+		{
+			asset to_add(avg_amount*p.second);
+			adjust_balance(p.first, to_add);
+			actual_awards += to_add.amount;
+		}
+	}
+	modify(dpo, [&](dynamic_global_property_object& _dpo)
+	{
+		if (dpo.next_content_award_time == time_point_sec(0))
+			_dpo.next_content_award_time = head_block_time() + gparams.get_content_award_interval();
+		else
+			_dpo.next_content_award_time += gparams.get_content_award_interval();
+	});
+
+	const auto& core_asset = get_core_asset();
+	const auto& core_dyn_data = core_asset.dynamic_data(*this);
+	modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
+	{
+		dyn.current_supply += actual_awards;
+	});
+
+	clear_active_post();
+}
+
+void database::process_platform_voted_awards()
+{
+	const global_property_object& gpo = get_global_properties();
+	const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+	const auto& gparams = gpo.parameters;
+	const auto& total_platform_voted_award_amount = gparams.get_total_platform_voted_award();
+
+	if (head_block_time() >= dpo.next_platform_voted_award_time && total_platform_voted_award_amount > 0)
+	{
+		uint64_t total_votes = 0;
+		map<account_uid_type, uint64_t> platform_votes;
+
+		const auto& platform_award_min_votes = gparams.get_platform_award_min_votes();
+		auto limit = gparams.get_platform_award_requested_rank();
+
+		const auto& pla_idx = get_index_type<platform_index>().indices().get<by_platform_votes>();
+		auto pla_itr = pla_idx.lower_bound(std::make_tuple(true, platform_award_min_votes));
+		while (pla_itr != pla_idx.end() && limit > 0) // assume false < true
+		{
+			total_votes += pla_itr->total_votes;
+			auto uid = pla_itr->owner;
+			if (platform_votes.find(uid) != platform_votes.end())
+				platform_votes.at(uid) += pla_itr->total_votes;
+			else
+				platform_votes.emplace(uid, pla_itr->total_votes);
+			pla_itr++;
+			limit--;
+		}
+
+		share_type actual_awards = 0;
+		if (total_votes > 0)
+		{
+			auto avg_amount = total_platform_voted_award_amount.value / total_votes;
+			for (const auto& p : platform_votes)
+			{
+				asset to_add(share_type(avg_amount*p.second));
+				adjust_balance(p.first, to_add);
+				actual_awards += to_add.amount;
+			}
+		}
+		
+		modify(dpo, [&](dynamic_global_property_object& _dpo)
+		{
+			if (dpo.next_content_award_time == time_point_sec(0))
+				_dpo.next_platform_voted_award_time = head_block_time() + gparams.get_platform_award_interval();
+			else
+				_dpo.next_platform_voted_award_time += gparams.get_platform_award_interval();
+		});
+
+		const auto& core_asset = get_core_asset();
+		const auto& core_dyn_data = core_asset.dynamic_data(*this);
+		modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
+		{
+			dyn.current_supply += actual_awards;
+		});
+	}
 }
 
 } }
