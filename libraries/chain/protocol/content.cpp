@@ -150,6 +150,12 @@ void post_operation::validate()const
 		   if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
 		   {
 			   const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
+			   if (ext.post_type == Post_Type::Post_Type_Comment 
+				   || ext.post_type == Post_Type::Post_Type_forward 
+				   || ext.post_type == Post_Type::Post_Type_forward_And_Modify)
+				   FC_ASSERT(origin_post_pid.valid() && origin_poster.valid() && origin_platform.valid(), 
+				   "${type} post operation must include origin_post_pid, origin_poster and origin_platform", ("type",ext.post_type));
+
 			   if (ext.receiptors.valid())
 			   {
 				   const map<account_uid_type, Recerptor_Parameter>& receiptor = *(ext.receiptors);
@@ -216,6 +222,8 @@ share_type post_update_operation::calculate_fee( const fee_parameters_type& sche
 void score_create_operation::validate()const
 {
 	validate_op_fee(fee, "score ");
+	validate_account_uid(poster, "poster ");
+	validate_account_uid(platform, "platform");
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
 	FC_ASSERT((score >= -5) && (score <= 5), "The score_create_operation`s score over range");
@@ -230,6 +238,8 @@ share_type score_create_operation::calculate_fee(const fee_parameters_type& k)co
 void reward_operation::validate()const
 {
 	validate_op_fee(fee, "score ");
+	validate_account_uid(poster, "poster ");
+	validate_account_uid(platform, "platform");
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
 	FC_ASSERT(amount.amount > share_type(0), "amount must be greater than 0 ");

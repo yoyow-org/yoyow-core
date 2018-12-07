@@ -451,9 +451,50 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
       FC_ASSERT( origin_account_stats->last_post_sequence >= *op.origin_post_pid, "the ${pid} origin post not exists.", ("pid", op.origin_post_pid) );
    }
 
+   if (op.extensions.valid())
+   {
+	   for (auto ext_iter = op.extensions->begin(); ext_iter != op.extensions->end(); ext_iter++)
+	   {
+		   if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
+		   {
+			   const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
+			   if (ext.post_type == post_operation::Post_Type::Post_Type_Comment
+				   || ext.post_type == post_operation::Post_Type::Post_Type_forward
+				   || ext.post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
+			   {
+				   d.get_platform_by_owner(*op.origin_platform); // make sure pid exists
+				   d.get_account_by_uid(*op.origin_poster); // make sure uid exists
+				   d.get_post_by_platform(*op.origin_platform, *op.origin_poster, *op.origin_poster); // make sure pid exists
+			   }
+			   if (ext.post_type == post_operation::Post_Type::Post_Type_Comment)
+			       FC_ASSERT((poster_account->can_reply), "poster ${uid} is not allowed to reply.", ("uid", op.poster));
+			   if (ext.post_type == post_operation::Post_Type::Post_Type_forward
+				   || ext.post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
+			   {
+				   const post_object& post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);
+				   FC_ASSERT(post.forward_price.valid(), "post ${p} is not allowed to forward", ("p", post.origin_post_pid));
+				   
+				   const account_object* from_account = &d.get_account_by_uid(op.poster);
+				   const asset_object&   transfer_asset_object = d.get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
+				   validate_authorized_asset(d, *from_account, transfer_asset_object, "'from' ");
+
+				   if (*(ext.forward_price) > 0)
+				   {
+					   const auto& from_balance = d.get_balance(*from_account, transfer_asset_object);
+					   bool sufficient_balance = from_balance.amount >= *(ext.forward_price);
+					   FC_ASSERT(sufficient_balance, "Insufficient balance: unable to reward, because account: ${f} `s balance [${c}] is less then needed [${n}]",
+						   ("f", GRAPHENE_CORE_ASSET_AID)("c", from_balance.amount)("n", *(ext.forward_price)));
+				   }
+			   }
+		   }
+	   }
+   }
+
    return void_result();
 
 }  FC_CAPTURE_AND_RETHROW( (op) ) }
+
+typedef boost::multiprecision::uint128_t uint128_t;
 
 object_id_type post_evaluator::do_apply( const post_operation& o )
 { try {
@@ -462,6 +503,41 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
       d.modify( *account_stats, [&](account_statistics_object& s) {
          s.last_post_sequence += 1;
       });
+
+	  if (o.extensions.valid())
+	  {
+		  for (auto ext_iter = o.extensions->begin(); ext_iter != o.extensions->end(); ext_iter++)
+		  {
+			  if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
+			  {
+				  const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
+				  if (ext.post_type == post_operation::Post_Type::Post_Type_forward
+					  || ext.post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
+				  {
+					  share_type forwardprice = *(ext.forward_price);
+					  const account_object* from_account = &d.get_account_by_uid(o.poster);
+					  asset ast(forwardprice);
+					  d.adjust_balance(*from_account, -ast);
+
+					  const post_object* post = &d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
+					  uint128_t amount(forwardprice.value);
+					  uint128_t surplus = amount;
+					  asset ast_tmp(share_type(0));
+					  for (auto iter : post->receiptors)
+					  {
+						  if (iter.first == post->platform)
+							  continue;
+						  uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
+						  ast_tmp.amount = uint64_t(temp);
+						  surplus -= temp;
+						  d.adjust_balance(iter.first, ast_tmp);
+					  }
+					  ast_tmp.amount = surplus;
+					  d.adjust_balance(post->platform, ast_tmp);
+				  }
+			  }
+		  }
+	  }
 
       const auto& new_post_object = d.create<post_object>( [&]( post_object& obj )
       {
@@ -605,8 +681,9 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 	try {
 		const database& d = db();
 		const auto& global_params = d.get_global_properties().parameters;
-		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
-		d.get_post_by_pid(op.post_pid);// make sure pid exists
+		auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
+		d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
+		FC_ASSERT((from_account.can_rate), "poster ${uid} is not allowed to appraise.", ("uid", op.poster));
 		FC_ASSERT(op.csaf <= global_params.get_max_csaf_per_approval(), "The score_create_operation`s member points is over the maximum limit");
 		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 		FC_ASSERT(account_stats->csaf >= op.csaf, "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
@@ -641,7 +718,7 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
 	try {
 		const database& d = db();
 		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
-		d.get_post_by_pid(op.post_pid);// make sure pid exists
+		d.get_post_by_platform(op.platform,op.poster,op.post_pid);// make sure pid exists
 		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 
 		const account_object* from_account = &d.get_account_by_uid(op.from_account_uid);
@@ -669,8 +746,6 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
 	}FC_CAPTURE_AND_RETHROW((op))
 }
 
-typedef boost::multiprecision::uint128_t uint128_t;
-
 void_result reward_evaluator::do_apply(const operation_type& op)
 {
 	try {
@@ -679,7 +754,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 		const account_object* from_account = &d.get_account_by_uid(op.from_account_uid);
 		d.adjust_balance(*from_account, -op.amount);
 
-		const post_object* post = &d.get_post_by_pid(op.post_pid);
+		const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
 		uint128_t amount(op.amount.amount.value);
 		uint128_t surplus = amount;
 		asset ast(share_type(0), op.amount.asset_id);
@@ -687,7 +762,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 		{
 			if (iter.first == post->platform)
 				continue;
-			uint128_t temp = (amount*iter.second.cur_ratio) / 10000;
+			uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
 			ast.amount = uint64_t(temp);
 			surplus -= temp;
 			d.adjust_balance(iter.first, ast);

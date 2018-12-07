@@ -133,9 +133,9 @@ namespace graphene { namespace chain {
     */
    struct Recerptor_Parameter
    {
-	   int8_t      cur_ratio;
+	   int16_t     cur_ratio;
 	   bool        to_buyout;
-	   int8_t      buyout_ratio;
+	   int16_t     buyout_ratio;
 	   share_type  buyout_price;
 
 	   void validate()const
@@ -148,8 +148,19 @@ namespace graphene { namespace chain {
 
    struct post_operation : public base_operation
    {
+	   enum Post_Type
+	   {
+		   Post_Type_Post = 0,
+		   Post_Type_Comment = 1,
+		   Post_Type_forward = 2,
+		   Post_Type_forward_And_Modify = 3,
+
+		   Post_Type_Default
+	   };
+
 	   struct ext
 	   {
+		   uint8_t post_type = Post_Type::Post_Type_Post;
 		   optional<share_type> forward_price;
 		   optional< map<account_uid_type, Recerptor_Parameter> > receiptors;
 	   };
@@ -280,6 +291,8 @@ namespace graphene { namespace chain {
 	   fee_type                     fee;
 
 	   account_uid_type             from_account_uid;//from account
+	   account_uid_type             platform;
+	   account_uid_type             poster;
 	   post_pid_type                post_pid; //post id
 	   int8_t                       score;
 	   int64_t                      csaf;
@@ -316,6 +329,8 @@ namespace graphene { namespace chain {
 	   fee_type                     fee;
 
 	   account_uid_type             from_account_uid;//from account
+	   account_uid_type             platform;
+	   account_uid_type             poster;
 	   post_pid_type                post_pid; //post id
 	   asset                        amount;
 
@@ -356,12 +371,12 @@ FC_REFLECT( graphene::chain::post_update_operation,
             (extensions) )
 
 FC_REFLECT(graphene::chain::score_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(post_pid)(score)(csaf)(extensions))
+FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(extensions))
 
 FC_REFLECT(graphene::chain::reward_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(post_pid)(amount)(extensions))
+FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
-FC_REFLECT(graphene::chain::post_operation::ext, (forward_price)(receiptors))
+FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(receiptors))
 FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price))
 
 FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price))

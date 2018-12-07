@@ -350,9 +350,6 @@ namespace graphene { namespace chain {
                                               account_uid_type poster,
                                               post_pid_type post_pid )const;
 
-		 const post_object& get_post_by_pid(post_pid_type platform)const;
-		 const post_object* find_post_by_pid(post_pid_type platform)const;
-
          //////////////////// db_init.cpp ////////////////////
 
          void initialize_evaluators();
