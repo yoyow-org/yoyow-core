@@ -281,6 +281,12 @@ struct get_impacted_account_uid_visitor
    {
 	   _impacted.insert(op.fee_payer_uid()); // fee payer
    }
+
+   // TODO review
+   void operator()(const buyout_operation& op)
+   {
+	   _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
 };
 
 void operation_get_impacted_account_uids( const operation& op, flat_set<account_uid_type>& result )

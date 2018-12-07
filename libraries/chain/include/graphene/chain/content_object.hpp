@@ -218,6 +218,8 @@ namespace graphene { namespace chain {
 			 for (auto iter : receiptors)
 			 {
 				 total += iter.second.cur_ratio;
+				 if (iter.second.to_buyout)
+					 FC_ASSERT(iter.second.cur_ratio >= iter.second.buyout_ratio, "buyout_ratio must less then cur_ratio");
 			 }
 			 FC_ASSERT(total == 10000, "The sum of receiptors` ratio must be 100%");
 		 }

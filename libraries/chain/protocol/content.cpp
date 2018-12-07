@@ -251,4 +251,21 @@ share_type reward_operation::calculate_fee(const fee_parameters_type& k)const
 	return core_fee_required;
 }
 
+void buyout_operation::validate()const
+{
+	validate_op_fee(fee, "score ");
+	validate_account_uid(poster, "poster ");
+	validate_account_uid(platform, "platform");
+	validate_account_uid(from_account_uid, "from account ");
+	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
+	FC_ASSERT(from_account_uid != receiptor_account_uid, "from_account shouldn`t be platform");
+	validate_account_uid(receiptor_account_uid, "from account ");
+}
+
+share_type buyout_operation::calculate_fee(const fee_parameters_type& k)const
+{
+	share_type core_fee_required = k.fee;
+	return core_fee_required;
+}
+
 } } // graphene::chain

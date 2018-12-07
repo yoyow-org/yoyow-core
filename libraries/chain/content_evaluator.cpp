@@ -774,4 +774,71 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 	}FC_CAPTURE_AND_RETHROW((op))
 }
 
+void_result buyout_evaluator::do_evaluate(const operation_type& op)
+{
+	try {
+		database& d = db();
+		auto post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
+		post.receiptors_validate();
+		auto iter = post.receiptors.find(op.receiptor_account_uid);
+		FC_ASSERT(iter != post.receiptors.end(), "account ${a} isn`t a receiptor of the post ${p}", ("a", op.receiptor_account_uid)("p", op.post_pid));
+		FC_ASSERT(iter->second.to_buyout && iter->second.buyout_ratio > 0 && iter->second.buyout_ratio <= iter->second.cur_ratio,
+			"post ${p} `s receiptor`s buyout parameter is invalid. ${b}", ("p", op.post_pid)("b", iter->second));
+		if (iter->second.buyout_ratio < iter->second.cur_ratio)
+		{
+			if (post.receiptors.find(op.from_account_uid) == post.receiptors.end()) //add a new receiptor
+			{
+				FC_ASSERT(post.receiptors.size() < 5, "the num of post`s receiptors should be less than or equal to 5");
+			}
+		}
+		const account_object* from_account = &d.get_account_by_uid(op.from_account_uid);
+		const asset_object&   transfer_asset_object = d.get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
+		validate_authorized_asset(d, *from_account, transfer_asset_object, "'from' ");
+
+		if (iter->second.buyout_price > 0)
+		{
+			const auto& from_balance = d.get_balance(*from_account, transfer_asset_object);
+			bool sufficient_balance = from_balance.amount >= iter->second.buyout_price;
+			FC_ASSERT(sufficient_balance, "Insufficient balance: unable to reward, because account: ${f} `s balance [${c}] is less then needed [${n}]",
+				("f", GRAPHENE_CORE_ASSET_AID)("c", from_balance.amount)("n", iter->second.buyout_price));
+		}
+
+		return void_result();
+	}FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result buyout_evaluator::do_apply(const operation_type& op)
+{
+	try {
+		database& d = db();
+		const post_object& post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);
+		auto iter = post.receiptors.find(op.receiptor_account_uid);
+		Recerptor_Parameter para = iter->second;
+
+		const account_object* from_account = &d.get_account_by_uid(op.from_account_uid);
+		const account_object* to_account = &d.get_account_by_uid(op.receiptor_account_uid);
+		d.adjust_balance(*from_account, -asset(para.buyout_price));
+		d.adjust_balance(*to_account, asset(para.buyout_price));
+
+		d.modify(post, [&](post_object& p) {
+			if (para.buyout_ratio < para.cur_ratio)
+			{
+				auto& old_receiptor = p.receiptors.find(op.receiptor_account_uid);
+				old_receiptor->second.cur_ratio = para.cur_ratio - para.buyout_ratio;
+				old_receiptor->second.to_buyout = false;
+				old_receiptor->second.buyout_price = 0;
+				old_receiptor->second.buyout_ratio = 0;
+				p.receiptors.insert(make_pair(op.from_account_uid, Recerptor_Parameter{ para.buyout_ratio, false, 0, 0 }));
+			}
+			else if (para.buyout_ratio == para.cur_ratio)
+			{
+				p.receiptors.erase(op.receiptor_account_uid);
+				p.receiptors.insert(make_pair(op.from_account_uid, Recerptor_Parameter{ para.buyout_ratio, false, 0, 0 }));
+			}
+		});
+
+		return void_result();
+	}FC_CAPTURE_AND_RETHROW((op))
+}
+
 } } // graphene::chain

@@ -93,4 +93,13 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 	   void_result do_evaluate(const operation_type& o);
 	   void_result do_apply(const operation_type& o);
    };
+
+   class buyout_evaluator : public evaluator<buyout_evaluator>
+   {
+   public:
+	   typedef buyout_operation operation_type;
+
+	   void_result do_evaluate(const operation_type& o);
+	   void_result do_apply(const operation_type& o);
+   };
 } } // graphene::chain
