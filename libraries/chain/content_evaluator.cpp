@@ -528,7 +528,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 						  if (iter.first == post->platform)
 							  continue;
 						  uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
-						  ast_tmp.amount = uint64_t(temp);
+						  ast_tmp.amount = temp.convert_to<int64_t>();
 						  surplus -= temp;
 						  d.adjust_balance(iter.first, ast_tmp);
 					  }
@@ -684,6 +684,7 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 		auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
 		d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
 		FC_ASSERT((from_account.can_rate), "poster ${uid} is not allowed to appraise.", ("uid", op.poster));
+		FC_ASSERT(op.csaf > 0, "The score_create_operation`s member points must more then 0.");
 		FC_ASSERT(op.csaf <= global_params.get_max_csaf_per_approval(), "The score_create_operation`s member points is over the maximum limit");
 		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 		FC_ASSERT(account_stats->csaf >= op.csaf, "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
@@ -763,7 +764,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 			if (iter.first == post->platform)
 				continue;
 			uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
-			ast.amount = uint64_t(temp);
+			ast.amount = temp.convert_to<int64_t>();
 			surplus -= temp;
 			d.adjust_balance(iter.first, ast);
 		}
