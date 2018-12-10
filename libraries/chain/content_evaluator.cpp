@@ -691,7 +691,7 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 			                                      ("f",op.from_account_uid)("c",account_stats->csaf)("n",op.csaf));
 		
 		const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-		auto apt_itr = apt_idx.lower_bound(op.post_pid);
+		auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, op.post_pid));
 		if (apt_itr != apt_idx.end())
 		{
 			active_post = &(*apt_itr);
@@ -778,7 +778,7 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
 		}
 
 		const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-		auto apt_itr = apt_idx.lower_bound(op.post_pid);
+		auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, op.post_pid));
 		if (apt_itr != apt_idx.end())
 		{
 			active_post = &(*apt_itr);
