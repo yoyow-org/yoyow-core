@@ -83,6 +83,8 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
 	   void_result do_evaluate(const operation_type& o);
 	   object_id_type do_apply(const operation_type& o);
+
+		 const active_post_object* active_post = nullptr;
    };
 
    class reward_evaluator : public evaluator<reward_evaluator>
@@ -92,6 +94,8 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
 	   void_result do_evaluate(const operation_type& o);
 	   void_result do_apply(const operation_type& o);
+
+		 const active_post_object* active_post = nullptr;
    };
 
    class buyout_evaluator : public evaluator<buyout_evaluator>

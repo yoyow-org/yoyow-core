@@ -237,9 +237,11 @@ void database::clear_expired_proposals()
 
 void database::clear_active_post()
 {
-	const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_id>();
+	const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+	const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
+	const auto& apt_end= apt_idx.lower_bound(dpo.current_active_post_sequence - 10);
 	auto apt_itr = apt_idx.begin();
-	while (apt_itr != apt_idx.end())
+	while (apt_itr != apt_end)
 	{
 		remove(*apt_itr);
 		apt_itr = apt_idx.begin();
@@ -1330,6 +1332,7 @@ void database::process_content_platform_awards()
 			{
 				_dpo.last_content_award_time = head_block_time();
 				_dpo.next_content_award_time = head_block_time() + gparams.get_content_award_interval();
+				_dpo.current_active_post_sequence++;
 			});
 			return;
 		}
@@ -1344,8 +1347,8 @@ void database::process_content_platform_awards()
 
 		const auto& min_effective_csaf = gparams.get_min_effective_csaf();
 
-		const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_id>();
-		auto apt_itr = apt_idx.begin();
+		const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
+		auto apt_itr = apt_idx.lower_bound(dpo.current_active_post_sequence);
 		while (apt_itr != apt_idx.end())
 		{
 			if (apt_itr->total_amount >= min_effective_csaf)
@@ -1423,6 +1426,7 @@ void database::process_content_platform_awards()
 				_dpo.last_content_award_time = _dpo.next_content_award_time;
 				_dpo.next_content_award_time += gparams.get_content_award_interval();
 			}
+			_dpo.current_active_post_sequence++;
 		});
 
 		clear_active_post();
@@ -1515,7 +1519,6 @@ void database::process_platform_voted_awards()
 				});
 			}
 		}
-
 	}
 }
 
