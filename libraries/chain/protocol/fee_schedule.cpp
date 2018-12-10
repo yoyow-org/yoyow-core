@@ -287,114 +287,15 @@ namespace graphene { namespace chain {
                  "Committee proposal review period must be less than the maximum proposal lifetime" );
    }
 
-	 uint32_t chain_parameters::get_content_award_interval()const
+	 const content_parameter_extension_type& chain_parameters::get_award_params()const
 	 {
 		 if (extensions.valid())
 		 {
 			 for (auto item = extensions->begin(); item != extensions->end(); item++)
 				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().content_award_interval;
+					 return item->get< content_parameter_extension_type >();
 		 }
-		 return GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
-	 }
-
-	 uint32_t chain_parameters::get_platform_award_interval()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().platform_award_interval;
-		 }
-		 return GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;
-	 }
-
-	 uint64_t chain_parameters::get_max_csaf_per_approval()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().max_csaf_per_approval;
-		 }
-		 return GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
-	 }
-
-	 uint32_t chain_parameters::get_approval_expiration()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().approval_expiration;
-		 }
-		 return GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
-	 }
-
-	 share_type chain_parameters::get_min_effective_csaf()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().min_effective_csaf;
-		 }
-		 return GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;
-	 }
-
-	 share_type chain_parameters::get_total_content_award()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().total_content_award_amount;
-		 }
-		 return GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;
-	 }
-
-	 share_type chain_parameters::get_total_platform_content_award()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().total_platform_content_award_amount;
-		 }
-		 return GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;
-	 }
-
-	 share_type chain_parameters::get_total_platform_voted_award()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().total_platform_voted_award_amount;
-		 }
-		 return GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
-	 }
-
-	 uint64_t chain_parameters::get_platform_award_min_votes()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().platform_award_min_votes;
-		 }
-		 return GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
-	 }
-
-	 uint32_t chain_parameters::get_platform_award_requested_rank()const
-	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >().platform_award_requested_rank;
-		 }
-		 return GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;
+		 return content_parameter_extension_type();
 	 }
 
 } } // graphene::chain

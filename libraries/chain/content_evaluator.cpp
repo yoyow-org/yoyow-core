@@ -680,12 +680,12 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 {
 	try {
 		const database& d = db();
-		const auto& global_params = d.get_global_properties().parameters;
+		const auto& global_params = d.get_global_properties().parameters.get_award_params();
 		auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
 		d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
 		FC_ASSERT((from_account.can_rate), "poster ${uid} is not allowed to appraise.", ("uid", op.poster));
 		FC_ASSERT(op.csaf > 0, "The score_create_operation`s member points must more then 0.");
-		FC_ASSERT(op.csaf <= global_params.get_max_csaf_per_approval(), "The score_create_operation`s member points is over the maximum limit");
+		FC_ASSERT(op.csaf <= global_params.max_csaf_per_approval, "The score_create_operation`s member points is over the maximum limit");
 		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 		FC_ASSERT(account_stats->csaf >= op.csaf, "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
 			                                      ("f",op.from_account_uid)("c",account_stats->csaf)("n",op.csaf));

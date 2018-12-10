@@ -48,7 +48,6 @@ namespace graphene { namespace chain {
 		 share_type	total_platform_voted_award_amount		= GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
 		 uint64_t		platform_award_min_votes						= GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
 		 uint32_t		platform_award_requested_rank				= GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;
-
 	 };
 	 typedef static_variant<content_parameter_extension_type>  parameter_extension;
 
@@ -124,16 +123,8 @@ namespace graphene { namespace chain {
 
       /** defined in fee_schedule.cpp */
       void validate()const;
-			uint32_t get_content_award_interval()const;
-			uint32_t get_platform_award_interval()const;
-			uint64_t get_max_csaf_per_approval()const;
-			uint32_t get_approval_expiration()const;
-			share_type get_min_effective_csaf()const;
-			share_type get_total_content_award()const;
-			share_type get_total_platform_content_award()const;
-			share_type get_total_platform_voted_award()const;
-			uint64_t get_platform_award_min_votes()const;
-			uint32_t get_platform_award_requested_rank()const;
+
+			const content_parameter_extension_type& get_award_params()const;
    };
 
 } }  // graphene::chain

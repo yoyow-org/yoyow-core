@@ -541,6 +541,9 @@ void database::_apply_block( const signed_block& next_block )
    update_committee();
    adjust_budgets();
 
+	 process_content_platform_awards();
+	 process_platform_voted_awards();
+
    dlog("before update_witness_schedule");
    update_witness_schedule();
    if( !_node_property_object.debug_updates.empty() )

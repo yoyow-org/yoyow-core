@@ -250,10 +250,10 @@ void database::clear_active_post()
 
 void database::clear_expired_scores()
 {
-	const auto& global_params = get_global_properties().parameters;
+	const auto& global_params = get_global_properties().parameters.get_award_params();
 	const auto& score_expiration_index = get_index_type<score_index>().indices().get<by_create_time>();
 
-	while (!score_expiration_index.empty() && score_expiration_index.begin()->create_time <= head_block_time()-global_params.get_approval_expiration())
+	while (!score_expiration_index.empty() && score_expiration_index.begin()->create_time <= head_block_time()-global_params.approval_expiration)
 	{
 		const score_object& score = *score_expiration_index.begin();
 		remove(score);
@@ -1306,11 +1306,9 @@ void database::process_content_platform_awards()
 	if (head_block_time() >= dpo.next_content_award_time  )
 	{
 		const global_property_object& gpo = get_global_properties();
-		const auto& gparams = gpo.parameters;
-		const auto& total_content_award_amount = gparams.get_total_content_award();
-		const auto& total_platform_content_award_amount = gparams.get_total_platform_content_award();
+		const auto& params = gpo.parameters.get_award_params();
 
-		if (total_content_award_amount == 0 && total_platform_content_award_amount == 0)
+		if (params.total_content_award_amount == 0 && params.total_platform_content_award_amount == 0)
 		{
 			clear_active_post();
 			if (dpo.next_content_award_time != time_point_sec(0))
@@ -1331,27 +1329,26 @@ void database::process_content_platform_awards()
 			modify(dpo, [&](dynamic_global_property_object& _dpo)
 			{
 				_dpo.last_content_award_time = head_block_time();
-				_dpo.next_content_award_time = head_block_time() + gparams.get_content_award_interval();
+				_dpo.next_content_award_time = head_block_time() + params.content_award_interval;
 				_dpo.current_active_post_sequence++;
 			});
 			return;
 		}
 
 		//compute per period award amount 
-		share_type content_award_amount_per_period =  total_content_award_amount.value *
+		uint128_t value = (uint128_t)(params.total_content_award_amount.value) *
 			(dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
+		share_type content_award_amount_per_period = value.to_uint64();
 
 		share_type total_csaf_amount = 0;
 		map<account_uid_type, share_type> platform_csaf_amount;
 		map<post_pid_type, share_type> post_casf_amount;
 
-		const auto& min_effective_csaf = gparams.get_min_effective_csaf();
-
 		const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
 		auto apt_itr = apt_idx.lower_bound(dpo.current_active_post_sequence);
 		while (apt_itr != apt_idx.end())
 		{
-			if (apt_itr->total_amount >= min_effective_csaf)
+			if (apt_itr->total_amount >= params.min_effective_csaf)
 			{
 				//compute total effective csaf
 				total_csaf_amount += apt_itr->total_amount;
@@ -1371,15 +1368,15 @@ void database::process_content_platform_awards()
 		if (total_csaf_amount > 0)
 		{
 			share_type actual_awards = 0;
-			if (total_content_award_amount > 0)
+			if (params.total_content_award_amount > 0)
 			{
 				auto avg_amount = content_award_amount_per_period / total_csaf_amount;
 				for (const auto& p : post_casf_amount)
 				{
 					share_type post_earned = avg_amount*p.second;
 					const auto& pos_idx = get_index_type<post_index>().indices().get<by_post_pid>();
-					const auto itr = pos_idx.equal_range(p.first).first;
-					if (itr != pos_idx.end())
+					const auto itr = pos_idx.lower_bound(p.first);
+					if (itr != pos_idx.end() && itr->post_pid == p.first)
 					{
 						share_type temp = post_earned;
 						for (const auto& r : itr->receiptors)
@@ -1396,7 +1393,8 @@ void database::process_content_platform_awards()
 					}
 				}
 			}
-			if (total_platform_content_award_amount > 0)
+
+			if (params.total_platform_content_award_amount > 0)
 			{
 				auto avg_amount = content_award_amount_per_period / total_csaf_amount;
 				for (const auto& p : platform_csaf_amount)
@@ -1406,6 +1404,7 @@ void database::process_content_platform_awards()
 					actual_awards += to_add.amount;
 				}
 			}
+
 			const auto& core_asset = get_core_asset();
 			const auto& core_dyn_data = core_asset.dynamic_data(*this);
 			modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
@@ -1419,12 +1418,12 @@ void database::process_content_platform_awards()
 			if (dpo.next_content_award_time == time_point_sec(0))
 			{
 				_dpo.last_content_award_time = head_block_time();
-				_dpo.next_content_award_time = head_block_time() + gparams.get_content_award_interval();
+				_dpo.next_content_award_time = head_block_time() + params.content_award_interval;
 			}
 			else
 			{
 				_dpo.last_content_award_time = _dpo.next_content_award_time;
-				_dpo.next_content_award_time += gparams.get_content_award_interval();
+				_dpo.next_content_award_time += params.content_award_interval;
 			}
 			_dpo.current_active_post_sequence++;
 		});
@@ -1439,19 +1438,16 @@ void database::process_platform_voted_awards()
 	if (head_block_time() >= dpo.next_platform_voted_award_time)
 	{
 		const global_property_object& gpo = get_global_properties();
-		const auto& gparams = gpo.parameters;
-		const auto& total_platform_voted_award_amount = gparams.get_total_platform_voted_award();
+		const auto& params = gpo.parameters.get_award_params();
 
-		if (total_platform_voted_award_amount > 0 && dpo.next_platform_voted_award_time > time_point_sec(0))
+		if (params.total_platform_voted_award_amount > 0 && dpo.next_platform_voted_award_time > time_point_sec(0))
 		{
 			uint64_t total_votes = 0;
 			map<account_uid_type, uint64_t> platform_votes;
 
-			const auto& platform_award_min_votes = gparams.get_platform_award_min_votes();
-			auto limit = gparams.get_platform_award_requested_rank();
-
 			const auto& pla_idx = get_index_type<platform_index>().indices().get<by_platform_votes>();
-			auto pla_itr = pla_idx.lower_bound(std::make_tuple(true, platform_award_min_votes));
+			auto pla_itr = pla_idx.lower_bound(std::make_tuple(true, params.platform_award_min_votes));
+			auto limit = params.platform_award_requested_rank;
 			while (pla_itr != pla_idx.end() && limit > 0) // assume false < true
 			{
 				total_votes += pla_itr->total_votes;
@@ -1468,8 +1464,9 @@ void database::process_platform_voted_awards()
 			if (total_votes > 0)
 			{
 				//compute per period award amount 
-				share_type platform_voted_award_per_period = total_platform_voted_award_amount.value *
+				uint128_t value = (uint128_t)(params.total_platform_voted_award_amount.value) *
 					(dpo.next_platform_voted_award_time - dpo.last_platform_voted_award_time).to_seconds() / (86400 * 365);
+				share_type platform_voted_award_per_period = value.to_uint64();
 
 				auto avg_amount = platform_voted_award_per_period.value / total_votes;
 				for (const auto& p : platform_votes)
@@ -1491,12 +1488,12 @@ void database::process_platform_voted_awards()
 				if (dpo.next_platform_voted_award_time == time_point_sec(0))
 				{
 					_dpo.last_platform_voted_award_time = head_block_time();
-					_dpo.next_platform_voted_award_time = head_block_time() + gparams.get_platform_award_interval();
+					_dpo.next_platform_voted_award_time = head_block_time() + params.platform_award_interval;
 				}
 				else
 				{
 					_dpo.last_platform_voted_award_time = _dpo.next_platform_voted_award_time;
-					_dpo.next_platform_voted_award_time += gparams.get_platform_award_interval();
+					_dpo.next_platform_voted_award_time += params.platform_award_interval;
 				}
 			});
 		}
@@ -1505,19 +1502,16 @@ void database::process_platform_voted_awards()
 			modify(dpo, [&](dynamic_global_property_object& _dpo)
 			{
 				_dpo.last_platform_voted_award_time = head_block_time();
-				_dpo.next_platform_voted_award_time = head_block_time() + gparams.get_platform_award_interval();
+				_dpo.next_platform_voted_award_time = head_block_time() + params.platform_award_interval;
 			});
 		}
-		else
+		else if (dpo.next_content_award_time != time_point_sec(0))
 		{
-			if (dpo.next_content_award_time != time_point_sec(0))
+			modify(dpo, [&](dynamic_global_property_object& _dpo)
 			{
-				modify(dpo, [&](dynamic_global_property_object& _dpo)
-				{
-					_dpo.last_platform_voted_award_time = time_point_sec(0);
-					_dpo.next_platform_voted_award_time = time_point_sec(0);
-				});
-			}
+				_dpo.last_platform_voted_award_time = time_point_sec(0);
+				_dpo.next_platform_voted_award_time = time_point_sec(0);
+			});
 		}
 	}
 }
