@@ -84,7 +84,10 @@ namespace graphene { namespace chain {
          uint32_t                        accounts_registered_this_interval = 0;
 
 				 time_point_sec									 next_content_award_time = time_point_sec(0);
+				 time_point_sec									 last_content_award_time = time_point_sec(0);
 				 time_point_sec									 next_platform_voted_award_time = time_point_sec(0);
+				 time_point_sec									 last_platform_voted_award_time = time_point_sec(0);
+				 uint64_t												 current_active_post_sequence = 0;
          /**
           *  Every time a block is missed this increases by
           *  RECENTLY_MISSED_COUNT_INCREMENT,
@@ -152,7 +155,10 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
                     //(dynamic_flags)
                     (last_irreversible_block_num)
 										(next_content_award_time)
+										(last_content_award_time)
 										(next_platform_voted_award_time)
+										(last_platform_voted_award_time)
+										(current_active_post_sequence)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::global_property_object, (graphene::db::object),
