@@ -163,6 +163,7 @@ namespace graphene { namespace chain {
 		   uint8_t post_type = Post_Type::Post_Type_Post;
 		   optional<share_type> forward_price;
 		   optional< map<account_uid_type, Recerptor_Parameter> > receiptors;
+		   optional<permission_mid_type> permission_mid;
 	   };
 	   typedef static_variant< ext > extension_parameter;
 
@@ -215,11 +216,12 @@ namespace graphene { namespace chain {
    {
 	   struct ext
 	   {
-		   optional<share_type>        forward_price;
-		   optional<account_uid_type>  receiptor;
-		   optional<bool>              to_buyout;
-		   optional<int8_t>            buyout_ratio;
-		   optional<share_type>        buyout_price;
+		   optional<share_type>           forward_price;
+		   optional<account_uid_type>     receiptor;
+		   optional<bool>                 to_buyout;
+		   optional<int8_t>               buyout_ratio;
+		   optional<share_type>           buyout_price;
+		   optional<permission_mid_type>  permission_mid;
 	   };
 	   typedef static_variant< ext > extension_parameter;
 
@@ -283,6 +285,7 @@ namespace graphene { namespace chain {
    {
 	   struct fee_parameters_type {
 		   uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
 		   extensions_type   extensions;
@@ -322,6 +325,7 @@ namespace graphene { namespace chain {
    {
 	   struct fee_parameters_type {
 		   uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
 		   extensions_type   extensions;
@@ -360,6 +364,7 @@ namespace graphene { namespace chain {
    {
 	   struct fee_parameters_type {
 		   uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
 		   extensions_type   extensions;
@@ -410,16 +415,16 @@ FC_REFLECT( graphene::chain::post_update_operation,
             (hash_value)(extra_data)(title)(body)
             (extensions) )
 
-FC_REFLECT(graphene::chain::score_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::score_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(extensions))
 
-FC_REFLECT(graphene::chain::reward_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::reward_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
-FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(receiptors))
-FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price))
+FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(receiptors)(permission_mid))
+FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(permission_mid))
 
 FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price))
 
-FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(extensions))

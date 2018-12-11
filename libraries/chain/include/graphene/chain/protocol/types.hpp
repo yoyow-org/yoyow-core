@@ -90,6 +90,7 @@ namespace graphene { namespace chain {
    typedef uint64_t                    account_uid_type;
    typedef uint64_t                    asset_aid_type;
    typedef uint64_t                    post_pid_type;
+   typedef uint64_t                    permission_mid_type;
    typedef uint64_t                    committee_proposal_number_type;
 
    account_uid_type                    calc_account_uid( uint64_t id_without_checksum );
@@ -154,7 +155,8 @@ namespace graphene { namespace chain {
       committee_proposal_object_type,
       proposal_object_type,
       operation_history_object_type,
-			active_post_object_type,
+	  active_post_object_type,
+	  permission_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -189,7 +191,8 @@ namespace graphene { namespace chain {
    class committee_proposal_object;
    class proposal_object;
    class operation_history_object;
-	 class active_post_object;
+   class active_post_object;
+   class permission_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -200,7 +203,8 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, committee_proposal_object_type, committee_proposal_object>    committee_proposal_id_type;
    typedef object_id< protocol_ids, proposal_object_type,           proposal_object>              proposal_id_type;
    typedef object_id< protocol_ids, operation_history_object_type,  operation_history_object>     operation_history_id_type;
-	 typedef object_id< protocol_ids, active_post_object_type,				active_post_object>						active_post_id_type;
+   typedef object_id< protocol_ids, active_post_object_type,		active_post_object>			  active_post_id_type;
+   typedef object_id< protocol_ids, permission_object_type,         permission_object>			  permission_id_type;
 
    // implementation types
    class global_property_object;
@@ -347,7 +351,8 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (committee_proposal_object_type)
                  (proposal_object_type)
                  (operation_history_object_type)
-								 (active_post_object_type)
+				 (active_post_object_type)
+				 (permission_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,

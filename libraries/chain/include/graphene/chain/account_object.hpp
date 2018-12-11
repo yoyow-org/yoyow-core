@@ -226,9 +226,8 @@ namespace graphene { namespace chain {
           * Record the last published article number
           */
          post_pid_type last_post_sequence = 0;
+		 permission_mid_type last_permisson_sequence = 0;
 
-
-		 Platform_auth_data& get_platform_auth_data(account_uid_type platform_uid);
          /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds

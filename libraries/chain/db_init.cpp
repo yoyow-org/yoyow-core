@@ -127,6 +127,9 @@ const uint8_t witness_vote_object::type_id;
 const uint8_t committee_member_vote_object::space_id;
 const uint8_t committee_member_vote_object::type_id;
 
+const uint8_t permission_object::space_id;
+const uint8_t permission_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -149,6 +152,8 @@ void database::initialize_evaluators()
    register_evaluator<platform_update_evaluator>();
    register_evaluator<platform_vote_update_evaluator>();
    register_evaluator<score_create_evaluator>();
+   register_evaluator<reward_evaluator>();
+   register_evaluator<buyout_evaluator>();
    register_evaluator<post_evaluator>();
    register_evaluator<post_update_evaluator>();
    register_evaluator<csaf_collect_evaluator>();
@@ -204,6 +209,7 @@ void database::initialize_indexes()
    add_index< primary_index<witness_vote_index                            > >();
    add_index< primary_index<platform_vote_index                           > >();
    add_index< primary_index<score_index                                   > >();
+   add_index< primary_index<permission_index                              > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();

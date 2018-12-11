@@ -527,7 +527,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 					  {
 						  if (iter.first == post->platform)
 							  continue;
-						  uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
+						  uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
 						  ast_tmp.amount = temp.convert_to<int64_t>();
 						  surplus -= temp;
 						  d.adjust_balance(iter.first, ast_tmp);
@@ -573,13 +573,17 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 								obj.receiptors = map_receiptor;
 							}	
 						}
+						if (ext.permission_mid.valid())
+						{
+							obj.permission_mid = *ext.permission_mid;
+						}
 					}
 				}
 			}
 			if (need_init_receiptors){
 				map<account_uid_type, Recerptor_Parameter> map_receiptors;
 				map_receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-				map_receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ 10000 - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+				map_receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
 				obj.receiptors = map_receiptors;
 			}
       } );
@@ -665,6 +669,10 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
 							 iter->second.buyout_ratio = *(ext.buyout_ratio);
 						 if (ext.buyout_price.valid())
 							 iter->second.buyout_price = *(ext.buyout_price);
+					 }
+					 if (ext.permission_mid.valid())
+					 {
+						 obj.permission_mid = *ext.permission_mid;
 					 }
 				 }
 			 }

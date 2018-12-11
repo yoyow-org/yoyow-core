@@ -159,6 +159,7 @@ void post_operation::validate()const
 			   if (ext.receiptors.valid())
 			   {
 				   const map<account_uid_type, Recerptor_Parameter>& receiptor = *(ext.receiptors);
+				   FC_ASSERT(receiptor.size() >= 2 && receiptor.size() <= 5, "receiptors` size must be >= 2 and <= 5");
 				   auto itor = receiptor.find(platform);
 				   FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
 				   FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 30%");
@@ -167,7 +168,7 @@ void post_operation::validate()const
 				   {
 					   total += iter.second.cur_ratio;
 				   }
-				   FC_ASSERT(total == 10000, "The sum of receiptors` ratio must be 100%");
+				   FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
 			   }
 		   }
 	   }
@@ -194,7 +195,7 @@ void post_update_operation::validate()const
 			   {
 				   FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
 				   if (ext.buyout_ratio.valid())
-					   FC_ASSERT(ext.buyout_ratio <= (10000 - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The sum of receiptors` ratio must be 100%");
+					   FC_ASSERT(ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The sum of receiptors` ratio must be 100%");
 			   }
 		   }
 	   }
@@ -258,7 +259,8 @@ void buyout_operation::validate()const
 	validate_account_uid(platform, "platform");
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
-	FC_ASSERT(from_account_uid != receiptor_account_uid, "from_account shouldn`t be platform");
+	FC_ASSERT(from_account_uid != platform, "from_account shouldn`t be platform");
+	FC_ASSERT(receiptor_account_uid != platform, "platform shouldn`t sell out its receipt ratio");
 	validate_account_uid(receiptor_account_uid, "from account ");
 }
 

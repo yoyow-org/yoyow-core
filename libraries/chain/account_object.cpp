@@ -48,21 +48,6 @@ void account_balance_object::adjust_balance(const asset& delta)
    balance += delta.amount;
 }
 
-account_statistics_object::Platform_auth_data& account_statistics_object::get_platform_auth_data(account_uid_type platform_uid)
-{
-	auto plat_iter = prepaids_for_platform.find(platform_uid);
-	if (plat_iter != prepaids_for_platform.end())
-	{
-		return plat_iter->second;
-	}
-	else
-	{
-		prepaids_for_platform.insert(std::make_pair(platform_uid, account_statistics_object::Platform_auth_data()));
-		auto iter = prepaids_for_platform.find(platform_uid);
-		return iter->second;
-	}
-}
-
 std::pair<fc::uint128_t,share_type> account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now)const
 {
    fc::time_point_sec now_rounded( ( now.sec_since_epoch() / 60 ) * 60 );

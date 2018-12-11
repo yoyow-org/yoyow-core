@@ -298,7 +298,22 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
 			   {
 				   d.modify(*from_account_stats, [&](account_statistics_object& s)
 				   {
-					   account_statistics_object::Platform_auth_data& plat_data = s.get_platform_auth_data(o.platform);
+					   auto get_platform_auth_data = [&](account_uid_type platform_uid)
+					   {
+						   auto plat_iter = s.prepaids_for_platform.find(platform_uid);
+						   if (plat_iter != s.prepaids_for_platform.end())
+						   {
+							   return plat_iter->second;
+						   }
+						   else
+						   {
+							   s.prepaids_for_platform.insert(std::make_pair(platform_uid, account_statistics_object::Platform_auth_data()));
+							   auto iter = s.prepaids_for_platform.find(platform_uid);
+							   return iter->second;
+						   }
+					   };
+
+					   account_statistics_object::Platform_auth_data& plat_data = get_platform_auth_data(o.platform);
 
 					   if (ext.limit_for_platform.valid())
 						   plat_data.max_limit = *ext.limit_for_platform;
