@@ -241,7 +241,7 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_post_pid>,
             composite_key<
                post_object,
-               member< post_object, account_uid_type, &post_object::platform >,
+               member< post_object, account_uid_type,  &post_object::platform >,
                member< post_object, account_uid_type,  &post_object::poster >,
                member< post_object, post_pid_type,     &post_object::post_pid >
             >
@@ -318,8 +318,15 @@ namespace graphene { namespace chain {
 		 active_post_object,
 		 indexed_by<
 				ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-				ordered_unique< tag<by_post_pid>, member< active_post_object, post_pid_type, &active_post_object::post_pid > >,
-				ordered_unique< tag<by_period_sequence>, member<active_post_object, uint64_t, &active_post_object::period_sequence> >
+				ordered_unique< tag<by_post_pid>,
+				   composite_key<
+					    active_post_object,
+					    member< active_post_object, account_uid_type, &active_post_object::platform >,
+					    member< active_post_object, account_uid_type, &active_post_object::poster >,
+					    member< active_post_object, post_pid_type,    &active_post_object::post_pid >
+				   >
+				>,
+				ordered_non_unique< tag<by_period_sequence>, member<active_post_object, uint64_t, &active_post_object::period_sequence> >
 		 >
 	 > active_post_multi_index_type;
 
