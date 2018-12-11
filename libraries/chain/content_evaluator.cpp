@@ -573,9 +573,9 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 								obj.receiptors = map_receiptor;
 							}	
 						}
-                        if (ext.license_lid.valid())
+            if (ext.license_lid.valid())
 						{
-                            obj.license_lid = *ext.license_lid;
+                obj.license_lid = *ext.license_lid;
 						}
 					}
 				}
@@ -670,9 +670,9 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
 						 if (ext.buyout_price.valid())
 							 iter->second.buyout_price = *(ext.buyout_price);
 					 }
-                     if (ext.license_lid.valid())
+					 if (ext.license_lid.valid())
 					 {
-                         obj.license_lid = *ext.license_lid;
+               obj.license_lid = *ext.license_lid;
 					 }
 				 }
 			 }
@@ -916,44 +916,45 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
 	}FC_CAPTURE_AND_RETHROW((op))
 }
 
-void_result license_update_evaluator::do_evaluate(const operation_type& op)
-{
-    try {
-        database& d = db();
-        const account_object* platform = &d.get_account_by_uid(op.platform);
-        const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.platform);
-        const auto& license_by_lid = d.get_index_type<license_index>().indices().get<by_license_lid>();
-        auto itr = license_by_lid.find(std::make_tuple(op.platform, op.license_lid));
-        FC_ASSERT(itr != license_by_lid.end(), "license ${platform}_${license_lid} not found.",
-            ("platform", op.platform)("license_lid", op.license_lid));
-        FC_ASSERT((account_stats != nullptr && account_stats->last_license_sequence >= op.license_lid), "license_lid ${pid} is invalid.", ("pid", op.license_lid));
-        return void_result();
-    }FC_CAPTURE_AND_RETHROW((op))
-}
+void_result license_create_evaluator::do_evaluate(const operation_type& op)
+{try {
+    const database& d = db();
+    d.get_platform_by_owner(op.platform); // make sure pid exists
+    account_stats = &d.get_account_statistics_by_uid(op.platform);
 
-void_result license_update_evaluator::do_apply(const operation_type& op)
-{
-    try {
-        database& d = db();
-        const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.platform);
-        const auto& license_by_lid = d.get_index_type<license_index>().indices().get<by_license_lid>();
-        auto itr = license_by_lid.find(std::make_tuple(op.platform, op.license_lid));
-        d.modify(*itr, [&](license_object& obj)
-        {
-            if (op.license_type.valid())
-                obj.license_type = *op.license_type;
-            if (op.hash_value.valid())
-                obj.hash_value = *op.hash_value;
-            if (op.extra_data.valid())
-                obj.extra_data = *op.extra_data;
-            if (op.title.valid())
-                obj.title = *op.title;
-            if (op.body.valid())
-                obj.body = *op.body;
-            obj.last_update_time = d.head_block_time();
-        });
-        return void_result();
-    }FC_CAPTURE_AND_RETHROW((op))
-}
+    FC_ASSERT((account_stats->last_license_sequence + 1) == op.license_lid, "license id ${pid} is invalid.", ("pid", op.license_lid));
+
+    const auto& licenses = d.get_index_type<license_index>().indices().get<by_license_lid>();
+    auto itr = licenses.find(std::make_tuple(op.platform, op.license_lid));
+    FC_ASSERT(itr == licenses.end(), "license ${license} already existed.", ("license", op.license_lid));
+
+    return void_result();
+
+}FC_CAPTURE_AND_RETHROW((op)) }
+
+object_id_type license_create_evaluator::do_apply(const operation_type& op)
+{try {
+    database& d = db();
+
+    d.modify(*account_stats, [&](account_statistics_object& s) {
+        s.last_license_sequence += 1;
+    });
+
+    const auto& new_license_object = d.create<license_object>([&](license_object& obj)
+    {
+        obj.license_lid         = op.license_lid;
+        obj.platform            = op.platform;
+        obj.license_type        = op.type;
+        obj.hash_value          = op.hash_value;
+        obj.extra_data          = op.extra_data;
+        obj.title               = op.title;
+        obj.body                = op.body;
+
+        obj.create_time         = d.head_block_time();
+        obj.last_update_time    = d.head_block_time();
+    });
+    return new_license_object.id;
+
+} FC_CAPTURE_AND_RETHROW((op)) }
 
 } } // graphene::chain

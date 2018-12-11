@@ -294,19 +294,19 @@ namespace graphene { namespace chain {
 		 static const uint8_t type_id		= active_post_object_type;
 
 		 /// The platform's pid.
-		 account_uid_type												platform;
+		 account_uid_type                       platform;
 		 /// The poster's uid.
-		 account_uid_type												poster;
+		 account_uid_type	poster;
 		 /// The post's pid.
-		 post_pid_type													post_pid;
+		 post_pid_type                          post_pid;
 		 /// detail information of approvals, csaf.
-		 vector<score_id_type>									scores;
+		 vector<score_id_type>                  scores;
 		 /// approvals of a post, csaf.
-		 share_type															total_amount;
+		 share_type                             total_amount;
 		 /// rewards of a post.
-		 flat_map<asset_aid_type, share_type>		total_rewards;
+		 flat_map<asset_aid_type, share_type>   total_rewards;
 		 /// period sequence of a post.
-		 uint64_t															  period_sequence;
+		 uint64_t                               period_sequence;
 	 };
 
 	 struct by_period_sequence{};
@@ -385,11 +385,11 @@ namespace graphene { namespace chain {
    {
    public:
 	   static const uint8_t space_id = protocol_ids;
-       static const uint8_t type_id = license_object_type;
+     static const uint8_t type_id = license_object_type;
 
-       license_lid_type             license_lid;
+     license_lid_type             license_lid;
 	   account_uid_type             platform;
-       uint8_t                      license_type;
+     uint8_t                      license_type;
 	   
 	   string                       hash_value;
 	   string                       extra_data;

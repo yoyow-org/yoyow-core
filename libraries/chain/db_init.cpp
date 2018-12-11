@@ -155,7 +155,6 @@ void database::initialize_evaluators()
    register_evaluator<reward_evaluator>();
    register_evaluator<buyout_evaluator>();
    register_evaluator<post_evaluator>();
-   register_evaluator<license_update_evaluator>();
    register_evaluator<post_update_evaluator>();
    register_evaluator<csaf_collect_evaluator>();
    register_evaluator<csaf_lease_evaluator>();
@@ -174,6 +173,7 @@ void database::initialize_evaluators()
    register_evaluator<witness_vote_update_evaluator>();
    register_evaluator<witness_collect_pay_evaluator>();
    register_evaluator<witness_report_evaluator>();
+   register_evaluator<license_create_evaluator>();
 }
 
 void database::initialize_indexes()

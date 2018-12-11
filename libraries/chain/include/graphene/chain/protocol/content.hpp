@@ -344,7 +344,7 @@ namespace graphene { namespace chain {
 	   account_uid_type fee_payer_uid()const { return from_account_uid; }
 	   void             validate()const;
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+     void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
 	   {
 		   a.insert(from_account_uid);    // Requires authors to change the permissions
 	   }
@@ -383,24 +383,23 @@ namespace graphene { namespace chain {
 	   account_uid_type fee_payer_uid()const { return from_account_uid; }
 	   void             validate()const;
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+     void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
 	   {
 		   a.insert(from_account_uid);    // Requires authors to change the permissions
 		   a.insert(platform);  // Requires platform to change the permissions
 	   }
    };
 
-
    /**
    * @ingroup operations
    *
-   * @brief update permission
+   * @brief create license
    *
    *  Fees are paid by the "platform" account
    *
    *  @return n/a
    */
-   struct license_update_operation : public base_operation
+   struct license_create_operation : public base_operation
    {
        struct fee_parameters_type {
            uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -412,21 +411,20 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
-       account_uid_type             platform;
        license_lid_type             license_lid;
-
-       optional<uint8_t>            license_type;
-       optional<string>             hash_value;
-       optional<string>             extra_data;
-       optional<string>             title;
-       optional<string>             body;
+       account_uid_type             platform = 0;
+       uint8_t                      type;
+       string                       hash_value;
+       string                       extra_data = "{}"; 
+       string                       title;
+       string                       body;
 
        extensions_type              extensions;
 
        account_uid_type fee_payer_uid()const { return platform; }
        void             validate()const;
        share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
        {
            a.insert(platform);    // Requires platform to change the permissions
        }
@@ -471,5 +469,5 @@ FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_r
 FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(extensions))
 
-FC_REFLECT(graphene::chain::license_update_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::license_update_operation, (fee)(platform)(license_lid)(license_type)(hash_value)(extra_data)(title)(body)(extensions))
+FC_REFLECT(graphene::chain::license_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::license_create_operation, (fee)(license_lid)(platform)(type)(hash_value)(extra_data)(title)(body)(extensions))

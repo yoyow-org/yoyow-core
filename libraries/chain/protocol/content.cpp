@@ -278,13 +278,14 @@ share_type buyout_operation::calculate_fee(const fee_parameters_type& k)const
 	return core_fee_required;
 }
 
-void license_update_operation::validate()const
+void license_create_operation::validate()const
 {
+    validate_op_fee(fee, "post ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(license_type.valid() || (hash_value.valid() && (extra_data.valid() || title.valid() || body.valid())), "Should change something");
+    FC_ASSERT(platform > uint64_t(0), "post_pid must be greater than 0 ");
 }
 
-share_type license_update_operation::calculate_fee(const fee_parameters_type& k)const
+share_type license_create_operation::calculate_fee(const fee_parameters_type& k)const
 {
     share_type core_fee_required = k.fee;
     auto hash_size = fc::raw::pack_size(hash_value);

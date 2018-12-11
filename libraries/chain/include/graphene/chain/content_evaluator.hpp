@@ -107,12 +107,14 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 	   void_result do_apply(const operation_type& o);
    };
 
-   class license_update_evaluator : public evaluator<license_update_evaluator>
+   class license_create_evaluator : public evaluator < license_create_evaluator >
    {
    public:
-       typedef license_update_operation operation_type;
+       typedef license_create_operation operation_type;
 
-       void_result do_evaluate(const operation_type& o);
-       void_result do_apply(const operation_type& o);
+       void_result do_evaluate(const operation_type& op);
+       object_id_type do_apply(const operation_type& op);
+
+       const account_statistics_object* account_stats = nullptr;
    };
 } } // graphene::chain
