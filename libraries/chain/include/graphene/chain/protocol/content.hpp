@@ -163,7 +163,7 @@ namespace graphene { namespace chain {
 		   uint8_t post_type = Post_Type::Post_Type_Post;
 		   optional<share_type> forward_price;
 		   optional< map<account_uid_type, Recerptor_Parameter> > receiptors;
-		   optional<permission_mid_type> permission_mid;
+           optional<license_lid_type> license_lid;
 	   };
 	   typedef static_variant< ext > extension_parameter;
 
@@ -221,7 +221,7 @@ namespace graphene { namespace chain {
 		   optional<bool>                 to_buyout;
 		   optional<int8_t>               buyout_ratio;
 		   optional<share_type>           buyout_price;
-		   optional<permission_mid_type>  permission_mid;
+           optional<license_lid_type>     license_lid;
 	   };
 	   typedef static_variant< ext > extension_parameter;
 
@@ -344,7 +344,7 @@ namespace graphene { namespace chain {
 	   account_uid_type fee_payer_uid()const { return from_account_uid; }
 	   void             validate()const;
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
-	   void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
 	   {
 		   a.insert(from_account_uid);    // Requires authors to change the permissions
 	   }
@@ -383,11 +383,53 @@ namespace graphene { namespace chain {
 	   account_uid_type fee_payer_uid()const { return from_account_uid; }
 	   void             validate()const;
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
-	   void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
 	   {
 		   a.insert(from_account_uid);    // Requires authors to change the permissions
 		   a.insert(platform);  // Requires platform to change the permissions
 	   }
+   };
+
+
+   /**
+   * @ingroup operations
+   *
+   * @brief update permission
+   *
+   *  Fees are paid by the "platform" account
+   *
+   *  @return n/a
+   */
+   struct license_update_operation : public base_operation
+   {
+       struct fee_parameters_type {
+           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t min_real_fee = 0;
+           uint16_t min_rf_percent = 0;
+           extensions_type   extensions;
+       };
+
+       fee_type                     fee;
+
+       account_uid_type             platform;
+       license_lid_type             license_lid;
+
+       optional<uint8_t>            license_type;
+       optional<string>             hash_value;
+       optional<string>             extra_data;
+       optional<string>             title;
+       optional<string>             body;
+
+       extensions_type              extensions;
+
+       account_uid_type fee_payer_uid()const { return platform; }
+       void             validate()const;
+       share_type       calculate_fee(const fee_parameters_type& k)const;
+       void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
+       {
+           a.insert(platform);    // Requires platform to change the permissions
+       }
    };
 
 }} // graphene::chain
@@ -421,10 +463,13 @@ FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(plat
 FC_REFLECT(graphene::chain::reward_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
-FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(receiptors)(permission_mid))
-FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(permission_mid))
+FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(receiptors)(license_lid))
+FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(license_lid))
 
 FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price))
 
 FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(extensions))
+
+FC_REFLECT(graphene::chain::license_update_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::license_update_operation, (fee)(platform)(license_lid)(license_type)(hash_value)(extra_data)(title)(body)(extensions))

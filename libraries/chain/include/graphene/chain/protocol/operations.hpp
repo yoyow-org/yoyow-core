@@ -80,7 +80,8 @@ namespace graphene { namespace chain {
             account_whitelist_operation,
 			score_create_operation,
 			reward_operation,
-			buyout_operation
+			buyout_operation,
+            license_update_operation
          > operation;
 
    /// @} // operations group

@@ -123,6 +123,10 @@ share_type post_operation::calculate_fee( const fee_parameters_type& schedule )c
    core_fee_required += calculate_data_fee( fc::raw::pack_size(extra_data), schedule.price_per_kbyte );
    core_fee_required += calculate_data_fee( fc::raw::pack_size(title), schedule.price_per_kbyte );
    core_fee_required += calculate_data_fee( fc::raw::pack_size(body), schedule.price_per_kbyte );
+   if (extensions.valid())
+   {
+       core_fee_required += calculate_data_fee(fc::raw::pack_size(extensions), schedule.price_per_kbyte);
+   }
    return core_fee_required;
 }
 
@@ -217,6 +221,10 @@ share_type post_update_operation::calculate_fee( const fee_parameters_type& sche
       core_fee_required += calculate_data_fee( fc::raw::pack_size(title), schedule.price_per_kbyte );
    if( body.valid() )
       core_fee_required += calculate_data_fee( fc::raw::pack_size(body), schedule.price_per_kbyte );
+   if (extensions.valid())
+   {
+       core_fee_required += calculate_data_fee(fc::raw::pack_size(extensions), schedule.price_per_kbyte);
+   }
    return core_fee_required;
 }
 
@@ -268,6 +276,24 @@ share_type buyout_operation::calculate_fee(const fee_parameters_type& k)const
 {
 	share_type core_fee_required = k.fee;
 	return core_fee_required;
+}
+
+void license_update_operation::validate()const
+{
+    validate_account_uid(platform, "platform");
+    FC_ASSERT(license_type.valid() || (hash_value.valid() && (extra_data.valid() || title.valid() || body.valid())), "Should change something");
+}
+
+share_type license_update_operation::calculate_fee(const fee_parameters_type& k)const
+{
+    share_type core_fee_required = k.fee;
+    auto hash_size = fc::raw::pack_size(hash_value);
+    if (hash_size > 65)
+        core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
+    core_fee_required += calculate_data_fee(fc::raw::pack_size(extra_data), k.price_per_kbyte);
+    core_fee_required += calculate_data_fee(fc::raw::pack_size(title), k.price_per_kbyte);
+    core_fee_required += calculate_data_fee(fc::raw::pack_size(body), k.price_per_kbyte);
+    return core_fee_required;
 }
 
 } } // graphene::chain

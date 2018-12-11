@@ -106,4 +106,13 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 	   void_result do_evaluate(const operation_type& o);
 	   void_result do_apply(const operation_type& o);
    };
+
+   class license_update_evaluator : public evaluator<license_update_evaluator>
+   {
+   public:
+       typedef license_update_operation operation_type;
+
+       void_result do_evaluate(const operation_type& o);
+       void_result do_apply(const operation_type& o);
+   };
 } } // graphene::chain

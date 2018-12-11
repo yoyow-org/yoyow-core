@@ -226,7 +226,7 @@ namespace graphene { namespace chain {
           * Record the last published article number
           */
          post_pid_type last_post_sequence = 0;
-		 permission_mid_type last_permisson_sequence = 0;
+         license_lid_type last_license_sequence = 0;
 
          /**
           * Compute coin_seconds_earned.  Used to

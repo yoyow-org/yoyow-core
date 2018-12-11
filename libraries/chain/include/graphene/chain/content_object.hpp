@@ -207,7 +207,7 @@ namespace graphene { namespace chain {
 
 		 map<account_uid_type, Recerptor_Parameter> receiptors; //receiptors of the post
 		 optional<share_type>                       forward_price;
-		 optional<permission_mid_type>              permission_mid;
+         optional<license_lid_type>                 license_lid;
 
          post_id_type get_id()const { return id; }
 		 void receiptors_validate()const
@@ -381,15 +381,15 @@ namespace graphene { namespace chain {
    * @ingroup object
    * @ingroup protocol
    */
-   class permission_object : public graphene::db::abstract_object<permission_object>
+   class license_object : public graphene::db::abstract_object<license_object>
    {
    public:
 	   static const uint8_t space_id = protocol_ids;
-	   static const uint8_t type_id = permission_object_type;
+       static const uint8_t type_id = license_object_type;
 
-	   permission_mid_type          permission_mid;
+       license_lid_type             license_lid;
 	   account_uid_type             platform;
-	   uint8_t                      permission_type;
+       uint8_t                      license_type;
 	   
 	   string                       hash_value;
 	   string                       extra_data;
@@ -400,32 +400,32 @@ namespace graphene { namespace chain {
 	   time_point_sec               last_update_time;
    };
 
-   struct by_permission_mid{};
+   struct by_license_lid{};
    struct by_platform{};
-   struct by_permission_type{};
+   struct by_license_type{};
 
    /**
    * @ingroup object_index
    */
    typedef multi_index_container<
-	   permission_object,
+       license_object,
 	   indexed_by<
 	   ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-	   ordered_unique< tag<by_permission_mid>, 
+       ordered_unique< tag<by_license_lid>,
 	                   composite_key<
-	                               permission_object,
-								   member< permission_object, account_uid_type, &permission_object::platform >,
-								   member< permission_object, permission_mid_type, &permission_object::permission_mid >
+                                   license_object,
+                                   member< license_object, account_uid_type, &license_object::platform >,
+                                   member< license_object, license_lid_type, &license_object::license_lid >
 								   >> ,
-	   ordered_non_unique< tag<by_platform>, member< permission_object, account_uid_type, &permission_object::platform> >,
-	   ordered_non_unique< tag<by_permission_type>, member< permission_object, uint8_t, &permission_object::permission_type> >
+       ordered_non_unique< tag<by_platform>, member< license_object, account_uid_type, &license_object::platform> >,
+       ordered_non_unique< tag<by_license_type>, member< license_object, uint8_t, &license_object::license_type> >
 	   >
-   > permission_multi_index_type;
+    > license_multi_index_type;
 
    /**
    * @ingroup object_index
    */
-   typedef generic_index<permission_object, permission_multi_index_type> permission_index;
+   typedef generic_index<license_object, license_multi_index_type> license_index;
 }}
 
 FC_REFLECT_DERIVED( graphene::chain::platform_object,
@@ -447,7 +447,7 @@ FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
                     (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
                     (hash_value)(extra_data)(title)(body)
-					(create_time)(last_update_time)(receiptors)(forward_price)(permission_mid)
+                    (create_time)(last_update_time)(receiptors)(forward_price)(license_lid)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::active_post_object,
@@ -460,6 +460,6 @@ FC_REFLECT_DERIVED(graphene::chain::score_object,
 					(from_account_uid)(post_pid)(score)(csaf)(create_time)
 					)
 
-FC_REFLECT_DERIVED(graphene::chain::permission_object,
-					(graphene::db::object),(permission_mid)(platform)(permission_type)(hash_value)(extra_data)(title)(body)(create_time)(last_update_time)
+FC_REFLECT_DERIVED(graphene::chain::license_object,
+                    (graphene::db::object), (license_lid)(platform)(license_type)(hash_value)(extra_data)(title)(body)(create_time)(last_update_time)
 					)
