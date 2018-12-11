@@ -1383,10 +1383,10 @@ void database::process_content_platform_awards()
 						share_type to_add = post_earned * r.second.cur_ratio / GRAPHENE_100_PERCENT;
 						adjust_balance(r.first, asset(to_add));
 						temp -= to_add;
-						//platform earned from content
-						adjust_balance(post.platform, asset(temp));
-						actual_awards += post_earned;
 					}
+					//platform earned from content
+					adjust_balance(post.platform, asset(temp));
+					actual_awards += post_earned;
 				}
 			}
 
