@@ -347,6 +347,8 @@ namespace graphene { namespace chain {
 	   static const uint8_t type_id = impl_score_object_type;
 
 	   account_uid_type    from_account_uid;
+       account_uid_type    platform;
+       account_uid_type    poster;
 	   post_pid_type       post_pid;
 	   int8_t              score;
 	   int64_t             csaf;
@@ -366,7 +368,13 @@ namespace graphene { namespace chain {
 	   indexed_by<
 	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
 		  ordered_non_unique< tag<by_from_account_uid>, member< score_object, account_uid_type, &score_object::from_account_uid> >,
-		  ordered_non_unique< tag<by_posts_pid>, member< score_object, post_pid_type, &score_object::post_pid> >,
+          ordered_non_unique< tag<by_posts_pid>, 
+                              composite_key<
+                                  score_object,
+                                  member< score_object, account_uid_type, &score_object::platform >,
+                                  member< score_object, account_uid_type, &score_object::poster >,
+                                  member< score_object, post_pid_type, &score_object::post_pid >
+                              > >,
 		  ordered_non_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
        >
    > score_multi_index_type;
@@ -457,7 +465,7 @@ FC_REFLECT_DERIVED( graphene::chain::active_post_object,
 
 FC_REFLECT_DERIVED(graphene::chain::score_object,
 					(graphene::db::object),
-					(from_account_uid)(post_pid)(score)(csaf)(create_time)
+                    (from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(create_time)
 					)
 
 FC_REFLECT_DERIVED(graphene::chain::license_object,

@@ -732,6 +732,8 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
 		const auto& new_score_object = d.create<score_object>([&](score_object& obj)
 		{
 			obj.from_account_uid = op.from_account_uid;
+            obj.platform = op.platform;
+            obj.poster = op.poster;
 			obj.post_pid = op.post_pid;
 			obj.score = op.score;
 			obj.csaf = op.csaf;
