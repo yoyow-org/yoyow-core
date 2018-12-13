@@ -593,6 +593,8 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
    const chain_parameters& chain_parameters = get_global_properties().parameters;
    eval_state._trx = &trx;
 
+   signed_information sigs;
+
    if( !(skip & (skip_transaction_signatures | skip_authority_check) ) )
    {
       //auto get_active = [&]( account_id_type id ) { return &id(*this).active; };
@@ -602,7 +604,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
       auto get_owner_by_uid      = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).owner);     };
       auto get_active_by_uid     = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).active);    };
       auto get_secondary_by_uid  = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).secondary); };
-      trx.verify_authority( chain_id,
+      sigs = trx.verify_authority(chain_id,
                             get_owner_by_uid,
                             get_active_by_uid,
                             get_secondary_by_uid,
@@ -644,7 +646,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
    _current_op_in_trx = 0;
    for( const auto& op : ptrx.operations )
    {
-      eval_state.operation_results.emplace_back(apply_operation(eval_state, op));
+      eval_state.operation_results.emplace_back(apply_operation(eval_state, op, sigs));
       ++_current_op_in_trx;
    }
    ptrx.operation_results = std::move(eval_state.operation_results);
@@ -652,7 +654,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
    return ptrx;
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
-operation_result database::apply_operation(transaction_evaluation_state& eval_state, const operation& op)
+operation_result database::apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs)
 { try {
    int i_which = op.which();
    uint64_t u_which = uint64_t( i_which );
@@ -661,7 +663,7 @@ operation_result database::apply_operation(transaction_evaluation_state& eval_st
    unique_ptr<op_evaluator>& eval = _operation_evaluators[ u_which ];
    FC_ASSERT( eval, "No registered evaluator for operation ${op}", ("op",op) );
    auto op_id = push_applied_operation( op );
-   auto result = eval->evaluate( eval_state, op, true );
+   auto result = eval->evaluate( eval_state, op, true, sigs);
    set_applied_operation_result( op_id, result );
    return result;
 } FC_CAPTURE_AND_RETHROW( (op) ) }

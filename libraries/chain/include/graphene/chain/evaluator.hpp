@@ -51,6 +51,8 @@ namespace graphene { namespace chain {
 
       database& db()const;
 
+      void set_signed_information(const signed_information& s){ sigs = s; }
+
       //void check_required_authorities(const operation& op);
    protected:
       /**
@@ -102,22 +104,24 @@ namespace graphene { namespace chain {
       const account_object*            fee_paying_account = nullptr;
       const account_statistics_object* fee_paying_account_statistics = nullptr;
       transaction_evaluation_state*    trx_state;
+      signed_information               sigs;
    };
 
    class op_evaluator
    {
    public:
       virtual ~op_evaluator(){}
-      virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply) = 0;
+      virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply, const signed_information& sigs) = 0;
    };
 
    template<typename T>
    class op_evaluator_impl : public op_evaluator
    {
    public:
-      virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply = true) override
+      virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply = true, const signed_information& sigs = signed_information()) override
       {
          T eval;
+         eval.set_signed_information(sigs);
          return eval.start_evaluate(eval_state, op, apply);
       }
    };

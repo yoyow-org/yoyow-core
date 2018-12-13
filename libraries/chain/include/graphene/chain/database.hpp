@@ -418,7 +418,7 @@ namespace graphene { namespace chain {
          // these were formerly private, but they have a fairly well-defined API, so let's make them public
          void                  apply_block( const signed_block& next_block, uint32_t skip = skip_nothing );
          processed_transaction apply_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing );
-         operation_result      apply_operation( transaction_evaluation_state& eval_state, const operation& op );
+         operation_result      apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs = signed_information());
 
          /**
           *  This method validates transactions without adding it to the pending state.

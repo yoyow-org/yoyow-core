@@ -119,6 +119,34 @@ namespace graphene { namespace chain {
 
    };
 
+   struct signed_information
+   {
+      struct sign_tree
+      {
+         account_uid_type           uid = 0;
+         flat_set<public_key_type>  pub_keys;
+         flat_set<sign_tree>        childs;
+
+         bool operator < (const sign_tree& a)const {
+            return uid < a.uid;
+         }
+         sign_tree(const account_uid_type& id = 0) :uid(id){}
+      };
+
+      flat_set<sign_tree>  owner;
+      flat_set<sign_tree>  active;
+      flat_set<sign_tree>  secondary;
+
+      account_uid_type real_signed_id(const sign_tree& root, uint32_t depth)const
+      {
+         if (root.pub_keys.empty() && root.childs.size() == 1 && depth)
+         {
+            return real_signed_id(*(root.childs.begin()), depth - 1);
+         }
+         return root.uid;
+      }
+   };
+
    /**
     *  @brief adds a signature to a transaction
     */
@@ -153,7 +181,7 @@ namespace graphene { namespace chain {
          uint32_t max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH
          )const;
 
-      void verify_authority(
+      signed_information verify_authority(
          const chain_id_type& chain_id,
          const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
          const std::function<const authority*(account_uid_type)>& get_active_by_uid,
@@ -184,7 +212,7 @@ namespace graphene { namespace chain {
       void clear() { operations.clear(); signatures.clear(); }
    };
 
-void verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
+signed_information verify_authority(const vector<operation>& ops, const flat_map<public_key_type, signature_type>& sigs,
                        const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
                        const std::function<const authority*(account_uid_type)>& get_active_by_uid,
                        const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,

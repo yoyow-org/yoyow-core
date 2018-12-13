@@ -131,12 +131,30 @@ struct sign_state
       {
          if( approved_by_uid_auth.find( uid_auth ) != approved_by_uid_auth.end() )
             return std::make_tuple( true, true, empty_public_key_set );
-         if( uid_auth.auth_type == authority::secondary_auth )
-            return check_authority( get_secondary_by_uid( uid_auth.uid ) );
-         else if( uid_auth.auth_type == authority::active_auth )
-            return check_authority( get_active_by_uid( uid_auth.uid ) );
+
+         signed_information::sign_tree parent(uid_auth.uid);
+         std::tuple<bool, bool, flat_set<public_key_type>> result;
+         if (uid_auth.auth_type == authority::secondary_auth)
+         {
+            result = check_authority(get_secondary_by_uid(uid_auth.uid), parent);
+            if (std::get<0>(result))
+               sigs.secondary.emplace(parent);
+            return result;
+         }
+         else if (uid_auth.auth_type == authority::active_auth)
+         {
+            result = check_authority(get_active_by_uid(uid_auth.uid), parent);
+            if (std::get<0>(result))
+               sigs.active.emplace(parent);
+            return result;
+         }
          else // if( uid_auth.auth_type == authority::owner_auth )
-            return check_authority( get_owner_by_uid( uid_auth.uid ) );
+         {
+            result = check_authority(get_owner_by_uid(uid_auth.uid), parent);
+            if (std::get<0>(result))
+               sigs.owner.emplace(parent);
+            return result;
+         }
       }
 
       /**
@@ -146,7 +164,7 @@ struct sign_state
        *     returns if it's possible to satisfy the authority as the second item in the tuple,
        *     and the missed keys as the third item in the tuple
        */
-      std::tuple<bool,bool,flat_set<public_key_type>> check_authority( const authority* au, uint32_t depth = 0 )
+      std::tuple<bool,bool,flat_set<public_key_type>> check_authority( const authority* au, signed_information::sign_tree& parent = signed_information::sign_tree(), uint32_t depth = 0 )
       {
          if( au == nullptr )
          {
@@ -168,8 +186,9 @@ struct sign_state
             if( signed_by( kf ) )
             {
                total_weight += k.second;
-               if( total_weight >= auth.weight_threshold )
-                  return std::make_tuple( true, true, empty_public_key_set );
+               parent.pub_keys.emplace(kf);
+               if (total_weight >= auth.weight_threshold)
+                  return std::make_tuple(true, true, empty_public_key_set);    
             }
             else
             {
@@ -184,18 +203,21 @@ struct sign_state
             {
                if( depth == max_recursion )
                   continue;
+
+               signed_information::sign_tree child(a.first.uid);
                std::tuple<bool, bool, flat_set<public_key_type>> result;
-               if( a.first.auth_type == authority::secondary_auth )
-                  result = check_authority( get_secondary_by_uid( a.first.uid ), depth+1 );
-               else if( a.first.auth_type == authority::active_auth )
-                  result = check_authority( get_active_by_uid( a.first.uid ), depth+1 );
+               if (a.first.auth_type == authority::secondary_auth)
+                  result = check_authority(get_secondary_by_uid(a.first.uid), child, depth + 1);
+               else if (a.first.auth_type == authority::active_auth)
+                  result = check_authority(get_active_by_uid(a.first.uid), child, depth + 1);
                else // if( a.first.auth_type == authority::owner_auth )
-                  result = check_authority( get_owner_by_uid( a.first.uid ), depth+1 );
+                  result = check_authority(get_owner_by_uid(a.first.uid), child, depth + 1);
                if( std::get<0>( result ) )
                {
                   total_possible_weight += a.second;
                   approved_by_uid_auth.insert( a.first );
                   total_weight += a.second;
+                  parent.childs.emplace(child);
                   if( total_weight >= auth.weight_threshold )
                      return std::make_tuple( true, true, empty_public_key_set );
                }
@@ -213,13 +235,15 @@ struct sign_state
             {
                total_possible_weight += a.second;
                total_weight += a.second;
+               signed_information::sign_tree child(a.first.uid);
+               parent.childs.emplace(child);
                if( total_weight >= auth.weight_threshold )
                   return std::make_tuple( true, true, empty_public_key_set );
             }
          }
 
-         if( total_possible_weight >= auth.weight_threshold )
-            return std::make_tuple( total_weight >= auth.weight_threshold, true, missed_keys );
+         if (total_possible_weight >= auth.weight_threshold)
+            return std::make_tuple(total_weight >= auth.weight_threshold, true, missed_keys);
          else
          {
             flat_set<public_key_type> s;
@@ -280,9 +304,10 @@ struct sign_state
       flat_map<public_key_type,bool>             provided_signatures; // the bool means "is_used"
       flat_set<authority::account_uid_auth_type> approved_by_uid_auth;
       uint32_t                                   max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH;
+      signed_information                         sigs;
 };
 
-void verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
+signed_information verify_authority( const vector<operation>& ops, const flat_map<public_key_type,signature_type>& sigs,
                           const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_active_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
@@ -369,6 +394,9 @@ void verify_authority( const vector<operation>& ops, const flat_map<public_key_t
       tx_irrelevant_sig,
       "Unnecessary signature(s) detected"
       );
+
+   return s.sigs;
+
 } FC_CAPTURE_AND_RETHROW( (ops)(sigs) ) }
 
 void get_authority_uid( const account_uid_type uid,
@@ -504,14 +532,14 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
    return std::make_tuple( used_keys, missed_keys, unused_sigs );
 }
 
-void signed_transaction::verify_authority(
+signed_information signed_transaction::verify_authority(
    const chain_id_type& chain_id,
    const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
    const std::function<const authority*(account_uid_type)>& get_active_by_uid,
    const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
    uint32_t max_recursion )const
 { try {
-   graphene::chain::verify_authority( operations,
+   return graphene::chain::verify_authority( operations,
                                       get_signature_keys( chain_id ),
                                       get_owner_by_uid,
                                       get_active_by_uid,
