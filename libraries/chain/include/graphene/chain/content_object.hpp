@@ -181,6 +181,15 @@ namespace graphene { namespace chain {
    class post_object : public graphene::db::abstract_object<post_object>
    {
       public:
+          enum Post_Permission
+          {
+              Post_Permission_Forward = 0,   //allow forward 
+              Post_Permission_Liked   = 2,   //allow liked or scored
+              Post_Permission_Buyout  = 4,   //allow buyout
+              Post_Permission_Comment = 8,   //allow comment
+              Post_Permission_Reward  = 16   //allow reward
+          };
+
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id  = post_object_type;
 
@@ -208,6 +217,7 @@ namespace graphene { namespace chain {
 		 map<account_uid_type, Recerptor_Parameter> receiptors; //receiptors of the post
 		 optional<share_type>                       forward_price;
          optional<license_lid_type>                 license_lid;
+         uint16_t                                   permission_flags = 0xFFFF;
 
          post_id_type get_id()const { return id; }
 		 void receiptors_validate()const
@@ -392,12 +402,12 @@ namespace graphene { namespace chain {
    class license_object : public graphene::db::abstract_object<license_object>
    {
    public:
-	   static const uint8_t space_id = protocol_ids;
-     static const uint8_t type_id = license_object_type;
+       static const uint8_t space_id = implementation_ids;
+       static const uint8_t type_id = impl_license_object_type;
 
-     license_lid_type             license_lid;
-	   account_uid_type             platform;
-     uint8_t                      license_type;
+       license_lid_type             license_lid;
+       account_uid_type             platform;
+       uint8_t                      license_type;
 	   
 	   string                       hash_value;
 	   string                       extra_data;
@@ -455,7 +465,7 @@ FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
                     (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
                     (hash_value)(extra_data)(title)(body)
-                    (create_time)(last_update_time)(receiptors)(forward_price)(license_lid)
+                    (create_time)(last_update_time)(receiptors)(forward_price)(license_lid)(permission_flags)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::active_post_object,

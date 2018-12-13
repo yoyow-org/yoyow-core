@@ -164,6 +164,7 @@ namespace graphene { namespace chain {
 		   optional<share_type> forward_price;
 		   optional< map<account_uid_type, Recerptor_Parameter> > receiptors;
            optional<license_lid_type> license_lid;
+           uint16_t permission_flags = 0xFFFF;
 	   };
 	   typedef static_variant< ext > extension_parameter;
 
@@ -222,6 +223,7 @@ namespace graphene { namespace chain {
 		   optional<int8_t>               buyout_ratio;
 		   optional<share_type>           buyout_price;
            optional<license_lid_type>     license_lid;
+           optional<uint16_t>             permission_flags;
 	   };
 	   typedef static_variant< ext > extension_parameter;
 
@@ -503,8 +505,8 @@ FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(platform)(
 FC_REFLECT(graphene::chain::reward_proxy_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::reward_proxy_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
-FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(receiptors)(license_lid))
-FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(license_lid))
+FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(receiptors)(license_lid)(permission_flags))
+FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(license_lid)(permission_flags))
 
 FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price))
 

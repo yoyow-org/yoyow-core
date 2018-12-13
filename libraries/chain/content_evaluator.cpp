@@ -581,6 +581,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 						{
                             obj.license_lid = *ext.license_lid;
 						}
+                        obj.permission_flags = ext.permission_flags;
 					}
 				}
 			}
@@ -678,6 +679,10 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
 					 {
                          obj.license_lid = *ext.license_lid;
 					 }
+                     if (ext.permission_flags.valid())
+                     {
+                         obj.permission_flags = *ext.permission_flags;
+                     }
 				 }
 			 }
 		 }
