@@ -458,19 +458,22 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 		   if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
 		   {
 			   const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
-			   if (ext.post_type == post_operation::Post_Type::Post_Type_Comment
-				   || ext.post_type == post_operation::Post_Type::Post_Type_forward
-				   || ext.post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
-			   {
-				   d.get_platform_by_owner(*op.origin_platform); // make sure pid exists
-				   d.get_account_by_uid(*op.origin_poster); // make sure uid exists
-				   d.get_post_by_platform(*op.origin_platform, *op.origin_poster, *op.origin_poster); // make sure pid exists
-			   }
 			   if (ext.post_type == post_operation::Post_Type::Post_Type_Comment)
-			       FC_ASSERT((poster_account->can_reply), "poster ${uid} is not allowed to reply.", ("uid", op.poster));
+			   {
+                   d.get_platform_by_owner(*op.origin_platform); // make sure pid exists
+                   d.get_account_by_uid(*op.origin_poster); // make sure uid exists
+                   const post_object& origin_post = d.get_post_by_platform(*op.origin_platform, *op.origin_poster, *op.origin_post_pid); // make sure pid exists
+                   FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Comment)>0, "post_object ${p} not allowed to comment.", ("p", op.origin_post_pid));
+                   FC_ASSERT((poster_account->can_reply), "poster ${uid} is not allowed to reply.", ("uid", op.poster));
+			   }
 			   if (ext.post_type == post_operation::Post_Type::Post_Type_forward
 				   || ext.post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
 			   {
+                   d.get_platform_by_owner(*op.origin_platform); // make sure pid exists
+                   d.get_account_by_uid(*op.origin_poster); // make sure uid exists
+                   const post_object& origin_post = d.get_post_by_platform(*op.origin_platform, *op.origin_poster, *op.origin_post_pid); // make sure pid exists
+                   FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Forward)>0, "post_object ${p} not allowed to forward.", ("p", op.origin_post_pid));
+
 				   const post_object& post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);
 				   FC_ASSERT(post.forward_price.valid(), "post ${p} is not allowed to forward", ("p", post.origin_post_pid));
 				   
@@ -699,7 +702,8 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 		const database& d = db();
 		const auto& global_params = d.get_global_properties().parameters.get_award_params();
 		auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
-		d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
+        const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
+        FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Liked) > 0, "post_object ${p} not allowed to liked.", ("p", op.post_pid));
 		FC_ASSERT((from_account.can_rate), "poster ${uid} is not allowed to appraise.", ("uid", op.poster));
 		FC_ASSERT(op.csaf > 0, "The score_create_operation`s member points must more then 0.");
 		FC_ASSERT(op.csaf <= global_params.max_csaf_per_approval, "The score_create_operation`s member points is over the maximum limit");
@@ -776,7 +780,8 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
 	try {
 		const database& d = db();
 		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
-		d.get_post_by_platform(op.platform,op.poster,op.post_pid);// make sure pid exists
+        const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
+        FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Reward) > 0, "post_object ${p} not allowed to reward.", ("p", op.post_pid));
 		const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 
 		const account_object* from_account = &d.get_account_by_uid(op.from_account_uid);
@@ -870,7 +875,8 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         d.get_account_by_uid(op.from_account_uid);// make sure uid exists
-        d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
+        const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
+        FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Reward) > 0, "post_object ${p} not allowed to reward.", ("p", op.post_pid));
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 
         auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
@@ -959,6 +965,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
 	try {
 		database& d = db();
 		auto post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
+        FC_ASSERT((post.permission_flags & post_object::Post_Permission_Buyout) > 0, "post_object ${p} not allowed to buyout.", ("p", op.post_pid));
 		post.receiptors_validate();
 		auto iter = post.receiptors.find(op.receiptor_account_uid);
 		FC_ASSERT(iter != post.receiptors.end(), "account ${a} isn`t a receiptor of the post ${p}", ("a", op.receiptor_account_uid)("p", op.post_pid));
