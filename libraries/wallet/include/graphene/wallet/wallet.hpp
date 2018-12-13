@@ -1325,6 +1325,27 @@ class wallet_api
                                      post_pid_type    post_pid,
                                      string           receiptor_account,
                                      bool broadcast = false);
+
+      /** create a license by platform.
+      *
+      * Only platformcan create a license.
+      *
+      * @param platform the name or uid of the platform which create this license.
+      * @param license_type The license`s type.
+      * @param hash_value the hash for this license.
+      * @param title the license`s title
+      * @param body the license`s body
+      * @param extra_data the license`s extra_data
+      * @param broadcast true to broadcast the transaction on the network
+      * @returns the signed transaction
+      */
+      signed_transaction create_license(string           platform,
+                                        uint8_t          license_type,
+                                        string           hash_value,
+                                        string           title,
+                                        string           body,
+                                        string           extra_data,
+                                        bool broadcast = false);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -1492,4 +1513,5 @@ FC_API( graphene::wallet::wallet_api,
         (reward_post)
         (reward_post_proxy_by_platform)
         (buyout_post)
+        (create_license)
       )

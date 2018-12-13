@@ -63,6 +63,7 @@
 
 #include <graphene/app/api.hpp>
 #include <graphene/chain/asset_object.hpp>
+#include <graphene/chain/account_object.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/utilities/git_revision.hpp>
 #include <graphene/utilities/key_conversion.hpp>
@@ -2214,6 +2215,37 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(broadcast))
    }
 
+   signed_transaction create_license(string           platform,
+                                     uint8_t          license_type,
+                                     string           hash_value,
+                                     string           title,
+                                     string           body,
+                                     string           extra_data,
+                                     bool broadcast = false)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+           account_uid_type platform_uid = get_account_uid(platform);
+           const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
+           license_create_operation create_op;
+           create_op.license_lid = plat_account_statistics.last_license_sequence + 1;
+           create_op.platform = platform_uid;
+           create_op.type = license_type;
+           create_op.hash_value = hash_value;
+           create_op.extra_data = extra_data;
+           create_op.title = title;
+           create_op.body = body;
+
+           signed_transaction tx;
+           tx.operations.push_back(create_op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(broadcast))
+   }
+
    signed_transaction approve_proposal(
       const string& fee_paying_account,
       const string& proposal_id,
@@ -3350,6 +3382,17 @@ signed_transaction wallet_api::buyout_post(string           from_account,
                                            bool             broadcast)
 {
     return my->buyout_post(from_account, platform, poster, post_pid, receiptor_account, broadcast);
+}
+
+signed_transaction wallet_api::create_license(string           platform,
+                                              uint8_t          license_type,
+                                              string           hash_value,
+                                              string           title,
+                                              string           body,
+                                              string           extra_data,
+                                              bool             broadcast)
+{
+    return my->create_license(platform, license_type, hash_value, title, body, extra_data, broadcast);
 }
 
 signed_transaction wallet_api::approve_proposal(

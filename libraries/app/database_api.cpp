@@ -95,6 +95,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       std::map<string,full_account> get_full_accounts( const vector<string>& names_or_ids, bool subscribe );
       std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
                                                                         const full_account_query_options& options );
+      const account_statistics_object& get_account_statistics_by_uid(account_uid_type uid)const;
       optional<account_object> get_account_by_name( string name )const;
       vector<account_uid_type> get_account_references( account_uid_type uid )const;
       vector<optional<account_object>> lookup_account_names(const vector<string>& account_names)const;
@@ -775,6 +776,17 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
       results[uid] = acnt;
    }
    return results;
+}
+
+const account_statistics_object& database_api::get_account_statistics_by_uid(account_uid_type uid)const
+{
+    return my->get_account_statistics_by_uid(uid);
+}
+
+const account_statistics_object& database_api_impl::get_account_statistics_by_uid(account_uid_type uid)const
+{
+    const account_statistics_object& account_stats = _db.get_account_statistics_by_uid(uid);
+    return account_stats;
 }
 
 

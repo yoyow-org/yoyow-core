@@ -277,6 +277,9 @@ class database_api
       std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
                                                                         const full_account_query_options& options );
 
+
+      const account_statistics_object& database_api::get_account_statistics_by_uid(account_uid_type uid)const;
+
       /**
        * @brief Get an account by name
        * @param name name of the account to retrieve
@@ -640,6 +643,7 @@ FC_API( graphene::app::database_api,
    (get_accounts_by_uid)
    //(get_full_accounts)
    (get_full_accounts_by_uid)
+   (get_account_statistics_by_uid)
    (get_account_by_name)
    (get_account_references)
    //(lookup_account_names)
