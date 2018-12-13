@@ -1245,6 +1245,68 @@ class wallet_api
          bool broadcast = false
          );
 
+
+      /** Creates a score object for a post object by from_account.
+      *
+      * An account can create only one score_object for a post_object.
+      *
+      * @param from_account the name or uid of the account which is creating the score_object
+      * @param platform The post`s platform account.
+      * @param poster The post`s publisher account.
+      * @param post_pid_type The post`s id.
+      * @param score given score num, from -5 to 5
+      * @param csaf given some csaf from from_account for this score object 
+      * @param broadcast true to broadcast the transaction on the network
+      * @returns the signed transaction registering a committee_member
+      */
+      signed_transaction score_a_post(string           from_account,
+                                      string           platform,
+                                      string           poster,
+                                      post_pid_type    post_pid,
+                                      int8_t           score,
+                                      int64_t          csaf,
+                                      bool broadcast = false);
+
+      /** Reward a post by from_account.
+      *
+      * Any asset can reward a post_object by from_account.
+      *
+      * @param from_account the name or uid of the account which reward the post
+      * @param platform The post`s platform account.
+      * @param poster The post`s publisher account.
+      * @param post_pid_type The post`s id.
+      * @param amount the reward asset`s amount
+      * @param asset_symbol the reward asset`s symbol
+      * @param broadcast true to broadcast the transaction on the network
+      * @returns the signed transaction registering a committee_member
+      */
+      signed_transaction reward_post(string           from_account,
+                                     string           platform,
+                                     string           poster,
+                                     post_pid_type    post_pid,
+                                     string           amount,
+                                     string           asset_symbol,
+                                     bool broadcast = false);
+
+      /** Reward a post by platform.
+      *
+      * Only pre_paid can reward a post_object by platform which allowed by from_account.
+      *
+      * @param from_account the name or uid of the account which reward the post
+      * @param platform The post`s platform account.
+      * @param poster The post`s publisher account.
+      * @param post_pid_type The post`s id.
+      * @param amount the reward asset`s amount, just pre_paid
+      * @param broadcast true to broadcast the transaction on the network
+      * @returns the signed transaction registering a committee_member
+      */
+      signed_transaction reward_post_proxy_by_platform(string           from_account,
+                                                       string           platform,
+                                                       string           poster,
+                                                       post_pid_type    post_pid,
+                                                       share_type       amount,
+                                                       bool broadcast = false);
+
        
          
       void dbg_make_uia(string creator, string symbol);
@@ -1409,4 +1471,7 @@ FC_API( graphene::wallet::wallet_api,
         //(set_key_label)
         //(get_key_label)
         (get_public_key)
+        (score_a_post)
+        (reward_post)
+        (reward_post_proxy_by_platform)
       )

@@ -361,7 +361,7 @@ namespace graphene { namespace chain {
        account_uid_type    poster;
 	   post_pid_type       post_pid;
 	   int8_t              score;
-	   int64_t             csaf;
+	   uint64_t            csaf;
 
 	   time_point_sec      create_time;
    };

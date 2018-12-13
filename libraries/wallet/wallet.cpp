@@ -2107,6 +2107,87 @@ signed_transaction account_cancel_auth_platform(string account,
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (committee_member_account)(proposal_number)(opinion)(broadcast) ) }
 
+   signed_transaction score_a_post(string from_account,
+                                   string platform,
+                                   string poster,
+                                   post_pid_type    post_pid,
+                                   int8_t           score,
+                                   int64_t          csaf,
+                                   bool broadcast = false)
+   {
+       try {
+           score_create_operation create_op;
+           create_op.from_account_uid = get_account_uid(from_account);
+           create_op.platform = get_account_uid(platform);
+           create_op.poster = get_account_uid(poster);
+           create_op.post_pid = post_pid;
+           create_op.score = score;
+           create_op.csaf = csaf;
+
+           signed_transaction tx;
+           tx.operations.push_back(create_op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(score)(csaf)(broadcast))
+   }
+
+   signed_transaction reward_post(string           from_account,
+                                  string           platform,
+                                  string           poster,
+                                  post_pid_type    post_pid,
+                                  string           amount,
+                                  string           asset_symbol,
+                                  bool broadcast = false)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
+           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+
+           reward_operation reward_op;
+           reward_op.from_account_uid = get_account_uid(from_account);
+           reward_op.platform = get_account_uid(platform);
+           reward_op.poster = get_account_uid(poster);
+           reward_op.post_pid = post_pid;
+           reward_op.amount = asset_obj->amount_from_string(amount);
+
+           signed_transaction tx;
+           tx.operations.push_back(reward_op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(asset_symbol)(broadcast))
+   }
+
+   signed_transaction reward_post_proxy_by_platform(string           from_account,
+                                                    string           platform,
+                                                    string           poster,
+                                                    post_pid_type    post_pid,
+                                                    share_type       amount,
+                                                    bool broadcast = false)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+           reward_proxy_operation reward_op;
+           reward_op.from_account_uid = get_account_uid(from_account);
+           reward_op.platform = get_account_uid(platform);
+           reward_op.poster = get_account_uid(poster);
+           reward_op.post_pid = post_pid;
+           reward_op.amount = amount;
+
+           signed_transaction tx;
+           tx.operations.push_back(reward_op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(broadcast))
+   }
+
    signed_transaction approve_proposal(
       const string& fee_paying_account,
       const string& proposal_id,
@@ -3201,6 +3282,38 @@ signed_transaction wallet_api::committee_proposal_vote(
    )
 {
    return my->committee_proposal_vote( committee_member_account, proposal_number, opinion, broadcast );
+}
+
+signed_transaction wallet_api::score_a_post(string         from_account,
+                                            string         platform,
+                                            string         poster,
+                                            post_pid_type  post_pid,
+                                            int8_t         score,
+                                            int64_t        csaf,
+                                            bool           broadcast)
+{
+    return my->score_a_post(from_account, platform, poster, post_pid, score, csaf, broadcast);
+}
+
+signed_transaction wallet_api::reward_post(string           from_account,
+                                           string           platform,
+                                           string           poster,
+                                           post_pid_type    post_pid,
+                                           string           amount,
+                                           string           asset_symbol,
+                                           bool             broadcast)
+{
+    return my->reward_post(from_account, platform, poster, post_pid, amount, asset_symbol, broadcast);
+}
+
+signed_transaction wallet_api::reward_post_proxy_by_platform(string           from_account,
+                                                             string           platform,
+                                                             string           poster,
+                                                             post_pid_type    post_pid,
+                                                             share_type       amount,
+                                                             bool             broadcast)
+{
+    return my->reward_post_proxy_by_platform(from_account, platform, poster, post_pid, amount, broadcast);
 }
 
 signed_transaction wallet_api::approve_proposal(
