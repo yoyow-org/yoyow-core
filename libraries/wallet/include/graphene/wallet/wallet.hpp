@@ -1257,7 +1257,7 @@ class wallet_api
       * @param score given score num, from -5 to 5
       * @param csaf given some csaf from from_account for this score object 
       * @param broadcast true to broadcast the transaction on the network
-      * @returns the signed transaction registering a committee_member
+      * @returns the signed transaction 
       */
       signed_transaction score_a_post(string           from_account,
                                       string           platform,
@@ -1278,7 +1278,7 @@ class wallet_api
       * @param amount the reward asset`s amount
       * @param asset_symbol the reward asset`s symbol
       * @param broadcast true to broadcast the transaction on the network
-      * @returns the signed transaction registering a committee_member
+      * @returns the signed transaction
       */
       signed_transaction reward_post(string           from_account,
                                      string           platform,
@@ -1298,7 +1298,7 @@ class wallet_api
       * @param post_pid_type The post`s id.
       * @param amount the reward asset`s amount, just pre_paid
       * @param broadcast true to broadcast the transaction on the network
-      * @returns the signed transaction registering a committee_member
+      * @returns the signed transaction
       */
       signed_transaction reward_post_proxy_by_platform(string           from_account,
                                                        string           platform,
@@ -1307,7 +1307,24 @@ class wallet_api
                                                        share_type       amount,
                                                        bool broadcast = false);
 
-       
+      /** buyout a post by from_account.
+      *
+      * Only from_account buyout receipt ratio owned by receiptor_account.
+      *
+      * @param from_account the name or uid of the account which buyout the post
+      * @param platform The post`s platform account.
+      * @param poster The post`s publisher account.
+      * @param post_pid_type The post`s id.
+      * @param receiptor_account the receipt ratio`s owner
+      * @param broadcast true to broadcast the transaction on the network
+      * @returns the signed transaction
+      */
+      signed_transaction buyout_post(string           from_account,
+                                     string           platform,
+                                     string           poster,
+                                     post_pid_type    post_pid,
+                                     string           receiptor_account,
+                                     bool broadcast = false);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -1474,4 +1491,5 @@ FC_API( graphene::wallet::wallet_api,
         (score_a_post)
         (reward_post)
         (reward_post_proxy_by_platform)
+        (buyout_post)
       )

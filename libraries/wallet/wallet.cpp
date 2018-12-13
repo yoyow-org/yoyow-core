@@ -2188,6 +2188,32 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(broadcast))
    }
 
+   signed_transaction buyout_post(string           from_account,
+                                  string           platform,
+                                  string           poster,
+                                  post_pid_type    post_pid,
+                                  string           receiptor_account,
+                                  bool broadcast = false)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+           buyout_operation buyout_op;
+           buyout_op.from_account_uid = get_account_uid(from_account);
+           buyout_op.platform = get_account_uid(platform);
+           buyout_op.poster = get_account_uid(poster);
+           buyout_op.post_pid = post_pid;
+           buyout_op.receiptor_account_uid = get_account_uid(receiptor_account);
+
+           signed_transaction tx;
+           tx.operations.push_back(buyout_op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(broadcast))
+   }
+
    signed_transaction approve_proposal(
       const string& fee_paying_account,
       const string& proposal_id,
@@ -3314,6 +3340,16 @@ signed_transaction wallet_api::reward_post_proxy_by_platform(string           fr
                                                              bool             broadcast)
 {
     return my->reward_post_proxy_by_platform(from_account, platform, poster, post_pid, amount, broadcast);
+}
+
+signed_transaction wallet_api::buyout_post(string           from_account,
+                                           string           platform,
+                                           string           poster,
+                                           post_pid_type    post_pid,
+                                           string           receiptor_account,
+                                           bool             broadcast)
+{
+    return my->buyout_post(from_account, platform, poster, post_pid, receiptor_account, broadcast);
 }
 
 signed_transaction wallet_api::approve_proposal(
