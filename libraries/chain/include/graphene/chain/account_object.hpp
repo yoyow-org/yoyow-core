@@ -42,12 +42,13 @@ namespace graphene { namespace chain {
    class account_statistics_object : public graphene::db::abstract_object<account_statistics_object>
    {
       public:
-		  struct Platform_auth_data
+		  struct Platform_Auth_Data
 		  {
-			  share_type    max_limit;   //max limit prepaid for platform
-			  share_type    cur_used;    //current prepaid used by platform 
-			  bool          proxy_post;  //publish or comment by proxy
-			  bool          proxy_liked; //liked by proxy
+			  share_type    max_limit = 0;   //max limit prepaid for platform
+			  share_type    cur_used = 0;    //current prepaid used by platform 
+			  bool          proxy_post = true;  //publish or comment by proxy
+			  bool          proxy_liked = true; //liked by proxy
+              bool          proxy_reward = true;//reward 
 		  };
 
          static const uint8_t space_id = implementation_ids;
@@ -65,7 +66,7 @@ namespace graphene { namespace chain {
          uint32_t                            removed_ops = 0;
 
 		 
-		 map<account_uid_type, Platform_auth_data> prepaids_for_platform; //prepaid fee limits for platforms
+		 map<account_uid_type, Platform_Auth_Data> prepaids_for_platform; //prepaid fee limits for platforms
 
          /**
           * Prepaid fee.
@@ -757,8 +758,8 @@ FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (graphene::db::object),
                     (owner)(asset_type)(balance) )
 
-FC_REFLECT(graphene::chain::account_statistics_object::Platform_auth_data,
-                    (max_limit)(cur_used)(proxy_post)(proxy_liked))
+FC_REFLECT(graphene::chain::account_statistics_object::Platform_Auth_Data,
+                    (max_limit)(cur_used)(proxy_post)(proxy_liked)(proxy_reward))
 
 FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (graphene::chain::object),

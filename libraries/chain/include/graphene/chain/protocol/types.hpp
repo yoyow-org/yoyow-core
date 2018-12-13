@@ -156,7 +156,6 @@ namespace graphene { namespace chain {
       proposal_object_type,
       operation_history_object_type,
 	  active_post_object_type,
-      license_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -179,6 +178,7 @@ namespace graphene { namespace chain {
       impl_witness_schedule_object_type,
       impl_platform_vote_object_type,
 	  impl_score_object_type,
+      impl_license_object_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
    };
 
@@ -204,7 +204,6 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, proposal_object_type,           proposal_object>              proposal_id_type;
    typedef object_id< protocol_ids, operation_history_object_type,  operation_history_object>     operation_history_id_type;
    typedef object_id< protocol_ids, active_post_object_type,		active_post_object>			  active_post_id_type;
-   typedef object_id< protocol_ids, license_object_type,            license_object>			      license_id_type;
 
    // implementation types
    class global_property_object;
@@ -245,6 +244,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_witness_schedule_object_type, witness_schedule_object>                   witness_schedule_id_type;
    typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
    typedef object_id< implementation_ids, impl_score_object_type, score_object>                                         score_id_type;
+   typedef object_id< implementation_ids, impl_license_object_type, license_object>			                            license_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -352,7 +352,6 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (proposal_object_type)
                  (operation_history_object_type)
 				 (active_post_object_type)
-                 (license_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,
@@ -365,6 +364,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_witness_vote_object_type)
                  (impl_platform_vote_object_type)
 				 (impl_score_object_type)
+                 (impl_license_object_type)
                  (impl_committee_member_vote_object_type)
                  (impl_registrar_takeover_object_type)
                  (impl_csaf_lease_object_type)

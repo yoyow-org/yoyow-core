@@ -307,13 +307,13 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
 						   }
 						   else
 						   {
-							   s.prepaids_for_platform.insert(std::make_pair(platform_uid, account_statistics_object::Platform_auth_data()));
+							   s.prepaids_for_platform.insert(std::make_pair(platform_uid, account_statistics_object::Platform_Auth_Data()));
 							   auto iter = s.prepaids_for_platform.find(platform_uid);
 							   return iter->second;
 						   }
 					   };
 
-					   account_statistics_object::Platform_auth_data& plat_data = get_platform_auth_data(o.platform);
+					   account_statistics_object::Platform_Auth_Data& plat_data = get_platform_auth_data(o.platform);
 
 					   if (ext.limit_for_platform.valid())
 						   plat_data.max_limit = *ext.limit_for_platform;
@@ -321,6 +321,8 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
 						   plat_data.proxy_post = *ext.proxy_publish;
 					   if (ext.proxy_liked.valid())
 						   plat_data.proxy_liked = *ext.proxy_liked;
+                       if (ext.proxy_reward.valid())
+                           plat_data.proxy_reward = *ext.proxy_reward;
 				   });
 			   }
 		   }
