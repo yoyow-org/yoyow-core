@@ -191,13 +191,14 @@ void_result proposal_update_evaluator::do_apply(const proposal_update_operation&
    if( _proposal->review_period_time )
       return void_result();
 
-   if( _proposal->is_authorized_to_execute(d) )
+   auto result = _proposal->is_authorized_to_execute(d);
+   if (result.first)
    {
       // All required approvals are satisfied. Execute!
       //ilog( "apply proposed ${id}", ("id", _proposal->id ) );
       _executed_proposal = true;
       try {
-         _processed_transaction = d.push_proposal(*_proposal);
+         _processed_transaction = d.push_proposal(*_proposal, result.second);
       } catch(fc::exception& e) {
          wlog("Proposed transaction ${id} failed to apply once approved with exception:\n----\n${reason}\n----\nWill try again when it expires.",
               ("id", o.proposal)("reason", e.to_detail_string()));

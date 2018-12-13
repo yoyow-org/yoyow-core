@@ -27,9 +27,10 @@
 
 namespace graphene { namespace chain {
 
-bool proposal_object::is_authorized_to_execute(database& db) const
+std::pair<bool, signed_information> proposal_object::is_authorized_to_execute(database& db) const
 {
    transaction_evaluation_state dry_run_eval(&db);
+   signed_information sigs;
 
    try {
        flat_map<public_key_type,signature_type> map;
@@ -38,7 +39,7 @@ bool proposal_object::is_authorized_to_execute(database& db) const
        {
            map[key] = st;
        }
-        verify_authority( proposed_transaction.operations,
+       sigs = verify_authority( proposed_transaction.operations,
                        map,
                        [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).owner); },
                        [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).active); },
@@ -53,9 +54,9 @@ bool proposal_object::is_authorized_to_execute(database& db) const
    {
       //idump((available_active_approvals));
       //wlog((e.to_detail_string()));
-      return false;
+      return std::make_pair(false, sigs);
    }
-   return true;
+   return std::make_pair(true, sigs);
 }
 
 

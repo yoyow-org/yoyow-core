@@ -221,9 +221,10 @@ void database::clear_expired_proposals()
       const proposal_object& proposal = *proposal_expiration_index.begin();
       processed_transaction result;
       try {
-         if( proposal.is_authorized_to_execute(*this) )
+         auto value = proposal.is_authorized_to_execute(*this);
+         if (value.first)
          {
-            result = push_proposal(proposal);
+            result = push_proposal(proposal, value.second);
             //TODO: Do something with result so plugins can process it.
             continue;
          }

@@ -125,7 +125,7 @@ namespace graphene { namespace chain {
       {
          account_uid_type           uid = 0;
          flat_set<public_key_type>  pub_keys;
-         flat_set<sign_tree>        childs;
+         flat_set<sign_tree>        children;
 
          bool operator < (const sign_tree& a)const {
             return uid < a.uid;
@@ -133,18 +133,52 @@ namespace graphene { namespace chain {
          sign_tree(const account_uid_type& id = 0) :uid(id){}
       };
 
-      flat_set<sign_tree>  owner;
-      flat_set<sign_tree>  active;
-      flat_set<sign_tree>  secondary;
+      flat_map<account_uid_type, sign_tree>  owner;
+      flat_map<account_uid_type, sign_tree>  active;
+      flat_map<account_uid_type, sign_tree>  secondary;
 
-      account_uid_type real_signed_id(const sign_tree& root, uint32_t depth)const
+      account_uid_type real_owner_uid(account_uid_type uid, uint32_t depth)const
       {
-         if (root.pub_keys.empty() && root.childs.size() == 1 && depth)
+         if (owner.find(uid) == owner.end())
+            return account_uid_type(0);
+
+         sign_tree root = owner.at(uid);
+         while (root.pub_keys.empty() && root.children.size() == 1 && depth)
          {
-            return real_signed_id(*(root.childs.begin()), depth - 1);
+            root = *(root.children.begin());
+            depth--;
          }
          return root.uid;
       }
+
+      account_uid_type real_active_uid(account_uid_type uid, uint32_t depth)const
+      {
+         if (active.find(uid) == active.end())
+            return account_uid_type(0);
+
+         sign_tree root = active.at(uid);
+         while (root.pub_keys.empty() && root.children.size() == 1 && depth)
+         {
+            root = *(root.children.begin());
+            depth--;
+         }
+         return root.uid;
+      }
+
+      account_uid_type real_secondary_uid(account_uid_type uid, uint32_t depth)const
+      {
+         if (secondary.find(uid) == secondary.end())
+            return account_uid_type(0);
+
+         sign_tree root = secondary.at(uid);
+         while (root.pub_keys.empty() && root.children.size() == 1 && depth)
+         {
+            root = *(root.children.begin());
+            depth--;
+         }
+         return root.uid;
+      }
+
    };
 
    /**

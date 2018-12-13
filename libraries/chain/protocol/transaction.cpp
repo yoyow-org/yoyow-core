@@ -138,21 +138,21 @@ struct sign_state
          {
             result = check_authority(get_secondary_by_uid(uid_auth.uid), parent);
             if (std::get<0>(result))
-               sigs.secondary.emplace(parent);
+               sigs.secondary.emplace(uid_auth.uid, parent);
             return result;
          }
          else if (uid_auth.auth_type == authority::active_auth)
          {
             result = check_authority(get_active_by_uid(uid_auth.uid), parent);
             if (std::get<0>(result))
-               sigs.active.emplace(parent);
+               sigs.active.emplace(uid_auth.uid, parent);
             return result;
          }
          else // if( uid_auth.auth_type == authority::owner_auth )
          {
             result = check_authority(get_owner_by_uid(uid_auth.uid), parent);
             if (std::get<0>(result))
-               sigs.owner.emplace(parent);
+               sigs.owner.emplace(uid_auth.uid, parent);
             return result;
          }
       }
@@ -217,7 +217,7 @@ struct sign_state
                   total_possible_weight += a.second;
                   approved_by_uid_auth.insert( a.first );
                   total_weight += a.second;
-                  parent.childs.emplace(child);
+                  parent.children.emplace(child);
                   if( total_weight >= auth.weight_threshold )
                      return std::make_tuple( true, true, empty_public_key_set );
                }
@@ -236,7 +236,7 @@ struct sign_state
                total_possible_weight += a.second;
                total_weight += a.second;
                signed_information::sign_tree child(a.first.uid);
-               parent.childs.emplace(child);
+               parent.children.emplace(child);
                if( total_weight >= auth.weight_threshold )
                   return std::make_tuple( true, true, empty_public_key_set );
             }

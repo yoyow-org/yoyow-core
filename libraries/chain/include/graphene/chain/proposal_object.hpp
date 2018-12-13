@@ -53,7 +53,7 @@ class proposal_object : public abstract_object<proposal_object>
       flat_set<account_uid_type>     available_owner_approvals;
       flat_set<public_key_type>     available_key_approvals;
 
-      bool is_authorized_to_execute(database& db)const;
+      std::pair<bool, signed_information> is_authorized_to_execute(database& db)const;
 };
 
 /**

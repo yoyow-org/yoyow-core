@@ -265,7 +265,7 @@ processed_transaction database::validate_transaction( const signed_transaction& 
    return _apply_transaction( trx );
 }
 
-processed_transaction database::push_proposal(const proposal_object& proposal)
+processed_transaction database::push_proposal(const proposal_object& proposal, const signed_information& sigs)
 { try {
    transaction_evaluation_state eval_state(this);
    eval_state._is_proposed_trx = true;
@@ -278,7 +278,7 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
    try {
       auto session = _undo_db.start_undo_session(true);
       for( auto& op : proposal.proposed_transaction.operations )
-         eval_state.operation_results.emplace_back(apply_operation(eval_state, op));
+         eval_state.operation_results.emplace_back(apply_operation(eval_state, op, sigs));
       remove(proposal);
       session.merge();
    } catch ( const fc::exception& e ) {
