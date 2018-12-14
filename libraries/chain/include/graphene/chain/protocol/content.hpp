@@ -164,7 +164,7 @@ namespace graphene { namespace chain {
 		   optional<share_type> forward_price;
 		   optional< map<account_uid_type, Recerptor_Parameter> > receiptors;
            optional<license_lid_type> license_lid;
-           uint16_t permission_flags = 0xFFFF;
+           uint32_t permission_flags = 0xFFFFFFFF;
 	   };
 	   typedef static_variant< ext > extension_parameter;
 
@@ -223,7 +223,7 @@ namespace graphene { namespace chain {
 		   optional<uint32_t>             buyout_ratio;
 		   optional<share_type>           buyout_price;
            optional<license_lid_type>     license_lid;
-           optional<uint16_t>             permission_flags;
+           optional<uint32_t>             permission_flags;
 	   };
 	   typedef static_variant< ext > extension_parameter;
 

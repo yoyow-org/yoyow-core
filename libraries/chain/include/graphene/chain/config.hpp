@@ -322,4 +322,5 @@
 #define GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK (uint32_t(100))
 
 #define GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(30)) //the ratio of platform`s recerpts from post_object 3000 means 30.00%
+#define GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID (uint64_t(-1)>>1)
 ///@}

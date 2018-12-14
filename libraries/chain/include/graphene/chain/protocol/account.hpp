@@ -231,9 +231,7 @@ namespace graphene { namespace chain {
 	   struct ext
 	   {
 		   optional<share_type> limit_for_platform;
-		   optional<bool>       proxy_publish;
-		   optional<bool>       proxy_liked;
-           optional<bool>       proxy_reward;
+           optional<uint32_t>   permission_flags;
 	   };
 
 	   typedef static_variant< ext > extension_parameter;
@@ -504,4 +502,4 @@ FC_REFLECT( graphene::chain::account_update_allowed_assets_operation::fee_parame
 FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )
 
-FC_REFLECT(graphene::chain::account_auth_platform_operation::ext, (limit_for_platform)(proxy_publish)(proxy_liked)(proxy_reward))
+FC_REFLECT(graphene::chain::account_auth_platform_operation::ext, (limit_for_platform)(permission_flags))

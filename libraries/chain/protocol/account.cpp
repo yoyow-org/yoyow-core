@@ -236,7 +236,7 @@ void account_auth_platform_operation::validate()const
 		   {
 			   isfound = true;
 			   const account_auth_platform_operation::ext& ext = ext_iter->get<account_auth_platform_operation::ext>();
-			   bool has_option = ext.limit_for_platform.valid() || ext.proxy_publish.valid() || ext.proxy_liked.valid();
+			   bool has_option = ext.limit_for_platform.valid() || ext.permission_flags.valid();
 			   FC_ASSERT(has_option, "Should update something");
 		   }
 	   }

@@ -317,16 +317,27 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
 
 					   if (ext.limit_for_platform.valid())
 						   plat_data->max_limit = *ext.limit_for_platform;
-					   if (ext.proxy_publish.valid())
-						   plat_data->proxy_post = *ext.proxy_publish;
-					   if (ext.proxy_liked.valid())
-						   plat_data->proxy_liked = *ext.proxy_liked;
-                       if (ext.proxy_reward.valid())
-                           plat_data->proxy_reward = *ext.proxy_reward;
+					   if (ext.permission_flags.valid())
+						   plat_data->permission_flags = *ext.permission_flags;
 				   });
 			   }
 		   }
 	   }
+   }
+   else
+   {
+       const account_statistics_object* from_account_stats = &acnt->statistics(d);
+       if (from_account_stats)
+       {
+           d.modify(*from_account_stats, [&](account_statistics_object& s)
+           {
+               s.prepaids_for_platform.insert(std::make_pair(o.platform, account_statistics_object::Platform_Auth_Data()));
+               auto iter = s.prepaids_for_platform.find(o.platform);
+               account_statistics_object::Platform_Auth_Data* plat_data = &(iter->second);
+               plat_data->max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+               plat_data->permission_flags = 0xFFFFFFFF;
+           });
+       }
    }
 
    return void_result();

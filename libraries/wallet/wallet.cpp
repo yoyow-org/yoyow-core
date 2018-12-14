@@ -1469,6 +1469,7 @@ signed_transaction account_auth_platform(string account,
 	  ext.limit_for_platform = limit_for_platform;
 	  ext.proxy_publish = proxy_publish;
 	  ext.proxy_liked = proxy_liked;
+      op.extensions = flat_set<account_auth_platform_operation::extension_parameter>();
 	  op.extensions->insert(ext);
 
       signed_transaction tx;

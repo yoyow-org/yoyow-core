@@ -41,17 +41,27 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
    validate_authorized_asset( d, *from_account, transfer_asset_object, "'from' " );
    validate_authorized_asset( d, *to_account,   transfer_asset_object, "'to' " );
 
-   account_uid_type sign_account = sigs.real_secondary_uid(op.from, 1);
-   const auto& account_stats = d.get_account_statistics_by_uid(op.from);
-   auto auth_data = account_stats.prepaids_for_platform.find(sign_account);
-   if (auth_data != account_stats.prepaids_for_platform.end())
+   if (!op.some_from_balance())
    {
-       FC_ASSERT(account_stats.prepaid >= op.amount.amount, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
-           ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("a", op.from)("n", op.amount.amount));
-       FC_ASSERT((auth_data->second.max_limit > auth_data->second.cur_used)
-           && ((auth_data->second.max_limit - auth_data->second.cur_used) >= op.amount.amount),
-           "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
-           ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("p", sign_account)("a", op.from)("n", op.amount.amount));
+       account_uid_type sign_account = sigs.real_secondary_uid(op.from, 1);
+       if (sign_account != op.from)
+       {
+           const auto& account_stats = d.get_account_statistics_by_uid(op.from);
+           auto auth_data = account_stats.prepaids_for_platform.find(sign_account);
+           if (auth_data != account_stats.prepaids_for_platform.end())
+           {
+               sign_platform_uid = sign_account;
+               FC_ASSERT(account_stats.prepaid >= op.amount.amount, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+                   ("c", (account_stats.prepaid))("a", op.from)("n", op.amount.amount));
+               if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
+               {
+                   FC_ASSERT((auth_data->second.max_limit > auth_data->second.cur_used)
+                       && ((auth_data->second.max_limit - auth_data->second.cur_used) >= op.amount.amount),
+                       "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
+                       ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("p", sign_account)("a", op.from)("n", op.amount.amount));
+               }
+           }
+       }
    }
 
    try {
@@ -122,6 +132,15 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
       d.modify( *from_account_stats, [&](account_statistics_object& s)
       {
          s.prepaid -= asset_from_prepaid.amount;
+         if (sign_platform_uid.valid())
+         {
+             d.modify(*from_account_stats, [&](account_statistics_object& s)
+             {
+                 auto iter = s.prepaids_for_platform.find(*sign_platform_uid);
+                 account_statistics_object::Platform_Auth_Data* plat_data = &(iter->second);
+                 plat_data->cur_used += asset_from_prepaid.amount;
+             });
+         }
       });
    if( asset_to_balance.amount > 0 )
       d.adjust_balance( *to_account, asset_to_balance );

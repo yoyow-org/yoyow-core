@@ -42,13 +42,20 @@ namespace graphene { namespace chain {
    class account_statistics_object : public graphene::db::abstract_object<account_statistics_object>
    {
       public:
+          enum Platform_Auth_Permission
+          {
+              Platform_Permission_Forward = 0,   //allow forward 
+              Platform_Permission_Liked   = 2,   //allow liked or scored
+              Platform_Permission_Buyout  = 4,   //allow buyout
+              Platform_Permission_Comment = 8,   //allow comment
+              Platform_Permission_Reward  = 16   //allow reward
+          };
+
 		  struct Platform_Auth_Data
 		  {
 			  share_type    max_limit = 0;   //max limit prepaid for platform
 			  share_type    cur_used = 0;    //current prepaid used by platform 
-			  bool          proxy_post = true;  //publish or comment by proxy
-			  bool          proxy_liked = true; //liked by proxy
-              bool          proxy_reward = true;//reward 
+              uint32_t      permission_flags = 0xFFFFFFFF;
 		  };
 
          static const uint8_t space_id = implementation_ids;
@@ -759,7 +766,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (owner)(asset_type)(balance) )
 
 FC_REFLECT(graphene::chain::account_statistics_object::Platform_Auth_Data,
-                    (max_limit)(cur_used)(proxy_post)(proxy_liked)(proxy_reward))
+                    (max_limit)(cur_used)(permission_flags))
 
 FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (graphene::chain::object),
