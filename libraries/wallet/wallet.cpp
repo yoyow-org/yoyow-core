@@ -64,6 +64,7 @@
 #include <graphene/app/api.hpp>
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/config.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/utilities/git_revision.hpp>
 #include <graphene/utilities/key_conversion.hpp>
@@ -1452,8 +1453,7 @@ signed_transaction update_platform(string platform_account,
 signed_transaction account_auth_platform(string account,
                                          string platform_owner,
 										 share_type limit_for_platform = 0,
-										 bool proxy_publish = false,
-										 bool proxy_liked = false,
+                                         uint32_t permission_flags = 0xFFFFFFFF,
                                          bool broadcast = false)
 {
    try {
@@ -1467,8 +1467,7 @@ signed_transaction account_auth_platform(string account,
 
 	  account_auth_platform_operation::ext ext;
 	  ext.limit_for_platform = limit_for_platform;
-	  ext.proxy_publish = proxy_publish;
-	  ext.proxy_liked = proxy_liked;
+      ext.permission_flags = permission_flags;
       op.extensions = flat_set<account_auth_platform_operation::extension_parameter>();
 	  op.extensions->insert(ext);
 
@@ -1478,7 +1477,7 @@ signed_transaction account_auth_platform(string account,
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (account)(platform_owner)(broadcast) )
+   } FC_CAPTURE_AND_RETHROW((account)(platform_owner)(limit_for_platform)(permission_flags)(broadcast))
 }
 
 signed_transaction account_cancel_auth_platform(string account,
@@ -2245,6 +2244,90 @@ signed_transaction account_cancel_auth_platform(string account,
 
            return sign_transaction(tx, broadcast);
        } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(broadcast))
+   }
+
+   signed_transaction create_post(string           platform,
+                                  string           poster,
+                                  string           hash_value,
+                                  string           title,
+                                  string           body,
+                                  string           extra_data,
+                                  string           origin_platform = "",
+                                  string           origin_poster = "",
+                                  string           origin_post_pid = "",
+                                  post_operation::ext ext = post_operation::ext(),
+                                  bool broadcast = false)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+           account_uid_type platform_uid = get_account_uid(platform);
+           const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
+           post_operation create_op;
+           create_op.post_pid = plat_account_statistics.last_post_sequence + 1;
+           create_op.platform = platform_uid;
+           create_op.poster = get_account_uid(poster);
+           if (!origin_platform.empty())
+               create_op.origin_platform = get_account_uid(origin_platform);
+           if (!origin_poster.empty())
+               create_op.origin_poster = get_account_uid(origin_poster);
+           if (!origin_post_pid.empty())
+               create_op.origin_post_pid = fc::to_uint64(fc::string(origin_post_pid));
+           
+           create_op.hash_value = hash_value;
+           create_op.extra_data = extra_data;
+           create_op.title = title;
+           create_op.body = body;
+
+           create_op.extensions = flat_set<post_operation::extension_parameter>();
+           create_op.extensions->insert(ext);
+
+           signed_transaction tx;
+           tx.operations.push_back(create_op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((platform)(poster)(hash_value)(title)(body)(extra_data)(origin_platform)(origin_poster)(origin_post_pid)(ext)(broadcast))
+   }
+
+   signed_transaction update_post(string           platform,
+                                  string           poster,
+                                  string           post_pid,
+                                  string           hash_value = "",
+                                  string           title = "",
+                                  string           body = "",
+                                  string           extra_data = "",
+                                  post_update_operation::ext ext = post_update_operation::ext(),
+                                  bool broadcast = false)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+           post_update_operation update_op;
+           update_op.post_pid = fc::to_uint64(fc::string(post_pid));
+           update_op.platform = get_account_uid(platform);
+           update_op.poster = get_account_uid(poster);
+
+           if (!hash_value.empty())
+               update_op.hash_value = hash_value;
+           if (!extra_data.empty())
+               update_op.extra_data = extra_data;
+           if (!title.empty())
+               update_op.title = title;
+           if (!body.empty())
+               update_op.body = body;
+
+           update_op.extensions = flat_set<post_update_operation::extension_parameter>();
+           update_op.extensions->insert(ext);
+
+           signed_transaction tx;
+           tx.operations.push_back(update_op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext)(broadcast))
    }
 
    signed_transaction approve_proposal(
@@ -3159,9 +3242,9 @@ signed_transaction wallet_api::update_platform_votes(string voting_account,
    return my->update_platform_votes( voting_account, platforms_to_add, platforms_to_remove, broadcast );
 }
 
-signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, share_type limit_for_platform, bool proxy_publish, bool proxy_liked, bool broadcast)
+signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, share_type limit_for_platform, uint32_t permission_flags, bool broadcast)
 {
-	return my->account_auth_platform(account, platform_owner, limit_for_platform, proxy_publish, proxy_liked, broadcast);
+    return my->account_auth_platform(account, platform_owner, limit_for_platform, permission_flags, broadcast);
 }
 
 signed_transaction wallet_api::account_cancel_auth_platform(string account, string platform_owner, bool broadcast )
@@ -3394,6 +3477,34 @@ signed_transaction wallet_api::create_license(string           platform,
                                               bool             broadcast)
 {
     return my->create_license(platform, license_type, hash_value, title, body, extra_data, broadcast);
+}
+
+signed_transaction wallet_api::create_post(string              platform,
+                                           string              poster,
+                                           string              hash_value,
+                                           string              title,
+                                           string              body,
+                                           string              extra_data,
+                                           string              origin_platform,
+                                           string              origin_poster,
+                                           string              origin_post_pid,
+                                           post_operation::ext ext,
+                                           bool                broadcast)
+{
+    return my->create_post(platform, poster, hash_value, title, body, extra_data, origin_platform, origin_poster, origin_post_pid, ext, broadcast);
+}
+
+signed_transaction wallet_api::update_post(string                     platform,
+                                           string                     poster,
+                                           string                     post_pid,
+                                           string                     hash_value,
+                                           string                     title,
+                                           string                     body,
+                                           string                     extra_data,
+                                           post_update_operation::ext ext,
+                                           bool                       broadcast)
+{
+    return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, broadcast);
 }
 
 signed_transaction wallet_api::approve_proposal(

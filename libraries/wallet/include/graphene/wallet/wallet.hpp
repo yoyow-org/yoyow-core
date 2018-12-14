@@ -1080,8 +1080,7 @@ class wallet_api
       signed_transaction account_auth_platform(string account,
                                                string platform_owner,
 											   share_type limit_for_platform = 0,
-	                                           bool proxy_publish = false,
-	                                           bool proxy_liked = false,
+                                               uint32_t permission_flags = 0xFFFFFFFF,
                                                bool broadcast = false);
 
       /**
@@ -1346,6 +1345,60 @@ class wallet_api
                                         string           body,
                                         string           extra_data,
                                         bool broadcast = false);
+
+      /** create a post by poster and platform.
+      *
+      * Only platform and poster can create a post.
+      *
+      * @param platform the name or uid of the platform which create this license.
+      * @param poster the poster.
+      * @param hash_value the hash for this post.
+      * @param title the post`s title.
+      * @param body the post`s body.
+      * @param extra_data the post`s extra_data.
+      * @param origin_platform the origin post platform od the post.
+      * @param origin_poster the origin poster of the post.
+      * @param origin_post_pid the origin post id of the post.
+      * @param ext the post`s extensions.
+      * @param broadcast true to broadcast the transaction on the network.
+      * @returns the signed transaction.
+      */
+      signed_transaction create_post(string           platform,
+                                     string           poster,
+                                     string           hash_value,
+                                     string           title,
+                                     string           body,
+                                     string           extra_data,
+                                     string           origin_platform = "",
+                                     string           origin_poster = "",
+                                     string           origin_post_pid = "",
+                                     post_operation::ext ext = post_operation::ext(),
+                                     bool broadcast = false);
+
+      /** update a post by poster and platform.
+      *
+      * Only platform and poster can update a post.
+      *
+      * @param platform the name or uid of the platform which create this license.
+      * @param poster the poster.
+      * @param post_pid the poster`s id.
+      * @param hash_value the hash to update.
+      * @param title the title to update.
+      * @param body the body to update.
+      * @param extra_data the extra_data to update.
+      * @param ext the post`s extensions.
+      * @param broadcast true to broadcast the transaction on the network.
+      * @returns the signed transaction.
+      */
+      signed_transaction update_post(string           platform,
+                                     string           poster,
+                                     string           post_pid,
+                                     string           hash_value = "",
+                                     string           title = "",
+                                     string           body = "",
+                                     string           extra_data = "",
+                                     post_update_operation::ext ext = post_update_operation::ext(),
+                                     bool broadcast = false);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -1514,4 +1567,6 @@ FC_API( graphene::wallet::wallet_api,
         (reward_post_proxy_by_platform)
         (buyout_post)
         (create_license)
+        (create_post)
+        (update_post)
       )
