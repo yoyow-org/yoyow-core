@@ -228,6 +228,7 @@ namespace graphene { namespace chain {
 			 uint32_t total = 0;
 			 for (auto iter : receiptors)
 			 {
+                 FC_ASSERT(iter.second.cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The cur_ratio of receiptor should less then 70%");
 				 total += iter.second.cur_ratio;
 				 if (iter.second.to_buyout)
 					 FC_ASSERT(iter.second.cur_ratio >= iter.second.buyout_ratio, "buyout_ratio must less then cur_ratio");
