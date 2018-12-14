@@ -307,14 +307,16 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
 						   }
 						   else
 						   {
-							   s.prepaids_for_platform.insert(std::make_pair(platform_uid, account_statistics_object::Platform_Auth_Data()));
+                               account_statistics_object::Platform_Auth_Data plat_data;
+                               plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+                               plat_data.permission_flags = 0xFFFFFFFF;
+                               s.prepaids_for_platform.insert(std::make_pair(platform_uid, plat_data));
 							   auto iter = s.prepaids_for_platform.find(platform_uid);
 							   return &(iter->second);
 						   }
 					   };
 
 					   account_statistics_object::Platform_Auth_Data* plat_data = get_platform_auth_data(o.platform);
-
 					   if (ext.limit_for_platform.valid())
 						   plat_data->max_limit = *ext.limit_for_platform;
 					   if (ext.permission_flags.valid())
@@ -331,11 +333,10 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
        {
            d.modify(*from_account_stats, [&](account_statistics_object& s)
            {
-               s.prepaids_for_platform.insert(std::make_pair(o.platform, account_statistics_object::Platform_Auth_Data()));
-               auto iter = s.prepaids_for_platform.find(o.platform);
-               account_statistics_object::Platform_Auth_Data* plat_data = &(iter->second);
-               plat_data->max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
-               plat_data->permission_flags = 0xFFFFFFFF;
+               account_statistics_object::Platform_Auth_Data plat_data;
+               plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+               plat_data.permission_flags = 0xFFFFFFFF;
+               s.prepaids_for_platform.insert(std::make_pair(o.platform, plat_data));
            });
        }
    }
