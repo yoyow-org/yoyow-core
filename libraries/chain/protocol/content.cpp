@@ -199,7 +199,7 @@ void post_update_operation::validate()const
 			   {
 				   FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
 				   if (ext.buyout_ratio.valid())
-					   FC_ASSERT(ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The sum of receiptors` ratio must be 100%");
+					   FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The sum of receiptors` ratio must be 100%");
 			   }
 		   }
 	   }

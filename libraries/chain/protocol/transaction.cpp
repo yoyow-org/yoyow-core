@@ -164,7 +164,7 @@ struct sign_state
        *     returns if it's possible to satisfy the authority as the second item in the tuple,
        *     and the missed keys as the third item in the tuple
        */
-      std::tuple<bool,bool,flat_set<public_key_type>> check_authority( const authority* au, signed_information::sign_tree& parent = signed_information::sign_tree(), uint32_t depth = 0 )
+      std::tuple<bool,bool,flat_set<public_key_type>> check_authority( const authority* au, signed_information::sign_tree parent = signed_information::sign_tree(), uint32_t depth = 0 )
       {
          if( au == nullptr )
          {

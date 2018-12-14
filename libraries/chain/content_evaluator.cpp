@@ -1012,7 +1012,7 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
 		d.modify(post, [&](post_object& p) {
 			if (para.buyout_ratio < para.cur_ratio)
 			{
-				auto& old_receiptor = p.receiptors.find(op.receiptor_account_uid);
+				auto old_receiptor = p.receiptors.find(op.receiptor_account_uid);
 				old_receiptor->second.cur_ratio = para.cur_ratio - para.buyout_ratio;
 				old_receiptor->second.to_buyout = false;
 				old_receiptor->second.buyout_price = 0;
