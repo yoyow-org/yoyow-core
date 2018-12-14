@@ -220,7 +220,7 @@ namespace graphene { namespace chain {
 		   optional<share_type>           forward_price;
 		   optional<account_uid_type>     receiptor;
 		   optional<bool>                 to_buyout;
-		   optional<int8_t>               buyout_ratio;
+		   optional<uint32_t>             buyout_ratio;
 		   optional<share_type>           buyout_price;
            optional<license_lid_type>     license_lid;
            optional<uint16_t>             permission_flags;
