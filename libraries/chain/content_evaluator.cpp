@@ -482,6 +482,8 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                                                                                        ("p",op.platform)("a",op.poster));
                    FC_ASSERT(auth_data->second.proxy_post == true, "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
                                                                     ("p", op.platform)("a", op.poster));
+                   FC_ASSERT(account_stats->prepaid >= ext.forward_price, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+                       ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("a", op.poster)("n", ext.forward_price));
                    FC_ASSERT((auth_data->second.max_limit > auth_data->second.cur_used) 
                               && ((auth_data->second.max_limit - auth_data->second.cur_used) >= ext.forward_price), 
                               "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
@@ -884,6 +886,8 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
                                                                            ("p", op.platform)("a", op.poster));
         FC_ASSERT(auth_data->second.proxy_reward == true, "the proxy_reward of platform ${p} authorized by account ${a} is invalid. ",
                                                                            ("p", op.platform)("a", op.poster));
+        FC_ASSERT(account_stats->prepaid >= op.amount, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+                                                        ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("a", op.poster)("n", op.amount));
         FC_ASSERT((auth_data->second.max_limit > auth_data->second.cur_used)
             && ((auth_data->second.max_limit - auth_data->second.cur_used) >= op.amount),
             "Insufficient balance: unable to reward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
@@ -983,6 +987,8 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
         auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
         FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(), "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
                                                                            ("p", op.platform)("a", op.poster));
+        FC_ASSERT(account_stats->prepaid >= iter->second.buyout_price, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+            ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("a", op.poster)("n", iter->second.buyout_price));
         FC_ASSERT((auth_data->second.max_limit > auth_data->second.cur_used)
             && ((auth_data->second.max_limit - auth_data->second.cur_used) >= iter->second.buyout_price),
             "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",

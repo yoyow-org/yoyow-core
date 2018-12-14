@@ -167,7 +167,7 @@ void post_operation::validate()const
 				   auto itor = receiptor.find(platform);
 				   FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
 				   FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 30%");
-				   int8_t total = 0;
+				   uint32_t total = 0;
 				   for (auto iter : receiptor)
 				   {
 					   total += iter.second.cur_ratio;

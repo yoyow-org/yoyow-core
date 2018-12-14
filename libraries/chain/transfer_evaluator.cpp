@@ -41,6 +41,19 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
    validate_authorized_asset( d, *from_account, transfer_asset_object, "'from' " );
    validate_authorized_asset( d, *to_account,   transfer_asset_object, "'to' " );
 
+   account_uid_type sign_account = sigs.real_secondary_uid(op.from, 1);
+   const auto& account_stats = d.get_account_statistics_by_uid(op.from);
+   auto auth_data = account_stats.prepaids_for_platform.find(sign_account);
+   if (auth_data != account_stats.prepaids_for_platform.end())
+   {
+       FC_ASSERT(account_stats.prepaid >= op.amount.amount, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+           ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("a", op.from)("n", op.amount.amount));
+       FC_ASSERT((auth_data->second.max_limit > auth_data->second.cur_used)
+           && ((auth_data->second.max_limit - auth_data->second.cur_used) >= op.amount.amount),
+           "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
+           ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("p", sign_account)("a", op.from)("n", op.amount.amount));
+   }
+
    try {
 
       if( transfer_asset_object.is_transfer_restricted() )
