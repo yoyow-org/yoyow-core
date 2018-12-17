@@ -386,7 +386,8 @@ signed_information verify_authority( const vector<operation>& ops, const flat_ma
 
    for( const auto& auth : other )
    {
-      GRAPHENE_ASSERT(std::get<0>(s.check_authority(&auth, signed_information::sign_tree())), tx_missing_other_auth, "Missing Authority: ${auth}", ("auth", auth)("sigs", sigs));
+      auto s_tree=signed_information::sign_tree();
+      GRAPHENE_ASSERT(std::get<0>(s.check_authority(&auth, s_tree)), tx_missing_other_auth, "Missing Authority: ${auth}", ("auth", auth)("sigs", sigs));
    }
 
    GRAPHENE_ASSERT(
@@ -509,7 +510,8 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
 
    for( const auto& auth : required )
    {
-      const auto& result = s.check_authority( &auth, signed_information::sign_tree() );
+      auto s_tree=signed_information::sign_tree() ;
+      const auto& result = s.check_authority( &auth, s_tree );
       check_ok = check_ok && std::get<0>( result );
       if( std::get<1>( result ) ) //possible
       {

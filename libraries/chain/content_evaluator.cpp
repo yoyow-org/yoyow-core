@@ -487,11 +487,11 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                                                                                        ("p",op.platform)("a",op.poster));
                    FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Forward)>0, "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
                                                                     ("p", op.platform)("a", op.poster));
-                   FC_ASSERT(account_stats->prepaid >= ext.forward_price, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+                   FC_ASSERT(account_stats->prepaid >= *ext.forward_price, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                        ("c", (account_stats->prepaid))("a", op.poster)("n", ext.forward_price));
                    if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
                        FC_ASSERT((auth_data->second.max_limit > auth_data->second.cur_used) 
-                              && ((auth_data->second.max_limit - auth_data->second.cur_used) >= ext.forward_price), 
+                              && ((auth_data->second.max_limit - auth_data->second.cur_used) >= *ext.forward_price), 
                               "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
                               ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("p", op.platform)("a", op.poster)("n", ext.forward_price));
 			   }
