@@ -278,7 +278,7 @@ class database_api
                                                                         const full_account_query_options& options );
 
 
-      const account_statistics_object& get_account_statistics_by_uid(account_uid_type uid)const;
+      account_statistics_object get_account_statistics_by_uid(account_uid_type uid)const;
 
       /**
        * @brief Get an account by name
