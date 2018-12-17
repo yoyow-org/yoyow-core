@@ -125,8 +125,8 @@ void witness_plugin::plugin_startup()
       app().set_block_production(true);
       if( _production_enabled )
       {
-         if( d.head_block_num() == 0 )
-            new_chain_banner(d);
+         //if( d.head_block_num() == 0 )
+         //   new_chain_banner(d);
          _production_skip_flags |= graphene::chain::database::skip_undo_history_check;
       }
       schedule_production_loop();
