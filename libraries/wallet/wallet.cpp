@@ -994,6 +994,7 @@ public:
                                                       string account_name,
                                                       string registrar_account,
                                                       string referrer_account,
+                                                      uint32_t seed,
                                                       bool broadcast = false,
                                                       bool save_wallet = true)
    { try {
@@ -1012,6 +1013,7 @@ public:
          // TODO:  process when pay_from_account is ID
 
          account_object registrar_account_object = get_account( registrar_account );
+         account_object referrer_account_object = get_account(referrer_account);
 
          // TODO: review
          /*
@@ -1026,6 +1028,12 @@ public:
          account_create_op.name = account_name;
          account_create_op.owner = authority(1, owner_pubkey, 1);
          account_create_op.active = authority(1, active_pubkey, 1);
+         account_create_op.secondary = authority(1, owner_pubkey, 1);
+         account_create_op.uid = graphene::chain::calc_account_uid(seed);
+         account_reg_info reg_info;
+         reg_info.registrar = registrar_account_object.uid;
+         reg_info.referrer = referrer_account_object.uid;
+         account_create_op.reg_info = reg_info;
          account_create_op.memo_key = memo_pubkey;
 
          // current_fee_schedule()
@@ -1072,6 +1080,7 @@ public:
                                                     string account_name,
                                                     string registrar_account,
                                                     string referrer_account,
+                                                    uint32_t seed,
                                                     bool broadcast = false,
                                                     bool save_wallet = true)
    { try {
@@ -1079,7 +1088,7 @@ public:
       string normalized_brain_key = normalize_brain_key( brain_key );
       // TODO:  scan blockchain for accounts that exist with same brain key
       fc::ecc::private_key owner_privkey = derive_private_key( normalized_brain_key, 0 );
-      return create_account_with_private_key(owner_privkey, account_name, registrar_account, referrer_account, broadcast, save_wallet);
+      return create_account_with_private_key(owner_privkey, account_name, registrar_account, referrer_account, seed, broadcast, save_wallet);
    } FC_CAPTURE_AND_RETHROW( (account_name)(registrar_account)(referrer_account) ) }
 
 
@@ -3088,11 +3097,12 @@ signed_transaction wallet_api::register_account(string name,
 }
 signed_transaction wallet_api::create_account_with_brain_key(string brain_key, string account_name,
                                                              string registrar_account, string referrer_account,
+                                                             uint32_t id,
                                                              bool broadcast /* = false */)
 {
    return my->create_account_with_brain_key(
             brain_key, account_name, registrar_account,
-            referrer_account, broadcast
+            referrer_account, id, broadcast
             );
 }
 signed_transaction wallet_api::issue_asset(string to_account, string amount, string symbol,

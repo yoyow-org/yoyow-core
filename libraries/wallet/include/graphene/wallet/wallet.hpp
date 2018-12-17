@@ -637,6 +637,7 @@ class wallet_api
                                                        string account_name,
                                                        string registrar_account,
                                                        string referrer_account,
+                                                       uint32_t seed,
                                                        bool broadcast = false);
 
       /** Transfer an amount from one account to another.
@@ -1496,7 +1497,7 @@ FC_API( graphene::wallet::wallet_api,
         (calculate_account_uid)
         //(derive_owner_keys_from_brain_key)
         //(register_account)
-        //(create_account_with_brain_key)
+        (create_account_with_brain_key)
         (transfer)
         (override_transfer)
         //(transfer2)
