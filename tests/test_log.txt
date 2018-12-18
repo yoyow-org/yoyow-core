@@ -1,0 +1,27 @@
+
+#1.    import_key init 5JbLA2gCHs7T9XhrCpcMJoJk3Y8EA41Y6to87GuQwMHWoJ9ZHYH
+
+
+
+#2.    create_account_with_brain_key test1 test1 init init 120 true
+       create_account_with_brain_key test2 test2 init init 121 true
+	   create_account_with_brain_key test3 test3 init init 122 true
+	   create_account_with_brain_key test4 test4 init init 123 true
+	   create_account_with_brain_key test5 test5 init init 124 true
+	   create_account_with_brain_key test6 test6 init init 125 true
+	   create_account_with_brain_key test7 test7 init init 126 true
+	   create_account_with_brain_key test8 test8 init init 127 true
+	   create_account_with_brain_key test9 test9 init init 128 true
+	   create_account_with_brain_key test10 test10 init init 129 true
+	   
+	   
+#3.    transfer init test1 100000 YOYO "" true
+       transfer init test2 100000 YOYO "" true
+       transfer init test3 100000 YOYO "" true
+       transfer init test4 100000 YOYO "" true
+       transfer init test5 100000 YOYO "" true
+       transfer init test6 100000 YOYO "" true
+       transfer init test7 100000 YOYO "" true
+       transfer init test8 100000 YOYO "" true
+       transfer init test9 100000 YOYO "" true
+       transfer init test10 100000 YOYO "" true
