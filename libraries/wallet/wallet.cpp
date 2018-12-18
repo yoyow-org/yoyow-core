@@ -1943,9 +1943,10 @@ signed_transaction account_cancel_auth_platform(string account,
                                       to_account.memo_key, memo);
          }
 
+      xfer_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ xfer_op }).at(0).min_fee));
       signed_transaction tx;
       tx.operations.push_back(xfer_op);
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      //set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
