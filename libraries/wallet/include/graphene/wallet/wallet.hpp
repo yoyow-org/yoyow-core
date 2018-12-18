@@ -659,6 +659,15 @@ class wallet_api
                                   string memo,
                                   bool broadcast = false);
 
+      signed_transaction transfer_extension(string from,
+                                            string to,
+                                            string amount,
+                                            string asset_symbol,
+                                            string memo,
+                                            bool isfrom_balance = true,
+                                            bool isto_balance = true,
+                                            bool broadcast = false);
+
       /** Force one account to transfer an amount to another account, can only used by asset issuer.
        * @param from the name or id of the account sending the funds
        * @param to the name or id of the account receiving the funds
@@ -1425,6 +1434,8 @@ class wallet_api
                                      string           extra_data = "",
                                      post_update_operation::ext ext = post_update_operation::ext(),
                                      bool broadcast = false);
+
+      account_statistics_object get_account_statistics(string account);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -1524,6 +1535,7 @@ FC_API( graphene::wallet::wallet_api,
         //(register_account)
         (create_account_with_brain_key)
         (transfer)
+        (transfer_extension)
         (override_transfer)
         //(transfer2)
         (get_transaction_id)
@@ -1598,4 +1610,5 @@ FC_API( graphene::wallet::wallet_api,
         (create_license)
         (create_post)
         (update_post)
+        (get_account_statistics)
       )

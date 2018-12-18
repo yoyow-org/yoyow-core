@@ -1952,6 +1952,51 @@ signed_transaction account_cancel_auth_platform(string account,
       return sign_transaction(tx, broadcast);
    } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(broadcast) ) }
 
+   signed_transaction transfer_extension(string from, string to, string amount,
+                               string asset_symbol, string memo, bool isfrom_balance = true, bool isto_balance = true, bool broadcast = false)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
+           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+
+           account_object from_account = get_account(from);
+           account_object to_account = get_account(to);
+
+           transfer_operation xfer_op;
+           xfer_op.extensions = extension< transfer_operation::ext >();
+           if (isfrom_balance)
+               xfer_op.extensions->value.from_balance = asset_obj->amount_from_string(amount);
+           else
+               xfer_op.extensions->value.from_prepaid = asset_obj->amount_from_string(amount);
+           if (isto_balance)
+               xfer_op.extensions->value.to_balance = asset_obj->amount_from_string(amount);
+           else
+               xfer_op.extensions->value.to_prepaid = asset_obj->amount_from_string(amount);
+
+           xfer_op.from = from_account.uid;
+           xfer_op.to = to_account.uid;
+           xfer_op.amount = asset_obj->amount_from_string(amount);
+
+           if (memo.size())
+           {
+               xfer_op.memo = memo_data();
+               xfer_op.memo->from = from_account.memo_key;
+               xfer_op.memo->to = to_account.memo_key;
+               xfer_op.memo->set_message(get_private_key(from_account.memo_key),
+                   to_account.memo_key, memo);
+           }
+
+           xfer_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ xfer_op }).at(0).min_fee));
+           signed_transaction tx;
+           tx.operations.push_back(xfer_op);
+           //set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((from)(to)(amount)(asset_symbol)(memo)(isfrom_balance)(isto_balance)(broadcast))
+   }
+
    signed_transaction override_transfer(string from, string to, string amount,
                                string asset_symbol, string memo, bool broadcast = false)
    { try {
@@ -2420,6 +2465,16 @@ signed_transaction account_cancel_auth_platform(string account,
 
            return sign_transaction(tx, broadcast);
        } FC_CAPTURE_AND_RETHROW((platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext)(broadcast))
+   }
+
+   account_statistics_object get_account_statistics(string account)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           account_uid_type account_uid = get_account_uid(account);
+           account_statistics_object plat_account_statistics = _remote_db->get_account_statistics_by_uid(account_uid);
+           return plat_account_statistics;
+       } FC_CAPTURE_AND_RETHROW((account))
    }
 
    signed_transaction approve_proposal(
@@ -3200,6 +3255,12 @@ signed_transaction wallet_api::transfer(string from, string to, string amount,
    return my->transfer(from, to, amount, asset_symbol, memo, broadcast);
 }
 
+signed_transaction wallet_api::transfer_extension(string from, string to, string amount,
+    string asset_symbol, string memo, bool isfrom_balance, bool isto_balance, bool broadcast)
+{
+    return my->transfer_extension(from, to, amount, asset_symbol, memo, isfrom_balance, isto_balance, broadcast);
+}
+
 signed_transaction wallet_api::override_transfer(string from, string to, string amount,
                                         string asset_symbol, string memo, bool broadcast /* = false */)
 {
@@ -3633,6 +3694,11 @@ signed_transaction wallet_api::update_post(string                     platform,
                                            bool                       broadcast)
 {
     return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, broadcast);
+}
+
+account_statistics_object wallet_api::get_account_statistics(string account)
+{
+    return my->get_account_statistics(account);
 }
 
 signed_transaction wallet_api::approve_proposal(
