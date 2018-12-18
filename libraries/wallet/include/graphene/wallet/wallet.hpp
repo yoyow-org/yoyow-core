@@ -1245,6 +1245,31 @@ class wallet_api
          bool broadcast = false
          );
 
+      signed_transaction proposal_create(const string              fee_paying_account,
+                                         const vector<op_wrapper>  proposed_ops,
+                                         time_point_sec            expiration_time,
+                                         uint32_t                  review_period_seconds,
+                                         bool                      broadcast = false
+                                         );
+
+      signed_transaction proposal_update(const string                      fee_paying_account,
+                                         proposal_id_type                  proposal,
+                                         const flat_set<account_uid_type>  secondary_approvals_to_add,
+                                         const flat_set<account_uid_type>  secondary_approvals_to_remove,
+                                         const flat_set<account_uid_type>  active_approvals_to_add,
+                                         const flat_set<account_uid_type>  active_approvals_to_remove,
+                                         const flat_set<account_uid_type>  owner_approvals_to_add,
+                                         const flat_set<account_uid_type>  owner_approvals_to_remove,
+                                         const flat_set<public_key_type>   key_approvals_to_add,
+                                         const flat_set<public_key_type>   key_approvals_to_remove,
+                                         bool                              broadcast = false
+                                         );
+
+      signed_transaction proposal_delete(const string              fee_paying_account,
+                                         proposal_id_type          proposal,
+                                         bool                      broadcast = false
+                                         );
+
 
       /** Creates a score object for a post object by from_account.
       *
@@ -1518,6 +1543,9 @@ FC_API( graphene::wallet::wallet_api,
         (list_committee_proposals)
         (committee_proposal_create)
         (committee_proposal_vote)
+        (proposal_create)
+        (proposal_update)
+        (proposal_delete)
         (create_witness)
         (update_witness)
         (get_witness)

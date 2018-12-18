@@ -2118,6 +2118,88 @@ signed_transaction account_cancel_auth_platform(string account,
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (committee_member_account)(proposal_number)(opinion)(broadcast) ) }
 
+   signed_transaction proposal_create(const string              fee_paying_account,
+                                      const vector<op_wrapper>  proposed_ops,
+                                      time_point_sec            expiration_time,
+                                      uint32_t                  review_period_seconds,
+                                      bool                      broadcast = false
+                                      )
+   {
+       try {
+           proposal_create_operation op;
+           op.fee_paying_account = get_account_uid(fee_paying_account);
+           op.proposed_ops = proposed_ops;
+           op.expiration_time = expiration_time;
+           op.review_period_seconds = review_period_seconds;
+
+           signed_transaction tx;
+           tx.operations.push_back(op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+
+       } FC_CAPTURE_AND_RETHROW((fee_paying_account)(proposed_ops)(expiration_time)(review_period_seconds)(broadcast))
+   }
+
+   signed_transaction proposal_update(const string                      fee_paying_account,
+                                      proposal_id_type                  proposal,
+                                      const flat_set<account_uid_type>  secondary_approvals_to_add,
+                                      const flat_set<account_uid_type>  secondary_approvals_to_remove,
+                                      const flat_set<account_uid_type>  active_approvals_to_add,
+                                      const flat_set<account_uid_type>  active_approvals_to_remove,
+                                      const flat_set<account_uid_type>  owner_approvals_to_add,
+                                      const flat_set<account_uid_type>  owner_approvals_to_remove,
+                                      const flat_set<public_key_type>   key_approvals_to_add,
+                                      const flat_set<public_key_type>   key_approvals_to_remove,
+                                      bool                              broadcast = false
+                                      )
+   {
+       try {
+           proposal_update_operation op;
+           op.fee_paying_account = get_account_uid(fee_paying_account);
+           op.proposal = proposal;
+           
+           op.secondary_approvals_to_add    = secondary_approvals_to_add;
+           op.secondary_approvals_to_remove = secondary_approvals_to_remove;
+           op.active_approvals_to_add       = active_approvals_to_add;
+           op.active_approvals_to_remove    = active_approvals_to_remove;
+           op.owner_approvals_to_add        = owner_approvals_to_add; 
+           op.owner_approvals_to_remove     = owner_approvals_to_remove;
+           op.key_approvals_to_add          = key_approvals_to_add;
+           op.key_approvals_to_remove       = key_approvals_to_remove;
+
+           signed_transaction tx;
+           tx.operations.push_back(op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+
+       } FC_CAPTURE_AND_RETHROW((fee_paying_account)(proposal)(secondary_approvals_to_add)(secondary_approvals_to_remove)(active_approvals_to_add)(active_approvals_to_remove)
+           (owner_approvals_to_add)(owner_approvals_to_remove)(key_approvals_to_add)(key_approvals_to_remove)(broadcast))
+   }
+
+   signed_transaction proposal_delete(const string              fee_paying_account,
+                                      proposal_id_type          proposal,
+                                      bool                      broadcast = false
+                                      )
+   {
+       try {
+           proposal_delete_operation op;
+           op.fee_paying_account = get_account_uid(fee_paying_account);
+           op.proposal = proposal;
+
+           signed_transaction tx;
+           tx.operations.push_back(op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+
+       } FC_CAPTURE_AND_RETHROW((fee_paying_account)(proposal)(broadcast))
+   }
+
    signed_transaction score_a_post(string from_account,
                                    string platform,
                                    string poster,
@@ -3435,6 +3517,41 @@ signed_transaction wallet_api::committee_proposal_vote(
    )
 {
    return my->committee_proposal_vote( committee_member_account, proposal_number, opinion, broadcast );
+}
+
+signed_transaction wallet_api::proposal_create(const string              fee_paying_account,
+                                               const vector<op_wrapper>  proposed_ops,
+                                               time_point_sec            expiration_time,
+                                               uint32_t                  review_period_seconds,
+                                               bool                      broadcast
+                                               )
+{
+    return my->proposal_create(fee_paying_account, proposed_ops, expiration_time, review_period_seconds, broadcast);
+}
+
+signed_transaction wallet_api::proposal_update(const string                      fee_paying_account,
+                                               proposal_id_type                  proposal,
+                                               const flat_set<account_uid_type>  secondary_approvals_to_add,
+                                               const flat_set<account_uid_type>  secondary_approvals_to_remove,
+                                               const flat_set<account_uid_type>  active_approvals_to_add,
+                                               const flat_set<account_uid_type>  active_approvals_to_remove,
+                                               const flat_set<account_uid_type>  owner_approvals_to_add,
+                                               const flat_set<account_uid_type>  owner_approvals_to_remove,
+                                               const flat_set<public_key_type>   key_approvals_to_add,
+                                               const flat_set<public_key_type>   key_approvals_to_remove,
+                                               bool                              broadcast
+                                               )
+{
+    return my->proposal_update(fee_paying_account, proposal, secondary_approvals_to_add, secondary_approvals_to_remove, active_approvals_to_add,
+        active_approvals_to_remove, owner_approvals_to_add, owner_approvals_to_remove, key_approvals_to_add, key_approvals_to_remove, broadcast);
+}
+
+signed_transaction wallet_api::proposal_delete(const string              fee_paying_account,
+                                               proposal_id_type          proposal,
+                                               bool                      broadcast
+                                               )
+{
+    return my->proposal_delete(fee_paying_account, proposal, broadcast);
 }
 
 signed_transaction wallet_api::score_a_post(string         from_account,
