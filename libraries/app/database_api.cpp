@@ -125,6 +125,13 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const uint32_t limit )const;
+      optional<score_object> get_score(const account_uid_type platform,
+                                       const account_uid_type poster_uid,
+                                       const post_pid_type    post_pid,
+                                       const account_uid_type from_account)const;
+
+      optional<license_object> get_license(const account_uid_type platform,
+                                           const license_lid_type license_lid)const;
 
       // Balances
       vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
@@ -1057,22 +1064,58 @@ uint64_t database_api_impl::get_platform_count()const
    return _db.get_index_type< platform_index >().indices().get< by_valid >().count( true );
 }
 
-optional<post_object> database_api::get_post( const account_uid_type platform_owner,
-                                              const account_uid_type poster_uid,
-                                              const post_pid_type post_pid )const
+post_object database_api::get_post( const account_uid_type platform_owner,
+                                    const account_uid_type poster_uid,
+                                    const post_pid_type post_pid )const
 {
-   return my->get_post( platform_owner, poster_uid, post_pid );
+    return my->get_post(platform_owner, poster_uid, post_pid).valid() ? *(my->get_post(platform_owner, poster_uid, post_pid)) : post_object{};
 }
 
-optional<post_object> database_api_impl::get_post( const account_uid_type platform_owner,
-                                                   const account_uid_type poster_uid,
-                                                   const post_pid_type post_pid )const
+optional<post_object> database_api_impl::get_post(const account_uid_type platform_owner,
+                                                  const account_uid_type poster_uid,
+                                                  const post_pid_type post_pid )const
 {
    if( auto o = _db.find_post_by_platform( platform_owner, poster_uid, post_pid ) )
    {
       return *o;
    }
    return {};
+}
+
+score_object database_api::get_score(const account_uid_type platform,
+                                     const account_uid_type poster_uid,
+                                     const post_pid_type post_pid,
+                                     const account_uid_type from_account)const
+{
+    return my->get_score(platform, poster_uid, post_pid, from_account).valid() ? *(my->get_score(platform, poster_uid, post_pid, from_account)) : score_object{};
+}
+
+optional<score_object> database_api_impl::get_score(const account_uid_type platform,
+                                                    const account_uid_type poster_uid,
+                                                    const post_pid_type post_pid,
+                                                    const account_uid_type from_account)const
+{
+    if (auto o = _db.find_score(platform, poster_uid, post_pid, from_account))
+    {
+        return *o;
+    }
+    return{};
+}
+
+license_object database_api::get_license(const account_uid_type platform,
+                                         const license_lid_type license_lid)const
+{
+    return my->get_license(platform, license_lid).valid() ? *(my->get_license(platform, license_lid)) : license_object{};
+}
+
+optional<license_object> database_api_impl::get_license(const account_uid_type platform,
+                                                        const license_lid_type license_lid)const
+{
+    if (auto o = _db.find_license_by_platform(platform, license_lid))
+    {
+        return *o;
+    }
+    return{};
 }
 
 vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_owner,

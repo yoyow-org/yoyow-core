@@ -350,6 +350,17 @@ namespace graphene { namespace chain {
                                               account_uid_type poster,
                                               post_pid_type post_pid )const;
 
+         const license_object& get_license_by_platform(account_uid_type platform, license_lid_type license_lid)const;
+         const license_object* find_license_by_platform(account_uid_type platform, license_lid_type license_lid)const;
+         const score_object& get_score(account_uid_type platform,
+                                       account_uid_type poster,
+                                       post_pid_type post_pid,
+                                       account_uid_type from_account)const;
+         const score_object* find_score(account_uid_type platform,
+                                        account_uid_type poster,
+                                        post_pid_type post_pid,
+                                        account_uid_type from_account)const;
+
          //////////////////// db_init.cpp ////////////////////
 
          void initialize_evaluators();

@@ -1411,6 +1411,8 @@ class wallet_api
                                      post_operation::ext ext = post_operation::ext(),
                                      bool broadcast = false);
 
+      post_operation::ext test_ext();
+
       /** update a post by poster and platform.
       *
       * Only platform and poster can update a post.
@@ -1435,6 +1437,18 @@ class wallet_api
                                      string           extra_data = "",
                                      post_update_operation::ext ext = post_update_operation::ext(),
                                      bool broadcast = false);
+
+      post_object get_post( string platform_owner,
+                            string poster_uid,
+                            string post_pid );
+
+      score_object get_score(string platform,
+                             string poster_uid,
+                             string post_pid,
+                             string from_account);
+
+      license_object get_license(string platform,
+                                 string license_lid);
 
       account_statistics_object get_account_statistics(string account);
          
@@ -1517,7 +1531,7 @@ FC_API( graphene::wallet::wallet_api,
         //(sign_builder_transaction)
         //(propose_builder_transaction)
         //(remove_builder_transaction)
-        //(approve_proposal)
+        (approve_proposal)
         //(list_proposals)
         (is_new)
         (is_locked)
@@ -1611,5 +1625,9 @@ FC_API( graphene::wallet::wallet_api,
         (create_license)
         (create_post)
         (update_post)
+        (get_post)
+        (get_score)
+        (get_license)
         (get_account_statistics)
+        (test_ext)
       )

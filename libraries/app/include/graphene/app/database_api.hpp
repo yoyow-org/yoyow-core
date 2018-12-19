@@ -396,9 +396,17 @@ class database_api
        * @param post_pid pid of the post
        * @return The post corresponding to the provided parameters.
        */
-      optional<post_object> get_post( const account_uid_type platform_owner,
-                                      const account_uid_type poster_uid,
-                                      const post_pid_type post_pid )const;
+      post_object get_post( const account_uid_type platform_owner,
+                            const account_uid_type poster_uid,
+                            const post_pid_type    post_pid )const;
+
+      score_object get_score(const account_uid_type platform,
+                             const account_uid_type poster_uid,
+                             const post_pid_type    post_pid,
+                             const account_uid_type from_account)const;
+
+      license_object get_license(const account_uid_type platform,
+                                 const license_lid_type license_lid)const;
 
       /**
        * @brief Get posts by platform plus poster
@@ -661,6 +669,8 @@ FC_API( graphene::app::database_api,
    (get_platform_count)
    (get_post)
    (get_posts_by_platform_poster)
+   (get_score)
+   (get_license)
 
    // Balances
    (get_account_balances)

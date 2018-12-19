@@ -2409,12 +2409,12 @@ signed_transaction account_cancel_auth_platform(string account,
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
 
-           account_uid_type platform_uid = get_account_uid(platform);
-           const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
+           account_uid_type poster_uid = get_account_uid(poster);
+           const account_statistics_object& poster_account_statistics = _remote_db->get_account_statistics_by_uid(poster_uid);
            post_operation create_op;
-           create_op.post_pid = plat_account_statistics.last_post_sequence + 1;
-           create_op.platform = platform_uid;
-           create_op.poster = get_account_uid(poster);
+           create_op.post_pid = poster_account_statistics.last_post_sequence + 1;
+           create_op.platform = get_account_uid(platform);
+           create_op.poster = poster_uid;
            if (!origin_platform.empty())
                create_op.origin_platform = get_account_uid(origin_platform);
            if (!origin_poster.empty())
@@ -2476,6 +2476,45 @@ signed_transaction account_cancel_auth_platform(string account,
 
            return sign_transaction(tx, broadcast);
        } FC_CAPTURE_AND_RETHROW((platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext)(broadcast))
+   }
+
+   post_object get_post(string platform_owner,
+                        string poster_uid,
+                        string post_pid)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           post_pid_type postid = fc::to_uint64(fc::string(post_pid));
+           account_uid_type platform = get_account_uid(platform_owner);
+           account_uid_type poster = get_account_uid(poster_uid);
+           return _remote_db->get_post(platform, poster, postid);
+       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(post_pid))
+   }
+
+   score_object get_score(string platform,
+                          string poster_uid,
+                          string post_pid,
+                          string from_account)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           post_pid_type postid = fc::to_uint64(fc::string(post_pid));
+           account_uid_type platform_uid = get_account_uid(platform);
+           account_uid_type poster = get_account_uid(poster_uid);
+           account_uid_type from_uid = get_account_uid(from_account);
+           return _remote_db->get_score(platform_uid, poster, postid, from_uid);
+       } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(from_account))
+   }
+
+   license_object get_license(string platform,
+                              string license_lid)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           account_uid_type platform_uid = get_account_uid(platform);
+           license_lid_type lid = fc::to_uint64(fc::string(license_lid));;
+           return _remote_db->get_license(platform_uid, lid);
+       } FC_CAPTURE_AND_RETHROW((platform)(license_lid))
    }
 
    account_statistics_object get_account_statistics(string account)
@@ -3695,6 +3734,11 @@ signed_transaction wallet_api::create_post(string              platform,
     return my->create_post(platform, poster, hash_value, title, body, extra_data, origin_platform, origin_poster, origin_post_pid, ext, broadcast);
 }
 
+post_operation::ext wallet_api::test_ext()
+{
+    return post_operation::ext();
+}
+
 signed_transaction wallet_api::update_post(string                     platform,
                                            string                     poster,
                                            string                     post_pid,
@@ -3706,6 +3750,27 @@ signed_transaction wallet_api::update_post(string                     platform,
                                            bool                       broadcast)
 {
     return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, broadcast);
+}
+
+post_object wallet_api::get_post(string platform_owner,
+                                 string poster_uid,
+                                 string post_pid)
+{
+    return my->get_post(platform_owner, poster_uid, post_pid);
+}
+
+score_object wallet_api::get_score(string platform,
+                                   string poster_uid,
+                                   string post_pid,
+                                   string from_account)
+{
+    return my->get_score(platform, poster_uid, post_pid, from_account);
+}
+
+license_object wallet_api::get_license(string platform,
+                                       string license_lid)
+{
+    return my->get_license(platform, license_lid);
 }
 
 account_statistics_object wallet_api::get_account_statistics(string account)

@@ -304,4 +304,50 @@ const post_object* database::find_post_by_platform( account_uid_type platform,
       return nullptr;
 }
 
+const license_object& database::get_license_by_platform(account_uid_type platform, license_lid_type license_lid)const
+{
+    const auto& license_by_lid = get_index_type<license_index>().indices().get<by_license_lid>();
+    auto itr = license_by_lid.find(std::make_tuple(platform, license_lid));
+    FC_ASSERT(itr != license_by_lid.end(),
+        "license ${platform}_${lid} not found.",
+        ("platform", platform)("lid", license_lid));
+    return *itr;
+}
+
+const license_object* database::find_license_by_platform(account_uid_type platform, license_lid_type license_lid)const
+{
+    const auto& license_by_lid = get_index_type<license_index>().indices().get<by_license_lid>();
+    auto itr = license_by_lid.find(std::make_tuple(platform, license_lid));
+    if (itr != license_by_lid.end())
+        return &(*itr);
+    else
+        return nullptr;
+}
+
+const score_object& database::get_score(account_uid_type platform,
+                                        account_uid_type poster,
+                                        post_pid_type post_pid,
+                                        account_uid_type from_account)const
+{
+    const auto& scores_by_pid = get_index_type<score_index>().indices().get<by_posts_pid>();
+    auto itr = scores_by_pid.find(std::make_tuple(platform, poster, post_pid, from_account));
+    FC_ASSERT(itr != scores_by_pid.end(),
+        "score ${platform}_${uid}_${post_pid}_${from_id} not found.",
+        ("platform", platform)("uid", poster)("post_pid", post_pid)("from_id", from_account));
+    return *itr;
+}
+
+const score_object* database::find_score(account_uid_type platform,
+                                        account_uid_type poster,
+                                        post_pid_type post_pid,
+                                        account_uid_type from_account)const
+{
+    const auto& scores_by_pid = get_index_type<score_index>().indices().get<by_posts_pid>();
+    auto itr = scores_by_pid.find(std::make_tuple(platform, poster, post_pid, from_account));
+    if (itr != scores_by_pid.end())
+        return &(*itr);
+    else
+        return nullptr;
+}
+
 } }

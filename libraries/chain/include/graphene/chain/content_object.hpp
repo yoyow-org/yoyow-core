@@ -379,12 +379,13 @@ namespace graphene { namespace chain {
 	   indexed_by<
 	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
 		  ordered_non_unique< tag<by_from_account_uid>, member< score_object, account_uid_type, &score_object::from_account_uid> >,
-          ordered_non_unique< tag<by_posts_pid>, 
+          ordered_unique< tag<by_posts_pid>, 
                               composite_key<
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::platform >,
                                   member< score_object, account_uid_type, &score_object::poster >,
-                                  member< score_object, post_pid_type, &score_object::post_pid >
+                                  member< score_object, post_pid_type, &score_object::post_pid >,
+                                  member< score_object, account_uid_type, &score_object::from_account_uid >
                               > >,
 		  ordered_non_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
        >
