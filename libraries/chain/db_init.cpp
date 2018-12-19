@@ -153,6 +153,7 @@ void database::initialize_evaluators()
    register_evaluator<platform_vote_update_evaluator>();
    register_evaluator<score_create_evaluator>();
    register_evaluator<reward_evaluator>();
+   register_evaluator<reward_proxy_evaluator>();
    register_evaluator<buyout_evaluator>();
    register_evaluator<post_evaluator>();
    register_evaluator<post_update_evaluator>();
