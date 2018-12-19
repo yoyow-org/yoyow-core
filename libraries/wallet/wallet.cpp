@@ -891,6 +891,7 @@ public:
                                        string  registrar_account,
                                        string  referrer_account,
                                        uint32_t referrer_percent,
+                                       uint32_t seed,
                                        bool broadcast = false)
    { try {
       FC_ASSERT( !self.is_locked() );
@@ -904,7 +905,10 @@ public:
 
       account_object registrar_account_object =
             this->get_account( registrar_account );
-      FC_ASSERT( registrar_account_object.is_lifetime_member() );
+      //FC_ASSERT( registrar_account_object.is_lifetime_member() );
+
+      account_object referrer_account_object =
+         this->get_account(referrer_account);
 
       // TODO review
       /*
@@ -920,7 +924,13 @@ public:
       account_create_op.name = name;
       account_create_op.owner = authority(1, owner, 1);
       account_create_op.active = authority(1, active, 1);
+      account_create_op.secondary = authority(1, owner, 1);
       account_create_op.memo_key = active;
+      account_create_op.uid = graphene::chain::calc_account_uid(seed);
+      account_reg_info reg_info;
+      reg_info.registrar = registrar_account_object.uid;
+      reg_info.referrer = referrer_account_object.uid;
+      account_create_op.reg_info = reg_info;
 
       signed_transaction tx;
 
@@ -1644,9 +1654,10 @@ signed_transaction account_cancel_auth_platform(string account,
       cc_op.amount = asset_obj->amount_from_string(amount);
       cc_op.time = time;
 
+      cc_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ cc_op }).at(0).min_fee));
       signed_transaction tx;
       tx.operations.push_back(cc_op);
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      //set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -1943,10 +1954,10 @@ signed_transaction account_cancel_auth_platform(string account,
                                       to_account.memo_key, memo);
          }
 
-      xfer_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ xfer_op }).at(0).min_fee));
+      //xfer_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ xfer_op }).at(0).min_fee));
       signed_transaction tx;
       tx.operations.push_back(xfer_op);
-      //set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -3229,9 +3240,10 @@ signed_transaction wallet_api::register_account(string name,
                                                 string  registrar_account,
                                                 string  referrer_account,
                                                 uint32_t referrer_percent,
+                                                uint32_t seed,
                                                 bool broadcast)
 {
-   return my->register_account( name, owner_pubkey, active_pubkey, registrar_account, referrer_account, referrer_percent, broadcast );
+   return my->register_account(name, owner_pubkey, active_pubkey, registrar_account, referrer_account, referrer_percent, seed, broadcast);
 }
 signed_transaction wallet_api::create_account_with_brain_key(string brain_key, string account_name,
                                                              string registrar_account, string referrer_account,

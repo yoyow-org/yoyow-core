@@ -613,6 +613,7 @@ class wallet_api
                                           string  registrar_account,
                                           string  referrer_account,
                                           uint32_t referrer_percent,
+                                          uint32_t seed,
                                           bool broadcast = false);
 
       /** Creates a new account and registers it on the blockchain.
@@ -1532,7 +1533,7 @@ FC_API( graphene::wallet::wallet_api,
         (suggest_brain_key)
         (calculate_account_uid)
         //(derive_owner_keys_from_brain_key)
-        //(register_account)
+        (register_account)
         (create_account_with_brain_key)
         (transfer)
         (transfer_extension)
