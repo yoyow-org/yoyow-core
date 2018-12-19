@@ -95,3 +95,27 @@
        transfer_extension test8 test8 5000 YOYO "" true false true 
        transfer_extension test9 test9 5000 YOYO "" true false true 
        transfer_extension test10 test10 5000 YOYO "" true false true    
+	   
+
+       create_license platform_account1 1 123456789 license_one dingdngdangdingdingdang extra true
+	   
+	   create_post platform_account1 test1 987456321 postname postbody postextry "" "" "" {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true
+	   
+	   account_manage init test1 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test2 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test3 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test4 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test5 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test6 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test7 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test8 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test9 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test10 {can_post : null, can_reply : true, can_rate : true} true
+
+	   create_post platform_account1 test2 945456321 commentname commentbody commentextry platform_account1 test1 2 {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true
+	   
+	   score_a_post test2 platform_account1 test1 2 5 10 true
+	   
+	   reward_post test3 platform_account1 test1 2 1000 YOYO true
+	   
+	   

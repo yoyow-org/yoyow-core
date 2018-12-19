@@ -2478,6 +2478,29 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext)(broadcast))
    }
 
+   signed_transaction account_manage(string executor,
+                                     string account,
+                                     account_manage_operation::opt options,
+                                     bool broadcast = false
+                                     )
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+           account_manage_operation manage_op;
+           manage_op.account = get_account_uid(account);
+           manage_op.executor = get_account_uid(executor);
+           manage_op.options.value = options;
+
+           signed_transaction tx;
+           tx.operations.push_back(manage_op);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           tx.validate();
+
+           return sign_transaction(tx, broadcast);
+       } FC_CAPTURE_AND_RETHROW((executor)(account)(options)(broadcast))
+   }
+
    post_object get_post(string platform_owner,
                         string poster_uid,
                         string post_pid)
@@ -3734,11 +3757,6 @@ signed_transaction wallet_api::create_post(string              platform,
     return my->create_post(platform, poster, hash_value, title, body, extra_data, origin_platform, origin_poster, origin_post_pid, ext, broadcast);
 }
 
-post_operation::ext wallet_api::test_ext()
-{
-    return post_operation::ext();
-}
-
 signed_transaction wallet_api::update_post(string                     platform,
                                            string                     poster,
                                            string                     post_pid,
@@ -3750,6 +3768,15 @@ signed_transaction wallet_api::update_post(string                     platform,
                                            bool                       broadcast)
 {
     return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, broadcast);
+}
+
+signed_transaction wallet_api::account_manage(string executor,
+                                              string account,
+                                              account_manage_operation::opt options,
+                                              bool broadcast
+                                              )
+{
+    return my->account_manage(executor,account, options, broadcast);
 }
 
 post_object wallet_api::get_post(string platform_owner,

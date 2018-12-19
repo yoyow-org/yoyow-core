@@ -1411,8 +1411,6 @@ class wallet_api
                                      post_operation::ext ext = post_operation::ext(),
                                      bool broadcast = false);
 
-      post_operation::ext test_ext();
-
       /** update a post by poster and platform.
       *
       * Only platform and poster can update a post.
@@ -1437,6 +1435,12 @@ class wallet_api
                                      string           extra_data = "",
                                      post_update_operation::ext ext = post_update_operation::ext(),
                                      bool broadcast = false);
+
+      signed_transaction account_manage(string executor,
+                                        string account,
+                                        account_manage_operation::opt options,
+                                        bool broadcast = false
+                                        );
 
       post_object get_post( string platform_owner,
                             string poster_uid,
@@ -1625,9 +1629,9 @@ FC_API( graphene::wallet::wallet_api,
         (create_license)
         (create_post)
         (update_post)
+        (account_manage)
         (get_post)
         (get_score)
         (get_license)
         (get_account_statistics)
-        (test_ext)
       )

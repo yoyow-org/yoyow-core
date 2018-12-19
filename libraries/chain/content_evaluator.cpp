@@ -848,7 +848,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 			surplus -= temp;
 			d.adjust_balance(iter.first, ast);
 		}
-		ast.amount = surplus;
+        ast.amount = surplus.convert_to<int64_t>();
 		d.adjust_balance(post->platform, ast);
 
 		if (active_post)
