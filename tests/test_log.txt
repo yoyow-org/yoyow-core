@@ -1,18 +1,47 @@
 
-#1.    import_key init 5JbLA2gCHs7T9XhrCpcMJoJk3Y8EA41Y6to87GuQwMHWoJ9ZHYH
+#1.  import_key init 5JbLA2gCHs7T9XhrCpcMJoJk3Y8EA41Y6to87GuQwMHWoJ9ZHYH
 
 
+#2.  collect_csaf init init 1000 YOYO 1545126370 true
 
-#2.    create_account_with_brain_key test1 test1 init init 120 true
-       create_account_with_brain_key test2 test2 init init 121 true
-	   create_account_with_brain_key test3 test3 init init 122 true
-	   create_account_with_brain_key test4 test4 init init 123 true
-	   create_account_with_brain_key test5 test5 init init 124 true
-	   create_account_with_brain_key test6 test6 init init 125 true
-	   create_account_with_brain_key test7 test7 init init 126 true
-	   create_account_with_brain_key test8 test8 init init 127 true
-	   create_account_with_brain_key test9 test9 init init 128 true
-	   create_account_with_brain_key test10 test10 init init 129 true
+#2.    	
+	{"private_key":"5KV3RG172g6wcsainBmdpPFYAFBniWxJkFSLJh2YY46VkkBJeVh","public_key":"YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj"},
+	{"private_key":"5JDJdcFrx6HEbQ9etbMuhQ5EMwmqTGBNYAAVQLWjtc5wLaZBiAf","public_key":"YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT"},
+	{"private_key":"5KVFzJdUnaiNrMBEvoUjPbMT9fXP296hCxDVtTh21h45NSDeVse","public_key":"YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv"},
+	{"private_key":"5JK77TMRzcjqq52u4HSdqcZ1h8PEL2PicrRpvNabZf2tqg8B7YU","public_key":"YYW7AJq5qvubh1dyWejRoi79tCyuiKwxs3tNLDrbuYFupfa2T5hZm"},
+	{"private_key":"5HsHVHc8ryekCvqkWoJKcrchq2kSPYrhNZtsGMQ5A1FZV7iDWjJ","public_key":"YYW6k64kZUJp8H9i7GLvmv8ZcideUrVEVwHmMJVqXvHcyzv6qURaD"},
+	{"private_key":"5HqQQde5GQHc1vjmWm96cwTAMHhJMBA6o8EDrfoHNWaxJoJ4gZh","public_key":"YYW6K99BgoWJzca4QhLuRYq1j8ZbeqHLsLfB2r4biydVWRRBvvqTJ"},
+	{"private_key":"5JuuQqWEyrL4Vd3C8GhchNvmoGaZsPHnX99Epcq3ooEQkMDztnL","public_key":"YYW7zX4N2NsXoeEhBLaR3VJoN2na9HP15suJSG6wQeJbj6bxvzBCL"},
+	{"private_key":"5J7v5VYjSR523euuVX9VS7a69amgTQj8ASQLfmWa6916mceJbiF","public_key":"YYW6ukbtJq1fhdoHPmvmH8ePssveuguvZrxJJatB8vxA9p7CEhD4W"},
+	{"private_key":"5JKsA3Lnc7YmyRQ53DgFKBVwKmyd3mtUKbgYxQzk8Dd5p7Nfuh9","public_key":"YYW7RpffbtehDchGh5tFETXZbGgQPUZJ9vLGMPfEyHxLLQmvFpxe1"},
+	{"private_key":"5J2nZArL1yiVzJUoHwMR4fuSsAVVV6EgTbGw8DjFTL1qi6P8NQs","public_key":"YYW8BVzoM36ocAMo42DPsNaG1fFo19XicEmCs5CfKhSmMMkaBfAAb"},
+	{"private_key":"5KbuHNCM1wxA5wM3nCXV4V3Dj7Rgs94wpvv5KxcFBuQPJH4XH8U","public_key":"YYW8K2cMvr5omtmvbAGxfqi1zN2XZMqoBwpLPfN87ivT644Ft5xmg"},
+	{"private_key":"5JTpqf39D5ev1u1ub6BDceVFxmm12bZKLwssFCdKCQVUhNosgU9","public_key":"YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7"},
+
+
+    register_account test1 YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj init init 0 120 true
+
+    register_account test2 YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT init init 0 121 true
+
+    register_account test3 YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv init init 0 122 true
+
+    register_account test4 YYW7AJq5qvubh1dyWejRoi79tCyuiKwxs3tNLDrbuYFupfa2T5hZm YYW7AJq5qvubh1dyWejRoi79tCyuiKwxs3tNLDrbuYFupfa2T5hZm init init 0 123 true
+
+    register_account test5 YYW6k64kZUJp8H9i7GLvmv8ZcideUrVEVwHmMJVqXvHcyzv6qURaD YYW6k64kZUJp8H9i7GLvmv8ZcideUrVEVwHmMJVqXvHcyzv6qURaD init init 0 124 true
+
+    register_account test6 YYW6K99BgoWJzca4QhLuRYq1j8ZbeqHLsLfB2r4biydVWRRBvvqTJ YYW6K99BgoWJzca4QhLuRYq1j8ZbeqHLsLfB2r4biydVWRRBvvqTJ init init 0 125 true
+
+    register_account test7 YYW7zX4N2NsXoeEhBLaR3VJoN2na9HP15suJSG6wQeJbj6bxvzBCL YYW7zX4N2NsXoeEhBLaR3VJoN2na9HP15suJSG6wQeJbj6bxvzBCL init init 0 126 true
+
+    register_account test8 YYW6ukbtJq1fhdoHPmvmH8ePssveuguvZrxJJatB8vxA9p7CEhD4W YYW6ukbtJq1fhdoHPmvmH8ePssveuguvZrxJJatB8vxA9p7CEhD4W init init 0 127 true
+
+    register_account test9 YYW7RpffbtehDchGh5tFETXZbGgQPUZJ9vLGMPfEyHxLLQmvFpxe1 YYW7RpffbtehDchGh5tFETXZbGgQPUZJ9vLGMPfEyHxLLQmvFpxe1 init init 0 128 true
+
+    register_account test10 YYW8BVzoM36ocAMo42DPsNaG1fFo19XicEmCs5CfKhSmMMkaBfAAb YYW8BVzoM36ocAMo42DPsNaG1fFo19XicEmCs5CfKhSmMMkaBfAAb init init 0 129 true
+
+    register_account platform_account1 YYW8K2cMvr5omtmvbAGxfqi1zN2XZMqoBwpLPfN87ivT644Ft5xmg YYW8K2cMvr5omtmvbAGxfqi1zN2XZMqoBwpLPfN87ivT644Ft5xmg init init 0 130 true
+
+    register_account platform_account2 YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7 YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7 init init 0 131 true
 	   
 	   
 #3.    transfer init test1 100000 YOYO "" true
@@ -25,3 +54,44 @@
        transfer init test8 100000 YOYO "" true
        transfer init test9 100000 YOYO "" true
        transfer init test10 100000 YOYO "" true
+
+       transfer init platform_account1 100000 YOYO "" true
+       transfer init platform_account2 100000 YOYO "" true
+
+
+#4.    import_key platform_account1  5KbuHNCM1wxA5wM3nCXV4V3Dj7Rgs94wpvv5KxcFBuQPJH4XH8U
+	   import_key platform_account2 5JTpqf39D5ev1u1ub6BDceVFxmm12bZKLwssFCdKCQVUhNosgU9
+
+#5.    create_platform platform_account1 platform1 10000 YOYO "www.baidu.com" "" true
+       create_platform platform_account2 platform2 10000 YOYO "www.google.com" "" true
+
+#6.    
+       import_key test1 5KV3RG172g6wcsainBmdpPFYAFBniWxJkFSLJh2YY46VkkBJeVh
+       import_key test2 5JDJdcFrx6HEbQ9etbMuhQ5EMwmqTGBNYAAVQLWjtc5wLaZBiAf
+       import_key test3 5KVFzJdUnaiNrMBEvoUjPbMT9fXP296hCxDVtTh21h45NSDeVse
+       import_key test4 5JK77TMRzcjqq52u4HSdqcZ1h8PEL2PicrRpvNabZf2tqg8B7YU
+       import_key test5 5HsHVHc8ryekCvqkWoJKcrchq2kSPYrhNZtsGMQ5A1FZV7iDWjJ
+
+       import_key test6 5HqQQde5GQHc1vjmWm96cwTAMHhJMBA6o8EDrfoHNWaxJoJ4gZh
+       import_key test7 5JuuQqWEyrL4Vd3C8GhchNvmoGaZsPHnX99Epcq3ooEQkMDztnL
+       import_key test8 5J7v5VYjSR523euuVX9VS7a69amgTQj8ASQLfmWa6916mceJbiF
+       import_key test9 5JKsA3Lnc7YmyRQ53DgFKBVwKmyd3mtUKbgYxQzk8Dd5p7Nfuh9
+       import_key test10 5J2nZArL1yiVzJUoHwMR4fuSsAVVV6EgTbGw8DjFTL1qi6P8NQs
+
+	   account_auth_platform test1 platform_account1 10000 255 true
+	   account_auth_platform test2 platform_account1 10000 255 true
+       account_auth_platform test3 platform_account1 10000 255 true
+       account_auth_platform test4 platform_account1 10000 255 true
+       account_auth_platform test5 platform_account1 10000 255 true
+
+
+7.     transfer_extension test1 test1 5000 YOYO "" true false true
+	   transfer_extension test2 test2 5000 YOYO "" true false true 
+       transfer_extension test3 test3 5000 YOYO "" true false true 
+       transfer_extension test4 test4 5000 YOYO "" true false true 
+       transfer_extension test5 test5 5000 YOYO "" true false true
+       transfer_extension test6 test6 5000 YOYO "" true false true
+       transfer_extension test7 test7 5000 YOYO "" true false true 
+       transfer_extension test8 test8 5000 YOYO "" true false true 
+       transfer_extension test9 test9 5000 YOYO "" true false true 
+       transfer_extension test10 test10 5000 YOYO "" true false true    
