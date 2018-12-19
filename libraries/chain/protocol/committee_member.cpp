@@ -222,6 +222,10 @@ void committee_proposal_create_operation::validate()const
          const auto& param_item = item.get< committee_update_global_parameter_item_type >();
          param_item.value.validate();
       }
+      else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
+      {
+         //param_item_count += 1;
+      }
       else
          FC_ASSERT( false, "Bad proposal item type: ${n}", ("n",item.which()) );
    }

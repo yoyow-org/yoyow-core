@@ -124,7 +124,7 @@ namespace graphene { namespace chain {
       /** defined in fee_schedule.cpp */
       void validate()const;
 
-			const content_parameter_extension_type& get_award_params()const;
+			content_parameter_extension_type get_award_params()const;
    };
 
 } }  // graphene::chain

@@ -287,7 +287,7 @@ namespace graphene { namespace chain {
                  "Committee proposal review period must be less than the maximum proposal lifetime" );
    }
 
-	 const content_parameter_extension_type& chain_parameters::get_award_params()const
+	 content_parameter_extension_type chain_parameters::get_award_params()const
 	 {
 		 if (extensions.valid())
 		 {

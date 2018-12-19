@@ -407,6 +407,7 @@ FC_REFLECT(graphene::chain::committee_updatable_content_parameters,
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )
+FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_content_parameter_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_proposal_item_type )
 
 FC_REFLECT_ENUM( graphene::chain::voting_opinion_type,
