@@ -1,8 +1,6 @@
 
 #1.  import_key init 5JbLA2gCHs7T9XhrCpcMJoJk3Y8EA41Y6to87GuQwMHWoJ9ZHYH
-
-
-#2.  collect_csaf init init 1000 YOYO 1545275438 true
+     
 
 #2.    	
 	{"private_key":"5KV3RG172g6wcsainBmdpPFYAFBniWxJkFSLJh2YY46VkkBJeVh","public_key":"YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj"},
@@ -43,6 +41,31 @@
 
     register_account platform_account2 YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7 YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7 init init 0 131 true
 	   
+
+#3.    collect_csaf init init 1000 YOYO 1545289965 true
+       collect_csaf init init1 1000 YOYO 1545289965 true
+       collect_csaf init init2 1000 YOYO 1545289965 true
+       collect_csaf init init3 1000 YOYO 1545289965 true
+       collect_csaf init init4 1000 YOYO 1545289965 true
+       collect_csaf init init5 1000 YOYO 1545289965 true
+       collect_csaf init init6 1000 YOYO 1545289965 true
+       collect_csaf init init7 1000 YOYO 1545289965 true
+       collect_csaf init init8 1000 YOYO 1545289965 true
+       collect_csaf init init9 1000 YOYO 1545289965 true
+       collect_csaf init init10 1000 YOYO 1545289965 true
+
+       collect_csaf init test1  1000 YOYO 1545289965 true
+       collect_csaf init test2  1000 YOYO 1545289965 true
+       collect_csaf init test3  1000 YOYO 1545289965 true
+       collect_csaf init test4  1000 YOYO 1545289965 true
+       collect_csaf init test5  1000 YOYO 1545289965 true
+       collect_csaf init test6  1000 YOYO 1545289965 true
+       collect_csaf init test7  1000 YOYO 1545289965 true
+       collect_csaf init test8  1000 YOYO 1545289965 true
+       collect_csaf init test9  1000 YOYO 1545289965 true
+       collect_csaf init test10 1000 YOYO 1545289965 true
+       collect_csaf init platform_account1  1000 YOYO 1545289965 true
+       collect_csaf init platform_account2 1000 YOYO 1545289965 true
 	   
 #3.    transfer init test1 100000 YOYO "" true
        transfer init test2 100000 YOYO "" true
@@ -83,6 +106,11 @@
        account_auth_platform test3 platform_account1 10000 255 true
        account_auth_platform test4 platform_account1 10000 255 true
        account_auth_platform test5 platform_account1 10000 255 true
+       account_auth_platform test6 platform_account1 10000 255 true
+	   account_auth_platform test7 platform_account1 10000 255 true
+       account_auth_platform test8 platform_account1 10000 255 true
+       account_auth_platform test9 platform_account1 10000 255 true
+       account_auth_platform test10 platform_account1 10000 255 true
 	   
 	   account_auth_platform test6 platform_account2 10000 255 true
 	   account_auth_platform test7 platform_account2 10000 255 true
@@ -91,7 +119,7 @@
 	   account_auth_platform test10 platform_account2 10000 255 true
 
 
-7.     transfer_extension test1 test1 5000 YOYO "" true false true
+#7.    transfer_extension test1 test1 5000 YOYO "" true false true
 	   transfer_extension test2 test2 5000 YOYO "" true false true 
        transfer_extension test3 test3 5000 YOYO "" true false true 
        transfer_extension test4 test4 5000 YOYO "" true false true 
@@ -102,8 +130,18 @@
        transfer_extension test9 test9 5000 YOYO "" true false true 
        transfer_extension test10 test10 5000 YOYO "" true false true    
 	   
+ 
+ #8.   committee_proposal_create init1 [[3 , {content_award_interval : 300,platform_award_interval : 300,max_csaf_per_approval : 1000,approval_expiration : 31536000,min_effective_csaf : 10,total_content_award_amount : 10000000000000,total_platform_content_award_amount : 10000000000000,total_platform_voted_award_amount : 10000000000000,platform_award_min_votes : 1,platform_award_requested_rank : 100}]] 320 1 320 320 true
+ 
+ 
+ #9	   committee_proposal_vote init2 1 1 true
+       committee_proposal_vote init3 1 1 true
+       committee_proposal_vote init4 1 1 true
+       committee_proposal_vote init5 1 1 true
+       committee_proposal_vote init6 1 1 true
 
-       create_license platform_account1 1 123456789 license_one dingdngdangdingdingdang extra true
+
+ #10   create_license platform_account1 1 123456789 license_one dingdngdangdingdingdang extra true
 	   
 	   create_post platform_account1 test1 987456321 postname postbody postextry "" "" "" {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true
 	   
