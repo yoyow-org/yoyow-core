@@ -542,6 +542,10 @@ public:
    {
       return _remote_db->get_global_properties();
    }
+   content_parameter_extension_type get_global_properties_extensions() const
+   {
+      return _remote_db->get_global_properties().parameters.get_award_params();
+   }
    dynamic_global_property_object get_dynamic_global_properties() const
    {
       return _remote_db->get_dynamic_global_properties();
@@ -3825,6 +3829,11 @@ vector<proposal_object> wallet_api::list_proposals( string account_name_or_id )
 global_property_object wallet_api::get_global_properties() const
 {
    return my->get_global_properties();
+}
+
+content_parameter_extension_type wallet_api::get_global_properties_extensions() const
+{
+   return my->get_global_properties_extensions();
 }
 
 dynamic_global_property_object wallet_api::get_dynamic_global_properties() const

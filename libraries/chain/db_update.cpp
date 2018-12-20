@@ -1433,53 +1433,55 @@ void database::process_platform_voted_awards()
 		const global_property_object& gpo = get_global_properties();
 		const auto& params = gpo.parameters.get_award_params();
 
-		if (params.total_platform_voted_award_amount > 0 && params.platform_award_interval > 0 &&
-			  dpo.next_platform_voted_award_time > time_point_sec(0))
-		{
-			vector<account_uid_type> platforms;
+		if (params.total_platform_voted_award_amount > 0 && params.platform_award_interval > 0)
+    {
+       if (dpo.next_platform_voted_award_time > time_point_sec(0))
+       {
+          vector<account_uid_type> platforms;
 
-			const auto& pla_idx = get_index_type<platform_index>().indices().get<by_platform_votes>();
-			auto pla_itr = pla_idx.lower_bound(std::make_tuple(true, params.platform_award_min_votes));
-			auto limit = params.platform_award_requested_rank;
-			while (pla_itr != pla_idx.end() && limit > 0) // assume false < true
-			{
-				platforms.push_back(pla_itr->owner);
-				++pla_itr;
-				--limit;
-			}
+          const auto& pla_idx = get_index_type<platform_index>().indices().get<by_platform_votes>();
+          auto pla_itr = pla_idx.lower_bound(std::make_tuple(true, params.platform_award_min_votes));
+          auto limit = params.platform_award_requested_rank;
+          while (pla_itr != pla_idx.end() && limit > 0) // assume false < true
+          {
+             platforms.push_back(pla_itr->owner);
+             ++pla_itr;
+             --limit;
+          }
 
-			//compute per period award amount 
-			uint128_t value = (uint128_t)(params.total_platform_voted_award_amount.value) *
-				(dpo.next_platform_voted_award_time - dpo.last_platform_voted_award_time).to_seconds() / (86400 * 365);
-			share_type platform_voted_award_per_period = value.to_uint64();
-			share_type platform_average_award = platform_voted_award_per_period / platforms.size();
+          //compute per period award amount 
+          uint128_t value = (uint128_t)(params.total_platform_voted_award_amount.value) *
+             (dpo.next_platform_voted_award_time - dpo.last_platform_voted_award_time).to_seconds() / (86400 * 365);
+          share_type platform_voted_award_per_period = value.to_uint64();
+          share_type platform_average_award = platform_voted_award_per_period / platforms.size();
 
-			for (const auto& p : platforms)
-				adjust_balance(p, asset(platform_average_award));
+          for (const auto& p : platforms)
+             adjust_balance(p, asset(platform_average_award));
 
-			share_type actual_awards = platform_average_award * platforms.size();
-			const auto& core_asset = get_core_asset();
-			const auto& core_dyn_data = core_asset.dynamic_data(*this);
-			modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
-			{
-				dyn.current_supply += actual_awards;
-			});
+          share_type actual_awards = platform_average_award * platforms.size();
+          const auto& core_asset = get_core_asset();
+          const auto& core_dyn_data = core_asset.dynamic_data(*this);
+          modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
+          {
+             dyn.current_supply += actual_awards;
+          });
 
-			modify(dpo, [&](dynamic_global_property_object& _dpo)
-			{
-				_dpo.last_platform_voted_award_time = head_block_time();
-				_dpo.next_platform_voted_award_time = head_block_time() + params.platform_award_interval;
-			});
+          modify(dpo, [&](dynamic_global_property_object& _dpo)
+          {
+             _dpo.last_platform_voted_award_time = head_block_time();
+             _dpo.next_platform_voted_award_time = head_block_time() + params.platform_award_interval;
+          });
+       }
+       else
+       {
+          modify(dpo, [&](dynamic_global_property_object& _dpo)
+          {
+             _dpo.last_platform_voted_award_time = head_block_time();
+             _dpo.next_platform_voted_award_time = head_block_time() + params.platform_award_interval;
+          });
+       }        
 		}
-		else if (dpo.next_platform_voted_award_time == time_point_sec(0) && params.platform_award_interval > 0)
-		{
-			modify(dpo, [&](dynamic_global_property_object& _dpo)
-			{
-				_dpo.last_platform_voted_award_time = head_block_time();
-				_dpo.next_platform_voted_award_time = head_block_time() + params.platform_award_interval;
-			});
-		}
-		else if (dpo.next_content_award_time != time_point_sec(0))
+    else if (dpo.next_platform_voted_award_time != time_point_sec(0))
 		{
 			modify(dpo, [&](dynamic_global_property_object& _dpo)
 			{
