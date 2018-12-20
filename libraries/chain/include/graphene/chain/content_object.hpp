@@ -183,7 +183,7 @@ namespace graphene { namespace chain {
       public:
           enum Post_Permission
           {
-              Post_Permission_Forward = 0,   //allow forward 
+              Post_Permission_Forward = 1,   //allow forward 
               Post_Permission_Liked   = 2,   //allow liked or scored
               Post_Permission_Buyout  = 4,   //allow buyout
               Post_Permission_Comment = 8,   //allow comment

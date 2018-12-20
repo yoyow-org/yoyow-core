@@ -2450,7 +2450,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                   string           title = "",
                                   string           body = "",
                                   string           extra_data = "",
-                                  post_update_operation::ext ext = post_update_operation::ext(),
+                                  post_update_ext ext = post_update_ext(),
                                   bool broadcast = false)
    {
        try {
@@ -2471,7 +2471,22 @@ signed_transaction account_cancel_auth_platform(string account,
                update_op.body = body;
 
            update_op.extensions = flat_set<post_update_operation::extension_parameter>();
-           update_op.extensions->insert(ext);
+           post_update_operation::ext extension;
+           if (ext.forward_price.valid())
+               extension.forward_price    = ext.forward_price->value;
+           if (ext.receiptor.valid())
+               extension.receiptor        = get_account_uid(*ext.receiptor);
+           if (ext.to_buyout.valid())
+               extension.to_buyout        = ext.to_buyout;
+           if (ext.buyout_ratio.valid())
+               extension.buyout_ratio     = ext.buyout_ratio;
+           if (ext.buyout_price.valid())
+               extension.buyout_price     = ext.buyout_price;
+           if (ext.license_lid.valid())
+               extension.license_lid      = ext.license_lid;
+           if (ext.permission_flags.valid())
+               extension.permission_flags = ext.permission_flags;
+           update_op.extensions->insert(extension);
 
            signed_transaction tx;
            tx.operations.push_back(update_op);
@@ -3768,7 +3783,7 @@ signed_transaction wallet_api::update_post(string                     platform,
                                            string                     title,
                                            string                     body,
                                            string                     extra_data,
-                                           post_update_operation::ext ext,
+                                           post_update_ext            ext,
                                            bool                       broadcast)
 {
     return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, broadcast);

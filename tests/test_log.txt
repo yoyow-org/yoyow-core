@@ -2,7 +2,7 @@
 #1.  import_key init 5JbLA2gCHs7T9XhrCpcMJoJk3Y8EA41Y6to87GuQwMHWoJ9ZHYH
 
 
-#2.  collect_csaf init init 1000 YOYO 1545126370 true
+#2.  collect_csaf init init 1000 YOYO 1545275438 true
 
 #2.    	
 	{"private_key":"5KV3RG172g6wcsainBmdpPFYAFBniWxJkFSLJh2YY46VkkBJeVh","public_key":"YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj"},
@@ -83,6 +83,12 @@
        account_auth_platform test3 platform_account1 10000 255 true
        account_auth_platform test4 platform_account1 10000 255 true
        account_auth_platform test5 platform_account1 10000 255 true
+	   
+	   account_auth_platform test6 platform_account2 10000 255 true
+	   account_auth_platform test7 platform_account2 10000 255 true
+	   account_auth_platform test8 platform_account2 10000 255 true
+	   account_auth_platform test9 platform_account2 10000 255 true
+	   account_auth_platform test10 platform_account2 10000 255 true
 
 
 7.     transfer_extension test1 test1 5000 YOYO "" true false true
@@ -118,4 +124,10 @@
 	   
 	   reward_post test3 platform_account1 test1 2 1000 YOYO true
 	   
+	   reward_post_proxy_by_platform test3 platform_account1 test1 2 1000 true
 	   
+	   update_post platform_account1 test1 2 "" "" "" "" {forward_price : 500, receiptor : test1, to_buyout : true, buyout_ratio : 3000, buyout_price : 300, license_lid : null, permission_flags : null} true
+	   
+	   buyout_post test3 platform_account1 test1 2 test1 true
+	   
+	   create_post platform_account2 test6 66666666 forwardtitle forwardbody forwardextra platform_account1 test1 2 {post_type :2, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true

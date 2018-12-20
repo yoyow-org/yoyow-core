@@ -171,6 +171,17 @@ struct approval_delta
    vector<string> key_approvals_to_remove;
 };
 
+struct post_update_ext
+{
+    optional<share_type>           forward_price;
+    optional<string>               receiptor;
+    optional<bool>                 to_buyout;
+    optional<uint32_t>             buyout_ratio;
+    optional<share_type>           buyout_price;
+    optional<license_lid_type>     license_lid;
+    optional<uint32_t>             permission_flags;
+};
+
 namespace detail {
 class wallet_api_impl;
 }
@@ -1434,7 +1445,7 @@ class wallet_api
                                      string           title = "",
                                      string           body = "",
                                      string           extra_data = "",
-                                     post_update_operation::ext ext = post_update_operation::ext(),
+                                     post_update_ext ext = post_update_ext(),
                                      bool broadcast = false);
 
       signed_transaction account_manage(string executor,
@@ -1519,6 +1530,16 @@ FC_REFLECT( graphene::wallet::approval_delta,
    (key_approvals_to_add)
    (key_approvals_to_remove)
 )
+
+FC_REFLECT(graphene::wallet::post_update_ext,
+          (forward_price)
+          (receiptor)
+          (to_buyout)
+          (buyout_ratio)
+          (buyout_price)
+          (license_lid)
+          (permission_flags)
+          )
 
 FC_REFLECT( graphene::wallet::operation_detail, 
             (memo)(description)(sequence)(op) )

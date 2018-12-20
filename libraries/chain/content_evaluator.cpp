@@ -478,22 +478,20 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                    d.get_account_by_uid(*op.origin_poster); // make sure uid exists
                    const post_object& origin_post = d.get_post_by_platform(*op.origin_platform, *op.origin_poster, *op.origin_post_pid); // make sure pid exists
                    FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Forward)>0, "post_object ${p} not allowed to forward.", ("p", op.origin_post_pid));
-
-				   const post_object& post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);
-				   FC_ASSERT(post.forward_price.valid(), "post ${p} is not allowed to forward", ("p", post.origin_post_pid));
+                   FC_ASSERT(origin_post.forward_price.valid(), "post ${p} is not allowed to forward", ("p", op.origin_post_pid));
 				   
                    auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
                    FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(), "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
                                                                                        ("p",op.platform)("a",op.poster));
                    FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Forward)>0, "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
                                                                     ("p", op.platform)("a", op.poster));
-                   FC_ASSERT(account_stats->prepaid >= *ext.forward_price, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
-                       ("c", (account_stats->prepaid))("a", op.poster)("n", ext.forward_price));
+                   FC_ASSERT(account_stats->prepaid >= *origin_post.forward_price, "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+                       ("c", (account_stats->prepaid))("a", op.poster)("n", origin_post.forward_price));
                    if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
                        FC_ASSERT((auth_data->second.max_limit > auth_data->second.cur_used) 
-                              && ((auth_data->second.max_limit - auth_data->second.cur_used) >= *ext.forward_price), 
+                       && ((auth_data->second.max_limit - auth_data->second.cur_used) >= *origin_post.forward_price),
                               "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
-                              ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("p", op.platform)("a", op.poster)("n", ext.forward_price));
+                              ("c", (auth_data->second.max_limit - auth_data->second.cur_used))("p", op.platform)("a", op.poster)("n", origin_post.forward_price));
 			   }
 		   }
 	   }
@@ -523,7 +521,8 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 				  if (ext.post_type == post_operation::Post_Type::Post_Type_forward
 					  || ext.post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
 				  {
-					  share_type forwardprice = *(ext.forward_price);
+                      const post_object& origin_post = d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
+                      share_type forwardprice = *(origin_post.forward_price);
                       d.modify(*account_stats, [&](account_statistics_object& obj)
                       {
                           auto iter = obj.prepaids_for_platform.find(o.platform);

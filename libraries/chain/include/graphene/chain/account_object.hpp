@@ -44,7 +44,7 @@ namespace graphene { namespace chain {
       public:
           enum Platform_Auth_Permission
           {
-              Platform_Permission_Forward = 0,   //allow forward 
+              Platform_Permission_Forward = 1,   //allow forward 
               Platform_Permission_Liked   = 2,   //allow liked or scored
               Platform_Permission_Buyout  = 4,   //allow buyout
               Platform_Permission_Comment = 8,   //allow comment
