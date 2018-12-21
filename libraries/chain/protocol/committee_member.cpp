@@ -196,6 +196,7 @@ void committee_proposal_create_operation::validate()const
    uint32_t account_item_count = 0;
    uint32_t fee_item_count = 0;
    uint32_t param_item_count = 0;
+   uint32_t award_item_count = 0;
    //flat_map< account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
    for( const auto& item : items )
    {
@@ -224,7 +225,8 @@ void committee_proposal_create_operation::validate()const
       }
       else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
       {
-         //param_item_count += 1;
+         award_item_count += 1;
+         FC_ASSERT(award_item_count <= 1, "No more than one global parameter award update item is allowed");
       }
       else
          FC_ASSERT( false, "Bad proposal item type: ${n}", ("n",item.which()) );
