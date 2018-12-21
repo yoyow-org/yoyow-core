@@ -25,15 +25,15 @@
 #include <boost/program_options.hpp>
 
 #include <graphene/account_history/account_history_plugin.hpp>
-#include <graphene/market_history/market_history_plugin.hpp>
+//#include <graphene/market_history/market_history_plugin.hpp>
 
 #include <graphene/db/simple_index.hpp>
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
-#include <graphene/chain/market_object.hpp>
-#include <graphene/chain/vesting_balance_object.hpp>
+//#include <graphene/chain/market_object.hpp>
+//#include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 
 #include <graphene/utilities/tempdir.hpp>
@@ -71,7 +71,7 @@ database_fixture::database_fixture()
          std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
    }
    auto ahplugin = app.register_plugin<graphene::account_history::account_history_plugin>();
-   auto mhplugin = app.register_plugin<graphene::market_history::market_history_plugin>();
+//   auto mhplugin = app.register_plugin<graphene::market_history::market_history_plugin>();
    init_account_pub_key = init_account_priv_key.get_public_key();
 
    boost::program_options::variables_map options;
@@ -100,11 +100,11 @@ database_fixture::database_fixture()
    // app.initialize();
    ahplugin->plugin_set_app(&app);
    ahplugin->plugin_initialize(options);
-   mhplugin->plugin_set_app(&app);
-   mhplugin->plugin_initialize(options);
+   //mhplugin->plugin_set_app(&app);
+   //mhplugin->plugin_initialize(options);
 
    ahplugin->plugin_startup();
-   mhplugin->plugin_startup();
+   //mhplugin->plugin_startup();
 
    generate_block();
 
@@ -159,26 +159,26 @@ void database_fixture::verify_asset_supplies( const database& db )
 
    for( const account_balance_object& b : balance_index )
       total_balances[b.asset_type] += b.balance;
-   for( const account_statistics_object& a : statistics_index )
+   /*for (const account_statistics_object& a : statistics_index)
    {
-      reported_core_in_orders += a.total_core_in_orders;
-      total_balances[GRAPHENE_CORE_ASSET_AID] += a.pending_fees + a.pending_vested_fees;
+   reported_core_in_orders += a.total_core_in_orders;
+   total_balances[GRAPHENE_CORE_ASSET_AID] += a.pending_fees + a.pending_vested_fees;
    }
    for( const limit_order_object& o : db.get_index_type<limit_order_index>().indices() )
    {
-      asset for_sale = o.amount_for_sale();
-      if( for_sale.asset_id == GRAPHENE_CORE_ASSET_AID ) core_in_orders += for_sale.amount;
-      total_balances[for_sale.asset_id] += for_sale.amount;
-      total_balances[GRAPHENE_CORE_ASSET_AID] += o.deferred_fee;
-   }
+   asset for_sale = o.amount_for_sale();
+   if( for_sale.asset_id == GRAPHENE_CORE_ASSET_AID ) core_in_orders += for_sale.amount;
+   total_balances[for_sale.asset_id] += for_sale.amount;
+   total_balances[GRAPHENE_CORE_ASSET_AID] += o.deferred_fee;
+   }*/
    for( const asset_object& asset_obj : db.get_index_type<asset_index>().indices() )
    {
       const auto& dasset_obj = asset_obj.dynamic_asset_data_id(db);
       total_balances[asset_obj.asset_id] += dasset_obj.accumulated_fees;
-      total_balances[asset_obj.asset_id] += dasset_obj.confidential_supply.value;
+      //total_balances[asset_obj.asset_id] += dasset_obj.confidential_supply.value;
    }
-   for( const vesting_balance_object& vbo : db.get_index_type< vesting_balance_index >().indices() )
-      total_balances[ vbo.balance.asset_id ] += vbo.balance.amount;
+   //for( const vesting_balance_object& vbo : db.get_index_type< vesting_balance_index >().indices() )
+   //   total_balances[ vbo.balance.asset_id ] += vbo.balance.amount;
 
    total_balances[GRAPHENE_CORE_ASSET_AID] += db.get_dynamic_global_properties().witness_budget;
 
@@ -412,8 +412,8 @@ const asset_object& database_fixture::create_user_issued_asset( const string& na
    creator.common_options.max_supply = 0;
    creator.precision = 2;
    creator.common_options.max_supply = GRAPHENE_MAX_SHARE_SUPPLY;
-   creator.common_options.flags = charge_market_fee;
-   creator.common_options.issuer_permissions = charge_market_fee;
+   //creator.common_options.flags = charge_market_fee;
+   //creator.common_options.issuer_permissions = charge_market_fee;
    trx.operations.push_back(std::move(creator));
    trx.validate();
    processed_transaction ptx = db.push_transaction(trx, ~0);
@@ -607,20 +607,20 @@ const witness_object& database_fixture::create_witness( const account_object& ow
    return db.get<witness_object>(ptx.operation_results[0].get<object_id_type>());
 } FC_CAPTURE_AND_RETHROW() }
 
-const worker_object& database_fixture::create_worker( const account_id_type owner, const share_type daily_pay, const fc::microseconds& duration )
-{ try {
-   worker_create_operation op;
-   op.owner = owner;
-   op.daily_pay = daily_pay;
-   op.initializer = burn_worker_initializer();
-   op.work_begin_date = db.head_block_time();
-   op.work_end_date = op.work_begin_date + duration;
-   trx.operations.push_back(op);
-   trx.validate();
-   processed_transaction ptx = db.push_transaction(trx, ~0);
-   trx.clear();
-   return db.get<worker_object>(ptx.operation_results[0].get<object_id_type>());
-} FC_CAPTURE_AND_RETHROW() }
+//const worker_object& database_fixture::create_worker( const account_id_type owner, const share_type daily_pay, const fc::microseconds& duration )
+//{ try {
+//   worker_create_operation op;
+//   op.owner = owner;
+//   op.daily_pay = daily_pay;
+//   op.initializer = burn_worker_initializer();
+//   op.work_begin_date = db.head_block_time();
+//   op.work_end_date = op.work_begin_date + duration;
+//   trx.operations.push_back(op);
+//   trx.validate();
+//   processed_transaction ptx = db.push_transaction(trx, ~0);
+//   trx.clear();
+//   return db.get<worker_object>(ptx.operation_results[0].get<object_id_type>());
+//} FC_CAPTURE_AND_RETHROW() }
 
 uint64_t database_fixture::fund(
    const account_object& account,
@@ -641,53 +641,53 @@ digest_type database_fixture::digest( const transaction& tx )
    return tx.digest();
 }
 
-const limit_order_object*database_fixture::create_sell_order(account_uid_type user, const asset& amount, const asset& recv)
-{
-   //TODO: market
-   //auto r =  create_sell_order(user(db), amount, recv);
-   //verify_asset_supplies(db);
-   //return r;
-
-   return nullptr;
-}
-
-const limit_order_object* database_fixture::create_sell_order( const account_object& user, const asset& amount, const asset& recv )
-{
-   //TODO: market
-   /*
-   limit_order_create_operation buy_order;
-   buy_order.seller = user.id;
-   buy_order.amount_to_sell = amount;
-   buy_order.min_to_receive = recv;
-   trx.operations.push_back(buy_order);
-   for( auto& op : trx.operations ) db.current_fee_schedule().set_fee(op);
-   trx.validate();
-   auto processed = db.push_transaction(trx, ~0);
-   trx.operations.clear();
-   verify_asset_supplies(db);
-   //wdump((processed));
-   return db.find<limit_order_object>( processed.operation_results[0].get<object_id_type>() );
-   */
-   return nullptr;
-}
-
-asset database_fixture::cancel_limit_order( const limit_order_object& order )
-{
-  //TODO: market
-  /*
-  limit_order_cancel_operation cancel_order;
-  cancel_order.fee_paying_account = order.seller;
-  cancel_order.order = order.id;
-  trx.operations.push_back(cancel_order);
-  for( auto& op : trx.operations ) db.current_fee_schedule().set_fee(op);
-  trx.validate();
-  auto processed = db.push_transaction(trx, ~0);
-  trx.operations.clear();
-   verify_asset_supplies(db);
-  return processed.operation_results[0].get<asset>();
-  */
-  return asset();
-}
+//const limit_order_object*database_fixture::create_sell_order(account_uid_type user, const asset& amount, const asset& recv)
+//{
+//   //TODO: market
+//   //auto r =  create_sell_order(user(db), amount, recv);
+//   //verify_asset_supplies(db);
+//   //return r;
+//
+//   return nullptr;
+//}
+//
+//const limit_order_object* database_fixture::create_sell_order( const account_object& user, const asset& amount, const asset& recv )
+//{
+//   //TODO: market
+//   /*
+//   limit_order_create_operation buy_order;
+//   buy_order.seller = user.id;
+//   buy_order.amount_to_sell = amount;
+//   buy_order.min_to_receive = recv;
+//   trx.operations.push_back(buy_order);
+//   for( auto& op : trx.operations ) db.current_fee_schedule().set_fee(op);
+//   trx.validate();
+//   auto processed = db.push_transaction(trx, ~0);
+//   trx.operations.clear();
+//   verify_asset_supplies(db);
+//   //wdump((processed));
+//   return db.find<limit_order_object>( processed.operation_results[0].get<object_id_type>() );
+//   */
+//   return nullptr;
+//}
+//
+//asset database_fixture::cancel_limit_order( const limit_order_object& order )
+//{
+//  //TODO: market
+//  /*
+//  limit_order_cancel_operation cancel_order;
+//  cancel_order.fee_paying_account = order.seller;
+//  cancel_order.order = order.id;
+//  trx.operations.push_back(cancel_order);
+//  for( auto& op : trx.operations ) db.current_fee_schedule().set_fee(op);
+//  trx.validate();
+//  auto processed = db.push_transaction(trx, ~0);
+//  trx.operations.clear();
+//   verify_asset_supplies(db);
+//  return processed.operation_results[0].get<asset>();
+//  */
+//  return asset();
+//}
 
 void database_fixture::transfer(
    account_uid_type from,
@@ -821,17 +821,17 @@ string database_fixture::pretty( const asset& a )const
   return ss.str();
 }
 
-void database_fixture::print_limit_order( const limit_order_object& cur )const
-{
-  // TODO: market
-  /*
-  std::cout << std::setw(10) << cur.seller(db).name << " ";
-  std::cout << std::setw(10) << "LIMIT" << " ";
-  std::cout << std::setw(16) << pretty( cur.amount_for_sale() ) << " ";
-  std::cout << std::setw(16) << pretty( cur.amount_to_receive() ) << " ";
-  std::cout << std::setw(16) << cur.sell_price.to_real() << " ";
-  */
-}
+//void database_fixture::print_limit_order( const limit_order_object& cur )const
+//{
+//  // TODO: market
+//  /*
+//  std::cout << std::setw(10) << cur.seller(db).name << " ";
+//  std::cout << std::setw(10) << "LIMIT" << " ";
+//  std::cout << std::setw(16) << pretty( cur.amount_for_sale() ) << " ";
+//  std::cout << std::setw(16) << pretty( cur.amount_to_receive() ) << " ";
+//  std::cout << std::setw(16) << cur.sell_price.to_real() << " ";
+//  */
+//}
 
 void database_fixture::print_joint_market( const string& syma, const string& symb )const
 {

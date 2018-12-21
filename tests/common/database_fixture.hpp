@@ -249,13 +249,13 @@ struct database_fixture {
                                         const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
    const witness_object& create_witness(const account_object& owner,
                                         const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
-   const worker_object& create_worker(account_id_type owner, const share_type daily_pay = 1000, const fc::microseconds& duration = fc::days(2));
+//   const worker_object& create_worker(account_id_type owner, const share_type daily_pay = 1000, const fc::microseconds& duration = fc::days(2));
    uint64_t fund( const account_object& account, const asset& amount = asset(500000) );
    digest_type digest( const transaction& tx );
    void sign( signed_transaction& trx, const fc::ecc::private_key& key );
-   const limit_order_object* create_sell_order( account_uid_type user, const asset& amount, const asset& recv );
-   const limit_order_object* create_sell_order( const account_object& user, const asset& amount, const asset& recv );
-   asset cancel_limit_order( const limit_order_object& order );
+//   const limit_order_object* create_sell_order( account_uid_type user, const asset& amount, const asset& recv );
+//   const limit_order_object* create_sell_order( const account_object& user, const asset& amount, const asset& recv );
+//   asset cancel_limit_order( const limit_order_object& order );
    void transfer( account_uid_type from, account_uid_type to, const asset& amount, const asset& fee = asset() );
    void transfer( const account_object& from, const account_object& to, const asset& amount, const asset& fee = asset() );
    void enable_fees();
@@ -268,7 +268,7 @@ struct database_fixture {
    void upgrade_to_annual_member( const account_object& account );
    void print_market( const string& syma, const string& symb )const;
    string pretty( const asset& a )const;
-   void print_limit_order( const limit_order_object& cur )const;
+//   void print_limit_order( const limit_order_object& cur )const;
    // TODO: market
    void print_joint_market( const string& syma, const string& symb )const;
    int64_t get_balance( account_uid_type account, asset_aid_type a )const;
