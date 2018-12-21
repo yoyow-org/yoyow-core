@@ -173,13 +173,30 @@ struct approval_delta
 
 struct post_update_ext
 {
-    optional<share_type>           forward_price;
-    optional<string>               receiptor;
-    optional<bool>                 to_buyout;
-    optional<uint32_t>             buyout_ratio;
-    optional<share_type>           buyout_price;
-    optional<license_lid_type>     license_lid;
-    optional<uint32_t>             permission_flags;
+    optional<std::string>               forward_price;
+    optional<std::string>               receiptor;
+    optional<bool>                      to_buyout;
+    optional<std::string>               buyout_ratio;
+    optional<std::string>               buyout_price;
+    optional<license_lid_type>          license_lid;
+    optional<uint32_t>                  permission_flags;
+};
+
+struct recerptor_ext
+{
+    std::string     cur_ratio;
+    bool            to_buyout;
+    std::string     buyout_ratio;
+    std::string     buyout_price;
+};
+
+struct post_create_ext
+{
+    uint8_t post_type = post_operation::Post_Type_Post;
+    optional<std::string> forward_price;
+    optional< map<account_uid_type, recerptor_ext> > receiptors;
+    optional<license_lid_type> license_lid;
+    uint32_t permission_flags = 0xFFFFFFFF;
 };
 
 namespace detail {
@@ -1102,7 +1119,7 @@ class wallet_api
        */ 
       signed_transaction account_auth_platform(string account,
                                                string platform_owner,
-											   share_type limit_for_platform = 0,
+											   string limit_for_platform,
                                                uint32_t permission_flags = 0xFFFFFFFF,
                                                bool broadcast = false);
 
@@ -1311,7 +1328,7 @@ class wallet_api
                                       string           poster,
                                       post_pid_type    post_pid,
                                       int8_t           score,
-                                      int64_t          csaf,
+                                      string           csaf,
                                       bool broadcast = false);
 
       /** Reward a post by from_account.
@@ -1351,7 +1368,7 @@ class wallet_api
                                                        string           platform,
                                                        string           poster,
                                                        post_pid_type    post_pid,
-                                                       share_type       amount,
+                                                       string           amount,
                                                        bool broadcast = false);
 
       /** buyout a post by from_account.
@@ -1420,7 +1437,7 @@ class wallet_api
                                      string           origin_platform = "",
                                      string           origin_poster = "",
                                      string           origin_post_pid = "",
-                                     post_operation::ext ext = post_operation::ext(),
+                                     post_create_ext  ext = post_create_ext(),
                                      bool broadcast = false);
 
       /** update a post by poster and platform.
@@ -1537,6 +1554,21 @@ FC_REFLECT(graphene::wallet::post_update_ext,
           (to_buyout)
           (buyout_ratio)
           (buyout_price)
+          (license_lid)
+          (permission_flags)
+          )
+
+FC_REFLECT(graphene::wallet::recerptor_ext,
+          (cur_ratio)
+          (to_buyout)
+          (buyout_ratio)
+          (buyout_price)
+          )
+
+FC_REFLECT(graphene::wallet::post_create_ext,
+          (post_type)
+          (forward_price)
+          (receiptors)
           (license_lid)
           (permission_flags)
           )
