@@ -149,10 +149,13 @@ void post_operation::validate()const
 
    if (extensions.valid())
    {
+       int extnum = 0;
 	   for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
 	   {
 		   if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
 		   {
+               extnum++;
+               FC_ASSERT(extnum <= 1,"post_operation::ext must be only one in post_operation::extension_parameter");
 			   const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
 			   if (ext.post_type == Post_Type::Post_Type_Comment 
 				   || ext.post_type == Post_Type::Post_Type_forward 
@@ -188,10 +191,13 @@ void post_update_operation::validate()const
 
    if (extensions.valid())
    {
+       int extnum = 0;
 	   for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
 	   {
 		   if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
 		   {
+               extnum++;
+               FC_ASSERT(extnum <= 1, "post_update_operation::ext must be only one in post_update_operation::extension_parameter");
 			   const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
 			   FC_ASSERT(ext.forward_price.valid() 
 				   || (ext.receiptor.valid() && (ext.to_buyout.valid() || ext.buyout_ratio.valid() || ext.buyout_price.valid())), "Should change something");

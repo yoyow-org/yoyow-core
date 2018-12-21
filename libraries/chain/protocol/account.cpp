@@ -227,6 +227,7 @@ void account_auth_platform_operation::validate()const
    validate_non_special_account( uid );
    validate_account_uid( platform, "platform " );
 
+   int extnum = 0;
    if (extensions.valid())
    {
 	   bool isfound = false;
@@ -234,6 +235,8 @@ void account_auth_platform_operation::validate()const
 	   {
 		   if (ext_iter->which() == account_auth_platform_operation::extension_parameter::tag<account_auth_platform_operation::ext>::value)
 		   {
+               extnum++;
+               FC_ASSERT(extnum <= 1, "account_auth_platform_operation::ext must be only one in account_auth_platform_operation::extension_parameter");
 			   isfound = true;
 			   const account_auth_platform_operation::ext& ext = ext_iter->get<account_auth_platform_operation::ext>();
 			   bool has_option = ext.limit_for_platform.valid() || ext.permission_flags.valid();
