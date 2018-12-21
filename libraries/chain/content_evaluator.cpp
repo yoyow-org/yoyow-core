@@ -772,7 +772,7 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
 				obj.platform				= op.platform;
 				obj.poster					= op.poster;
 				obj.post_pid				= op.post_pid;
-				obj.total_amount		= obj.total_amount + op.score;
+				obj.total_amount		= obj.total_amount + op.csaf;
 				obj.period_sequence = dpo.current_active_post_sequence;
 				obj.scores.push_back(new_score_object.id);
 			});
