@@ -133,10 +133,10 @@ namespace graphene { namespace chain {
     */
    struct Recerptor_Parameter
    {
-	   int16_t     cur_ratio;
-	   bool        to_buyout;
-	   int16_t     buyout_ratio;
-	   share_type  buyout_price;
+	   uint16_t     cur_ratio;
+	   bool         to_buyout;
+	   uint16_t     buyout_ratio;
+	   share_type   buyout_price;
 
 	   void validate()const
 	   {
@@ -160,7 +160,7 @@ namespace graphene { namespace chain {
 
 	   struct ext
 	   {
-		   uint8_t post_type = Post_Type::Post_Type_Post;
+		   uint8_t post_type = Post_Type_Post;
 		   optional<share_type> forward_price;
 		   optional< map<account_uid_type, Recerptor_Parameter> > receiptors;
            optional<license_lid_type> license_lid;
@@ -220,7 +220,7 @@ namespace graphene { namespace chain {
 		   optional<share_type>           forward_price;
 		   optional<account_uid_type>     receiptor;
 		   optional<bool>                 to_buyout;
-		   optional<uint32_t>             buyout_ratio;
+		   optional<uint16_t>             buyout_ratio;
 		   optional<share_type>           buyout_price;
            optional<license_lid_type>     license_lid;
            optional<uint32_t>             permission_flags;
@@ -300,7 +300,7 @@ namespace graphene { namespace chain {
 	   account_uid_type             poster;
 	   post_pid_type                post_pid; //post id
 	   int8_t                       score;
-	   uint64_t                     csaf;
+       share_type                   csaf;
 
 	   extensions_type              extensions;
 
