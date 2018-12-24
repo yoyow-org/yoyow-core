@@ -980,6 +980,180 @@ void database_fixture::committee_proposal_vote(
    }FC_CAPTURE_AND_RETHROW((committee_member_account)(proposal_number)(opinion))
 }
 
+void database_fixture::create_platform(account_uid_type owner_account,
+   string name,
+   asset pledge_amount,
+   string url,
+   string extra_data,
+   const fc::ecc::private_key& key)
+{
+   try {
+      platform_create_operation platform_create_op;
+      platform_create_op.account = owner_account;
+      platform_create_op.name = name;
+      platform_create_op.pledge = pledge_amount;
+      platform_create_op.extra_data = extra_data;
+      platform_create_op.url = url;
+
+      signed_transaction tx;
+      tx.operations.push_back(platform_create_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      sign(tx, key);
+
+      db.push_transaction(tx, ~0);
+   } FC_CAPTURE_AND_RETHROW((owner_account)(name)(pledge_amount)(url)(extra_data)(key))
+}
+
+void database_fixture::update_platform_votes(account_uid_type voting_account,
+   flat_set<account_uid_type> platforms_to_add,
+   flat_set<account_uid_type> platforms_to_remove,
+   const fc::ecc::private_key& key
+   )
+{
+   try {
+      flat_set<account_uid_type> uids_to_add;
+      flat_set<account_uid_type> uids_to_remove;
+      uids_to_add.reserve(platforms_to_add.size());
+      uids_to_remove.reserve(platforms_to_remove.size());
+      for (auto pla : platforms_to_add)
+         uids_to_add.insert(pla);
+      for (auto pla : platforms_to_remove)
+         uids_to_remove.insert(pla);
+
+      platform_vote_update_operation platform_vote_update_op;
+      platform_vote_update_op.voter = voting_account;
+      platform_vote_update_op.platform_to_add = uids_to_add;
+      platform_vote_update_op.platform_to_remove = uids_to_remove;
+
+      signed_transaction tx;
+      tx.operations.push_back(platform_vote_update_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      sign(tx, key);
+
+      db.push_transaction(tx, ~0);
+
+   } FC_CAPTURE_AND_RETHROW((voting_account)(platforms_to_add)(platforms_to_remove)(key))
+}
+
+void database_fixture::reward_post(account_uid_type from_account,
+   account_uid_type platform,
+   account_uid_type poster,
+   post_pid_type post_pid,
+   asset amount,
+   const fc::ecc::private_key& key)
+{
+   try {
+      reward_operation reward_op;
+      reward_op.from_account_uid = from_account;
+      reward_op.platform = platform;
+      reward_op.poster = poster;
+      reward_op.post_pid = post_pid;
+      reward_op.amount = amount;
+
+      signed_transaction tx;
+      tx.operations.push_back(reward_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      sign(tx, key);
+
+      db.push_transaction(tx, ~0);
+
+   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(key))
+}
+
+void database_fixture::reward_post_proxy_by_platform(account_uid_type from_account,
+   account_uid_type platform,
+   account_uid_type poster,
+   post_pid_type    post_pid,
+   uint64_t         amount,
+   const fc::ecc::private_key& key)
+{
+   try {
+      reward_proxy_operation reward_op;
+      reward_op.from_account_uid = from_account;
+      reward_op.platform = platform;
+      reward_op.poster = poster;
+      reward_op.post_pid = post_pid;
+      reward_op.amount = amount; //must be YOYO
+
+      signed_transaction tx;
+      tx.operations.push_back(reward_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      sign(tx, key);
+
+      db.push_transaction(tx, ~0);
+   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(key))
+}
+
+void database_fixture::buyout_post(account_uid_type from_account,
+   account_uid_type platform,
+   account_uid_type poster,
+   post_pid_type    post_pid,
+   account_uid_type receiptor_account,
+   const fc::ecc::private_key& key)
+{
+   try {
+      buyout_operation buyout_op;
+      buyout_op.from_account_uid = from_account;
+      buyout_op.platform = platform;
+      buyout_op.poster = poster;
+      buyout_op.post_pid = post_pid;
+      buyout_op.receiptor_account_uid = receiptor_account;
+
+      signed_transaction tx;
+      tx.operations.push_back(buyout_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      sign(tx, key);
+
+      db.push_transaction(tx, ~0);
+   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(key))
+}
+
+void database_fixture::create_license(account_uid_type platform,
+   uint8_t license_type,
+   string  hash_value,
+   string  title,
+   string  body,
+   string  extra_data,
+   const fc::ecc::private_key& key)
+{
+   try {
+      const account_statistics_object& plat_account_statistics = db.get_account_statistics_by_uid(platform);
+      license_create_operation create_op;
+      create_op.license_lid = plat_account_statistics.last_license_sequence + 1;
+      create_op.platform = platform;
+      create_op.type = license_type;
+      create_op.hash_value = hash_value;
+      create_op.extra_data = extra_data;
+      create_op.title = title;
+      create_op.body = body;
+
+      signed_transaction tx;
+      tx.operations.push_back(create_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      sign(tx, key);
+
+      db.push_transaction(tx, ~0);
+   } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(key))
+}
+
 namespace test {
 
 void set_expiration( const database& db, transaction& tx )
