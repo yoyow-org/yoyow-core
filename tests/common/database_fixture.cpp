@@ -720,7 +720,7 @@ void database_fixture::transfer(
       }
       trx.validate();
       db.push_transaction(trx, ~0);
-      verify_asset_supplies(db);
+      //verify_asset_supplies(db);
       trx.operations.clear();
    } FC_CAPTURE_AND_RETHROW( (from.id)(to.id)(amount)(fee) )
 }
@@ -890,9 +890,94 @@ vector< operation_history_object > database_fixture::get_operation_history( acco
 
 void database_fixture::add_csaf_for_account(account_uid_type account, share_type csaf)
 {
-    db.modify(db.get_account_statistics_by_uid(account), [&](account_statistics_object& s) {
-        s.csaf += csaf * 100000;
-    });
+   db.modify(db.get_account_statistics_by_uid(account), [&](account_statistics_object& s) {
+      s.csaf += csaf * 100000;
+   });
+}
+
+//void database_fixture::collect_csaf(account_uid_type from, account_uid_type to, uint32_t amount, string asset_symbol)
+//{
+//   try
+//   {
+//      time_point_sec time((time_point::now().sec_since_epoch()) / 60 * 60);
+//
+//      asset_object asset_obj = get_asset(asset_symbol);
+//      //FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+//
+//
+//      set_expiration(db, trx);
+//      csaf_collect_operation cc_op;
+//      cc_op.from = from;
+//      cc_op.to = to;
+//      cc_op.amount = asset(amount, asset_obj.asset_id);
+//      cc_op.time = time;
+//      auto a = fc::string(db.head_block_time());
+//      auto b = fc::string(time);
+//
+//
+//      cc_op.fee = fee_type(asset(100000));
+//      trx.operations.push_back(cc_op);
+//      //set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+//
+//      trx.validate();
+//      db.push_transaction(trx, ~0);
+//      trx.operations.clear();
+//   }FC_CAPTURE_AND_RETHROW((from)(to)(amount)(asset_symbol))
+//}
+
+void database_fixture::committee_proposal_create(
+   const account_uid_type committee_member_account,
+   const vector<committee_proposal_item_type> items,
+   const uint32_t voting_closing_block_num,
+   optional<voting_opinion_type> proposer_opinion,
+   const uint32_t execution_block_num,
+   const uint32_t expiration_block_num
+   )
+{
+   try{
+      committee_proposal_create_operation op;
+      op.proposer = committee_member_account;
+      op.items = items;
+      op.voting_closing_block_num = voting_closing_block_num;
+      op.proposer_opinion = proposer_opinion;
+      op.execution_block_num = execution_block_num;
+      op.expiration_block_num = expiration_block_num;
+
+      signed_transaction tx;
+      tx.operations.push_back(op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      sign(tx, init_account_priv_key);
+
+      db.push_transaction(tx, ~0);
+   }FC_CAPTURE_AND_RETHROW((committee_member_account)(items)(voting_closing_block_num)(proposer_opinion)(execution_block_num)(expiration_block_num))
+   
+}
+
+void database_fixture::committee_proposal_vote(
+   const account_uid_type committee_member_account,
+   const uint64_t proposal_number,
+   const voting_opinion_type opinion
+   )
+{
+   try{
+      committee_proposal_update_operation update_op;
+      update_op.account = committee_member_account;
+      update_op.proposal_number = proposal_number;
+      update_op.opinion = opinion;
+
+      signed_transaction tx;
+      tx.operations.push_back(update_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      sign(tx, init_account_priv_key);
+
+      db.push_transaction(tx, ~0);
+   }FC_CAPTURE_AND_RETHROW((committee_member_account)(proposal_number)(opinion))
 }
 
 namespace test {

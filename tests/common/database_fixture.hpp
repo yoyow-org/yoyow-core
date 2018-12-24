@@ -277,6 +277,27 @@ struct database_fixture {
 
    //content test add
    void add_csaf_for_account(account_uid_type account, share_type csaf);
+   //void collect_csaf(account_uid_type from, account_uid_type to, uint32_t amount, string asset_symbol = "YOYO");
+   void committee_proposal_create(
+      const account_uid_type committee_member_account,
+      const vector<committee_proposal_item_type> items,
+      const uint32_t voting_closing_block_num,
+      optional<voting_opinion_type> proposer_opinion,
+      const uint32_t execution_block_num = 0,
+      const uint32_t expiration_block_num = 0
+      );
+
+   void committee_proposal_vote(
+      const account_uid_type committee_member_account,
+      const uint64_t proposal_number,
+      const voting_opinion_type opinion
+      );
+
+   void set_operation_fees(signed_transaction& tx, const fee_schedule& s)
+   {
+      for (auto& op : tx.operations)
+         s.set_fee_with_csaf(op);
+   }
 };
 
 namespace test {
