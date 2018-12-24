@@ -274,6 +274,9 @@ struct database_fixture {
    int64_t get_balance( account_uid_type account, asset_aid_type a )const;
    int64_t get_balance( const account_object& account, const asset_object& a )const;
    vector< operation_history_object > get_operation_history( account_uid_type account_id )const;
+
+   //content test add
+   void add_csaf_for_account(account_uid_type account, share_type csaf);
 };
 
 namespace test {

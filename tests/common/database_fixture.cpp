@@ -888,6 +888,13 @@ vector< operation_history_object > database_fixture::get_operation_history( acco
    return result;
 }
 
+void database_fixture::add_csaf_for_account(account_uid_type account, share_type csaf)
+{
+    db.modify(db.get_account_statistics_by_uid(account), [&](account_statistics_object& s) {
+        s.csaf += csaf * 100000;
+    });
+}
+
 namespace test {
 
 void set_expiration( const database& db, transaction& tx )
