@@ -49,7 +49,7 @@
 
 using namespace graphene::chain::test;
 
-uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1520611200;
+uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1530522000;// 1520611200;
 
 namespace graphene { namespace chain {
 
@@ -1124,34 +1124,230 @@ void database_fixture::buyout_post(account_uid_type from_account,
 }
 
 void database_fixture::create_license(account_uid_type platform,
-   uint8_t license_type,
-   string  hash_value,
-   string  title,
-   string  body,
-   string  extra_data,
-   const fc::ecc::private_key& key)
+    uint8_t license_type,
+    string  hash_value,
+    string  title,
+    string  body,
+    string  extra_data,
+    const fc::ecc::private_key& key)
 {
-   try {
-      const account_statistics_object& plat_account_statistics = db.get_account_statistics_by_uid(platform);
-      license_create_operation create_op;
-      create_op.license_lid = plat_account_statistics.last_license_sequence + 1;
-      create_op.platform = platform;
-      create_op.type = license_type;
-      create_op.hash_value = hash_value;
-      create_op.extra_data = extra_data;
-      create_op.title = title;
-      create_op.body = body;
+    try {
+        const account_statistics_object& plat_account_statistics = db.get_account_statistics_by_uid(platform);
+        license_create_operation create_op;
+        create_op.license_lid = plat_account_statistics.last_license_sequence + 1;
+        create_op.platform = platform;
+        create_op.type = license_type;
+        create_op.hash_value = hash_value;
+        create_op.extra_data = extra_data;
+        create_op.title = title;
+        create_op.body = body;
 
-      signed_transaction tx;
-      tx.operations.push_back(create_op);
-      set_operation_fees(tx, db.current_fee_schedule());
-      set_expiration(db, tx);
-      tx.validate();
+        signed_transaction tx;
+        tx.operations.push_back(create_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
 
-      sign(tx, key);
+        sign(tx, key);
 
-      db.push_transaction(tx, ~0);
-   } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(key))
+        db.push_transaction(tx, ~0);
+    } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(key))
+}
+
+void database_fixture::transfer_extension(flat_set<fc::ecc::private_key> sign_keys,
+                                          account_uid_type from,
+                                          account_uid_type to,
+                                          asset            amount,
+                                          string           memo,
+                                          bool             isfrom_balance,
+                                          bool             isto_balance)
+{
+    try{
+        transfer_operation xfer_op;
+        xfer_op.extensions = extension< transfer_operation::ext >();
+        if (isfrom_balance)
+            xfer_op.extensions->value.from_balance = amount.amount;
+        else
+            xfer_op.extensions->value.from_prepaid = amount.amount;
+        if (isto_balance)
+            xfer_op.extensions->value.to_balance = amount.amount;
+        else
+            xfer_op.extensions->value.to_prepaid = amount.amount;
+
+        xfer_op.from = from;
+        xfer_op.to = to;
+        xfer_op.amount = amount.amount;
+
+        if (memo.size())
+        {
+            account_object from_account = db.get_account_by_uid(from);
+            account_object to_account = db.get_account_by_uid(to);
+            xfer_op.memo = memo_data();
+            xfer_op.memo->from = from_account.memo_key;
+            xfer_op.memo->to = to_account.memo_key;
+            //TODO
+            /*xfer_op.memo->set_message(get_private_key(from_account.memo_key),
+                to_account.memo_key, memo);*/
+        }
+
+        signed_transaction tx;
+        tx.operations.push_back(xfer_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+
+        db.push_transaction(tx, ~0);
+    }FC_CAPTURE_AND_RETHROW((sign_keys)(from)(to)(amount)(memo)(isfrom_balance)(isto_balance))
+}
+
+void database_fixture::account_auth_platform(flat_set<fc::ecc::private_key> sign_keys,
+                                             account_uid_type account,
+                                             account_uid_type platform_owner,
+                                             share_type       limit_for_platform,
+                                             uint32_t         permission_flags)
+{
+    try{
+        account_auth_platform_operation op;
+        op.uid = account;
+        op.platform = platform_owner;
+
+        account_auth_platform_operation::ext ext;
+        ext.limit_for_platform = limit_for_platform;
+        ext.permission_flags = permission_flags;
+        op.extensions = flat_set<account_auth_platform_operation::extension_parameter>();
+        op.extensions->insert(ext);
+
+        signed_transaction tx;
+        tx.operations.push_back(op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+
+        db.push_transaction(tx, ~0);
+    }FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform_owner)(limit_for_platform)(permission_flags))
+}
+
+void database_fixture::create_post(flat_set<fc::ecc::private_key> sign_keys,
+                                   account_uid_type           platform,
+                                   account_uid_type           poster,
+                                   string                     hash_value,
+                                   string                     title,
+                                   string                     body,
+                                   string                     extra_data,
+                                   optional<account_uid_type> origin_platform,
+                                   optional<account_uid_type> origin_poster,
+                                   optional<post_pid_type>    origin_post_pid,
+                                   post_operation::ext  exts)
+{
+    try{
+        const account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(poster);
+        post_operation create_op;
+        create_op.post_pid = poster_account_statistics.last_post_sequence + 1;
+        create_op.platform = platform;
+        create_op.poster = poster;
+        if (origin_platform.valid())
+            create_op.origin_platform = *origin_platform;
+        if (origin_poster.valid())
+            create_op.origin_poster = *origin_poster;
+        if (origin_post_pid.valid())
+            create_op.origin_post_pid = *origin_post_pid;
+
+        create_op.hash_value = hash_value;
+        create_op.extra_data = extra_data;
+        create_op.title = title;
+        create_op.body = body;
+
+        create_op.extensions = flat_set<post_operation::extension_parameter>();
+        create_op.extensions->insert(exts);
+
+        signed_transaction tx;
+        tx.operations.push_back(create_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+
+        db.push_transaction(tx, ~0);
+    }FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(poster)(hash_value)(title)(body)(extra_data)(origin_platform)(origin_poster)(origin_post_pid)(exts))
+}
+
+void database_fixture::update_post(flat_set<fc::ecc::private_key> sign_keys,
+                                   account_uid_type              platform,
+                                   account_uid_type              poster,
+                                   post_pid_type                 post_pid,
+                                   optional<string>              hash_value,
+                                   optional<string>              title,
+                                   optional<string>              body,
+                                   optional<string>              extra_data,
+                                   optional<post_update_operation::ext> ext)
+{
+    try{
+        post_update_operation update_op;
+        update_op.post_pid = post_pid;
+        update_op.platform = platform;
+        update_op.poster = poster;
+
+        if (hash_value.valid())
+            update_op.hash_value = *hash_value;
+        if (extra_data.valid())
+            update_op.extra_data = *extra_data;
+        if (title.valid())
+            update_op.title = *title;
+        if (body.valid())
+            update_op.body = *body;
+
+        update_op.extensions = flat_set<post_update_operation::extension_parameter>();
+        update_op.extensions->insert(*ext);
+
+        signed_transaction tx;
+        tx.operations.push_back(update_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+
+        db.push_transaction(tx, ~0);
+    }FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext))
+}
+
+void database_fixture::score_a_post(flat_set<fc::ecc::private_key> sign_keys,
+                                    account_uid_type from_account,
+                                    account_uid_type platform,
+                                    account_uid_type poster,
+                                    post_pid_type    post_pid,
+                                    int8_t           score,
+                                    share_type       csaf)
+{
+    try{
+        score_create_operation create_op;
+        create_op.from_account_uid = from_account;
+        create_op.platform = platform;
+        create_op.poster = poster;
+        create_op.post_pid = post_pid;
+        create_op.score = score;
+        create_op.csaf = csaf;
+
+        signed_transaction tx;
+        tx.operations.push_back(create_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+
+        db.push_transaction(tx, ~0);
+    }FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(platform)(poster)(post_pid)(score)(csaf))
 }
 
 namespace test {

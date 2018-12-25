@@ -341,6 +341,49 @@ struct database_fixture {
          s.set_fee_with_csaf(op);
    }
 
+   void transfer_extension(flat_set<fc::ecc::private_key> sign_keys,
+                           account_uid_type from,
+                           account_uid_type to,
+                           asset            amount,
+                           string           memo,
+                           bool             isfrom_balance = true,
+                           bool             isto_balance = true);
+
+   void account_auth_platform(flat_set<fc::ecc::private_key> sign_keys,
+                              account_uid_type account,
+                              account_uid_type platform_owner,
+                              share_type       limit_for_platform = 0,
+                              uint32_t         permission_flags = 0xFFFFFFFF);
+
+   void create_post(flat_set<fc::ecc::private_key> sign_keys,
+                    account_uid_type           platform,
+                    account_uid_type           poster,
+                    string                     hash_value,
+                    string                     title,
+                    string                     body,
+                    string                     extra_data,
+                    optional<account_uid_type> origin_platform,
+                    optional<account_uid_type> origin_poster,
+                    optional<post_pid_type>    origin_post_pid,
+                    post_operation::ext  exts = post_operation::ext());
+
+   void update_post(flat_set<fc::ecc::private_key> sign_keys,
+                    account_uid_type              platform,
+                    account_uid_type              poster,
+                    post_pid_type                 post_pid,
+                    optional<string>              hash_value,
+                    optional<string>              title,
+                    optional<string>              body,
+                    optional<string>              extra_data,
+                    optional<post_update_operation::ext> ext = post_update_operation::ext());
+
+   void score_a_post(flat_set<fc::ecc::private_key> sign_keys,
+                     account_uid_type from_account,
+                     account_uid_type platform,
+                     account_uid_type poster,
+                     post_pid_type    post_pid,
+                     int8_t           score,
+                     share_type       csaf);
 };
 
 namespace test {
