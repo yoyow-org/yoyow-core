@@ -176,17 +176,17 @@ struct post_update_ext
     optional<std::string>               forward_price;
     optional<std::string>               receiptor;
     optional<bool>                      to_buyout;
-    optional<std::string>               buyout_ratio;
+    optional<uint16_t>                  buyout_ratio;
     optional<std::string>               buyout_price;
     optional<license_lid_type>          license_lid;
     optional<uint32_t>                  permission_flags;
 };
 
-struct recerptor_ext
+struct receiptor_ext
 {
-    std::string     cur_ratio;
+    uint16_t        cur_ratio;
     bool            to_buyout;
-    std::string     buyout_ratio;
+    uint16_t        buyout_ratio;
     std::string     buyout_price;
 };
 
@@ -194,7 +194,7 @@ struct post_create_ext
 {
     uint8_t post_type = post_operation::Post_Type_Post;
     optional<std::string> forward_price;
-    optional< map<account_uid_type, recerptor_ext> > receiptors;
+    optional< map<account_uid_type, receiptor_ext> > receiptors;
     optional<license_lid_type> license_lid;
     uint32_t permission_flags = 0xFFFFFFFF;
 };
@@ -1558,7 +1558,7 @@ FC_REFLECT(graphene::wallet::post_update_ext,
           (permission_flags)
           )
 
-FC_REFLECT(graphene::wallet::recerptor_ext,
+FC_REFLECT(graphene::wallet::receiptor_ext,
           (cur_ratio)
           (to_buyout)
           (buyout_ratio)

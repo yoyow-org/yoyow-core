@@ -209,120 +209,6 @@ string normalize_brain_key( string s )
    return result;
 }
 
-share_type real_amount_from_string(string amount_string, uint8_t precision = 0)
-{
-    try {
-        bool negative_found = false;
-        bool decimal_found = false;
-        for (const char c : amount_string)
-        {
-            if (isdigit(c))
-                continue;
-
-            if (c == '-' && !negative_found)
-            {
-                negative_found = true;
-                continue;
-            }
-
-            if (c == '.' && !decimal_found)
-            {
-                decimal_found = true;
-                continue;
-            }
-
-            FC_THROW((amount_string));
-        }
-
-        share_type satoshis = 0;
-
-        share_type scaled_precision = asset::scaled_precision(precision);
-
-        const auto decimal_pos = amount_string.find('.');
-        const string lhs = amount_string.substr(negative_found, decimal_pos);
-        if (!lhs.empty())
-            satoshis += fc::safe<int64_t>(std::stoll(lhs)) *= scaled_precision;
-
-        if (decimal_found)
-        {
-            const size_t max_rhs_size = std::to_string(scaled_precision.value).substr(1).size();
-
-            string rhs = amount_string.substr(decimal_pos + 1);
-            FC_ASSERT(rhs.size() <= max_rhs_size);
-
-            while (rhs.size() < max_rhs_size)
-                rhs += '0';
-
-            if (!rhs.empty())
-                satoshis += std::stoll(rhs);
-        }
-
-        FC_ASSERT(satoshis <= GRAPHENE_MAX_SHARE_SUPPLY);
-
-        if (negative_found)
-            satoshis *= -1;
-
-        return satoshis;
-    } FC_CAPTURE_AND_RETHROW((amount_string))
-}
-
-uint16_t real_ratio_from_string(string ratio_string, uint8_t precision = 0)
-{
-    try {
-        bool negative_found = false;
-        bool decimal_found = false;
-        for (const char c : ratio_string)
-        {
-            if (isdigit(c))
-                continue;
-
-            if (c == '-' && !negative_found)
-            {
-                negative_found = true;
-                continue;
-            }
-
-            if (c == '.' && !decimal_found)
-            {
-                decimal_found = true;
-                continue;
-            }
-
-            FC_THROW((ratio_string));
-        }
-
-        share_type satoshis = 0;
-
-        share_type scaled_precision = asset::scaled_precision(precision);
-
-        const auto decimal_pos = ratio_string.find('.');
-        const string lhs = ratio_string.substr(negative_found, decimal_pos);
-        if (!lhs.empty())
-            satoshis += fc::safe<int64_t>(std::stoll(lhs)) *= scaled_precision;
-
-        if (decimal_found)
-        {
-            const size_t max_rhs_size = std::to_string(scaled_precision.value).substr(1).size();
-
-            string rhs = ratio_string.substr(decimal_pos + 1);
-            FC_ASSERT(rhs.size() <= max_rhs_size);
-
-            while (rhs.size() < max_rhs_size)
-                rhs += '0';
-
-            if (!rhs.empty())
-                satoshis += std::stoll(rhs);
-        }
-
-        FC_ASSERT(satoshis <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO));
-
-        if (negative_found)
-            satoshis *= -1;
-
-        return uint16_t(satoshis.value);
-    } FC_CAPTURE_AND_RETHROW((ratio_string))
-}
-
 struct op_prototype_visitor
 {
    typedef void result_type;
@@ -1594,6 +1480,9 @@ signed_transaction account_auth_platform(string account,
                                          bool broadcast = false)
 {
    try {
+       fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+       FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+
       account_object user = get_account( account );
       account_object platform_account = get_account( platform_owner );
       auto pa = _remote_db->get_platform_by_account( platform_account.uid );
@@ -1603,7 +1492,7 @@ signed_transaction account_auth_platform(string account,
       op.platform = pa->owner;
 
 	  account_auth_platform_operation::ext ext;
-      ext.limit_for_platform = real_amount_from_string(limit_for_platform, GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS);
+      ext.limit_for_platform = asset_obj->amount_from_string(limit_for_platform).amount;
       ext.permission_flags = permission_flags;
       op.extensions = flat_set<account_auth_platform_operation::extension_parameter>();
 	  op.extensions->insert(ext);
@@ -2383,13 +2272,16 @@ signed_transaction account_cancel_auth_platform(string account,
                                    bool broadcast = false)
    {
        try {
+           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+
            score_create_operation create_op;
            create_op.from_account_uid = get_account_uid(from_account);
            create_op.platform = get_account_uid(platform);
            create_op.poster = get_account_uid(poster);
            create_op.post_pid = post_pid;
            create_op.score = score;
-           create_op.csaf = real_amount_from_string(csaf, GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS); // csaf must like YOYO
+           create_op.csaf = asset_obj->amount_from_string(csaf).amount;
 
            signed_transaction tx;
            tx.operations.push_back(create_op);
@@ -2438,13 +2330,15 @@ signed_transaction account_cancel_auth_platform(string account,
    {
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
+           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
            reward_proxy_operation reward_op;
            reward_op.from_account_uid = get_account_uid(from_account);
            reward_op.platform = get_account_uid(platform);
            reward_op.poster = get_account_uid(poster);
            reward_op.post_pid = post_pid;
-           reward_op.amount = real_amount_from_string(amount, GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS); //must be YOYO
+           reward_op.amount = asset_obj->amount_from_string(amount).amount;
 
            signed_transaction tx;
            tx.operations.push_back(reward_op);
@@ -2526,6 +2420,8 @@ signed_transaction account_cancel_auth_platform(string account,
    {
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
+           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
            account_uid_type poster_uid = get_account_uid(poster);
            const account_statistics_object& poster_account_statistics = _remote_db->get_account_statistics_by_uid(poster_uid);
@@ -2550,17 +2446,17 @@ signed_transaction account_cancel_auth_platform(string account,
            if (exts.post_type)
                extension.post_type = exts.post_type;
            if (exts.forward_price.valid())
-               extension.forward_price = real_amount_from_string(*(exts.forward_price), GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS); // must be YOYO
+               extension.forward_price = asset_obj->amount_from_string(*(exts.forward_price)).amount;
            if (exts.receiptors.valid())
            {
                map<account_uid_type, Recerptor_Parameter> maps_receiptors;
                for (auto itor = (*exts.receiptors).begin(); itor != (*exts.receiptors).end(); itor++)
                {
                    Recerptor_Parameter para;
-                   para.cur_ratio = real_ratio_from_string(itor->second.cur_ratio, 2);
+                   para.cur_ratio = uint16_t(itor->second.cur_ratio * GRAPHENE_1_PERCENT);
                    para.to_buyout = itor->second.to_buyout;
-                   para.buyout_ratio = real_ratio_from_string(itor->second.buyout_ratio, 2);;
-                   para.buyout_price = real_amount_from_string(itor->second.buyout_price, GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS);
+                   para.buyout_ratio = uint16_t(itor->second.buyout_ratio * GRAPHENE_1_PERCENT);
+                   para.buyout_price = asset_obj->amount_from_string(itor->second.buyout_price).amount;
                    maps_receiptors.insert(std::make_pair(itor->first, para));
                }
                extension.receiptors = maps_receiptors;
@@ -2592,6 +2488,8 @@ signed_transaction account_cancel_auth_platform(string account,
    {
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
+           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
            post_update_operation update_op;
            update_op.post_pid = fc::to_uint64(fc::string(post_pid));
@@ -2610,15 +2508,15 @@ signed_transaction account_cancel_auth_platform(string account,
            update_op.extensions = flat_set<post_update_operation::extension_parameter>();
            post_update_operation::ext extension;
            if (ext.forward_price.valid())
-               extension.forward_price    = real_amount_from_string(*(ext.forward_price), GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS); // must be YOYO
+               extension.forward_price    = asset_obj->amount_from_string(*(ext.forward_price)).amount;
            if (ext.receiptor.valid())
                extension.receiptor        = get_account_uid(*(ext.receiptor));
            if (ext.to_buyout.valid())
                extension.to_buyout        = ext.to_buyout;
            if (ext.buyout_ratio.valid())
-               extension.buyout_ratio     = real_ratio_from_string(*(ext.buyout_ratio), 2);//eg: 30.50 (%)  convert to 3050
+               extension.buyout_ratio     = uint16_t((*(ext.buyout_ratio) )* GRAPHENE_1_PERCENT);
            if (ext.buyout_price.valid())
-               extension.buyout_price     = real_amount_from_string(*(ext.buyout_price), GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS); // must be YOYO
+               extension.buyout_price     = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
            if (ext.license_lid.valid())
                extension.license_lid      = ext.license_lid;
            if (ext.permission_flags.valid())
