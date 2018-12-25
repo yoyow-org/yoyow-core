@@ -28,9 +28,6 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
     try{
         ACTORS((1000)(1001));
 
-        const account_object& u1000 = db.get_account_by_uid(u_1000_id);
-        dlog("u_1000_id : ${u}",("u",u1000));
-
         const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
         // Return number of core shares (times precision)
@@ -46,104 +43,27 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
         // make sure the database requires our fee to be nonzero
         enable_fees();
 
-        signed_transaction tx;
-        transfer_operation xfer_op;
-        xfer_op.extensions = extension< transfer_operation::ext >();
-        xfer_op.extensions->value.from_balance = 6000 * prec;
-        xfer_op.extensions->value.to_prepaid = 6000 * prec;
-        xfer_op.from = u_1000_id;
-        xfer_op.to = u_1000_id;
-        xfer_op.amount = _core(6000);
-        xfer_op.fee = _core(0);
-
-        tx.operations.push_back(xfer_op);
-        set_expiration(db, tx);
-        
-        for (auto& op : tx.operations){
-            const fee_schedule& s = db.get_global_properties().parameters.current_fees;
-            s.set_fee_with_csaf(op);
-            //db.current_fee_schedule().set_fee(op);
-        }
-        tx.validate();
-        sign(tx, u_1000_private_key);
-        PUSH_TX(db, tx);
-
+        flat_set<fc::ecc::private_key> sign_keys;
+        sign_keys.insert(u_1000_private_key);
+        transfer_extension(sign_keys, u_1000_id, u_1000_id, _core(6000), "", true, false);
         const account_statistics_object& ant1000 = db.get_account_statistics_by_uid(u_1000_id);
         BOOST_CHECK(ant1000.prepaid == 6000 * prec);
         BOOST_CHECK(ant1000.core_balance == 4000 * prec);
 
-        signed_transaction tx2;
-        transfer_operation xfer_op2;
-        xfer_op2.extensions = extension< transfer_operation::ext >();
-        xfer_op2.extensions->value.from_prepaid = 5000 * prec;
-        xfer_op2.extensions->value.to_balance = 5000 * prec;
-        xfer_op2.from = u_1000_id;
-        xfer_op2.to = u_1001_id;
-        xfer_op2.amount = _core(5000);
-        xfer_op2.fee = _core(0);
-
-        tx2.operations.push_back(xfer_op2);
-        set_expiration(db, tx2);
-        for (auto& op : tx2.operations){
-            const fee_schedule& s = db.get_global_properties().parameters.current_fees;
-            s.set_fee_with_csaf(op);
-            //db.current_fee_schedule().set_fee(op);
-        }
-        tx2.validate();
-        sign(tx2, u_1000_private_key);
-        PUSH_TX(db, tx2);
-
+        transfer_extension(sign_keys, u_1000_id, u_1001_id, _core(5000), "", false, true);
         const account_statistics_object& ant1000_1 = db.get_account_statistics_by_uid(u_1000_id);
         const account_statistics_object& ant1001 = db.get_account_statistics_by_uid(u_1001_id);
         BOOST_CHECK(ant1000_1.prepaid == 1000 * prec);
         BOOST_CHECK(ant1001.core_balance == 15000 * prec);
 
-        signed_transaction tx3;
-        transfer_operation xfer_op3;
-        xfer_op3.extensions = extension< transfer_operation::ext >();
-        xfer_op3.extensions->value.from_balance = 15000 * prec;
-        xfer_op3.extensions->value.to_balance = 15000 * prec;
-        xfer_op3.from = u_1001_id;
-        xfer_op3.to = u_1000_id;
-        xfer_op3.amount = _core(15000);
-        xfer_op3.fee = _core(0);
-
-        tx3.operations.push_back(xfer_op3);
-        set_expiration(db, tx3);
-        for (auto& op : tx3.operations){
-            const fee_schedule& s = db.get_global_properties().parameters.current_fees;
-            s.set_fee_with_csaf(op);
-            //db.current_fee_schedule().set_fee(op);
-        }
-        tx3.validate();
-        sign(tx3, u_1001_private_key);
-        PUSH_TX(db, tx3);
-
+        flat_set<fc::ecc::private_key> sign_keys1;
+        sign_keys1.insert(u_1001_private_key);
+        transfer_extension(sign_keys1, u_1001_id, u_1000_id, _core(15000), "", true, true);
         const account_statistics_object& ant1000_2 = db.get_account_statistics_by_uid(u_1000_id);
         BOOST_CHECK(ant1000_2.prepaid == 1000 * prec);
         BOOST_CHECK(ant1000_2.core_balance == 19000 * prec);
 
-        signed_transaction tx4;
-        transfer_operation xfer_op4;
-        xfer_op4.extensions = extension< transfer_operation::ext >();
-        xfer_op4.extensions->value.from_prepaid = 1000 * prec;
-        xfer_op4.extensions->value.to_prepaid = 1000 * prec;
-        xfer_op4.from = u_1000_id;
-        xfer_op4.to = u_1001_id;
-        xfer_op4.amount = _core(1000);
-        xfer_op4.fee = _core(0);
-
-        tx4.operations.push_back(xfer_op4);
-        set_expiration(db, tx4);
-        for (auto& op : tx4.operations){
-            const fee_schedule& s = db.get_global_properties().parameters.current_fees;
-            s.set_fee_with_csaf(op);
-            //db.current_fee_schedule().set_fee(op);
-        }
-        tx4.validate();
-        sign(tx4, u_1000_private_key);
-        PUSH_TX(db, tx4);
-
+        transfer_extension(sign_keys, u_1000_id, u_1001_id, _core(1000), "", false, false);
         const account_statistics_object& ant1001_2 = db.get_account_statistics_by_uid(u_1001_id);
         const account_statistics_object& ant1000_3 = db.get_account_statistics_by_uid(u_1000_id);
         BOOST_CHECK(ant1001_2.prepaid == 1000 * prec);
@@ -153,6 +73,127 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
       edump((e.to_detail_string()));
       throw;
    }
+}
+
+BOOST_AUTO_TEST_CASE(account_auth_platform_test)
+{
+    try{
+        ACTORS((1000)(9000));
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+        auto _core = [&](int64_t x) -> asset
+        {  return asset(x*prec);    };
+        transfer(committee_account, u_1000_id, _core(10000));
+        transfer(committee_account, u_9000_id, _core(10000));
+        add_csaf_for_account(u_1000_id, 10000);
+        add_csaf_for_account(u_9000_id, 10000);
+
+        flat_set<fc::ecc::private_key> sign_keys;
+        sign_keys.insert(u_9000_private_key);
+        create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+
+        flat_set<fc::ecc::private_key> sign_keys1;
+        sign_keys1.insert(u_1000_private_key);
+        account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 1000 * prec, account_statistics_object::Platform_Permission_Forward |
+                                                                             account_statistics_object::Platform_Permission_Liked |
+                                                                             account_statistics_object::Platform_Permission_Buyout |
+                                                                             account_statistics_object::Platform_Permission_Comment |
+                                                                             account_statistics_object::Platform_Permission_Reward);
+
+        const account_statistics_object& ant1000 = db.get_account_statistics_by_uid(u_1000_id);
+        auto iter = ant1000.prepaids_for_platform.find(u_9000_id);
+        BOOST_CHECK(iter != ant1000.prepaids_for_platform.end());
+        BOOST_CHECK(iter->second.max_limit == 1000 * prec);
+        BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Forward);
+        BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Liked);
+        BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Buyout);
+        BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Comment);
+        BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Reward);
+    }
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(license_test)
+{
+    try{
+        ACTORS((1000)(9000));
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+        auto _core = [&](int64_t x) -> asset
+        {  return asset(x*prec);    };
+        transfer(committee_account, u_9000_id, _core(10000));
+        add_csaf_for_account(u_9000_id, 10000);
+
+        flat_set<fc::ecc::private_key> sign_keys;
+        sign_keys.insert(u_9000_private_key);
+        create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+
+        create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
+
+        const license_object& license = db.get_license_by_platform(u_9000_id, 1);
+        BOOST_CHECK(license.license_type == 6);
+        BOOST_CHECK(license.hash_value == "999999999");
+        BOOST_CHECK(license.extra_data == "extra");
+        BOOST_CHECK(license.title == "license title");
+        BOOST_CHECK(license.body == "license body");
+    }
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(post_test)
+{
+    try{
+        ACTORS((1000)(2000)(9000));
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+        auto _core = [&](int64_t x) -> asset
+        {  return asset(x*prec);    };
+        transfer(committee_account, u_1000_id, _core(10000));
+        transfer(committee_account, u_2000_id, _core(10000));
+        transfer(committee_account, u_9000_id, _core(10000));
+        add_csaf_for_account(u_1000_id, 10000);
+        add_csaf_for_account(u_2000_id, 10000);
+        add_csaf_for_account(u_9000_id, 10000);
+
+        flat_set<fc::ecc::private_key> sign_keys;
+        sign_keys.insert(u_9000_private_key);
+        create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+
+        flat_set<fc::ecc::private_key> sign_keys1;
+        sign_keys1.insert(u_1000_private_key);
+        account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 1000 * prec, account_statistics_object::Platform_Permission_Forward |
+            account_statistics_object::Platform_Permission_Liked |
+            account_statistics_object::Platform_Permission_Buyout |
+            account_statistics_object::Platform_Permission_Comment |
+            account_statistics_object::Platform_Permission_Reward);
+
+        //const account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(u_1000_id);
+        //post_operation post_op;
+        //post_op.post_pid = poster_account_statistics.last_post_sequence + 1;
+        //post_op.platform = u_9000_id;
+        //post_op.poster = u_1000_id;
+        //post_op.hash_value = "6666666";
+        //post_op.extra_data = "extra";
+        //post_op.title = "document name";
+        //post_op.body = "document body";
+
+        //post_op.extensions = flat_set<post_operation::extension_parameter>();
+        //post_operation::ext extension;
+        //extension.post_type = ;
+        //extension.forward_price = ;
+        //extension.license_lid = ;
+        //extension.permission_flags = ;
+        //extension.receiptors = ;
+
+
+    }
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
