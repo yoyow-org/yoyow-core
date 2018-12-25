@@ -23,6 +23,56 @@ using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( operation_tests, database_fixture )
 
+
+BOOST_AUTO_TEST_CASE(committee_proposal_test)
+{
+   try
+   {
+      ACTORS((1001)(1002)(1003)(1004)(1005)
+         (1006)(1007)(1008)(1009)(1010));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      // make sure the database requires our fee to be nonzero
+      enable_fees();
+
+      add_csaf_for_account(u_1001_id, 1000);
+      for (int i = 0; i < 5; ++i)
+         add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
+
+      generate_blocks(10);
+
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1, 100 };
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
+      for (int i = 1; i < 5; ++i)
+         committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+
+      generate_blocks(101);
+      auto gap = db.get_global_properties().parameters.get_award_params();
+     
+      BOOST_REQUIRE_EQUAL(gap.content_award_interval,    300);
+      BOOST_REQUIRE_EQUAL(gap.platform_award_interval,   300);
+      BOOST_REQUIRE_EQUAL(gap.max_csaf_per_approval,     1000);
+      BOOST_REQUIRE_EQUAL(gap.approval_expiration,       31536000);
+      BOOST_REQUIRE_EQUAL(gap.min_effective_csaf.value,  10);
+      BOOST_REQUIRE_EQUAL(gap.total_content_award_amount.value,            10000000000000);
+      BOOST_REQUIRE_EQUAL(gap.total_platform_content_award_amount.value,   10000000000000);
+      BOOST_REQUIRE_EQUAL(gap.total_platform_voted_award_amount.value,     10000000000000);
+      BOOST_REQUIRE_EQUAL(gap.platform_award_min_votes, 1);
+      BOOST_REQUIRE_EQUAL(gap.platform_award_requested_rank, 100);
+   }
+   catch (const fc::exception& e)
+   {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE(transfer_extension_test)
 {
     try{
