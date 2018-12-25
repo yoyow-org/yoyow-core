@@ -62,6 +62,8 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
          //const post_object*    post;
          //const post_object*    origin_post;
          const account_statistics_object* account_stats = nullptr;
+         const post_operation::ext* ext = nullptr;
+         optional<account_uid_type> sign_platform_uid;
    };
 
    class post_update_evaluator : public evaluator<post_update_evaluator>
@@ -74,6 +76,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
          //const account_object* poster_account;
          const post_object*    post = nullptr;
+         const post_update_operation::ext* ext = nullptr;
    };
 
    class score_create_evaluator : public evaluator<score_create_evaluator>
@@ -107,6 +110,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
        void_result do_apply(const operation_type& o);
 
        const active_post_object* active_post = nullptr;
+       optional<account_uid_type> sign_platform_uid;
    };
 
    class buyout_evaluator : public evaluator<buyout_evaluator>
@@ -116,6 +120,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
 	   void_result do_evaluate(const operation_type& o);
 	   void_result do_apply(const operation_type& o);
+       optional<account_uid_type> sign_platform_uid;
    };
 
    class license_create_evaluator : public evaluator < license_create_evaluator >

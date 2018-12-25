@@ -131,12 +131,23 @@ namespace graphene { namespace chain {
     *
     *  @return n/a
     */
-   struct Recerptor_Parameter
+   class Recerptor_Parameter
    {
+   public:
 	   uint16_t     cur_ratio;
 	   bool         to_buyout;
 	   uint16_t     buyout_ratio;
 	   share_type   buyout_price;
+
+       Recerptor_Parameter(){}
+
+       Recerptor_Parameter(uint16_t     cur_ratio_,
+                           bool         to_buyout_,
+                           uint16_t     buyout_ratio_,
+                           share_type   buyout_price_) :
+       cur_ratio(cur_ratio_), to_buyout(to_buyout_), buyout_ratio(buyout_ratio_), buyout_price(buyout_price_)
+       {
+       }
 
 	   void validate()const
 	   {

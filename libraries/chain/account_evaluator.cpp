@@ -356,6 +356,12 @@ void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_c
    bool found = ( itr != ka.end() );
    FC_ASSERT( found, "platform ${p} is not in secondary authority", ("p", o.platform) );
    
+   const account_statistics_object* from_account_stats = &acnt->statistics(d);
+   auto auth_data = from_account_stats->prepaids_for_platform.find(o.platform);
+   FC_ASSERT(auth_data != from_account_stats->prepaids_for_platform.end(),
+             "platform ${p} is not in account ${a}`s prepaids_for_platform",
+             ("p", o.platform)("a",o.uid));
+
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -367,6 +373,11 @@ void_result account_cancel_auth_platform_evaluator::do_apply( const account_canc
    d.modify( *acnt, [&](account_object& a){
       a.secondary.account_uid_auths.erase(itr);
       a.last_update_time = d.head_block_time();
+   });
+
+   const account_statistics_object* from_account_stats = &acnt->statistics(d);
+   d.modify(*from_account_stats, [&](account_statistics_object& a){
+       a.prepaids_for_platform.erase(o.platform);
    });
 
    return void_result();

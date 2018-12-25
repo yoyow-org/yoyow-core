@@ -117,6 +117,19 @@ void account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_
       coin_seconds_earned_last_update = now_rounded;
 }
 
+share_type account_statistics_object::get_auth_platform_usable_prepaid(account_uid_type platform) const
+{
+    share_type usable_prepaid = 0;
+    auto auth_data = prepaids_for_platform.find(platform);
+    if (auth_data != prepaids_for_platform.end())
+    {
+        FC_ASSERT(auth_data->second.max_limit >= auth_data->second.cur_used);
+        share_type amount = auth_data->second.max_limit - auth_data->second.cur_used;
+        usable_prepaid = prepaid >= amount ? amount : prepaid;
+    }
+    return usable_prepaid;
+}
+
 set<account_uid_type> account_member_index::get_account_members(const account_object& a)const
 {
    set<account_uid_type> result;

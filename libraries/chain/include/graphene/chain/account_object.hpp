@@ -257,6 +257,7 @@ namespace graphene { namespace chain {
           */
          void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now);
 
+         share_type get_auth_platform_usable_prepaid(account_uid_type platform)const;
    };
 
    /**
