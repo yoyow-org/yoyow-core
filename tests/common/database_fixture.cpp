@@ -985,7 +985,7 @@ void database_fixture::create_platform(account_uid_type owner_account,
    asset pledge_amount,
    string url,
    string extra_data,
-   const fc::ecc::private_key& key)
+   flat_set<fc::ecc::private_key> sign_keys)
 {
    try {
       platform_create_operation platform_create_op;
@@ -1001,16 +1001,17 @@ void database_fixture::create_platform(account_uid_type owner_account,
       set_expiration(db, tx);
       tx.validate();
 
-      sign(tx, key);
+      for (auto key : sign_keys)
+         sign(tx, key);
 
       db.push_transaction(tx, ~0);
-   } FC_CAPTURE_AND_RETHROW((owner_account)(name)(pledge_amount)(url)(extra_data)(key))
+   } FC_CAPTURE_AND_RETHROW((owner_account)(name)(pledge_amount)(url)(extra_data)(sign_keys))
 }
 
 void database_fixture::update_platform_votes(account_uid_type voting_account,
    flat_set<account_uid_type> platforms_to_add,
    flat_set<account_uid_type> platforms_to_remove,
-   const fc::ecc::private_key& key
+   flat_set<fc::ecc::private_key> sign_keys
    )
 {
    try {
@@ -1034,11 +1035,12 @@ void database_fixture::update_platform_votes(account_uid_type voting_account,
       set_expiration(db, tx);
       tx.validate();
 
-      sign(tx, key);
+      for (auto key : sign_keys)
+         sign(tx, key);
 
       db.push_transaction(tx, ~0);
 
-   } FC_CAPTURE_AND_RETHROW((voting_account)(platforms_to_add)(platforms_to_remove)(key))
+   } FC_CAPTURE_AND_RETHROW((voting_account)(platforms_to_add)(platforms_to_remove)(sign_keys))
 }
 
 void database_fixture::reward_post(account_uid_type from_account,
@@ -1046,7 +1048,7 @@ void database_fixture::reward_post(account_uid_type from_account,
    account_uid_type poster,
    post_pid_type post_pid,
    asset amount,
-   const fc::ecc::private_key& key)
+   flat_set<fc::ecc::private_key> sign_keys)
 {
    try {
       reward_operation reward_op;
@@ -1062,11 +1064,12 @@ void database_fixture::reward_post(account_uid_type from_account,
       set_expiration(db, tx);
       tx.validate();
 
-      sign(tx, key);
+      for (auto key : sign_keys)
+         sign(tx, key);
 
       db.push_transaction(tx, ~0);
 
-   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(key))
+   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(sign_keys))
 }
 
 void database_fixture::reward_post_proxy_by_platform(account_uid_type from_account,
@@ -1074,7 +1077,7 @@ void database_fixture::reward_post_proxy_by_platform(account_uid_type from_accou
    account_uid_type poster,
    post_pid_type    post_pid,
    uint64_t         amount,
-   const fc::ecc::private_key& key)
+   flat_set<fc::ecc::private_key> sign_keys)
 {
    try {
       reward_proxy_operation reward_op;
@@ -1090,10 +1093,11 @@ void database_fixture::reward_post_proxy_by_platform(account_uid_type from_accou
       set_expiration(db, tx);
       tx.validate();
 
-      sign(tx, key);
+      for (auto key : sign_keys)
+         sign(tx, key);
 
       db.push_transaction(tx, ~0);
-   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(key))
+   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(sign_keys))
 }
 
 void database_fixture::buyout_post(account_uid_type from_account,
@@ -1101,7 +1105,7 @@ void database_fixture::buyout_post(account_uid_type from_account,
    account_uid_type poster,
    post_pid_type    post_pid,
    account_uid_type receiptor_account,
-   const fc::ecc::private_key& key)
+   flat_set<fc::ecc::private_key> sign_keys)
 {
    try {
       buyout_operation buyout_op;
@@ -1117,10 +1121,11 @@ void database_fixture::buyout_post(account_uid_type from_account,
       set_expiration(db, tx);
       tx.validate();
 
-      sign(tx, key);
+      for (auto key : sign_keys)
+         sign(tx, key);
 
       db.push_transaction(tx, ~0);
-   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(key))
+   } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(sign_keys))
 }
 
 void database_fixture::create_license(account_uid_type platform,
@@ -1129,7 +1134,7 @@ void database_fixture::create_license(account_uid_type platform,
     string  title,
     string  body,
     string  extra_data,
-    const fc::ecc::private_key& key)
+    flat_set<fc::ecc::private_key> sign_keys)
 {
     try {
         const account_statistics_object& plat_account_statistics = db.get_account_statistics_by_uid(platform);
@@ -1148,10 +1153,11 @@ void database_fixture::create_license(account_uid_type platform,
         set_expiration(db, tx);
         tx.validate();
 
-        sign(tx, key);
+        for (auto key : sign_keys)
+           sign(tx, key);
 
         db.push_transaction(tx, ~0);
-    } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(key))
+    } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(sign_keys))
 }
 
 void database_fixture::transfer_extension(flat_set<fc::ecc::private_key> sign_keys,

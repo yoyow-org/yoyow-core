@@ -298,12 +298,12 @@ struct database_fixture {
       asset pledge_amount,
       string url,
       string extra_data,
-      const fc::ecc::private_key& key);
+      flat_set<fc::ecc::private_key> sign_keys);
 
    void database_fixture::update_platform_votes(account_uid_type voting_account,
       flat_set<account_uid_type> platforms_to_add,
       flat_set<account_uid_type> platforms_to_remove,
-      const fc::ecc::private_key& key
+      flat_set<fc::ecc::private_key> sign_keys
       );
 
    void reward_post(account_uid_type from_account,
@@ -311,21 +311,21 @@ struct database_fixture {
       account_uid_type poster,
       post_pid_type post_pid,
       asset amount,
-      const fc::ecc::private_key& key);
+      flat_set<fc::ecc::private_key> sign_keys);
 
    void database_fixture::reward_post_proxy_by_platform(account_uid_type from_account,
       account_uid_type platform,
       account_uid_type poster,
       post_pid_type    post_pid,
       uint64_t         amount,
-      const fc::ecc::private_key& key);
+      flat_set<fc::ecc::private_key> sign_keys);
 
    void database_fixture::buyout_post(account_uid_type from_account,
       account_uid_type platform,
       account_uid_type poster,
       post_pid_type    post_pid,
       account_uid_type receiptor_account,
-      const fc::ecc::private_key& key);
+      flat_set<fc::ecc::private_key> sign_keys);
 
    void database_fixture::create_license(account_uid_type platform,
       uint8_t license_type,
@@ -333,7 +333,7 @@ struct database_fixture {
       string  title,
       string  body,
       string  extra_data,
-      const fc::ecc::private_key& key);
+      flat_set<fc::ecc::private_key> sign_keys);
 
    void set_operation_fees(signed_transaction& tx, const fee_schedule& s)
    {
