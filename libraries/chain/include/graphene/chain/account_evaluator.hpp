@@ -82,6 +82,8 @@ public:
    void_result do_apply( const operation_type& o ) ;
 
    const account_object* acnt = nullptr;
+   const account_auth_platform_operation::ext* ext = nullptr;
+   bool found = false;
 };
 
 class account_cancel_auth_platform_evaluator : public evaluator<account_cancel_auth_platform_evaluator>

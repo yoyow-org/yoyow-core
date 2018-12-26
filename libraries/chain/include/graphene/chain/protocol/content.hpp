@@ -155,6 +155,14 @@ namespace graphene { namespace chain {
 			   FC_ASSERT(buyout_ratio <= cur_ratio, "forward_ratio must be less then cur_ratio");
 		   FC_ASSERT(cur_ratio <= (10000 - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "forward_ratio must be less then 75%");
 	   }
+
+       bool operator == (Recerptor_Parameter r1)
+       {
+           return (cur_ratio == r1.cur_ratio) &&
+                  (to_buyout == r1.to_buyout) && 
+                  (buyout_price == r1.buyout_price) && 
+                  (buyout_ratio == r1.buyout_ratio);
+       }
    };
 
    struct post_operation : public base_operation

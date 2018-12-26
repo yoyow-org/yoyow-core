@@ -253,13 +253,26 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    database& d = db();
 
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
+   if (o.extensions.valid())
+   {
+       for (auto ext_iter = o.extensions->begin(); ext_iter != o.extensions->end(); ext_iter++)
+       {
+           if (ext_iter->which() == account_auth_platform_operation::extension_parameter::tag<account_auth_platform_operation::ext>::value)
+           {
+               ext = &(ext_iter->get<account_auth_platform_operation::ext>());
+               FC_ASSERT(ext->limit_for_platform.valid() || ext->permission_flags.valid(),
+                         "accont_auth_platform_operation must change some thing");
+           }
+       }
+   }
 
    acnt = &d.get_account_by_uid( o.uid );
 
    auto& ka = acnt->secondary.account_uid_auths;
    auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
-   bool found = ( itr != ka.end() );
-   FC_ASSERT( !found, "platform ${p} is already in secondary authority", ("p", o.platform) );
+   found = ( itr != ka.end() );
+   if (!ext)
+       FC_ASSERT( !found, "platform ${p} is already in secondary authority", ("p", o.platform) );
 
    authority auth = acnt->secondary;
    authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
@@ -280,54 +293,14 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 void_result account_auth_platform_evaluator::do_apply( const account_auth_platform_operation& o )
 { try {
    database& d = db();
-   authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
-   d.modify( *acnt, [&](account_object& a){
-      a.secondary.add_authority( auat, acnt->secondary.weight_threshold );
-      a.last_update_time = d.head_block_time();
-   });
-
-   if (o.extensions.valid())
+   if (!ext)
    {
-	   for (auto ext_iter = o.extensions->begin(); ext_iter != o.extensions->end(); ext_iter++)
-	   {
-		   if (ext_iter->which() == account_auth_platform_operation::extension_parameter::tag<account_auth_platform_operation::ext>::value)
-		   {
-			   const account_auth_platform_operation::ext& ext = ext_iter->get<account_auth_platform_operation::ext>();
-			   const account_statistics_object* from_account_stats = &acnt->statistics(d);
-			   if (from_account_stats)
-			   {
-				   d.modify(*from_account_stats, [&](account_statistics_object& s)
-				   {
-					   auto get_platform_auth_data = [&](const account_uid_type platform_uid)
-					   {
-						   auto plat_iter = s.prepaids_for_platform.find(platform_uid);
-						   if (plat_iter != s.prepaids_for_platform.end())
-						   {
-							   return &(plat_iter->second);
-						   }
-						   else
-						   {
-                               account_statistics_object::Platform_Auth_Data plat_data;
-                               plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
-                               plat_data.permission_flags = 0xFFFFFFFF;
-                               s.prepaids_for_platform.insert(std::make_pair(platform_uid, plat_data));
-							   auto iter = s.prepaids_for_platform.find(platform_uid);
-							   return &(iter->second);
-						   }
-					   };
+       authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
+       d.modify(*acnt, [&](account_object& a){
+           a.secondary.add_authority(auat, acnt->secondary.weight_threshold);
+           a.last_update_time = d.head_block_time();
+       });
 
-					   account_statistics_object::Platform_Auth_Data* plat_data = get_platform_auth_data(o.platform);
-					   if (ext.limit_for_platform.valid())
-						   plat_data->max_limit = *ext.limit_for_platform;
-					   if (ext.permission_flags.valid())
-						   plat_data->permission_flags = *ext.permission_flags;
-				   });
-			   }
-		   }
-	   }
-   }
-   else
-   {
        const account_statistics_object* from_account_stats = &acnt->statistics(d);
        if (from_account_stats)
        {
@@ -337,6 +310,47 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
                plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
                plat_data.permission_flags = 0xFFFFFFFF;
                s.prepaids_for_platform.insert(std::make_pair(o.platform, plat_data));
+           });
+       }
+   }
+   else
+   {
+       if (!found)
+       {
+           authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
+           d.modify(*acnt, [&](account_object& a){
+               a.secondary.add_authority(auat, acnt->secondary.weight_threshold);
+               a.last_update_time = d.head_block_time();
+           });
+       }
+       const account_statistics_object* from_account_stats = &acnt->statistics(d);
+       if (from_account_stats)
+       {
+           d.modify(*from_account_stats, [&](account_statistics_object& s)
+           {
+               auto get_platform_auth_data = [&](const account_uid_type platform_uid)
+               {
+                   auto plat_iter = s.prepaids_for_platform.find(platform_uid);
+                   if (plat_iter != s.prepaids_for_platform.end())
+                   {
+                       return &(plat_iter->second);
+                   }
+                   else
+                   {
+                       account_statistics_object::Platform_Auth_Data plat_data;
+                       plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+                       plat_data.permission_flags = 0xFFFFFFFF;
+                       s.prepaids_for_platform.insert(std::make_pair(platform_uid, plat_data));
+                       auto iter = s.prepaids_for_platform.find(platform_uid);
+                       return &(iter->second);
+                   }
+               };
+
+               account_statistics_object::Platform_Auth_Data* plat_data = get_platform_auth_data(o.platform);
+               if (ext->limit_for_platform.valid())
+                   plat_data->max_limit = *(ext->limit_for_platform);
+               if (ext->permission_flags.valid())
+                   plat_data->permission_flags = *(ext->permission_flags);
            });
        }
    }

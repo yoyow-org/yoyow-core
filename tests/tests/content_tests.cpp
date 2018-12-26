@@ -274,6 +274,19 @@ BOOST_AUTO_TEST_CASE(account_auth_platform_test)
         BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Buyout);
         BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Comment);
         BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Reward);
+
+
+        account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 6000 * prec, 0);
+
+        const account_statistics_object& ant10001 = db.get_account_statistics_by_uid(u_1000_id);
+        auto iter2 = ant10001.prepaids_for_platform.find(u_9000_id);
+        BOOST_CHECK(iter2 != ant10001.prepaids_for_platform.end());
+        BOOST_CHECK(iter2->second.max_limit == 6000 * prec);
+        BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Forward)==0);
+        BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Liked)==0);
+        BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Buyout)==0);
+        BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Comment)==0);
+        BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Reward)==0);
     }
     catch (fc::exception& e) {
         edump((e.to_detail_string()));
@@ -327,34 +340,57 @@ BOOST_AUTO_TEST_CASE(post_test)
         flat_set<fc::ecc::private_key> sign_keys;
         sign_keys.insert(u_9000_private_key);
         create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+        create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
 
         flat_set<fc::ecc::private_key> sign_keys1;
         sign_keys1.insert(u_1000_private_key);
         account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 1000 * prec, account_statistics_object::Platform_Permission_Forward |
-            account_statistics_object::Platform_Permission_Liked |
-            account_statistics_object::Platform_Permission_Buyout |
-            account_statistics_object::Platform_Permission_Comment |
-            account_statistics_object::Platform_Permission_Reward);
+                                                                             account_statistics_object::Platform_Permission_Liked |
+                                                                             account_statistics_object::Platform_Permission_Buyout |
+                                                                             account_statistics_object::Platform_Permission_Comment |
+                                                                             account_statistics_object::Platform_Permission_Reward);
+        sign_keys1.insert(u_9000_private_key);
 
-        //const account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(u_1000_id);
-        //post_operation post_op;
-        //post_op.post_pid = poster_account_statistics.last_post_sequence + 1;
-        //post_op.platform = u_9000_id;
-        //post_op.poster = u_1000_id;
-        //post_op.hash_value = "6666666";
-        //post_op.extra_data = "extra";
-        //post_op.title = "document name";
-        //post_op.body = "document body";
+        map<account_uid_type, Recerptor_Parameter> receiptors;
+        receiptors.insert(std::make_pair(u_9000_id, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0}));
+        receiptors.insert(std::make_pair(u_1000_id, Recerptor_Parameter{ 5000 , false, 0 , 0}));
+        receiptors.insert(std::make_pair(u_2000_id, Recerptor_Parameter{ 2000, false, 0, 0 }));
 
-        //post_op.extensions = flat_set<post_operation::extension_parameter>();
-        //post_operation::ext extension;
-        //extension.post_type = ;
-        //extension.forward_price = ;
-        //extension.license_lid = ;
-        //extension.permission_flags = ;
-        //extension.receiptors = ;
+        post_operation::ext extension;
+        extension.post_type = post_operation::Post_Type_Post;
+        extension.forward_price = 10000*prec;
+        extension.receiptors = receiptors;
+        extension.license_lid = 1;
+        extension.permission_flags = post_object::Post_Permission_Forward |
+                                     post_object::Post_Permission_Liked |
+                                     post_object::Post_Permission_Buyout |
+                                     post_object::Post_Permission_Comment |
+                                     post_object::Post_Permission_Reward;
+        
+        create_post(sign_keys1, u_9000_id, u_1000_id, "6666666", "document name", "document body", "extra", optional<account_uid_type>(), optional<account_uid_type>(), optional<post_pid_type>(), extension);
 
-
+        const post_object& post = db.get_post_by_platform(u_9000_id, u_1000_id, 1);
+        BOOST_CHECK(post.hash_value == "6666666");
+        BOOST_CHECK(post.extra_data == "extra");
+        BOOST_CHECK(post.title == "document name");
+        BOOST_CHECK(post.body == "document body");
+        BOOST_CHECK(post.forward_price == 10000 * prec);
+        BOOST_CHECK(post.license_lid == 1);
+        BOOST_CHECK(post.permission_flags == post_object::Post_Permission_Forward |
+                                             post_object::Post_Permission_Liked |
+                                             post_object::Post_Permission_Buyout |
+                                             post_object::Post_Permission_Comment |
+                                             post_object::Post_Permission_Reward);
+        BOOST_CHECK(post.receiptors.find(u_9000_id) != post.receiptors.end());
+        Recerptor_Parameter r9 = post.receiptors.find(u_9000_id)->second;
+        BOOST_CHECK(r9 == Recerptor_Parameter(GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0));
+        BOOST_CHECK(post.receiptors.find(u_1000_id) != post.receiptors.end());
+        Recerptor_Parameter r1 = post.receiptors.find(u_1000_id)->second;
+        BOOST_CHECK(r1 == Recerptor_Parameter(5000, false, 0, 0));
+        BOOST_CHECK(post.receiptors.find(u_2000_id) != post.receiptors.end());
+        Recerptor_Parameter r2 = post.receiptors.find(u_2000_id)->second;
+        BOOST_CHECK(r2 == Recerptor_Parameter(2000, false, 0, 0));
+        
     }
     catch (fc::exception& e) {
         edump((e.to_detail_string()));

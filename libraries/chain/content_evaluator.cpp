@@ -747,6 +747,8 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
                   "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
 			      ("f",op.from_account_uid)("c",account_stats->csaf)("n",op.csaf));
 
+        FC_ASSERT(d.find_score(op.platform, op.poster, op.post_pid, op.from_account_uid)==nullptr, "only score a post once");
+
 		const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
         uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
 		auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, op.post_pid, sequence));
