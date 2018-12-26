@@ -56,7 +56,7 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
                          ("c", (account_stats.prepaid))("a", op.from)("n", op.amount.amount));
                if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
                {
-                   share_type usable_prepaid = account_stats.get_auth_platform_usable_prepaid(op.from);
+                   share_type usable_prepaid = account_stats.get_auth_platform_usable_prepaid(sign_account);
                    FC_ASSERT(usable_prepaid >= op.amount.amount,
                              "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
                              ("c", usable_prepaid)("p", sign_account)("a", op.from)("n", op.amount.amount));
