@@ -384,6 +384,8 @@ struct database_fixture {
                      post_pid_type    post_pid,
                      int8_t           score,
                      share_type       csaf);
+
+   void account_manage(account_uid_type account, account_manage_operation::opt options);
 };
 
 namespace test {

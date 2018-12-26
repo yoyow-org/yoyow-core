@@ -28,9 +28,6 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
 {
    try
    {
-      ACTORS((1001)(1002)(1003)(1004)(1005)
-         (1006)(1007)(1008)(1009)(1010));
-
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
       // Return number of core shares (times precision)
@@ -40,7 +37,6 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
       // make sure the database requires our fee to be nonzero
       enable_fees();
 
-      add_csaf_for_account(u_1001_id, 1000);
       for (int i = 0; i < 5; ++i)
          add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
 
@@ -68,6 +64,126 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
    }
    catch (const fc::exception& e)
    {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+BOOST_AUTO_TEST_CASE(update_post_test)
+{
+   try{
+      ACTORS((1000)(1001)
+         (9000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      transfer(committee_account, u_1000_id, _core(100000));
+      transfer(committee_account, u_9000_id, _core(100000));
+
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_9000_id, 10000);
+
+      create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
+      account_auth_platform({ u_1000_private_key }, u_1000_id, u_9000_id, 1000 * prec, 0x1F);
+      create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", {u_9000_private_key});
+
+      create_post({ u_1001_private_key, u_9000_private_key }, u_9000_id, u_1001_id, "", "", "", "",
+         optional<account_uid_type>(),
+         optional<account_uid_type>(),
+         optional<post_pid_type>());
+
+      post_update_operation::ext ext;
+      ext.forward_price    = 100 * prec;
+      ext.receiptor        = u_1001_id;
+      ext.to_buyout        = true;
+      ext.buyout_ratio     = 3000;
+      ext.buyout_price     = 10000 * prec;    
+      ext.license_lid      = 1;
+      ext.permission_flags = 0xF;
+      update_post({ u_1001_private_key, u_9000_private_key }, u_9000_id, u_1001_id, 1, "", "", "", "", ext);
+
+      auto post_obj = db.get_post_by_platform(u_9000_id, u_1001_id, 1);
+      Recerptor_Parameter parameter = post_obj.receiptors[u_1001_id];
+
+      BOOST_CHECK(*(post_obj.forward_price) == 100 * prec);
+      BOOST_CHECK(parameter.to_buyout == true);
+      BOOST_CHECK(parameter.buyout_ratio == 3000);
+      BOOST_CHECK(parameter.buyout_price == 10000 * prec);
+      BOOST_CHECK(post_obj.license_lid == 1);
+      BOOST_CHECK(post_obj.permission_flags == 0xF);
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+BOOST_AUTO_TEST_CASE(score_test)
+{
+   try{
+      ACTORS((1001)
+         (1003)(1004)(1005)(1006)(1007)(1008)(1009)(1010)(1011)(1012)
+         (9000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      //transfer(committee_account, u_1000_id, _core(100000));
+      transfer(committee_account, u_9000_id, _core(100000));
+
+      flat_map<account_uid_type, fc::ecc::private_key> map = {
+         { u_1003_id, u_1003_private_key }, { u_1004_id, u_1004_private_key }, { u_1005_id, u_1005_private_key },
+         { u_1006_id, u_1006_private_key }, { u_1007_id, u_1007_private_key }, { u_1008_id, u_1008_private_key },
+         { u_1009_id, u_1009_private_key }, { u_1010_id, u_1010_private_key }, { u_1011_id, u_1011_private_key },
+         { u_1012_id, u_1012_private_key } };
+
+      for (auto a : map)
+         add_csaf_for_account(a.first, 10000);
+      add_csaf_for_account(u_9000_id, 10000);
+
+      create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
+
+      create_post({ u_1001_private_key, u_9000_private_key }, u_9000_id, u_1001_id, "", "", "", "",
+         optional<account_uid_type>(),
+         optional<account_uid_type>(),
+         optional<post_pid_type>());
+
+      for (auto a : map)
+      {
+         account_auth_platform({a.second}, a.first, u_9000_id, 1000 * prec, 0x1F);
+         account_manage(a.first, {true, true, true});
+         score_a_post({a.second, u_9000_private_key}, a.first, u_9000_id, u_1001_id, 1, 5, 10);
+      }
+       
+      const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 1));     
+      BOOST_CHECK(apt_itr != apt_idx.end());
+      auto active_post = *apt_itr;
+      BOOST_CHECK(active_post.total_amount == 10 * 10);
+    
+      for (auto a : map)
+      {
+         auto score_obj = db.get_score(u_9000_id, u_1001_id, 1, a.first);
+         BOOST_CHECK(score_obj.score == 5);
+         BOOST_CHECK(score_obj.csaf == 10);
+         bool found = false;
+         for (auto score : active_post.scores)
+            if (score == score_obj.id)
+            {
+               found = true;
+               break;
+            }
+         BOOST_CHECK(found == true);
+      }        
+   }
+   catch (fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
    }

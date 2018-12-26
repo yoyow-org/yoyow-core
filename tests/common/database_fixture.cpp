@@ -951,7 +951,7 @@ void database_fixture::committee_proposal_create(
 
       sign(tx, init_account_priv_key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx);
    }FC_CAPTURE_AND_RETHROW((committee_member_account)(items)(voting_closing_block_num)(proposer_opinion)(execution_block_num)(expiration_block_num))
    
 }
@@ -976,7 +976,7 @@ void database_fixture::committee_proposal_vote(
 
       sign(tx, init_account_priv_key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx);
    }FC_CAPTURE_AND_RETHROW((committee_member_account)(proposal_number)(opinion))
 }
 
@@ -1004,7 +1004,7 @@ void database_fixture::create_platform(account_uid_type owner_account,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx);
    } FC_CAPTURE_AND_RETHROW((owner_account)(name)(pledge_amount)(url)(extra_data)(sign_keys))
 }
 
@@ -1038,7 +1038,7 @@ void database_fixture::update_platform_votes(account_uid_type voting_account,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx);
 
    } FC_CAPTURE_AND_RETHROW((voting_account)(platforms_to_add)(platforms_to_remove)(sign_keys))
 }
@@ -1067,7 +1067,7 @@ void database_fixture::reward_post(account_uid_type from_account,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx);
 
    } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(sign_keys))
 }
@@ -1096,7 +1096,7 @@ void database_fixture::reward_post_proxy_by_platform(account_uid_type from_accou
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx);
    } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(sign_keys))
 }
 
@@ -1124,7 +1124,7 @@ void database_fixture::buyout_post(account_uid_type from_account,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx);
    } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(sign_keys))
 }
 
@@ -1156,7 +1156,7 @@ void database_fixture::create_license(account_uid_type platform,
         for (auto key : sign_keys)
            sign(tx, key);
 
-        db.push_transaction(tx, ~0);
+        db.push_transaction(tx);
     } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(sign_keys))
 }
 
@@ -1205,7 +1205,7 @@ void database_fixture::transfer_extension(flat_set<fc::ecc::private_key> sign_ke
         for (auto key : sign_keys)
             sign(tx, key);
 
-        db.push_transaction(tx, ~0);
+        db.push_transaction(tx);
     }FC_CAPTURE_AND_RETHROW((sign_keys)(from)(to)(amount)(memo)(isfrom_balance)(isto_balance))
 }
 
@@ -1235,7 +1235,7 @@ void database_fixture::account_auth_platform(flat_set<fc::ecc::private_key> sign
         for (auto key : sign_keys)
             sign(tx, key);
 
-        db.push_transaction(tx, ~0);
+        db.push_transaction(tx);
     }FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform_owner)(limit_for_platform)(permission_flags))
 }
 
@@ -1281,7 +1281,7 @@ void database_fixture::create_post(flat_set<fc::ecc::private_key> sign_keys,
         for (auto key : sign_keys)
             sign(tx, key);
 
-        db.push_transaction(tx, ~0);
+        db.push_transaction(tx);
     }FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(poster)(hash_value)(title)(body)(extra_data)(origin_platform)(origin_poster)(origin_post_pid)(exts))
 }
 
@@ -1322,7 +1322,7 @@ void database_fixture::update_post(flat_set<fc::ecc::private_key> sign_keys,
         for (auto key : sign_keys)
             sign(tx, key);
 
-        db.push_transaction(tx, ~0);
+        db.push_transaction(tx);
     }FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext))
 }
 
@@ -1352,8 +1352,21 @@ void database_fixture::score_a_post(flat_set<fc::ecc::private_key> sign_keys,
         for (auto key : sign_keys)
             sign(tx, key);
 
-        db.push_transaction(tx, ~0);
+        db.push_transaction(tx);
     }FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(platform)(poster)(post_pid)(score)(csaf))
+}
+
+void database_fixture::account_manage(account_uid_type account, account_manage_operation::opt options)
+{
+   db.modify(db.get_account_by_uid(account), [&](account_object& a){
+      if (options.can_post.valid())
+         a.can_post = *options.can_post;
+      if (options.can_reply.valid())
+         a.can_reply = *options.can_reply;
+      if (options.can_rate.valid())
+         a.can_rate = *options.can_rate;
+      a.last_update_time = db.head_block_time();
+   });
 }
 
 namespace test {
