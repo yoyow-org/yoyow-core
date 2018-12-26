@@ -312,10 +312,10 @@ BOOST_AUTO_TEST_CASE(license_test)
 
         const license_object& license = db.get_license_by_platform(u_9000_id, 1);
         BOOST_CHECK(license.license_type == 6);
-        BOOST_CHECK(license.hash_value == "999999999");
-        BOOST_CHECK(license.extra_data == "extra");
-        BOOST_CHECK(license.title == "license title");
-        BOOST_CHECK(license.body == "license body");
+        BOOST_CHECK(license.hash_value   == "999999999");
+        BOOST_CHECK(license.extra_data   == "extra");
+        BOOST_CHECK(license.title        == "license title");
+        BOOST_CHECK(license.body         == "license body");
     }
     catch (fc::exception& e) {
         edump((e.to_detail_string()));
@@ -391,6 +391,166 @@ BOOST_AUTO_TEST_CASE(post_test)
         Recerptor_Parameter r2 = post.receiptors.find(u_2000_id)->second;
         BOOST_CHECK(r2 == Recerptor_Parameter(2000, false, 0, 0));
         
+    }
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(comment_test)
+{
+    try{
+        ACTORS((1000)(2000)(9000));
+        account_manage(u_1000_id, account_manage_operation::opt{ true, true, true });
+        account_manage(u_2000_id, account_manage_operation::opt{ true, true, true });
+
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+        auto _core = [&](int64_t x) -> asset
+        {  return asset(x*prec);    };
+        transfer(committee_account, u_1000_id, _core(10000));
+        transfer(committee_account, u_2000_id, _core(10000));
+        transfer(committee_account, u_9000_id, _core(10000));
+        add_csaf_for_account(u_1000_id, 10000);
+        add_csaf_for_account(u_2000_id, 10000);
+        add_csaf_for_account(u_9000_id, 10000);
+
+        flat_set<fc::ecc::private_key> sign_keys;
+        sign_keys.insert(u_9000_private_key);
+        create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+        create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
+
+        flat_set<fc::ecc::private_key> sign_keys1;
+        flat_set<fc::ecc::private_key> sign_keys2;
+        sign_keys1.insert(u_1000_private_key);
+        sign_keys2.insert(u_2000_private_key);
+        account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 1000 * prec, account_statistics_object::Platform_Permission_Forward |
+                                                                             account_statistics_object::Platform_Permission_Liked |
+                                                                             account_statistics_object::Platform_Permission_Buyout |
+                                                                             account_statistics_object::Platform_Permission_Comment |
+                                                                             account_statistics_object::Platform_Permission_Reward);
+        account_auth_platform(sign_keys2, u_2000_id, u_9000_id, 1000 * prec, account_statistics_object::Platform_Permission_Forward |
+                                                                             account_statistics_object::Platform_Permission_Liked |
+                                                                             account_statistics_object::Platform_Permission_Buyout |
+                                                                             account_statistics_object::Platform_Permission_Comment |
+                                                                             account_statistics_object::Platform_Permission_Reward);
+        sign_keys1.insert(u_9000_private_key);
+        sign_keys2.insert(u_9000_private_key);
+
+        post_operation::ext extension;
+        extension.post_type = post_operation::Post_Type_Post;
+        extension.forward_price = 10000 * prec;
+        extension.license_lid = 1;
+        extension.permission_flags = post_object::Post_Permission_Forward |
+                                     post_object::Post_Permission_Liked |
+                                     post_object::Post_Permission_Buyout |
+                                     post_object::Post_Permission_Comment |
+                                     post_object::Post_Permission_Reward;
+
+        create_post(sign_keys1, u_9000_id, u_1000_id, "6666666", "document name", "document body", "extra", optional<account_uid_type>(), optional<account_uid_type>(), optional<post_pid_type>(), extension);
+
+        extension.post_type = post_operation::Post_Type_Comment;
+        create_post(sign_keys2, u_9000_id, u_2000_id, "2333333", "comment", "the post is good", "extra", u_9000_id, u_1000_id, 1, extension);
+        const post_object& comment = db.get_post_by_platform(u_9000_id, u_2000_id, 1);
+        BOOST_CHECK(comment.origin_platform  == u_9000_id);
+        BOOST_CHECK(comment.origin_poster    == u_1000_id);
+        BOOST_CHECK(comment.origin_post_pid  == 1);
+        BOOST_CHECK(comment.hash_value       == "2333333");
+        BOOST_CHECK(comment.title            == "comment");
+        BOOST_CHECK(comment.body             == "the post is good");
+        BOOST_CHECK(comment.extra_data       == "extra");
+        BOOST_CHECK(comment.forward_price    == 10000 * prec);
+        BOOST_CHECK(comment.license_lid      == 1);
+        BOOST_CHECK(comment.permission_flags == post_object::Post_Permission_Forward |
+                                                post_object::Post_Permission_Liked |
+                                                post_object::Post_Permission_Buyout |
+                                                post_object::Post_Permission_Comment |
+                                                post_object::Post_Permission_Reward);
+    }
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(forward_test)
+{
+    try{
+        ACTORS((1000)(2000)(9000)(9001));
+        account_manage(u_1000_id, account_manage_operation::opt{ true, true, true });
+        account_manage(u_2000_id, account_manage_operation::opt{ true, true, true });
+
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+        auto _core = [&](int64_t x) -> asset
+        {  return asset(x*prec);    };
+        transfer(committee_account, u_1000_id, _core(10000));
+        transfer(committee_account, u_2000_id, _core(10000));
+        transfer(committee_account, u_9000_id, _core(10000));
+        transfer(committee_account, u_9001_id, _core(10000));
+        add_csaf_for_account(u_1000_id, 10000);
+        add_csaf_for_account(u_2000_id, 10000);
+        add_csaf_for_account(u_9000_id, 10000);
+        add_csaf_for_account(u_9001_id, 10000);
+        transfer_extension({ u_1000_private_key }, u_1000_id, u_1000_id, _core(10000), "", true, false);
+        transfer_extension({ u_2000_private_key }, u_2000_id, u_2000_id, _core(10000), "", true, false);
+         
+        flat_set<fc::ecc::private_key> sign_keys;
+        sign_keys.insert(u_9000_private_key);
+        create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+        create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
+        flat_set<fc::ecc::private_key> sign_keys1;
+        sign_keys1.insert(u_9001_private_key);
+        create_platform(u_9001_id, "platform2", _core(10000), "www.655667669.com", "", sign_keys1);
+        create_license(u_9001_id, 1, "7878787878", "license title", "license body", "extra", sign_keys1);
+
+
+        flat_set<fc::ecc::private_key> sign_keys_1;
+        flat_set<fc::ecc::private_key> sign_keys_2;
+        sign_keys_1.insert(u_1000_private_key);
+        sign_keys_2.insert(u_2000_private_key);
+        account_auth_platform(sign_keys_1, u_1000_id, u_9000_id, 10000 * prec, account_statistics_object::Platform_Permission_Forward |
+                                                                              account_statistics_object::Platform_Permission_Liked |
+                                                                              account_statistics_object::Platform_Permission_Buyout |
+                                                                              account_statistics_object::Platform_Permission_Comment |
+                                                                              account_statistics_object::Platform_Permission_Reward);
+        account_auth_platform(sign_keys_2, u_2000_id, u_9001_id, 10000 * prec, account_statistics_object::Platform_Permission_Forward |
+                                                                              account_statistics_object::Platform_Permission_Liked |
+                                                                              account_statistics_object::Platform_Permission_Buyout |
+                                                                              account_statistics_object::Platform_Permission_Comment |
+                                                                              account_statistics_object::Platform_Permission_Reward);
+        sign_keys_1.insert(u_9000_private_key);
+        sign_keys_2.insert(u_9001_private_key);
+
+        post_operation::ext extension;
+        extension.post_type = post_operation::Post_Type_Post;
+        extension.forward_price = 10000 * prec;
+        extension.license_lid = 1;
+        extension.permission_flags = post_object::Post_Permission_Forward |
+                                     post_object::Post_Permission_Liked |
+                                     post_object::Post_Permission_Buyout |
+                                     post_object::Post_Permission_Comment |
+                                     post_object::Post_Permission_Reward;
+
+        create_post(sign_keys_1, u_9000_id, u_1000_id, "6666666", "document name", "document body", "extra", optional<account_uid_type>(), optional<account_uid_type>(), optional<post_pid_type>(), extension);
+
+        extension.post_type = post_operation::Post_Type_forward_And_Modify;
+        create_post(sign_keys_2, u_9001_id, u_2000_id, "9999999", "new titile", "new body", "extra", u_9000_id, u_1000_id, 1, extension);
+
+        const post_object& forward_post = db.get_post_by_platform(u_9001_id, u_2000_id, 1);
+        BOOST_CHECK(forward_post.origin_platform  == u_9000_id);
+        BOOST_CHECK(forward_post.origin_poster    == u_1000_id);
+        BOOST_CHECK(forward_post.origin_post_pid  == 1);
+        BOOST_CHECK(forward_post.hash_value       == "9999999");
+        BOOST_CHECK(forward_post.title            == "new titile");
+        BOOST_CHECK(forward_post.body             == "new body");
+        BOOST_CHECK(forward_post.extra_data       == "extra");
+        BOOST_CHECK(forward_post.forward_price    == 10000 * prec);
+        BOOST_CHECK(forward_post.license_lid      == 1);
+        BOOST_CHECK(forward_post.permission_flags == post_object::Post_Permission_Forward |
+                                                     post_object::Post_Permission_Liked |
+                                                     post_object::Post_Permission_Buyout |
+                                                     post_object::Post_Permission_Comment |
+                                                     post_object::Post_Permission_Reward);
     }
     catch (fc::exception& e) {
         edump((e.to_detail_string()));
