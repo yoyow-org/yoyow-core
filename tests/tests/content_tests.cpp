@@ -15,6 +15,7 @@
 
 #include <fc/crypto/digest.hpp>
 #include <fc/log/logger.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include "../common/database_fixture.hpp"
 
@@ -182,6 +183,74 @@ BOOST_AUTO_TEST_CASE(score_test)
             }
          BOOST_CHECK(found == true);
       }        
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+typedef boost::multiprecision::uint128_t uint128_t;
+BOOST_AUTO_TEST_CASE(reward_test)
+{
+   try{
+      ACTORS((1001)
+         (1003)(1004)(1005)(1006)(1007)(1008)(1009)(1010)(1011)(1012)
+         (9000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      transfer(committee_account, u_9000_id, _core(100000));
+
+      flat_map<account_uid_type, fc::ecc::private_key> map = {
+         { u_1003_id, u_1003_private_key }, { u_1004_id, u_1004_private_key }, { u_1005_id, u_1005_private_key },
+         { u_1006_id, u_1006_private_key }, { u_1007_id, u_1007_private_key }, { u_1008_id, u_1008_private_key },
+         { u_1009_id, u_1009_private_key }, { u_1010_id, u_1010_private_key }, { u_1011_id, u_1011_private_key },
+         { u_1012_id, u_1012_private_key } };
+
+      for (auto a : map)
+         add_csaf_for_account(a.first, 10000);
+      add_csaf_for_account(u_9000_id, 10000);
+
+      create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
+
+      create_post({ u_1001_private_key, u_9000_private_key }, u_9000_id, u_1001_id, "", "", "", "",
+         optional<account_uid_type>(),
+         optional<account_uid_type>(),
+         optional<post_pid_type>());
+
+      for (auto a : map)
+      {
+         transfer(committee_account, a.first, _core(100000));
+         reward_post(a.first, u_9000_id, u_1001_id, 1, _core(1000), { a.second });
+      }
+
+      const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 1));
+      BOOST_CHECK(apt_itr != apt_idx.end());
+      auto active_post = *apt_itr;
+      BOOST_CHECK(active_post.total_rewards.find(GRAPHENE_CORE_ASSET_AID) != active_post.total_rewards.end());
+      BOOST_CHECK(active_post.total_rewards[GRAPHENE_CORE_ASSET_AID] == 10 * 1000 * prec);
+
+      post_object post_obj = db.get_post_by_platform(u_9000_id, u_1001_id, 1);
+      int64_t poster_earned = (post_obj.receiptors[u_1001_id].cur_ratio * uint128_t(100000000) / 10000).convert_to<int64_t>();
+      int64_t platform_earned = 100000000 - poster_earned;
+
+      auto act_1001 = db.get_account_statistics_by_uid(u_1001_id);
+      BOOST_CHECK(act_1001.core_balance == poster_earned * 10);
+      auto act_9000 = db.get_account_statistics_by_uid(u_9000_id);
+      BOOST_CHECK(act_9000.core_balance == (platform_earned * 10 + 100000 * prec));
+
+      for (auto a : map)
+      {
+         auto act = db.get_account_statistics_by_uid(a.first);
+         BOOST_CHECK(act.core_balance == (100000 - 1000) * prec);
+      }
+
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
