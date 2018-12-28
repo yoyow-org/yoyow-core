@@ -48,6 +48,14 @@ namespace graphene { namespace chain {
 		 share_type	total_platform_voted_award_amount		= GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
 		 uint64_t		platform_award_min_votes						= GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
 		 uint32_t		platform_award_requested_rank				= GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;
+
+     uint16_t   platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;
+     int64_t    post_award_score_threshold          = GRAPHENE_DEFAULT_POST_AWARD_SCORE_THRESHOLD;
+     uint16_t   casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;
+     uint32_t   post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;
+     uint16_t   approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;
+     uint16_t   approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;
+     uint16_t   approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;
 	 };
 	 typedef static_variant<content_parameter_extension_type>  parameter_extension;
 
