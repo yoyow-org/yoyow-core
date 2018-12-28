@@ -258,6 +258,69 @@ BOOST_AUTO_TEST_CASE(reward_test)
    }
 }
 
+
+BOOST_AUTO_TEST_CASE(post_platform_reward_test)
+{
+   try{
+      ACTORS((1001)(9000));
+
+      flat_map<account_uid_type, fc::ecc::private_key> score_map;
+      actor(1003, 10, score_map);
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+
+      for (int i = 0; i < 5; ++i)
+         add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
+      transfer(committee_account, u_9000_id, _core(100000));
+      generate_blocks(10);
+
+      BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1, 100 };
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
+      for (int i = 1; i < 5; ++i)
+         committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+      generate_blocks(89);
+
+      add_csaf_for_account(u_9000_id, 10000);
+      create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
+      create_post({ u_1001_private_key, u_9000_private_key }, u_9000_id, u_1001_id, "", "", "", "",
+         optional<account_uid_type>(),
+         optional<account_uid_type>(),
+         optional<post_pid_type>());
+
+      account_manage_operation::opt options;
+      options.can_rate = true;
+      for (auto a : score_map)
+      {
+         add_csaf_for_account(a.first, 10000);
+         account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
+
+         account_manage(GRAPHENE_NULL_ACCOUNT_UID, a.first, options);
+         auto b = db.get_account_by_uid(a.first);
+         score_a_post({ a.second, u_9000_private_key }, a.first, u_9000_id, u_1001_id, 1, 5, 10);
+      }
+
+      generate_blocks(100);
+
+      uint128_t award_average = (uint128_t)10000000000000 * 300 / (86400 * 365);
+      uint128_t post_earned = award_average * 10 * 10 / (10 * 10);
+
+      uint64_t  poster_earned = (post_earned * 3000 / 10000).convert_to<uint64_t>();
+      auto poster_act = db.get_account_statistics_by_uid(u_1001_id);
+      BOOST_CHECK(poster_act.core_balance == poster_earned);
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE(transfer_extension_test)
 {
     try{

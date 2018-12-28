@@ -386,6 +386,26 @@ struct database_fixture {
                      share_type       csaf);
 
    void account_manage(account_uid_type account, account_manage_operation::opt options);
+   void database_fixture::account_manage(account_uid_type executor,
+      account_uid_type account,
+      account_manage_operation::opt options
+      );
+
+   void actor(uint32_t start, uint32_t limit, flat_map<account_uid_type, fc::ecc::private_key>& map)
+   {
+      while(limit > 0)
+      {
+         account_uid_type uid = graphene::chain::calc_account_uid(start);
+         fc::ecc::private_key pri_key = generate_private_key(BOOST_PP_STRINGIZE(start));
+         public_key_type pub_key = pri_key.get_public_key();
+         char name[12];
+         sprintf(name, "u%d", start);
+         create_account(uid, name, pub_key);
+         map.emplace(uid, pri_key);
+         start++;
+         limit--;
+      }
+   }
 };
 
 namespace test {

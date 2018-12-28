@@ -1369,6 +1369,28 @@ void database_fixture::account_manage(account_uid_type account, account_manage_o
    });
 }
 
+void database_fixture::account_manage(account_uid_type executor,
+   account_uid_type account,
+   account_manage_operation::opt options
+   )
+{
+   try {
+      account_manage_operation manage_op;
+      manage_op.account = account;
+      manage_op.executor = executor;
+      manage_op.options.value = options;
+
+      signed_transaction tx;
+      tx.operations.push_back(manage_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      db.push_transaction(tx, ~0);
+
+   } FC_CAPTURE_AND_RETHROW((executor)(account)(options))
+}
+
 namespace test {
 
 void set_expiration( const database& db, transaction& tx )
