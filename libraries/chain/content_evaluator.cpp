@@ -6,6 +6,7 @@
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/is_authorized_asset.hpp>
+#include <graphene/chain/protocol/chain_parameters.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
 namespace graphene { namespace chain {
@@ -794,16 +795,21 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
 		}
 		else
 		{
-            const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-			d.create<active_post_object>([&](active_post_object& obj)
-			{
-				obj.platform				= op.platform;
-				obj.poster					= op.poster;
-				obj.post_pid				= op.post_pid;
-				obj.total_amount		    = op.csaf;
-				obj.period_sequence         = dpo.current_active_post_sequence;
-				obj.scores.push_back(new_score_object.id);
-			});
+            const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
+            time_point_sec expiration_time = post->create_time;
+            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration ) >= d.head_block_time())
+            {
+                const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+                d.create<active_post_object>([&](active_post_object& obj)
+                {
+                    obj.platform = op.platform;
+                    obj.poster = op.poster;
+                    obj.post_pid = op.post_pid;
+                    obj.total_amount = op.csaf;
+                    obj.period_sequence = dpo.current_active_post_sequence;
+                    obj.scores.push_back(new_score_object.id);
+                });
+            }
 		}
 
 		return new_score_object.id;
@@ -891,16 +897,20 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 		}
 		else
 		{
-            const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-			d.create<active_post_object>([&](active_post_object& obj)
-			{
-				obj.platform				= op.platform;
-				obj.poster					= op.poster;
-				obj.post_pid				= op.post_pid;
-                obj.total_amount            = 0;
-				obj.period_sequence         = dpo.current_active_post_sequence;
-				obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
-			});
+            time_point_sec expiration_time = post->create_time;
+            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            {
+                const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+                d.create<active_post_object>([&](active_post_object& obj)
+                {
+                    obj.platform = op.platform;
+                    obj.poster = op.poster;
+                    obj.post_pid = op.post_pid;
+                    obj.total_amount = 0;
+                    obj.period_sequence = dpo.current_active_post_sequence;
+                    obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
+                });
+            }
 		}
 
 		return void_result();
@@ -1003,16 +1013,20 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
         }
         else
         {
-            const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-            d.create<active_post_object>([&](active_post_object& obj)
+            time_point_sec expiration_time = post->create_time;
+            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
             {
-                obj.platform        = op.platform;
-                obj.poster          = op.poster;
-                obj.post_pid        = op.post_pid;
-                obj.total_amount    = 0;
-                obj.period_sequence = dpo.current_active_post_sequence;
-                obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
-            });
+                const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+                d.create<active_post_object>([&](active_post_object& obj)
+                {
+                    obj.platform = op.platform;
+                    obj.poster = op.poster;
+                    obj.post_pid = op.post_pid;
+                    obj.total_amount = 0;
+                    obj.period_sequence = dpo.current_active_post_sequence;
+                    obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
+                });
+            }
         }
 
         return void_result();
