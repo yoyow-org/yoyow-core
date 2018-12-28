@@ -173,6 +173,7 @@ void post_operation::validate()const
 				   uint32_t total = 0;
 				   for (auto iter : receiptor)
 				   {
+                       iter.second.validate();
 					   total += iter.second.cur_ratio;
 				   }
 				   FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
@@ -188,6 +189,8 @@ void post_update_operation::validate()const
    validate_account_uid( poster, "poster " );
    validate_account_uid( platform, "platform " );
    FC_ASSERT( post_pid > uint64_t( 0 ), "post_pid must be greater than 0 ");
+   FC_ASSERT(hash_value.valid() || (extra_data.valid() && (title.valid() || body.valid() || extensions.valid())),
+             "Should change something");
 
    if (extensions.valid())
    {
@@ -199,8 +202,9 @@ void post_update_operation::validate()const
                extnum++;
                FC_ASSERT(extnum <= 1, "post_update_operation::ext must be only one in post_update_operation::extension_parameter");
 			   const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
-			   FC_ASSERT(ext.forward_price.valid() 
-				   || (ext.receiptor.valid() && (ext.to_buyout.valid() || ext.buyout_ratio.valid() || ext.buyout_price.valid())), "Should change something");
+			   FC_ASSERT(ext.forward_price.valid() || (ext.receiptor.valid() && (ext.to_buyout.valid() ||
+                         ext.buyout_ratio.valid() || ext.buyout_price.valid() || ext.buyout_expiration.valid())),
+                        "Should change something");
 			   if (ext.receiptor.valid())
 			   {
 				   FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
@@ -242,6 +246,7 @@ void score_create_operation::validate()const
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
 	FC_ASSERT((score >= -5) && (score <= 5), "The score_create_operation`s score over range");
+    FC_ASSERT(csaf > 0, "The score_create_operation`s member points must more then 0.");
 }
 
 share_type score_create_operation::calculate_fee(const fee_parameters_type& k)const
