@@ -94,17 +94,19 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
 
    //TODO review
    database& d = db();
+   const platform_object* platform = d.find_platform_by_owner(o.reg_info.registrar);
 
    const auto& new_acnt_object = d.create<account_object>( [&]( account_object& obj ){
-         obj.uid              = o.uid;
-         obj.name             = o.name;
-         obj.owner            = o.owner;
-         obj.active           = o.active;
-         obj.secondary        = o.secondary;
-         obj.memo_key         = o.memo_key;
-         obj.reg_info         = o.reg_info;
-         obj.create_time      = d.head_block_time();
-         obj.last_update_time = d.head_block_time();
+         obj.uid                  = o.uid;
+         obj.name                 = o.name;
+         obj.owner                = o.owner;
+         obj.active               = o.active;
+         obj.secondary            = o.secondary;
+         obj.memo_key             = o.memo_key;
+         obj.reg_info             = o.reg_info;
+         obj.register_by_platform = platform == nullptr ? false : true;
+         obj.create_time          = d.head_block_time();
+         obj.last_update_time     = d.head_block_time();
 
          obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.uid;}).id;
    });

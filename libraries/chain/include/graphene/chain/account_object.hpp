@@ -44,11 +44,12 @@ namespace graphene { namespace chain {
       public:
           enum Platform_Auth_Permission
           {
-              Platform_Permission_Forward = 1,   //allow forward 
-              Platform_Permission_Liked   = 2,   //allow liked or scored
-              Platform_Permission_Buyout  = 4,   //allow buyout
-              Platform_Permission_Comment = 8,   //allow comment
-              Platform_Permission_Reward  = 16   //allow reward
+              Platform_Permission_Forward  = 1,   //allow forward 
+              Platform_Permission_Liked    = 2,   //allow liked or scored
+              Platform_Permission_Buyout   = 4,   //allow buyout
+              Platform_Permission_Comment  = 8,   //allow comment
+              Platform_Permission_Reward   = 16,  //allow reward
+              Platform_Permission_transfer = 32   //allow transfer
           };
 
 		  struct Platform_Auth_Data
@@ -306,6 +307,7 @@ namespace graphene { namespace chain {
           */
          time_point_sec membership_expiration_date;
 
+         bool             register_by_platform = false;
          ///The account that paid the fee to register this account. Receives a percentage of referral rewards.
          account_uid_type registrar;
          /// The account credited as referring this account. Receives a percentage of referral rewards.
@@ -731,7 +733,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
-                    //(membership_expiration_date)(registrar)(referrer)(lifetime_referrer)
+                    //(membership_expiration_date)(register_by_platform)(registrar)(referrer)(lifetime_referrer)
                     //(network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
                     (uid)(name)(owner)(active)(secondary)(memo_key)(reg_info)
                     (can_post)(can_reply)(can_rate)

@@ -51,6 +51,9 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
            if (auth_data != account_stats.prepaids_for_platform.end())
            {
                sign_platform_uid = sign_account;
+               FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_transfer)>0,
+                          "the transfer permisson of platform ${p} authorized by account ${a} is invalid. ",
+                          ("a", (op.from))("p", sign_account));
                FC_ASSERT(account_stats.prepaid >= op.amount.amount,
                          "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                          ("c", (account_stats.prepaid))("a", op.from)("n", op.amount.amount));

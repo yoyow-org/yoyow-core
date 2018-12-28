@@ -134,18 +134,20 @@ namespace graphene { namespace chain {
    class Recerptor_Parameter
    {
    public:
-	   uint16_t     cur_ratio;
-	   bool         to_buyout;
-	   uint16_t     buyout_ratio;
-	   share_type   buyout_price;
+	   uint16_t       cur_ratio;
+	   bool           to_buyout;
+	   uint16_t       buyout_ratio;
+	   share_type     buyout_price;
+       time_point_sec buyout_expiration = time_point_sec::maximum();
 
        Recerptor_Parameter(){}
 
-       Recerptor_Parameter(uint16_t     cur_ratio_,
-                           bool         to_buyout_,
-                           uint16_t     buyout_ratio_,
-                           share_type   buyout_price_) :
-       cur_ratio(cur_ratio_), to_buyout(to_buyout_), buyout_ratio(buyout_ratio_), buyout_price(buyout_price_)
+       Recerptor_Parameter(uint16_t       cur_ratio_,
+                           bool           to_buyout_,
+                           uint16_t       buyout_ratio_,
+                           share_type     buyout_price_,
+                           time_point_sec buyout_expiration_ = time_point_sec::maximum()) :
+        cur_ratio(cur_ratio_), to_buyout(to_buyout_), buyout_ratio(buyout_ratio_), buyout_price(buyout_price_), buyout_expiration(buyout_expiration_)
        {
        }
 
@@ -161,7 +163,8 @@ namespace graphene { namespace chain {
            return (cur_ratio == r1.cur_ratio) &&
                   (to_buyout == r1.to_buyout) && 
                   (buyout_price == r1.buyout_price) && 
-                  (buyout_ratio == r1.buyout_ratio);
+                  (buyout_ratio == r1.buyout_ratio) &&
+                  (buyout_expiration == r1.buyout_expiration);
        }
    };
 
@@ -241,6 +244,7 @@ namespace graphene { namespace chain {
 		   optional<bool>                 to_buyout;
 		   optional<uint16_t>             buyout_ratio;
 		   optional<share_type>           buyout_price;
+           optional<time_point_sec>       buyout_expiration;
            optional<license_lid_type>     license_lid;
            optional<uint32_t>             permission_flags;
 	   };
@@ -525,9 +529,9 @@ FC_REFLECT(graphene::chain::reward_proxy_operation::fee_parameters_type, (fee)(p
 FC_REFLECT(graphene::chain::reward_proxy_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
 FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(receiptors)(license_lid)(permission_flags))
-FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(license_lid)(permission_flags))
+FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(license_lid)(permission_flags))
 
-FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price))
+FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration))
 
 FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(extensions))

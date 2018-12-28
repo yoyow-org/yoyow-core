@@ -598,6 +598,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             obj.body             = o.body;
             obj.create_time      = d.head_block_time();
             obj.last_update_time = d.head_block_time();
+            obj.score_settlement = false;
 
 			bool need_init_receiptors = true;
 			if (ext)
@@ -706,6 +707,8 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
                      iter->second.buyout_ratio = *(ext->buyout_ratio);
                  if (ext->buyout_price.valid())
                      iter->second.buyout_price = *(ext->buyout_price);
+                 if (ext->buyout_expiration.valid())
+                     iter->second.buyout_expiration = *(ext->buyout_expiration);
              }
              if (ext->license_lid.valid())
              {
@@ -732,7 +735,6 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
         const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
         FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Liked) > 0, "post_object ${p} not allowed to liked.", ("p", op.post_pid));
 		FC_ASSERT((from_account.can_rate), "poster ${uid} is not allowed to appraise.", ("uid", op.poster));
-		FC_ASSERT(op.csaf > 0, "The score_create_operation`s member points must more then 0.");
 		FC_ASSERT(op.csaf <= global_params.max_csaf_per_approval, "The score_create_operation`s member points is over the maximum limit");
 
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
