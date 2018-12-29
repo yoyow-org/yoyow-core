@@ -324,7 +324,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
 BOOST_AUTO_TEST_CASE(transfer_extension_test)
 {
     try{
-        ACTORS((1000)(1001));
+        ACTORS((1000)(1001)(2000)(9000));
 
         const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
@@ -334,8 +334,11 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
 
         transfer(committee_account, u_1000_id, _core(10000));
         transfer(committee_account, u_1001_id, _core(10000));
+        transfer(committee_account, u_2000_id, _core(10000));
         add_csaf_for_account(u_1000_id, 10000);
         add_csaf_for_account(u_1001_id, 10000);
+        add_csaf_for_account(u_2000_id, 10000);
+        add_csaf_for_account(u_9000_id, 10000);
         const account_statistics_object& temp = db.get_account_statistics_by_uid(u_1000_id);
 
         // make sure the database requires our fee to be nonzero
@@ -366,6 +369,19 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
         const account_statistics_object& ant1000_3 = db.get_account_statistics_by_uid(u_1000_id);
         BOOST_CHECK(ant1001_2.prepaid == 1000 * prec);
         BOOST_CHECK(ant1000_3.prepaid == 0);
+
+        account_auth_platform({ u_2000_private_key }, u_2000_id, u_9000_id, 1000 * prec, account_statistics_object::Platform_Permission_Forward |
+                                                                             account_statistics_object::Platform_Permission_Liked |
+                                                                             account_statistics_object::Platform_Permission_Buyout |
+                                                                             account_statistics_object::Platform_Permission_Comment |
+                                                                             account_statistics_object::Platform_Permission_Reward |
+                                                                             account_statistics_object::Platform_Permission_Transfer);
+        transfer_extension({u_2000_private_key}, u_2000_id, u_2000_id, _core(10000), "", true, false);
+        transfer_extension({u_9000_private_key}, u_2000_id, u_9000_id, _core(1000), "", false, true);
+        const account_statistics_object& ant2000 = db.get_account_statistics_by_uid(u_2000_id);
+        const account_statistics_object& ant9000 = db.get_account_statistics_by_uid(u_9000_id);
+        BOOST_CHECK(ant2000.prepaid == 9000 * prec);
+        BOOST_CHECK(ant9000.core_balance == 1000 * prec);
 
     } catch (fc::exception& e) {
       edump((e.to_detail_string()));

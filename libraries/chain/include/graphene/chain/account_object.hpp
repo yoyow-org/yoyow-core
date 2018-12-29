@@ -49,7 +49,7 @@ namespace graphene { namespace chain {
               Platform_Permission_Buyout   = 4,   //allow buyout
               Platform_Permission_Comment  = 8,   //allow comment
               Platform_Permission_Reward   = 16,  //allow reward
-              Platform_Permission_transfer = 32   //allow transfer
+              Platform_Permission_Transfer = 32   //allow transfer
           };
 
 		  struct Platform_Auth_Data
