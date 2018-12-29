@@ -371,11 +371,11 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
         BOOST_CHECK(ant1000_3.prepaid == 0);
 
         account_auth_platform({ u_2000_private_key }, u_2000_id, u_9000_id, 1000 * prec, account_statistics_object::Platform_Permission_Forward |
-                                                                             account_statistics_object::Platform_Permission_Liked |
-                                                                             account_statistics_object::Platform_Permission_Buyout |
-                                                                             account_statistics_object::Platform_Permission_Comment |
-                                                                             account_statistics_object::Platform_Permission_Reward |
-                                                                             account_statistics_object::Platform_Permission_Transfer);
+                                                                                         account_statistics_object::Platform_Permission_Liked |
+                                                                                         account_statistics_object::Platform_Permission_Buyout |
+                                                                                         account_statistics_object::Platform_Permission_Comment |
+                                                                                         account_statistics_object::Platform_Permission_Reward |
+                                                                                         account_statistics_object::Platform_Permission_Transfer);
         transfer_extension({u_2000_private_key}, u_2000_id, u_2000_id, _core(10000), "", true, false);
         transfer_extension({u_9000_private_key}, u_2000_id, u_9000_id, _core(1000), "", false, true);
         const account_statistics_object& ant2000 = db.get_account_statistics_by_uid(u_2000_id);
@@ -411,7 +411,8 @@ BOOST_AUTO_TEST_CASE(account_auth_platform_test)
                                                                              account_statistics_object::Platform_Permission_Liked |
                                                                              account_statistics_object::Platform_Permission_Buyout |
                                                                              account_statistics_object::Platform_Permission_Comment |
-                                                                             account_statistics_object::Platform_Permission_Reward);
+                                                                             account_statistics_object::Platform_Permission_Reward |
+                                                                             account_statistics_object::Platform_Permission_Transfer);
 
         const account_statistics_object& ant1000 = db.get_account_statistics_by_uid(u_1000_id);
         auto iter = ant1000.prepaids_for_platform.find(u_9000_id);
@@ -422,6 +423,7 @@ BOOST_AUTO_TEST_CASE(account_auth_platform_test)
         BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Buyout);
         BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Comment);
         BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Reward);
+        BOOST_CHECK(iter->second.permission_flags & account_statistics_object::Platform_Permission_Transfer);
 
 
         account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 6000 * prec, 0);
@@ -435,6 +437,7 @@ BOOST_AUTO_TEST_CASE(account_auth_platform_test)
         BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Buyout)==0);
         BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Comment)==0);
         BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Reward)==0);
+        BOOST_CHECK((iter2->second.permission_flags & account_statistics_object::Platform_Permission_Transfer) == 0);
     }
     catch (fc::exception& e) {
         edump((e.to_detail_string()));

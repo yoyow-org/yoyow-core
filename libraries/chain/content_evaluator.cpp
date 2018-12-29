@@ -1041,8 +1041,10 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
         FC_ASSERT((post.permission_flags & post_object::Post_Permission_Buyout) > 0, "post_object ${p} not allowed to buyout.", ("p", op.post_pid));
 		post.receiptors_validate();
 		auto iter = post.receiptors.find(op.receiptor_account_uid);
-		FC_ASSERT(iter != post.receiptors.end(), "account ${a} isn`t a receiptor of the post ${p}", ("a", op.receiptor_account_uid)("p", op.post_pid));
-		FC_ASSERT(iter->second.to_buyout && iter->second.buyout_ratio > 0 && iter->second.buyout_ratio <= iter->second.cur_ratio,
+		FC_ASSERT(iter != post.receiptors.end(), 
+                  "account ${a} isn`t a receiptor of the post ${p}", 
+                  ("a", op.receiptor_account_uid)("p", op.post_pid));
+        FC_ASSERT(iter->second.to_buyout && iter->second.buyout_ratio > 0 && iter->second.buyout_ratio <= iter->second.cur_ratio && iter->second.buyout_expiration >= d.head_block_time(),
 			      "post ${p} `s receiptor`s buyout parameter is invalid. ${b}",
                   ("p", op.post_pid)("b", iter->second));
 		if (iter->second.buyout_ratio < iter->second.cur_ratio)
