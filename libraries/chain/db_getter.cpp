@@ -337,6 +337,14 @@ const score_object& database::get_score(account_uid_type platform,
     return *itr;
 }
 
+const score_object& database::get_score(score_id_type sid)const
+{
+   const auto& scores_by_id = get_index_type<score_index>().indices().get<by_id>();
+   auto idx = scores_by_id.equal_range(sid);
+   FC_ASSERT(idx.first != scores_by_id.end(), "score ${sid} not found.", ("sid", sid));
+   return *(idx.first);
+}
+
 const score_object* database::find_score(account_uid_type platform,
                                         account_uid_type poster,
                                         post_pid_type post_pid,

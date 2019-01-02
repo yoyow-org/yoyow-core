@@ -235,12 +235,15 @@ namespace graphene { namespace chain {
 		 optional< uint32_t			>			platform_award_requested_rank;
 
      optional< uint16_t     >     platform_award_basic_rate;
-     optional< int64_t      >     post_award_score_threshold;
      optional< uint16_t     >     casf_modulus;
      optional< uint32_t     >     post_award_expiration;
      optional< uint16_t     >     approval_casf_min_weight;
      optional< uint16_t     >     approval_casf_first_rate;
      optional< uint16_t     >     approval_casf_second_rate;
+     optional< uint16_t     >     receiptor_award_modulus;
+     optional< uint16_t     >     disapprove_award_modulus;
+
+     void validate()const;
 	 };
 	 typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
 

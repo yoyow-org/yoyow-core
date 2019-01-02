@@ -186,6 +186,43 @@ void committee_updatable_parameters::validate()const
                  "Platform average pledge update interval must be positive" );
 }
 
+void committee_updatable_content_parameters::validate()const
+{
+   if (approval_casf_min_weight.valid() && approval_casf_first_rate.valid() && approval_casf_second_rate.valid())
+   {
+      FC_ASSERT(*approval_casf_min_weight > 0 && *approval_casf_min_weight < 10000,
+         "approval casf min weight must be positive");
+      FC_ASSERT(*approval_casf_first_rate > 0 && *approval_casf_first_rate < 10000,
+         "approval casf first rate must be positive");
+      FC_ASSERT(*approval_casf_second_rate > 0 && *approval_casf_second_rate < 10000,
+         "approval casf second rate must be positive");
+      FC_ASSERT(*approval_casf_second_rate > approval_casf_first_rate,
+         "approval casf second rate must greater than first rate");
+   }
+   else if (!approval_casf_min_weight.valid() && !approval_casf_first_rate.valid() && !approval_casf_second_rate.valid())
+   {
+      //do nothing
+   }     
+   else
+      FC_ASSERT("min weight,first rate and second rate should be updated together");
+
+   if (receiptor_award_modulus.valid() && disapprove_award_modulus.valid())
+   {
+      FC_ASSERT(*receiptor_award_modulus > 0 && *receiptor_award_modulus < 10000,
+         "receiptor award modulus must be positive");
+      FC_ASSERT(*disapprove_award_modulus > 0 && *disapprove_award_modulus < 10000,
+         "receiptor award modulus must be positive");
+      FC_ASSERT(75 * (10000 - receiptor_award_modulus) >= 25 * (disapprove_award_modulus - 10000),
+         "extra award for disapprove should less than receiptor remaining award");
+   }
+   else if (!receiptor_award_modulus.valid() && !disapprove_award_modulus.valid())
+   {
+      //do nothing
+   }
+   else
+      FC_ASSERT("receiptor award modulus and disapprove award modulus should be updated together");
+}
+
 void committee_proposal_create_operation::validate()const
 {
    validate_op_fee( fee, "committee proposal creation " );
@@ -227,6 +264,8 @@ void committee_proposal_create_operation::validate()const
       {
          award_item_count += 1;
          FC_ASSERT(award_item_count <= 1, "No more than one global parameter award update item is allowed");
+         const auto& param_item = item.get< committee_update_global_content_parameter_item_type >();
+         param_item.value.validate();
       }
       else
          FC_ASSERT( false, "Bad proposal item type: ${n}", ("n",item.which()) );

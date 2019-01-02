@@ -352,6 +352,7 @@ namespace graphene { namespace chain {
 
          const license_object& get_license_by_platform(account_uid_type platform, license_lid_type license_lid)const;
          const license_object* find_license_by_platform(account_uid_type platform, license_lid_type license_lid)const;
+         const score_object& database::get_score(score_id_type sid)const;
          const score_object& get_score(account_uid_type platform,
                                        account_uid_type poster,
                                        post_pid_type post_pid,
@@ -462,6 +463,8 @@ namespace graphene { namespace chain {
          void clear_expired_transactions();
          void clear_expired_proposals();
 				 void clear_active_post();
+         const std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>& 
+            get_effective_csaf(const vector<score_id_type>& scores, share_type amount);
 		 void clear_expired_scores();
          void update_maintenance_flag( bool new_maintenance_flag );
          void clear_expired_csaf_leases();
