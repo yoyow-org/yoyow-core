@@ -391,6 +391,9 @@ struct database_fixture {
       account_manage_operation::opt options
       );
 
+   void collect_csaf(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount);
+   void collect_csaf_from_committee(account_uid_type to_account, int64_t amount);
+
    void actor(uint32_t start, uint32_t limit, flat_map<account_uid_type, fc::ecc::private_key>& map)
    {
       while(limit > 0)

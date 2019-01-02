@@ -331,6 +331,6 @@
 #define GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS (uint16_t(12000))
 
 
-#define GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the ratio of platform`s recerpts from post_object 3000 means 30.00%
+#define GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the ratio of platform`s recerpts from post_object 2500 means 25.00%
 #define GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID (uint64_t(-1)>>1)
 ///@}

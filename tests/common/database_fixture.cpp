@@ -1391,6 +1391,66 @@ void database_fixture::account_manage(account_uid_type executor,
    } FC_CAPTURE_AND_RETHROW((executor)(account)(options))
 }
 
+void database_fixture::collect_csaf(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount)
+{
+    try {
+        FC_ASSERT(amount <= (uint32_t(-1)>>1)/100000, "collect_csaf : amount is too big");
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+        share_type sum = (amount*prec) * 100000;
+        transfer(committee_account, from_account, asset(sum));
+        generate_blocks(3000); // must > 2880 
+        uint32_t counts = db.head_block_time().sec_since_epoch();
+        time_point_sec tim((counts / 60) * 60);
+
+        csaf_collect_operation cc_op;
+        cc_op.from = from_account;
+        cc_op.to = to_account;
+        cc_op.amount = asset(amount*prec);
+        cc_op.time = tim;
+
+        signed_transaction tx;
+        tx.operations.push_back(cc_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+        db.push_transaction(tx);
+
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(to_account)(amount))
+}
+
+void database_fixture::collect_csaf_from_committee(account_uid_type to_account, int64_t amount)
+{
+    try {
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+        generate_blocks(100);
+
+        set_expiration(db, trx);
+
+        uint32_t counts = db.head_block_time().sec_since_epoch();
+        time_point_sec tim((counts / 60) * 60);
+
+        csaf_collect_operation cc_op;
+        cc_op.from = committee_account;
+        cc_op.to = to_account;
+        cc_op.amount = asset(amount*prec);
+        cc_op.time = tim;
+
+        trx.operations.push_back(cc_op);
+
+        for (auto& op : trx.operations) db.current_fee_schedule().set_fee(op);
+        trx.validate();
+        db.push_transaction(trx, ~0);
+        //verify_asset_supplies(db);
+        trx.operations.clear();
+
+    } FC_CAPTURE_AND_RETHROW((to_account)(amount))
+}
+
 namespace test {
 
 void set_expiration( const database& db, transaction& tx )

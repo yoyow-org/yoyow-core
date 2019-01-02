@@ -24,6 +24,29 @@ using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( operation_tests, database_fixture )
 
+BOOST_AUTO_TEST_CASE(collect_csaf_test)
+{
+    try
+    {
+        ACTORS((1000)(2000));
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+        collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
+
+        const account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
+        BOOST_CHECK(ants_1000.csaf == 1000 * prec);
+
+        //###############################################################
+        collect_csaf_from_committee(u_2000_id, 1000);
+        const account_statistics_object& ants_2000 = db.get_account_statistics_by_uid(u_2000_id);
+        BOOST_CHECK(ants_2000.csaf == 1000 * prec);
+    }
+    catch (const fc::exception& e)
+    {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
 
 BOOST_AUTO_TEST_CASE(committee_proposal_test)
 {
@@ -505,7 +528,7 @@ BOOST_AUTO_TEST_CASE(post_test)
         map<account_uid_type, Recerptor_Parameter> receiptors;
         receiptors.insert(std::make_pair(u_9000_id, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0}));
         receiptors.insert(std::make_pair(u_1000_id, Recerptor_Parameter{ 5000 , false, 0 , 0}));
-        receiptors.insert(std::make_pair(u_2000_id, Recerptor_Parameter{ 2000, false, 0, 0 }));
+        receiptors.insert(std::make_pair(u_2000_id, Recerptor_Parameter{ 2500, false, 0, 0 }));
 
         post_operation::ext extension;
         extension.post_type = post_operation::Post_Type_Post;
@@ -791,6 +814,7 @@ BOOST_AUTO_TEST_CASE(buyout_test)
         ext.to_buyout = true;
         ext.buyout_ratio = 3000;
         ext.buyout_price = 1000 * prec;
+        ext.buyout_expiration = time_point_sec::maximum();
         update_post({ u_1000_private_key, u_9000_private_key }, u_9000_id, u_1000_id, 1, "", "", "", "", ext);
 
         buyout_post(u_2000_id, u_9000_id, u_1000_id, 1, u_1000_id, sign_keys_2);
