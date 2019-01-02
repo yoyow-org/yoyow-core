@@ -249,7 +249,7 @@ void database::clear_active_post()
 	}
 }
 
-const std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>& 
+std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type> 
    database::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)
 {
    const global_property_object& gpo = get_global_properties();
@@ -272,7 +272,7 @@ const std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_t
       }
       else if (total_csaf < turn_point_second)
       {
-         share_type slope = (turn_point_second.value - total_csaf.value) * (10000 - params.approval_casf_min_weight) /
+         share_type slope = (turn_point_second.value - total_csaf.value) * (GRAPHENE_100_PERCENT - params.approval_casf_min_weight) /
             (turn_point_second - turn_point_first) + params.approval_casf_min_weight;
          effective_casf = score_obj.csaf * slope / GRAPHENE_100_PERCENT;
       }
@@ -1481,7 +1481,7 @@ void database::process_content_platform_awards()
           adjust_balance(post.platform, asset(temp));
           actual_awards += receiptor_earned;
 
-          if (!post.score_settlement)
+          if (post.score_settlement)
              break;
           //result <vector<score account id, effective csaf for the score, is or not approve>, total effective csaf to award>
           auto result = get_effective_csaf(std::get<0>(*itr)->scores, std::get<0>(*itr)->total_amount);
