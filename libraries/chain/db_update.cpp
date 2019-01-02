@@ -1417,7 +1417,7 @@ void database::process_content_platform_awards()
     share_type total_effective_csaf_amount = 0;
 		map<account_uid_type, share_type> platform_csaf_amount;
     //<active post object, post effective csaf, (csaf * score / 5)*modulus>
-    vector<std::tuple<active_post_object, share_type, share_type>> post_effective_casf;
+    vector<std::tuple<active_post_object*, share_type, share_type>> post_effective_casf;
 
 		const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
 		auto apt_itr = apt_idx.lower_bound(dpo.current_active_post_sequence);
@@ -1435,7 +1435,7 @@ void database::process_content_platform_awards()
         if (csaf > 0)
         {
            total_effective_csaf_amount += csaf;
-           post_effective_casf.push_back(std::make_tuple(*apt_itr, csaf, approval_amount));
+           post_effective_casf.emplace_back(std::make_tuple((active_post_object*)&(*apt_itr), csaf, approval_amount));
         }
 			}
 
@@ -1443,7 +1443,7 @@ void database::process_content_platform_awards()
          platform_csaf_amount.at(apt_itr->platform) += apt_itr->total_amount;
       else
          platform_csaf_amount.emplace(apt_itr->platform, apt_itr->total_amount);
-      total_csaf_amount += total_csaf_amount;
+      total_csaf_amount += apt_itr->total_amount;
 
 			++apt_itr;
 		}
@@ -1460,14 +1460,14 @@ void database::process_content_platform_awards()
        {
           share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
              total_effective_csaf_amount.value).to_uint64();
-          share_type score_earned = post_earned * 25 / 100;
+          share_type score_earned = post_earned * GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO / GRAPHENE_100_PERCENT;
           share_type receiptor_earned = 0;
           if (std::get<2>(*itr) >= 0)
              receiptor_earned = post_earned - score_earned;
           else
              receiptor_earned = (post_earned - score_earned)*params.receiptor_award_modulus / GRAPHENE_100_PERCENT;
 
-          const auto& post = get_post_by_platform(std::get<0>(*itr).platform, std::get<0>(*itr).poster, std::get<0>(*itr).post_pid);
+          const auto& post = get_post_by_platform(std::get<0>(*itr)->platform, std::get<0>(*itr)->poster, std::get<0>(*itr)->post_pid);
           share_type temp = receiptor_earned;
           for (const auto& r : post.receiptors)
           {
@@ -1484,7 +1484,7 @@ void database::process_content_platform_awards()
           if (!post.score_settlement)
              break;
           //result <vector<score account id, effective csaf for the score, is or not approve>, total effective csaf to award>
-          auto result = get_effective_csaf(std::get<0>(*itr).scores, std::get<0>(*itr).total_amount);
+          auto result = get_effective_csaf(std::get<0>(*itr)->scores, std::get<0>(*itr)->total_amount);
           share_type total_award_csaf = std::get<1>(result);
           for (const auto& e : std::get<0>(result))
           {

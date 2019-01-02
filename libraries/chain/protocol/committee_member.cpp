@@ -190,11 +190,11 @@ void committee_updatable_content_parameters::validate()const
 {
    if (approval_casf_min_weight.valid() && approval_casf_first_rate.valid() && approval_casf_second_rate.valid())
    {
-      FC_ASSERT(*approval_casf_min_weight > 0 && *approval_casf_min_weight < 10000,
+      FC_ASSERT(*approval_casf_min_weight > 0 && *approval_casf_min_weight < GRAPHENE_100_PERCENT,
          "approval casf min weight must be positive");
-      FC_ASSERT(*approval_casf_first_rate > 0 && *approval_casf_first_rate < 10000,
+      FC_ASSERT(*approval_casf_first_rate > 0 && *approval_casf_first_rate < GRAPHENE_100_PERCENT,
          "approval casf first rate must be positive");
-      FC_ASSERT(*approval_casf_second_rate > 0 && *approval_casf_second_rate < 10000,
+      FC_ASSERT(*approval_casf_second_rate > 0 && *approval_casf_second_rate < GRAPHENE_100_PERCENT,
          "approval casf second rate must be positive");
       FC_ASSERT(*approval_casf_second_rate > approval_casf_first_rate,
          "approval casf second rate must greater than first rate");
@@ -208,11 +208,13 @@ void committee_updatable_content_parameters::validate()const
 
    if (receiptor_award_modulus.valid() && disapprove_award_modulus.valid())
    {
-      FC_ASSERT(*receiptor_award_modulus > 0 && *receiptor_award_modulus < 10000,
+      FC_ASSERT(*receiptor_award_modulus > 0 && *receiptor_award_modulus < GRAPHENE_100_PERCENT,
          "receiptor award modulus must be positive");
-      FC_ASSERT(*disapprove_award_modulus > 0 && *disapprove_award_modulus < 10000,
+      FC_ASSERT(*disapprove_award_modulus > GRAPHENE_100_PERCENT,
          "receiptor award modulus must be positive");
-      FC_ASSERT(75 * (10000 - receiptor_award_modulus) >= 25 * (disapprove_award_modulus - 10000),
+      auto disapprove_extra_award = GRAPHENE_IRREVERSIBLE_THRESHOLD * (GRAPHENE_100_PERCENT - receiptor_award_modulus);
+      auto receiptor_remaining_award = (GRAPHENE_100_PERCENT - GRAPHENE_IRREVERSIBLE_THRESHOLD)* (disapprove_award_modulus - GRAPHENE_100_PERCENT);
+      FC_ASSERT(disapprove_extra_award >= receiptor_remaining_award,
          "extra award for disapprove should less than receiptor remaining award");
    }
    else if (!receiptor_award_modulus.valid() && !disapprove_award_modulus.valid())
