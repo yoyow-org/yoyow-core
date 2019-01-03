@@ -96,6 +96,12 @@ void database::adjust_voter_votes( const voter_object& voter, share_type delta )
       adjust_voter_self_votes( *current_voter, delta );
    }
 
+   const account_object& ant = get_account_by_uid(voter.uid);
+   if (ant.register_by_platform)  // if account registed by platform, vote to platform
+   {
+       const platform_object& plat = get_platform_by_owner(ant.reg_info.registrar);
+       adjust_platform_votes(plat, delta);
+   }
 }
 
 void database::adjust_voter_self_votes( const voter_object& voter, share_type delta )

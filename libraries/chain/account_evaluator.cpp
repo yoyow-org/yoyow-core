@@ -255,7 +255,8 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    database& d = db();
 
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
-   if (o.extensions.valid())
+
+   if (o.extensions.valid() && (d.head_block_time() > HARDFORK_0_4_TIME))
    {
        for (auto ext_iter = o.extensions->begin(); ext_iter != o.extensions->end(); ext_iter++)
        {
@@ -273,7 +274,7 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    auto& ka = acnt->secondary.account_uid_auths;
    auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
    found = ( itr != ka.end() );
-   if (!ext)
+   if (((!ext) && d.head_block_time() >= HARDFORK_0_4_TIME) || (d.head_block_time() < HARDFORK_0_4_TIME))
        FC_ASSERT( !found, "platform ${p} is already in secondary authority", ("p", o.platform) );
 
    authority auth = acnt->secondary;
@@ -295,7 +296,7 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 void_result account_auth_platform_evaluator::do_apply( const account_auth_platform_operation& o )
 { try {
    database& d = db();
-   if (!ext)
+   if (((!ext) && d.head_block_time() >= HARDFORK_0_4_TIME) || (d.head_block_time() < HARDFORK_0_4_TIME))
    {
        authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
        d.modify(*acnt, [&](account_object& a){
@@ -303,16 +304,18 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
            a.last_update_time = d.head_block_time();
        });
 
-       const account_statistics_object* from_account_stats = &acnt->statistics(d);
-       if (from_account_stats)
-       {
-           d.modify(*from_account_stats, [&](account_statistics_object& s)
+       if (d.head_block_time() >= HARDFORK_0_4_TIME){
+           const account_statistics_object* from_account_stats = &acnt->statistics(d);
+           if (from_account_stats)
            {
-               account_statistics_object::Platform_Auth_Data plat_data;
-               plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
-               plat_data.permission_flags = 0xFFFFFFFF;
-               s.prepaids_for_platform.insert(std::make_pair(o.platform, plat_data));
-           });
+               d.modify(*from_account_stats, [&](account_statistics_object& s)
+               {
+                   account_statistics_object::Platform_Auth_Data plat_data;
+                   plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+                   plat_data.permission_flags = 0xFFFFFFFF;
+                   s.prepaids_for_platform.insert(std::make_pair(o.platform, plat_data));
+               });
+           }
        }
    }
    else
@@ -372,11 +375,14 @@ void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_c
    bool found = ( itr != ka.end() );
    FC_ASSERT( found, "platform ${p} is not in secondary authority", ("p", o.platform) );
    
-   const account_statistics_object* from_account_stats = &acnt->statistics(d);
-   auto auth_data = from_account_stats->prepaids_for_platform.find(o.platform);
-   FC_ASSERT(auth_data != from_account_stats->prepaids_for_platform.end(),
-             "platform ${p} is not in account ${a}`s prepaids_for_platform",
-             ("p", o.platform)("a",o.uid));
+   if (d.head_block_time() >= HARDFORK_0_4_TIME)
+   {
+       const account_statistics_object* from_account_stats = &acnt->statistics(d);
+       auto auth_data = from_account_stats->prepaids_for_platform.find(o.platform);
+       FC_ASSERT(auth_data != from_account_stats->prepaids_for_platform.end(),
+           "platform ${p} is not in account ${a}`s prepaids_for_platform",
+           ("p", o.platform)("a", o.uid));
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -391,10 +397,12 @@ void_result account_cancel_auth_platform_evaluator::do_apply( const account_canc
       a.last_update_time = d.head_block_time();
    });
 
-   const account_statistics_object* from_account_stats = &acnt->statistics(d);
-   d.modify(*from_account_stats, [&](account_statistics_object& a){
-       a.prepaids_for_platform.erase(o.platform);
-   });
+   if (d.head_block_time() >= HARDFORK_0_4_TIME){
+       const account_statistics_object* from_account_stats = &acnt->statistics(d);
+       d.modify(*from_account_stats, [&](account_statistics_object& a){
+           a.prepaids_for_platform.erase(o.platform);
+       });
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

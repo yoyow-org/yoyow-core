@@ -470,7 +470,7 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
        }
    }
 
-   if (op.extensions.valid())
+   if (op.extensions.valid() && d.head_block_time() >= HARDFORK_0_4_TIME)
    {
 	   for (auto ext_iter = op.extensions->begin(); ext_iter != op.extensions->end(); ext_iter++)
 	   {
@@ -547,7 +547,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
          s.last_post_sequence += 1;
       });
 
-	  if (ext)
+      if (ext && d.head_block_time() >= HARDFORK_0_4_TIME)
 	  {
           if (ext->post_type == post_operation::Post_Type::Post_Type_forward
               || ext->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
@@ -601,32 +601,35 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             obj.last_update_time = d.head_block_time();
             obj.score_settlement = false;
 
-			bool need_init_receiptors = true;
-			if (ext)
-			{
-                if (ext->forward_price.valid())
-                    obj.forward_price = *(ext->forward_price);
-                if (ext->receiptors.valid())
+            if (d.head_block_time() >= HARDFORK_0_4_TIME)
+            {
+                bool need_init_receiptors = true;
+                if (ext)
                 {
-                    map<account_uid_type, Recerptor_Parameter> map_receiptor = *(ext->receiptors);
-                    if (map_receiptor.size() > 0)
+                    if (ext->forward_price.valid())
+                        obj.forward_price = *(ext->forward_price);
+                    if (ext->receiptors.valid())
                     {
-                        need_init_receiptors = false;
-                        obj.receiptors = map_receiptor;
+                        map<account_uid_type, Recerptor_Parameter> map_receiptor = *(ext->receiptors);
+                        if (map_receiptor.size() > 0)
+                        {
+                            need_init_receiptors = false;
+                            obj.receiptors = map_receiptor;
+                        }
                     }
+                    if (ext->license_lid.valid())
+                    {
+                        obj.license_lid = *(ext->license_lid);
+                    }
+                    obj.permission_flags = ext->permission_flags;
                 }
-                if (ext->license_lid.valid())
-                {
-                    obj.license_lid = *(ext->license_lid);
+                if (need_init_receiptors){
+                    map<account_uid_type, Recerptor_Parameter> map_receiptors;
+                    map_receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                    map_receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                    obj.receiptors = map_receiptors;
                 }
-                obj.permission_flags = ext->permission_flags;
-			}
-			if (need_init_receiptors){
-				map<account_uid_type, Recerptor_Parameter> map_receiptors;
-				map_receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-				map_receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-				obj.receiptors = map_receiptors;
-			}
+            }
       } );
       return new_post_object.id;
    
@@ -651,7 +654,7 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
 	   FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
    }
 
-   if (op.extensions.valid())
+   if (op.extensions.valid() && d.head_block_time() >= HARDFORK_0_4_TIME)
    {
 	   for (auto ext_iter = op.extensions->begin(); ext_iter != op.extensions->end(); ext_iter++)
 	   {
@@ -693,7 +696,7 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
          if( o.body.valid() )
             obj.body             = *o.body;
 
-		 if (ext)
+         if (ext && d.head_block_time() >= HARDFORK_0_4_TIME)
 		 {
              if (ext->forward_price.valid())
              {
@@ -731,6 +734,8 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 {
 	try {
 		const database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create_score after HARDFORK_0_4_TIME");
+
 		const auto& global_params = d.get_global_properties().parameters.get_award_params();
 		auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
         const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
@@ -819,7 +824,9 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
 void_result reward_evaluator::do_evaluate(const operation_type& op)
 {
 	try {
-		const database& d = db();
+        const database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only be reward after HARDFORK_0_4_TIME");
+		
 		d.get_account_by_uid(op.from_account_uid);// make sure uid exists
         const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
         FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Reward) > 0, "post_object ${p} not allowed to reward.", ("p", op.post_pid));
@@ -921,6 +928,8 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
 {
     try {
         const database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only be reward_proxy after HARDFORK_0_4_TIME");
+
         d.get_account_by_uid(op.from_account_uid);// make sure uid exists
         const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
         FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Reward) > 0, "post_object ${p} not allowed to reward.", ("p", op.post_pid));
@@ -1037,6 +1046,8 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
 {
 	try {
 		database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buyout after HARDFORK_0_4_TIME");
+
 		auto post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
         FC_ASSERT((post.permission_flags & post_object::Post_Permission_Buyout) > 0, "post_object ${p} not allowed to buyout.", ("p", op.post_pid));
 		post.receiptors_validate();
@@ -1134,6 +1145,8 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
 void_result license_create_evaluator::do_evaluate(const operation_type& op)
 {try {
     const database& d = db();
+    FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
+
     d.get_platform_by_owner(op.platform); // make sure pid exists
     account_stats = &d.get_account_statistics_by_uid(op.platform);
 
