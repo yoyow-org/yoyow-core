@@ -1476,7 +1476,11 @@ signed_transaction update_platform(string platform_account,
 signed_transaction account_auth_platform(string account,
                                          string platform_owner,
 										 string limit_for_platform = 0,
-                                         uint32_t permission_flags = 0xFFFFFFFF,
+                                         uint32_t permission_flags = account_statistics_object::Platform_Permission_Forward |
+                                                                     account_statistics_object::Platform_Permission_Liked |
+                                                                     account_statistics_object::Platform_Permission_Buyout |
+                                                                     account_statistics_object::Platform_Permission_Comment |
+                                                                     account_statistics_object::Platform_Permission_Reward,
                                          bool broadcast = false)
 {
    try {

@@ -56,7 +56,11 @@ namespace graphene { namespace chain {
 		  {
 			  share_type    max_limit = 0;   //max limit prepaid for platform
 			  share_type    cur_used = 0;    //current prepaid used by platform 
-              uint32_t      permission_flags = 0xFFFFFFFF;
+              uint32_t      permission_flags = account_statistics_object::Platform_Permission_Forward |
+                                               account_statistics_object::Platform_Permission_Liked |
+                                               account_statistics_object::Platform_Permission_Buyout |
+                                               account_statistics_object::Platform_Permission_Comment |
+                                               account_statistics_object::Platform_Permission_Reward;
 		  };
 
          static const uint8_t space_id = implementation_ids;
