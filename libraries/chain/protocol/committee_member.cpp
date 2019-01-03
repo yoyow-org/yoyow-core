@@ -190,11 +190,11 @@ void committee_updatable_content_parameters::validate()const
 {
    if (approval_casf_min_weight.valid() && approval_casf_first_rate.valid() && approval_casf_second_rate.valid())
    {
-      FC_ASSERT(*approval_casf_min_weight > 0 && *approval_casf_min_weight < GRAPHENE_100_PERCENT,
+      FC_ASSERT(*approval_casf_min_weight >= 0 && *approval_casf_min_weight <= GRAPHENE_100_PERCENT,
          "approval casf min weight must be positive");
-      FC_ASSERT(*approval_casf_first_rate > 0 && *approval_casf_first_rate < GRAPHENE_100_PERCENT,
+      FC_ASSERT(*approval_casf_first_rate >= 0,
          "approval casf first rate must be positive");
-      FC_ASSERT(*approval_casf_second_rate > 0 && *approval_casf_second_rate < GRAPHENE_100_PERCENT,
+      FC_ASSERT(*approval_casf_second_rate <= GRAPHENE_100_PERCENT,
          "approval casf second rate must be positive");
       FC_ASSERT(*approval_casf_second_rate > approval_casf_first_rate,
          "approval casf second rate must greater than first rate");
@@ -208,7 +208,7 @@ void committee_updatable_content_parameters::validate()const
 
    if (receiptor_award_modulus.valid() && disapprove_award_modulus.valid())
    {
-      FC_ASSERT(*receiptor_award_modulus > 0 && *receiptor_award_modulus < GRAPHENE_100_PERCENT,
+      FC_ASSERT(*receiptor_award_modulus >= 0 && *receiptor_award_modulus <= GRAPHENE_100_PERCENT,
          "receiptor award modulus must be positive");
       FC_ASSERT(*disapprove_award_modulus > GRAPHENE_100_PERCENT,
          "receiptor award modulus must be positive");

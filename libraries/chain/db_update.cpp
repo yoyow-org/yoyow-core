@@ -257,14 +257,15 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
 
    share_type total_csaf = 0;
    share_type total_effective_csaf = 0;
-   share_type turn_point_first = amount * params.approval_casf_first_rate / GRAPHENE_100_PERCENT;
-   share_type turn_point_second = amount * params.approval_casf_second_rate / GRAPHENE_100_PERCENT;
+   uint128_t  value = (uint128_t)amount.value;
+   share_type turn_point_first = (value * params.approval_casf_first_rate / GRAPHENE_100_PERCENT).to_uint64();
+   share_type turn_point_second = (value * params.approval_casf_second_rate / GRAPHENE_100_PERCENT).to_uint64();
    
    vector<std::tuple<account_uid_type, share_type, bool>> effective_csaf_container;
    for (const auto& score : scores)
    {
       const auto& score_obj = get_score(score);
-      bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / 5) >= 0;    
+      bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
       share_type effective_casf = 0;
       if (total_csaf <= turn_point_first)
       {
@@ -1429,7 +1430,7 @@ void database::process_content_platform_awards()
         for (const auto& s : apt_itr->scores)
         {
            const auto& score_obj = get_score(s);
-           approval_amount += score_obj.csaf * score_obj.score * params.casf_modulus / 5;
+           approval_amount += score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT);
         }
         share_type csaf = apt_itr->total_amount + approval_amount;
         if (csaf > 0)
@@ -1460,12 +1461,12 @@ void database::process_content_platform_awards()
        {
           share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
              total_effective_csaf_amount.value).to_uint64();
-          share_type score_earned = post_earned * GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO / GRAPHENE_100_PERCENT;
+          share_type score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
           share_type receiptor_earned = 0;
           if (std::get<2>(*itr) >= 0)
              receiptor_earned = post_earned - score_earned;
           else
-             receiptor_earned = (post_earned - score_earned)*params.receiptor_award_modulus / GRAPHENE_100_PERCENT;
+             receiptor_earned = ((uint128_t)((post_earned - score_earned).value)*params.receiptor_award_modulus / GRAPHENE_100_PERCENT).to_uint64();
 
           const auto& post = get_post_by_platform(std::get<0>(*itr)->platform, std::get<0>(*itr)->poster, std::get<0>(*itr)->post_pid);
           share_type temp = receiptor_earned;
@@ -1473,7 +1474,7 @@ void database::process_content_platform_awards()
           {
              if (r.first == post.platform)
                 continue;
-             share_type to_add = receiptor_earned * r.second.cur_ratio / GRAPHENE_100_PERCENT;
+             share_type to_add = ((uint128_t)receiptor_earned.value * r.second.cur_ratio / GRAPHENE_100_PERCENT).to_uint64();
              adjust_balance(r.first, asset(to_add));
              temp -= to_add;
           }
@@ -1485,15 +1486,16 @@ void database::process_content_platform_awards()
              break;
           //result <vector<score account id, effective csaf for the score, is or not approve>, total effective csaf to award>
           auto result = get_effective_csaf(std::get<0>(*itr)->scores, std::get<0>(*itr)->total_amount);
-          share_type total_award_csaf = std::get<1>(result);
+          uint128_t total_award_csaf = (uint128_t)std::get<1>(result).value;
           for (const auto& e : std::get<0>(result))
           {
+             uint128_t effective_csaf_per_account = (uint128_t)std::get<1>(e).value;
              share_type to_add = 0;
              if (std::get<2>(*itr) < 0 && !std::get<2>(e))
-                to_add = std::get<1>(e) * score_earned * params.disapprove_award_modulus / 
-                (total_award_csaf * GRAPHENE_100_PERCENT);
+                to_add = (effective_csaf_per_account * score_earned.value * params.disapprove_award_modulus /
+                (total_award_csaf * GRAPHENE_100_PERCENT)).to_uint64();
              else
-                to_add = std::get<1>(e) * score_earned / total_award_csaf;
+                to_add = (effective_csaf_per_account * score_earned.value / total_award_csaf).to_uint64();
              adjust_balance(std::get<0>(e), asset(to_add));
              actual_awards += to_add;
           }
