@@ -40,23 +40,23 @@ namespace graphene { namespace chain {
 	 {
 		 uint32_t		content_award_interval							= GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
 		 uint32_t		platform_award_interval							= GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;
-		 uint64_t		max_csaf_per_approval								= GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
+     share_type	max_csaf_per_approval               = GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
 		 uint32_t		approval_expiration									= GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
 		 share_type min_effective_csaf									= GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;
 		 share_type	total_content_award_amount					= GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;
 		 share_type total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;
 		 share_type	total_platform_voted_award_amount		= GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
-		 uint64_t		platform_award_min_votes						= GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
+     share_type	platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
 		 uint32_t		platform_award_requested_rank				= GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;
 
-     uint16_t   platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;
-     uint16_t   casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;
+     uint32_t   platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;
+     uint32_t   casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;
      uint32_t   post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;
-     uint16_t   approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;
-     uint16_t   approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;
-     uint16_t   approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;
-     uint16_t   receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;
-     uint16_t   disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;
+     uint32_t   approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;
+     uint32_t   approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;
+     uint32_t   approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;
+     uint32_t   receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;
+     uint32_t   disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;
 	 };
 	 typedef static_variant<content_parameter_extension_type>  parameter_extension;
 
@@ -147,7 +147,15 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
 						(total_platform_content_award_amount)
 						(total_platform_voted_award_amount)
 						(platform_award_min_votes)
-						(platform_award_requested_rank))
+						(platform_award_requested_rank)           
+            (platform_award_basic_rate)
+            (casf_modulus)
+            (post_award_expiration)
+            (approval_casf_min_weight)
+            (approval_casf_first_rate)
+            (approval_casf_second_rate)
+            (receiptor_award_modulus)
+            (disapprove_award_modulus))
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)
             (block_interval)

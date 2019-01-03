@@ -1559,7 +1559,7 @@ void database::process_platform_voted_awards()
 
           uint32_t total_votes = 0;
           const auto& pla_idx = get_index_type<platform_index>().indices().get<by_platform_votes>();
-          auto pla_itr = pla_idx.lower_bound(std::make_tuple(true, params.platform_award_min_votes));
+          auto pla_itr = pla_idx.lower_bound(std::make_tuple(true, params.platform_award_min_votes.value));
           auto limit = params.platform_award_requested_rank;      
           while (pla_itr != pla_idx.end() && limit > 0) // assume false < true
           {

@@ -225,23 +225,23 @@ namespace graphene { namespace chain {
 	 {
 		 optional< uint32_t			>			content_award_interval;
 		 optional< uint32_t			>			platform_award_interval;
-		 optional< uint64_t			>			max_csaf_per_approval;
+     optional< share_type		>			max_csaf_per_approval;
 		 optional< uint32_t			>			approval_expiration;
 		 optional< share_type		>			min_effective_csaf;
 		 optional< share_type		>			total_content_award_amount;
 		 optional< share_type		>			total_platform_content_award_amount;
 		 optional< share_type		>			total_platform_voted_award_amount;
-		 optional< uint64_t			>			platform_award_min_votes;
+     optional< share_type		>			platform_award_min_votes;
 		 optional< uint32_t			>			platform_award_requested_rank;
 
-     optional< uint16_t     >     platform_award_basic_rate;
-     optional< uint16_t     >     casf_modulus;
+     optional< uint32_t     >     platform_award_basic_rate;
+     optional< uint32_t     >     casf_modulus;
      optional< uint32_t     >     post_award_expiration;
-     optional< uint16_t     >     approval_casf_min_weight;
-     optional< uint16_t     >     approval_casf_first_rate;
-     optional< uint16_t     >     approval_casf_second_rate;
-     optional< uint16_t     >     receiptor_award_modulus;
-     optional< uint16_t     >     disapprove_award_modulus;
+     optional< uint32_t     >     approval_casf_min_weight;
+     optional< uint32_t     >     approval_casf_first_rate;
+     optional< uint32_t     >     approval_casf_second_rate;
+     optional< uint32_t     >     receiptor_award_modulus;
+     optional< uint32_t     >     disapprove_award_modulus;
 
      void validate()const;
 	 };
