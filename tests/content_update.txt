@@ -1,0 +1,389 @@
+Content_update 数据结构整理
+1.	用户授予平台权限
+\\libraries\chain\include\graphene\chain\account_object.hpp
+1.	enum Platform_Auth_Permission  
+2.	{  
+3.	    Platform_Permission_Forward  = 1,   //允许平台转发文章，默认允许
+4.	    Platform_Permission_Liked    = 2,   //允许平台点赞或打分，默认允许
+5.	    Platform_Permission_Buyout   = 4,   //允许平台买断文章收益，默认允许
+6.	    Platform_Permission_Comment  = 8,   //允许平台评论其他文章，默认允许
+7.	    Platform_Permission_Reward   = 16,  //允许平台打赏其他文章，默认允许
+8.	    Platform_Permission_Transfer = 32   //允许平台动用零钱转账，默认不允许
+9.	};
+更新说明：用户授予平台能代理用户做操作的权限，使用uint32_t的标志位，方便之后做权限扩展。以上所有平台代理账户操作都需要账户授权，否则操作失效。
+
+
+
+2.	作者授予文章权限
+\\libraries\chain\include\graphene\chain\content_object.hpp
+1.	enum Post_Permission  
+2.	{  
+3.	    Post_Permission_Forward = 1,   //文章允许转发，默认允许
+4.	    Post_Permission_Liked   = 2,   //文章允许打分、点赞，默认允许
+5.	    Post_Permission_Buyout  = 4,   //文章允许出售收益，默认允许
+6.	    Post_Permission_Comment = 8,   //文章允许评论，默认允许
+7.	    Post_Permission_Reward  = 16   //文章允许打赏，默认允许
+8.	};
+更新说明：作者（外加平台）授予文章的权限，使用uint32_t的标志位。所有对文章的相关操作，需要作者打开文章相关权限，否则操作实效。
+
+
+
+3. 文章类型
+\\libraries\chain\include\graphene\chain\protocol\content.hpp
+1.	enum Post_Type  
+2.	{  
+3.	   Post_Type_Post = 0,                 //新文章
+4.	   Post_Type_Comment = 1,              //评论
+5.	   Post_Type_forward = 2,              //转发的文章
+6.	   Post_Type_forward_And_Modify = 3,  //转发且修改的文章
+7.	  
+8.	   Post_Type_Default  
+9.	};
+更新说明：添加了文章的类型，具体见上。
+
+
+
+4. account_auth_platform_operation
+\\libraries\chain\include\graphene\chain\protocol\account.hpp
+1.	struct account_auth_platform_operation : public base_operation  
+2.	{  
+3.	   struct ext  
+4.	   {  
+5.	        optional<share_type> limit_for_platform;  //扩展： 账户授予平台使用零钱的最大限额。当限额使用完了，所有平台动用账户零钱的操作将失败，直到账户提高平台限额。
+6.	        optional<uint32_t>   permission_flags;    //扩展： 账户授予平台权限，权限按标志位设定，具体设定参见 Platform_Auth_Permission
+7.	   };  
+8.	  
+9.	   typedef static_variant< ext > extension_parameter;  
+10.	  
+11.	   struct fee_parameters_type  
+12.	   {  
+13.	      uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+14.	      uint64_t min_real_fee     = 0;  
+15.	      uint16_t min_rf_percent   = 0;  
+16.	      extensions_type   extensions;  
+17.	   };  
+18.	  
+19.	   fee_type                   fee;  
+20.	   account_uid_type           uid;  
+21.	   account_uid_type           platform;  
+22.	  
+23.	  optional< flat_set<extension_parameter> > extensions;  
+24.	};
+更新说明：账户授权平台，在原来的account_auth_platform_operation基础上，扩展添加了对授权平台动用零钱的限额，以及平台各类代理操作的限定。
+
+
+
+5. post_operation
+\\libraries\chain\include\graphene\chain\protocol\content.hpp
+1.	class Recerptor_Parameter  //扩展：文章受益人参数
+2.	{  
+3.	public:  
+4.	   uint16_t       cur_ratio;     //扩展: 当前的文章收益占比
+5.	   bool           to_buyout;     //扩展：收益是否出售，出售比例不得大于自己的当前占比，当该文章目前的受益人（包括平台）已经满了5人，必须全部出售自己的收益占比
+6.	   uint16_t       buyout_ratio;  //扩展：收益出售比例，
+7.	   share_type     buyout_price;  //扩展：收益出售价格
+8.	   time_point_sec buyout_expiration = time_point_sec::maximum();  //扩展：收益出售过期时间，当时间过期，该收益出售将无效
+9.	}  
+10.	  
+11.	struct post_operation : public base_operation  
+12.	{  
+13.	   struct ext  
+14.	   {  
+15.	        uint8_t                                                post_type = Post_Type_Post;      //扩展：文章类型，参见Post_Type
+16.	        optional<share_type>                                   forward_price;                    //扩展：转发价
+17.	        optional< map<account_uid_type, Recerptor_Parameter> > receiptors;                       //扩展：文章受益人列表，列表强制包括文章平台，且强制占比25%，不可修改。收益列表受益人数必须是[2,5]之前
+18.	        optional<license_lid_type>                             license_lid;                      //扩展：文章许可id
+19.	        uint32_t                                               permission_flags = 0xFFFFFFFF;  //扩展：文章权限，参见Post_Permission
+20.	   };  
+21.	   typedef static_variant< ext > extension_parameter;  
+22.	  
+23.	   struct fee_parameters_type {  
+24.	      uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+25.	      uint32_t price_per_kbyte  = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+26.	      uint64_t min_real_fee     = 0;  
+27.	      uint16_t min_rf_percent   = 0;  
+28.	      extensions_type   extensions;  
+29.	   };  
+30.	  
+31.	   fee_type                     fee;  
+32.	  
+33.	   post_pid_type                post_pid;  
+34.	   account_uid_type             platform = 0;  
+35.	   account_uid_type             poster = 0;  
+36.	   optional<account_uid_type>   origin_poster;  
+37.	   optional<post_pid_type>      origin_post_pid;  
+38.	   optional<account_uid_type>   origin_platform;  
+39.	  
+40.	   string                       hash_value;  
+41.	   string                       extra_data = "{}";  
+42.	   string                       title;  
+43.	   string                       body;  
+44.	  
+45.	  optional< flat_set<extension_parameter> > extensions;  
+46.	};
+更新说明：在原来的post_operation基础上，添加了文章类型，文章转发价，文章许可，文章权限，以及文章受益人列表等扩展属性。
+
+
+
+6.	post_update_operation
+\\libraries\chain\include\graphene\chain\protocol\content.hpp
+1.	struct post_update_operation : public base_operation  
+2.	{  
+3.	   struct ext  
+4.	   {  
+5.	        optional<share_type>           forward_price;     //扩展：修改的文章转发价
+6.	        optional<account_uid_type>     receiptor;         //扩展：受益人账户id
+7.	        optional<bool>                 to_buyout;         //扩展：是否出售收益
+8.	        optional<uint16_t>             buyout_ratio;      //扩展：出售收益比例，出售比例不得大于自己的当前占比。当该文章目前的受益人（包括平台）已经满了5人，必须全部出售自己的收益占比。
+9.	        optional<share_type>           buyout_price;      //扩展：出售收益价格
+10.	        optional<time_point_sec>       buyout_expiration; //扩展：出售挂单过期时间
+11.	        optional<license_lid_type>     license_lid;        //扩展：文章许可id
+12.	        optional<uint32_t>             permission_flags;  //扩展：文章权限，参见Post_Permission
+13.	   };  
+14.	   typedef static_variant< ext > extension_parameter;  
+15.	  
+16.	   struct fee_parameters_type {  
+17.	      uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+18.	      uint32_t price_per_kbyte  = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+19.	      uint64_t min_real_fee     = 0;  
+20.	      uint16_t min_rf_percent   = 0;  
+21.	      extensions_type   extensions;  
+22.	   };  
+23.	  
+24.	   fee_type                     fee;  
+25.	  
+26.	   account_uid_type             platform;  
+27.	   account_uid_type             poster;  
+28.	   post_pid_type                post_pid;  
+29.	  
+30.	   optional< string >           hash_value;  
+31.	   optional< string >           extra_data;  
+32.	   optional< string >           title;  
+33.	   optional< string >           body;  
+34.	  
+35.	  optional< flat_set<extension_parameter> > extensions;  
+36.	};
+更新说明：在原来的post_update_operation基础上，添加了文章转发价，文章许可id，文章权限，以及文章受益人的是否出售文章受益，出售收益比，出售价格，挂单有效时间等扩展属性。
+
+
+
+7.	score_create_operation
+\\libraries\chain\include\graphene\chain\protocol\content.hpp
+1.	struct score_create_operation : public base_operation  
+2.	{  
+3.	   struct fee_parameters_type {  
+4.	       uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+5.	       uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+6.	       uint64_t min_real_fee = 0;  
+7.	       uint16_t min_rf_percent = 0;  
+8.	       extensions_type   extensions;  
+9.	   };  
+10.	  
+11.	   fee_type                     fee;  //手续费
+12.	  
+13.	   account_uid_type             from_account_uid;  //打分或点赞发起人账户id
+14.	   account_uid_type             platform;          //文章所在平台
+15.	   account_uid_type             poster;            //文章的作者
+16.	   post_pid_type                post_pid;          //文章的id
+17.	   int8_t                       score;             //文章打的分数，分数范围为-5~5
+18.	   share_type                   csaf;              //打分或点赞花费的积分
+19.	  
+20.	   extensions_type              extensions;  //扩展项
+21.	};
+更新说明：新增score_create_operation，用于账户对文章进行打分或者点赞。文章需要开放打分权限，用户需要授权平台打分权限，否则操作失败。数据库底层新建score_object来存储打分信息。每一个分配周期会参考打分信息来评定收益。超过最大的保存时间（由理事会参数决定）的，score_object会被数据库删除。
+
+
+
+8. reward_operation
+\\libraries\chain\include\graphene\chain\protocol\content.hpp
+1.	struct reward_operation : public base_operation  
+2.	{  
+3.	   struct fee_parameters_type {  
+4.	       uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+5.	       uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+6.	       uint64_t min_real_fee = 0;  
+7.	       uint16_t min_rf_percent = 0;  
+8.	       extensions_type   extensions;  
+9.	   };  
+10.	  
+11.	   fee_type                     fee;  //手续费
+12.	  
+13.	   account_uid_type             from_account_uid; //打赏发起人账户id
+14.	   account_uid_type             platform;          //文章所在平台
+15.	   account_uid_type             poster;            //文章作者
+16.	   post_pid_type                post_pid;          //文章id
+17.	   asset                        amount;            //打赏给文章的资产，可以是任意的资产
+18.	  
+19.	   extensions_type              extensions;  //扩展项
+20.	};
+更新说明：新增reward_operation，用于账户对文章进行打赏。文章需要开放打赏权限，否则失败。打赏的资产可以是任意链上资产（不限定为YOYO），打赏的资产由文章的受益人门按照收益比例平分，该收益直接结算，不进入收益分配环节。
+
+
+
+9. reward_proxy_operation
+\\libraries\chain\include\graphene\chain\protocol\content.hpp
+1.	struct reward_proxy_operation : public base_operation  
+2.	{  
+3.	    struct fee_parameters_type {  
+4.	        uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+5.	        uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+6.	        uint64_t min_real_fee = 0;  
+7.	        uint16_t min_rf_percent = 0;  
+8.	        extensions_type   extensions;  
+9.	    };  
+10.	  
+11.	    fee_type                     fee;  //手续费
+12.	  
+13.	    account_uid_type             from_account_uid; //代理打赏的账户id
+14.	    account_uid_type             platform;          //文章所在平台
+15.	    account_uid_type             poster;            //文章作者
+16.	    post_pid_type                post_pid;          //文章的id
+17.	    share_type                   amount;            //打上给文章的金额，代理打赏是平台代理用户操作，此处是动用账户的零钱，会使用账户授予平台的零钱限额
+18.	  
+19.	    extensions_type              extensions;  //扩展项
+20.	};
+更新说明：新增reward_proxy_operation，用于平台代理账户来打赏文章。文章需要开放打赏权限，用户需要授权平台打赏权限，否则失败。该操作动用账户授予平台的零钱，消耗账户授予平台的额度，因此资产必须是YOYO，且平台必须是账户允许代理打赏的。打赏的YOYO由文章的受益人门按照收益比例平分，该收益直接结算，不进入收益分配环节。
+
+
+
+10. buyout_operation
+\\libraries\chain\include\graphene\chain\protocol\content.hpp
+1.	struct buyout_operation : public base_operation  
+2.	{  
+3.	   struct fee_parameters_type {  
+4.	       uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+5.	       uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+6.	       uint64_t min_real_fee = 0;  
+7.	       uint16_t min_rf_percent = 0;  
+8.	       extensions_type   extensions;  
+9.	   };  
+10.	  
+11.	   fee_type                     fee;  //手续费
+12.	  
+13.	   account_uid_type             from_account_uid;       //买断文章受益的发起账户id
+14.	   account_uid_type             platform;               //文章所在平台
+15.	   account_uid_type             poster;                 //文章的作者
+16.	   post_pid_type                post_pid;               //文章的id
+17.	   account_uid_type             receiptor_account_uid; //要买断的受益人的id
+18.	  
+19.	   extensions_type              extensions;  //扩展项
+20.	}; 
+更新说明：新增buyout_operation，用于文章收益人对文章收益比的交易。文章需要开发买断权限，用户需要授权平台买断权限，否则失败。该操作动用账户零钱，消耗用户授予平台的额度。用于买断的YOYO会从发起账户的零钱转给收益卖出账户的零钱。
+
+
+
+11. license_create_operation
+\\libraries\chain\include\graphene\chain\protocol\content.hpp
+1.	struct license_create_operation : public base_operation  
+2.	{  
+3.	    struct fee_parameters_type {  
+4.	        uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+5.	        uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;  
+6.	        uint64_t min_real_fee = 0;  
+7.	        uint16_t min_rf_percent = 0;  
+8.	        extensions_type   extensions;  
+9.	    };  
+10.	  
+11.	    fee_type                     fee;  //手续费
+12.	  
+13.	    license_lid_type             license_lid;      //许可的id
+14.	    account_uid_type             platform = 0;     //许可所在平台
+15.	    uint8_t                      type;              //许可类型，目前范围未定
+16.	    string                       hash_value;        //许可的hash
+17.	    string                       extra_data = "{}"; //许可的额外内容
+18.	    string                       title;              //许可的标题
+19.	    string                       body;               //许可的内容
+20.	  
+21.	    extensions_type              extensions;  //扩展项
+22.	};
+更新说明：新增license_create_operation，用于平台用户新建文章许可。数据库底层新建license_object来存储。许可在链上只可以新建，不可以修改。当文章许可声明需要修改的时候，需新建许可内容，并更新文章许可号。
+
+
+
+12.	 score_object
+\\libraries\chain\include\graphene\chain\content_object.hpp
+1.	class score_object : public graphene::db::abstract_object<score_object>  
+2.	{  
+3.	public:  
+4.	   static const uint8_t space_id = implementation_ids;  
+5.	   static const uint8_t type_id = impl_score_object_type;  
+6.	  
+7.	   account_uid_type    from_account_uid; //打分或点赞的发起账户id
+8.	   account_uid_type    platform;         //文章所在平台
+9.	   account_uid_type    poster;            //文章作者
+10.	   post_pid_type       post_pid;          //文章的id
+11.	   int8_t              score;             //打分的分数，范围为-5~5
+12.	   share_type          csaf;              //花费的积分数
+13.	  
+14.	   time_point_sec      create_time;      //创建时间
+15.	};
+更新说明：数据库新增score_object用于存储点赞打分信息，每一个分配周期会参考打分信息来评定收益。超过最大的保存时间（由理事会参数决定）的，score_object会被数据库删除。
+
+
+
+13. license_object
+\\libraries\chain\include\graphene\chain\content_object.hpp
+1.	class license_object : public graphene::db::abstract_object<license_object>  
+2.	{  
+3.	public:  
+4.	    static const uint8_t space_id = implementation_ids;  
+5.	    static const uint8_t type_id = impl_license_object_type;  
+6.	  
+7.	    license_lid_type             license_lid;    //许可的id
+8.	    account_uid_type             platform;       //平台账户的id
+9.	    uint8_t                      license_type;   //许可类型，暂时没有预定具体类型
+10.	     
+11.	    string                       hash_value;     //许可的hash
+12.	    string                       extra_data;     //许可的额外内容
+13.	    string                       title;           //许可的标题
+14.	    string                       body;            //许可的内容
+15.	  
+16.	    time_point_sec               create_time;    //许可的创建时间
+17.	};
+更新说明：数据库新增license_object用于存储平台用户新建的许可信息。许可只能是平台来创建，且不可被修改。用户发布文章的时候，需要选择平台发布的相应的许可。
+
+
+
+
+14. active_post_object
+\\libraries\chain\include\graphene\chain\content_object.hpp
+1.	活跃文章:  
+2.	   class active_post_object : public graphene::db::abstract_object < active_post_object >  
+3.	   {  
+4.	         account_uid_type                       platform;           // 平台账号  
+5.	         account_uid_type                       poster;             // 作者账号  
+6.	         post_pid_type                          post_pid            // 同一账号同一平台下帖子唯一标识（pid）  
+7.	         vector<score_id_type>                  scores;             // 打分标识集合  
+8.	         share_type                             total_amount        // 文章总共积分;  
+9.	         flat_map<asset_aid_type, share_type>   total_rewards;      // 文章打赏  
+10.	         uint64_t                               period_sequence;    // 文章所属奖励周期数  
+11.	   };  
+
+
+
+
+15. 理事会参数扩展
+1.	struct content_parameter_extension_type  
+2.	{  
+3.	     uint32_t   content_award_interval              = GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;                // 内容奖励周期。初始值为0  
+4.	     uint32_t   platform_award_interval             = GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;               // 平台投票奖励周期。初始值为0  
+5.	     share_type max_csaf_per_approval               = GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;                 // 点赞消耗最大积分。初始值为1000积分  
+6.	     uint32_t   approval_expiration                 = GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;                   // 点赞过期时间。初始值为1年  
+7.	     share_type min_effective_csaf                  = GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;                    // 文章参与评奖所需最小积分。初始值为100积分  
+8.	     share_type total_content_award_amount          = GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;            // 总共文章奖励金额。初始值为0，一年量  
+9.	     share_type total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;   // 平台从文章中收益奖励金额。初始值为0，一年量  
+10.	     share_type total_platform_voted_award_amount   = GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;     // 总共平台投票奖励金额。初始值为0，一年量  
+11.	     share_type platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;              // 平台参与评奖所需最小投票数。初始值为10  
+12.	     uint32_t   platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;         // 平台参与评奖所需投票排名数。初始值为100  
+13.	     uint32_t   platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;             // 平台投票奖励中基础比例（平分给平台）。初始值为20%  
+14.	     uint32_t   casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;                          // 积分绝对值+ （评分*积分/5)*系数；加权平均系数。初始值为200%  
+15.	     uint32_t   post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;                 // 文章评奖过期时间。初始值为1年  
+16.	     uint32_t   approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;              // 点赞积分最小权重。初始值为50%  
+17.	     uint32_t   approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;              // 计算有效积分比例一。初始值为30%  
+18.	     uint32_t   approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;             // 计算有效积分比例二。初始值为70%//有效积分比例二应该大于有效积分比例一  
+19.	     uint32_t   receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;               // 反方胜时（踩大于赞）文章收益人奖励系数。初始值为80%  
+20.	     uint32_t   disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;              // 反方胜时（踩大于赞）点踩者奖励系数。初始值为120%  
+21.	 };  
+
+
+
