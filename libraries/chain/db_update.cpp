@@ -255,11 +255,10 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
    const global_property_object& gpo = get_global_properties();
    const auto& params = gpo.parameters.get_award_params();
 
-   share_type total_csaf = 0;
+   uint128_t  total_csaf = 0;
    share_type total_effective_csaf = 0;
-   uint128_t  value = (uint128_t)amount.value;
-   share_type turn_point_first = (value * params.approval_casf_first_rate / GRAPHENE_100_PERCENT).to_uint64();
-   share_type turn_point_second = (value * params.approval_casf_second_rate / GRAPHENE_100_PERCENT).to_uint64();
+   uint128_t  turn_point_first = (uint128_t)amount.value * params.approval_casf_first_rate / GRAPHENE_100_PERCENT;
+   uint128_t  turn_point_second = (uint128_t)amount.value * params.approval_casf_second_rate / GRAPHENE_100_PERCENT;
    
    vector<std::tuple<account_uid_type, share_type, bool>> effective_csaf_container;
    for (const auto& score : scores)
@@ -273,15 +272,15 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       }
       else if (total_csaf < turn_point_second)
       {
-         share_type slope = (turn_point_second.value - total_csaf.value) * (GRAPHENE_100_PERCENT - params.approval_casf_min_weight) /
-            (turn_point_second - turn_point_first) + params.approval_casf_min_weight;
+         auto slope = ((turn_point_second - total_csaf) * (GRAPHENE_100_PERCENT - params.approval_casf_min_weight) /
+            (turn_point_second - turn_point_first) + params.approval_casf_min_weight).to_uint64();
          effective_casf = score_obj.csaf * slope / GRAPHENE_100_PERCENT;
       }
       else
       {
          effective_casf = score_obj.csaf * params.approval_casf_min_weight / GRAPHENE_100_PERCENT;
       }
-      total_csaf = total_csaf + score_obj.csaf;
+      total_csaf = total_csaf + score_obj.csaf.value;
       total_effective_csaf = total_effective_csaf + effective_casf;
       
       effective_csaf_container.emplace_back(std::make_tuple(
