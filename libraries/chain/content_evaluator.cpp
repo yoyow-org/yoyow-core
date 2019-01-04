@@ -1179,7 +1179,6 @@ object_id_type license_create_evaluator::do_apply(const operation_type& op)
         obj.body                = op.body;
 
         obj.create_time         = d.head_block_time();
-        obj.last_update_time    = d.head_block_time();
     });
     return new_license_object.id;
 

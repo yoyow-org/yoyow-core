@@ -419,7 +419,6 @@ namespace graphene { namespace chain {
 	   string                       body;
 
 	   time_point_sec               create_time;
-	   time_point_sec               last_update_time;
    };
 
    struct by_license_lid{};
@@ -483,5 +482,5 @@ FC_REFLECT_DERIVED(graphene::chain::score_object,
 					)
 
 FC_REFLECT_DERIVED(graphene::chain::license_object,
-                    (graphene::db::object), (license_lid)(platform)(license_type)(hash_value)(extra_data)(title)(body)(create_time)(last_update_time)
+                    (graphene::db::object), (license_lid)(platform)(license_type)(hash_value)(extra_data)(title)(body)(create_time)
 					)
