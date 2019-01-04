@@ -196,7 +196,7 @@ void committee_updatable_content_parameters::validate()const
          "approval casf first rate must be positive");
       FC_ASSERT(*approval_casf_second_rate <= GRAPHENE_100_PERCENT,
          "approval casf second rate must be positive");
-      FC_ASSERT(*approval_casf_second_rate > approval_casf_first_rate,
+      FC_ASSERT(*approval_casf_second_rate > *approval_casf_first_rate,
          "approval casf second rate must greater than first rate");
    }
    else if (!approval_casf_min_weight.valid() && !approval_casf_first_rate.valid() && !approval_casf_second_rate.valid())
@@ -212,8 +212,8 @@ void committee_updatable_content_parameters::validate()const
          "receiptor award modulus must be positive");
       FC_ASSERT(*disapprove_award_modulus > GRAPHENE_100_PERCENT,
          "receiptor award modulus must be positive");
-      auto disapprove_extra_award = GRAPHENE_IRREVERSIBLE_THRESHOLD * (GRAPHENE_100_PERCENT - receiptor_award_modulus);
-      auto receiptor_remaining_award = (GRAPHENE_100_PERCENT - GRAPHENE_IRREVERSIBLE_THRESHOLD)* (disapprove_award_modulus - GRAPHENE_100_PERCENT);
+      auto disapprove_extra_award = GRAPHENE_IRREVERSIBLE_THRESHOLD * (GRAPHENE_100_PERCENT - *receiptor_award_modulus);
+      auto receiptor_remaining_award = (GRAPHENE_100_PERCENT - GRAPHENE_IRREVERSIBLE_THRESHOLD)* (*disapprove_award_modulus - GRAPHENE_100_PERCENT);
       FC_ASSERT(disapprove_extra_award >= receiptor_remaining_award,
          "extra award for disapprove should less than receiptor remaining award");
    }
