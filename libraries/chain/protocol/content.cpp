@@ -157,6 +157,7 @@ void post_operation::validate()const
                extnum++;
                FC_ASSERT(extnum <= 1,"post_operation::ext must be only one in post_operation::extension_parameter");
 			   const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
+               FC_ASSERT(ext.post_type >= Post_Type::Post_Type_Post && ext.post_type < Post_Type::Post_Type_Default, "post_operation`s extension post_type is invalid");
 			   if (ext.post_type == Post_Type::Post_Type_Comment 
 				   || ext.post_type == Post_Type::Post_Type_forward 
 				   || ext.post_type == Post_Type::Post_Type_forward_And_Modify)
@@ -178,6 +179,7 @@ void post_operation::validate()const
 				   }
 				   FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
 			   }
+               FC_ASSERT(ext.license_lid.valid(), "license_lid is invalid.");
 		   }
 	   }
    }

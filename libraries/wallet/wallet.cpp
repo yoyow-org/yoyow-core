@@ -1480,7 +1480,8 @@ signed_transaction account_auth_platform(string account,
                                                                      account_statistics_object::Platform_Permission_Liked |
                                                                      account_statistics_object::Platform_Permission_Buyout |
                                                                      account_statistics_object::Platform_Permission_Comment |
-                                                                     account_statistics_object::Platform_Permission_Reward,
+                                                                     account_statistics_object::Platform_Permission_Reward |
+                                                                     account_statistics_object::Platform_Permission_Post,
                                          bool broadcast = false)
 {
    try {

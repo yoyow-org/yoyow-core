@@ -49,7 +49,8 @@ namespace graphene { namespace chain {
               Platform_Permission_Buyout   = 4,   //allow buyout
               Platform_Permission_Comment  = 8,   //allow comment
               Platform_Permission_Reward   = 16,  //allow reward
-              Platform_Permission_Transfer = 32   //allow transfer
+              Platform_Permission_Transfer = 32,  //allow transfer
+              Platform_Permission_Post     = 64,  //allow post
           };
 
 		  struct Platform_Auth_Data
@@ -60,7 +61,8 @@ namespace graphene { namespace chain {
                                                account_statistics_object::Platform_Permission_Liked |
                                                account_statistics_object::Platform_Permission_Buyout |
                                                account_statistics_object::Platform_Permission_Comment |
-                                               account_statistics_object::Platform_Permission_Reward;
+                                               account_statistics_object::Platform_Permission_Reward |
+                                               account_statistics_object::Platform_Permission_Post;
 		  };
 
          static const uint8_t space_id = implementation_ids;

@@ -470,13 +470,25 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
        }
    }
 
-   if (op.extensions.valid() && d.head_block_time() >= HARDFORK_0_4_TIME)
+   if (d.head_block_time() >= HARDFORK_0_4_TIME)
+       FC_ASSERT(op.extensions.valid(), "post_operation must include extension from HARDFORK_0_4_TIME.");
+   if (op.extensions.valid())
    {
 	   for (auto ext_iter = op.extensions->begin(); ext_iter != op.extensions->end(); ext_iter++)
 	   {
 		   if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
 		   {
 			   ext = &(ext_iter->get<post_operation::ext>());
+               if (ext->post_type == post_operation::Post_Type::Post_Type_Post)
+               {
+                   auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
+                   FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(),
+                       "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
+                       ("p", op.platform)("a", op.poster));
+                   FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Post) > 0,
+                       "the post permission of platform ${p} authorized by account ${a} is invalid. ",
+                       ("p", op.platform)("a", op.poster));
+               }
 			   if (ext->post_type == post_operation::Post_Type::Post_Type_Comment)
 			   {
                    d.get_platform_by_owner(*op.origin_platform); // make sure pid exists
@@ -529,6 +541,7 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                                  ("c", (usable_prepaid))("p", *sign_platform_uid)("a", op.poster)("n", *origin_post.forward_price));
                    }   
 			   }
+               d.get_license_by_platform(op.platform, *(ext->license_lid)); // make sure license exist
 		   }
 	   }
    }

@@ -316,7 +316,8 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
                                                 account_statistics_object::Platform_Permission_Liked |
                                                 account_statistics_object::Platform_Permission_Buyout |
                                                 account_statistics_object::Platform_Permission_Comment |
-                                                account_statistics_object::Platform_Permission_Reward;
+                                                account_statistics_object::Platform_Permission_Reward |
+                                                account_statistics_object::Platform_Permission_Post;
                    s.prepaids_for_platform.insert(std::make_pair(o.platform, plat_data));
                });
            }
@@ -352,7 +353,8 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
                                                     account_statistics_object::Platform_Permission_Liked |
                                                     account_statistics_object::Platform_Permission_Buyout |
                                                     account_statistics_object::Platform_Permission_Comment |
-                                                    account_statistics_object::Platform_Permission_Reward;
+                                                    account_statistics_object::Platform_Permission_Reward |
+                                                    account_statistics_object::Platform_Permission_Post;
                        s.prepaids_for_platform.insert(std::make_pair(platform_uid, plat_data));
                        auto iter = s.prepaids_for_platform.find(platform_uid);
                        return &(iter->second);

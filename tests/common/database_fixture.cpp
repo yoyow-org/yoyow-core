@@ -1427,7 +1427,7 @@ void database_fixture::collect_csaf_from_committee(account_uid_type to_account, 
     try {
         const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
-        generate_blocks(100);
+        generate_blocks(10);
 
         set_expiration(db, trx);
 
