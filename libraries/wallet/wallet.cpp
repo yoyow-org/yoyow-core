@@ -2522,6 +2522,8 @@ signed_transaction account_cancel_auth_platform(string account,
                extension.buyout_ratio     = uint16_t((*(ext.buyout_ratio) )* GRAPHENE_1_PERCENT);
            if (ext.buyout_price.valid())
                extension.buyout_price     = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
+           if (ext.buyout_expiration.valid())
+               extension.buyout_expiration = ext.buyout_expiration;
            if (ext.license_lid.valid())
                extension.license_lid      = ext.license_lid;
            if (ext.permission_flags.valid())
