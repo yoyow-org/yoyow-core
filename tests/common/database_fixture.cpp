@@ -1451,6 +1451,49 @@ void database_fixture::collect_csaf_from_committee(account_uid_type to_account, 
     } FC_CAPTURE_AND_RETHROW((to_account)(amount))
 }
 
+std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
+   database_fixture::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)
+{
+   const global_property_object& gpo = db.get_global_properties();
+   const auto& params = gpo.parameters.get_award_params();
+
+   uint128_t  total_csaf = 0;
+   share_type total_effective_csaf = 0;
+   uint128_t  turn_point_first = (uint128_t)amount.value * params.approval_casf_first_rate / GRAPHENE_100_PERCENT;
+   uint128_t  turn_point_second = (uint128_t)amount.value * params.approval_casf_second_rate / GRAPHENE_100_PERCENT;
+
+   vector<std::tuple<account_uid_type, share_type, bool>> effective_csaf_container;
+   for (const auto& score : scores)
+   {
+      const auto& score_obj = db.get_score(score);
+      bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
+      share_type effective_casf = 0;
+      if (total_csaf <= turn_point_first)
+      {
+         effective_casf = score_obj.csaf;
+      }
+      else if (total_csaf < turn_point_second)
+      {
+         auto slope = ((turn_point_second - total_csaf) * (GRAPHENE_100_PERCENT - params.approval_casf_min_weight) /
+            (turn_point_second - turn_point_first) + params.approval_casf_min_weight).convert_to<uint64_t>();
+         effective_casf = score_obj.csaf * slope / GRAPHENE_100_PERCENT;
+      }
+      else
+      {
+         effective_casf = score_obj.csaf * params.approval_casf_min_weight / GRAPHENE_100_PERCENT;
+      }
+      total_csaf = total_csaf + score_obj.csaf.value;
+      total_effective_csaf = total_effective_csaf + effective_casf;
+
+      effective_csaf_container.emplace_back(std::make_tuple(
+         score_obj.from_account_uid,
+         effective_casf,
+         approve));
+   }
+
+   return std::make_tuple(effective_csaf_container, total_effective_csaf);
+}
+
 namespace test {
 
 void set_expiration( const database& db, transaction& tx )

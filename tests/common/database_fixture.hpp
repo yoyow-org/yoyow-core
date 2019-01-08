@@ -29,12 +29,15 @@
 #include <fc/smart_ref_impl.hpp>
 
 #include <graphene/chain/operation_history_object.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include <iostream>
 
 using namespace graphene::db;
 
 extern uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP;
+
+typedef boost::multiprecision::uint128_t uint128_t;
 
 #define PUSH_TX \
    graphene::chain::test::_push_transaction
@@ -409,6 +412,9 @@ struct database_fixture {
          limit--;
       }
    }
+
+   std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
+      get_effective_csaf(const vector<score_id_type>& scores, share_type amount);
 };
 
 namespace test {

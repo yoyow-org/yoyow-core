@@ -15,7 +15,6 @@
 
 #include <fc/crypto/digest.hpp>
 #include <fc/log/logger.hpp>
-#include <boost/multiprecision/cpp_int.hpp>
 
 #include "../common/database_fixture.hpp"
 
@@ -157,10 +156,9 @@ BOOST_AUTO_TEST_CASE(update_post_test)
 BOOST_AUTO_TEST_CASE(score_test)
 {
    try{
-      ACTORS((1001)
-         (1003)(1004)(1005)(1006)(1007)(1008)(1009)(1010)(1011)(1012)
-         (9000));
-
+      ACTORS((1001)(9000));
+      flat_map<account_uid_type, fc::ecc::private_key> score_map;
+      actor(1003, 10, score_map);
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
       // Return number of core shares (times precision)
@@ -170,13 +168,7 @@ BOOST_AUTO_TEST_CASE(score_test)
       //transfer(committee_account, u_1000_id, _core(100000));
       transfer(committee_account, u_9000_id, _core(100000));
 
-      flat_map<account_uid_type, fc::ecc::private_key> map = {
-         { u_1003_id, u_1003_private_key }, { u_1004_id, u_1004_private_key }, { u_1005_id, u_1005_private_key },
-         { u_1006_id, u_1006_private_key }, { u_1007_id, u_1007_private_key }, { u_1008_id, u_1008_private_key },
-         { u_1009_id, u_1009_private_key }, { u_1010_id, u_1010_private_key }, { u_1011_id, u_1011_private_key },
-         { u_1012_id, u_1012_private_key } };
-
-      for (auto a : map)
+      for (auto a : score_map)
          add_csaf_for_account(a.first, 10000);
       add_csaf_for_account(u_9000_id, 10000);
 
@@ -197,7 +189,7 @@ BOOST_AUTO_TEST_CASE(score_test)
          optional<post_pid_type>(),
          extensions);
 
-      for (auto a : map)
+      for (auto a : score_map)
       {
          account_auth_platform({a.second}, a.first, u_9000_id, 1000 * prec, 0x1F);
          account_manage(a.first, {true, true, true});
@@ -210,7 +202,7 @@ BOOST_AUTO_TEST_CASE(score_test)
       auto active_post = *apt_itr;
       BOOST_CHECK(active_post.total_amount == 10 * 10);
     
-      for (auto a : map)
+      for (auto a : score_map)
       {
          auto score_obj = db.get_score(u_9000_id, u_1001_id, 1, a.first);
          BOOST_CHECK(score_obj.score == 5);
@@ -231,14 +223,13 @@ BOOST_AUTO_TEST_CASE(score_test)
    }
 }
 
-typedef boost::multiprecision::uint128_t uint128_t;
 BOOST_AUTO_TEST_CASE(reward_test)
 {
    try{
-      ACTORS((1001)
-         (1003)(1004)(1005)(1006)(1007)(1008)(1009)(1010)(1011)(1012)
-         (9000));
+      ACTORS((1001)(9000));
 
+      flat_map<account_uid_type, fc::ecc::private_key> reward_map;
+      actor(1003, 10, reward_map);
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
       // Return number of core shares (times precision)
@@ -247,13 +238,7 @@ BOOST_AUTO_TEST_CASE(reward_test)
 
       transfer(committee_account, u_9000_id, _core(100000));
 
-      flat_map<account_uid_type, fc::ecc::private_key> map = {
-         { u_1003_id, u_1003_private_key }, { u_1004_id, u_1004_private_key }, { u_1005_id, u_1005_private_key },
-         { u_1006_id, u_1006_private_key }, { u_1007_id, u_1007_private_key }, { u_1008_id, u_1008_private_key },
-         { u_1009_id, u_1009_private_key }, { u_1010_id, u_1010_private_key }, { u_1011_id, u_1011_private_key },
-         { u_1012_id, u_1012_private_key } };
-
-      for (auto a : map)
+      for (auto a : reward_map)
          add_csaf_for_account(a.first, 10000);
       add_csaf_for_account(u_9000_id, 10000);
 
@@ -275,7 +260,7 @@ BOOST_AUTO_TEST_CASE(reward_test)
          optional<post_pid_type>(),
          extensions);
 
-      for (auto a : map)
+      for (auto a : reward_map)
       {
          transfer(committee_account, a.first, _core(100000));
          reward_post(a.first, u_9000_id, u_1001_id, 1, _core(1000), { a.second });
@@ -297,7 +282,7 @@ BOOST_AUTO_TEST_CASE(reward_test)
       auto act_9000 = db.get_account_statistics_by_uid(u_9000_id);
       BOOST_CHECK(act_9000.core_balance == (platform_earned * 10 + 100000 * prec));
 
-      for (auto a : map)
+      for (auto a : reward_map)
       {
          auto act = db.get_account_statistics_by_uid(a.first);
          BOOST_CHECK(act.core_balance == (100000 - 1000) * prec);
@@ -316,8 +301,10 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
    try{
       ACTORS((1001)(9000));
 
-      flat_map<account_uid_type, fc::ecc::private_key> score_map;
-      actor(1003, 10, score_map);
+      flat_map<account_uid_type, fc::ecc::private_key> score_map1;
+      flat_map<account_uid_type, fc::ecc::private_key> score_map2;
+      actor(1003, 20, score_map1);
+      actor(2003, 20, score_map2);
 
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
@@ -333,13 +320,13 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
       committee_update_global_content_parameter_item_type item;
-      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1, 100 };
+      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
       for (int i = 1; i < 5; ++i)
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
       generate_blocks(89);
 
-      add_csaf_for_account(u_9000_id, 10000);
+      collect_csaf_from_committee(u_9000_id, 1000);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
       create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", { u_9000_private_key });
       account_auth_platform({ u_1001_private_key }, u_1001_id, u_9000_id, 10000 * prec, account_statistics_object::Platform_Permission_Forward |
@@ -359,24 +346,64 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
 
       account_manage_operation::opt options;
       options.can_rate = true;
-      for (auto a : score_map)
+      for (auto a : score_map1)
       {
-         add_csaf_for_account(a.first, 10000);
+         //transfer(committee_account, a.first, _core(100000));
+         collect_csaf_from_committee(a.first, 100);
          account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
-
          account_manage(GRAPHENE_NULL_ACCOUNT_UID, a.first, options);
          auto b = db.get_account_by_uid(a.first);
-         score_a_post({ a.second, u_9000_private_key }, a.first, u_9000_id, u_1001_id, 1, 5, 10);
+      }
+      for (auto a : score_map2)
+      {
+         //transfer(committee_account, a.first, _core(100000));
+         collect_csaf_from_committee(a.first, 100);
+         account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
+         account_manage(GRAPHENE_NULL_ACCOUNT_UID, a.first, options);
       }
 
+      for (auto a : score_map1)
+      {
+         score_a_post({ a.second, u_9000_private_key }, a.first, u_9000_id, u_1001_id, 1, 5, 50);
+      }
+      for (auto a : score_map2)
+      {
+      score_a_post({ a.second, u_9000_private_key }, a.first, u_9000_id, u_1001_id, 1, -5, 10);
+      }
+      
       generate_blocks(100);
 
       uint128_t award_average = (uint128_t)10000000000000 * 300 / (86400 * 365);
-      uint128_t post_earned = award_average * 10 * 10 / (10 * 10);
 
-      uint64_t  poster_earned = (post_earned * 3000 / 10000).convert_to<uint64_t>();
+      uint128_t post_earned = award_average;
+      uint128_t score_earned = post_earned * GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO / GRAPHENE_100_PERCENT;
+      uint128_t receiptor_earned = post_earned - score_earned;
+      uint64_t  poster_earned = (receiptor_earned * 7500 / 10000).convert_to<uint64_t>();
       auto poster_act = db.get_account_statistics_by_uid(u_1001_id);
       BOOST_CHECK(poster_act.core_balance == poster_earned);
+
+      vector<score_id_type> scores;
+      for (auto a : score_map1)
+      {
+         auto score_id = db.get_score(u_9000_id, u_1001_id, 1, a.first).id;
+         scores.push_back(score_id);
+      }
+      for (auto a : score_map2)
+      {
+         auto score_id = db.get_score(u_9000_id, u_1001_id, 1, a.first).id;
+         scores.push_back(score_id);
+      }
+      auto result = get_effective_csaf(scores, 50 * 20 + 10 * 20);
+      for (auto a : std::get<0>(result))
+      {
+         auto balance = score_earned.convert_to<uint64_t>() * std::get<1>(a) / std::get<1>(result);
+         auto score_act = db.get_account_statistics_by_uid(std::get<0>(a));
+         BOOST_CHECK(score_act.core_balance == balance);
+      }
+
+      auto platform_act = db.get_account_statistics_by_uid(u_9000_id);
+      auto platform_core_balance = receiptor_earned.convert_to<uint64_t>() - poster_earned + award_average.convert_to<uint64_t>() + 10000000000;
+      BOOST_CHECK(platform_act.core_balance == platform_core_balance);
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
