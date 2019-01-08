@@ -66,7 +66,8 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
       generate_blocks(10);
 
       committee_update_global_content_parameter_item_type item;
-      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1, 100 };
+      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1, 100,
+      3000, 30000, 62000000, 4000, 2000, 8000, 9000, 11000};
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
       for (int i = 1; i < 5; ++i)
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
@@ -84,6 +85,16 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
       BOOST_REQUIRE_EQUAL(gap.total_platform_voted_award_amount.value,     10000000000000);
       BOOST_REQUIRE_EQUAL(gap.platform_award_min_votes.value, 1);
       BOOST_REQUIRE_EQUAL(gap.platform_award_requested_rank, 100);
+
+      BOOST_REQUIRE_EQUAL(gap.platform_award_basic_rate, 3000);
+      BOOST_REQUIRE_EQUAL(gap.casf_modulus,              30000);
+      BOOST_REQUIRE_EQUAL(gap.post_award_expiration,     62000000);
+      BOOST_REQUIRE_EQUAL(gap.approval_casf_min_weight,  4000);
+      BOOST_REQUIRE_EQUAL(gap.approval_casf_first_rate,  2000);
+      BOOST_REQUIRE_EQUAL(gap.approval_casf_second_rate, 8000);
+      BOOST_REQUIRE_EQUAL(gap.receiptor_award_modulus,   9000);
+      BOOST_REQUIRE_EQUAL(gap.disapprove_award_modulus,  11000);
+
    }
    catch (const fc::exception& e)
    {

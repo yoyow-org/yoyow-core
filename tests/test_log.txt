@@ -131,7 +131,7 @@
        transfer_extension test10 test10 5000 YOYO "" true false true    
 	   
  
- #8.   committee_proposal_create init1 [[3 , {content_award_interval : 300,platform_award_interval : 300,max_csaf_per_approval : 1000,approval_expiration : 31536000,min_effective_csaf : 10,total_content_award_amount : 10000000000000,total_platform_content_award_amount : 10000000000000,total_platform_voted_award_amount : 10000000000000,platform_award_min_votes : 1,platform_award_requested_rank : 100}]] 320 1 320 320 true
+ #8.   committee_proposal_create init1 [[3 , {content_award_interval : 300,platform_award_interval : 300,max_csaf_per_approval : 1000,approval_expiration : 31536000,min_effective_csaf : 10,total_content_award_amount : 10000000000000,total_platform_content_award_amount : 10000000000000,total_platform_voted_award_amount : 10000000000000,platform_award_min_votes : 1,platform_award_requested_rank : 100, platform_award_basic_rate : 3000, casf_modulus : 30000, post_award_expiration : 62000000, approval_casf_min_weight : 4000, approval_casf_first_rate : 2000, approval_casf_second_rate : 8000, receiptor_award_modulus : 9000, disapprove_award_modulus : 11000}]] 200 1 200 200 true
  
  
  #9	   committee_proposal_vote init2 1 1 true
