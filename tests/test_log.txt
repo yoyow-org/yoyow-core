@@ -164,7 +164,7 @@
 	   
 	   reward_post_proxy_by_platform test3 platform_account1 test1 2 1000 true
 	   
-	   update_post platform_account1 test1 2 "" "" "" "" {forward_price : 500, receiptor : test1, to_buyout : true, buyout_ratio : 3000, buyout_price : 300, license_lid : null, permission_flags : null} true
+	   update_post platform_account1 test1 2 "" "" "" "" {forward_price : 500, receiptor : test1, to_buyout : true, buyout_ratio : 3000, buyout_price : 300, buyout_expiration : 1546972000， license_lid : 1, permission_flags : null} true
 	   
 	   buyout_post test3 platform_account1 test1 2 test1 true
 	   
