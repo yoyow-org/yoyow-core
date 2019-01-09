@@ -432,6 +432,7 @@ class wallet_api
          const string& fee_paying_account,
          const string& proposal_id,
          const approval_delta& delta,
+         bool  csaf_fee,
          bool broadcast /* = false */
          );
 
@@ -648,6 +649,7 @@ class wallet_api
                                           string  referrer_account,
                                           uint32_t referrer_percent,
                                           uint32_t seed,
+                                          bool csaf_fee = true,
                                           bool broadcast = false);
 
       /** Creates a new account and registers it on the blockchain.
@@ -673,6 +675,7 @@ class wallet_api
                                                        string registrar_account,
                                                        string referrer_account,
                                                        uint32_t seed,
+                                                       bool csaf_fee = true,
                                                        bool broadcast = false);
 
       /** Transfer an amount from one account to another.
@@ -692,6 +695,7 @@ class wallet_api
                                   string amount,
                                   string asset_symbol,
                                   string memo,
+                                  bool csaf_fee = true,
                                   bool broadcast = false);
 
       signed_transaction transfer_extension(string from,
@@ -701,6 +705,7 @@ class wallet_api
                                             string memo,
                                             bool isfrom_balance = true,
                                             bool isto_balance = true,
+                                            bool csaf_fee = true,
                                             bool broadcast = false);
 
       /** Force one account to transfer an amount to another account, can only used by asset issuer.
@@ -720,6 +725,7 @@ class wallet_api
                                   string amount,
                                   string asset_symbol,
                                   string memo,
+                                  bool csaf_fee = true,
                                   bool broadcast = false);
 
       /**
@@ -731,7 +737,7 @@ class wallet_api
                                                              string amount,
                                                              string asset_symbol,
                                                              string memo ) {
-         auto trx = transfer( from, to, amount, asset_symbol, memo, true );
+         auto trx = transfer( from, to, amount, asset_symbol, memo, true, true );
          return std::make_pair(trx.id(),trx);
       }
 
@@ -781,6 +787,7 @@ class wallet_api
                                       uint8_t precision,
                                       asset_options common,
                                       share_type initial_supply,
+                                      bool csaf_fee = true,
                                       bool broadcast = false);
 
       /** Issue new shares of an asset.
@@ -795,6 +802,7 @@ class wallet_api
       signed_transaction issue_asset(string to_account, string amount,
                                      string symbol,
                                      string memo,
+                                     bool csaf_fee = true,
                                      bool broadcast = false);
 
       /** Update options of an asset.
@@ -814,6 +822,7 @@ class wallet_api
       signed_transaction update_asset(string symbol,
                                       optional<uint8_t> new_precision,
                                       asset_options new_options,
+                                      bool csaf_fee = true,
                                       bool broadcast = false);
 
       /** Burns the given amount of asset.
@@ -828,6 +837,7 @@ class wallet_api
       signed_transaction reserve_asset(string from,
                                     string amount,
                                     string symbol,
+                                    bool csaf_fee = true,
                                     bool broadcast = false);
 
       /** Whitelist and blacklist accounts, primarily for transacting in whitelisted assets.
@@ -853,6 +863,7 @@ class wallet_api
       signed_transaction whitelist_account(string authorizing_account,
                                            string account_to_list,
                                            account_whitelist_operation::account_listing new_listing_status,
+                                           bool csaf_fee = true,
                                            bool broadcast = false);
 
       /** Creates a committee_member object owned by the given account.
@@ -871,6 +882,7 @@ class wallet_api
                                          string pledge_amount,
                                          string pledge_asset_symbol,
                                          string url, 
+                                         bool csaf_fee = true,
                                          bool broadcast = false);
 
       /**
@@ -887,6 +899,7 @@ class wallet_api
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        bool csaf_fee = true,
                                         bool broadcast = false);
 
       /** Lists all witnesses registered in the blockchain. This returns a list of all witness objects,
@@ -956,6 +969,7 @@ class wallet_api
                                         string pledge_amount,
                                         string pledge_asset_symbol,
                                         string url,
+                                        bool csaf_fee = true,
                                         bool broadcast = false);
 
       /**
@@ -974,6 +988,7 @@ class wallet_api
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        bool csaf_fee = true,
                                         bool broadcast = false);
 
 
@@ -988,6 +1003,7 @@ class wallet_api
       signed_transaction collect_witness_pay(string witness_account,
                                         string pay_amount,
                                         string pay_asset_symbol,
+                                        bool csaf_fee = true,
                                         bool broadcast = false);
 
       /**
@@ -1003,6 +1019,7 @@ class wallet_api
                                       string to,
                                       string amount,
                                       string asset_symbol,
+                                      bool csaf_fee = true,
                                       bool broadcast = false);
 
       /**
@@ -1020,6 +1037,7 @@ class wallet_api
                                       string amount,
                                       string asset_symbol,
                                       fc::time_point_sec time,
+                                      bool csaf_fee = true,
                                       bool broadcast = false);
 
 
@@ -1072,6 +1090,7 @@ class wallet_api
                                         string pledge_asset_symbol,
                                         string url,
                                         string extra_data = "{}",
+                                        bool csaf_fee = true,
                                         bool broadcast = false);
 
       /**
@@ -1092,6 +1111,7 @@ class wallet_api
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
                                         optional<string> extra_data,
+                                        bool csaf_fee = true,
                                         bool broadcast = false);
 
       /** Update platform voting options.
@@ -1113,6 +1133,7 @@ class wallet_api
       signed_transaction update_platform_votes(string voting_account,
                                           flat_set<string> platforms_to_add,
                                           flat_set<string> platforms_to_remove,
+                                          bool csaf_fee = true,
                                           bool broadcast = false);
 
       /**
@@ -1124,13 +1145,14 @@ class wallet_api
        */ 
       signed_transaction account_auth_platform(string account,
                                                string platform_owner,
-											   string limit_for_platform,
+                                               string limit_for_platform,
                                                uint32_t permission_flags = account_statistics_object::Platform_Permission_Forward |
                                                                            account_statistics_object::Platform_Permission_Liked |
                                                                            account_statistics_object::Platform_Permission_Buyout |
                                                                            account_statistics_object::Platform_Permission_Comment |
                                                                            account_statistics_object::Platform_Permission_Reward |
                                                                            account_statistics_object::Platform_Permission_Post,
+                                               bool csaf_fee = true,
                                                bool broadcast = false);
 
       /**
@@ -1142,6 +1164,7 @@ class wallet_api
        */ 
       signed_transaction account_cancel_auth_platform(string account,
                                                       string platform_owner,
+                                                      bool csaf_fee = true,
                                                       bool broadcast = false);
 
       /**
@@ -1153,6 +1176,7 @@ class wallet_api
        */
       signed_transaction enable_allowed_assets(string account,
                                           bool enable,
+                                          bool csaf_fee = true,
                                           bool broadcast = false);
 
       /**
@@ -1166,6 +1190,7 @@ class wallet_api
       signed_transaction update_allowed_assets(string account,
                                           flat_set<string> assets_to_add,
                                           flat_set<string> assets_to_remove,
+                                          bool csaf_fee = true,
                                           bool broadcast = false);
 
       /** Update witness voting options.
@@ -1187,6 +1212,7 @@ class wallet_api
       signed_transaction update_witness_votes(string voting_account,
                                           flat_set<string> witnesses_to_add,
                                           flat_set<string> witnesses_to_remove,
+                                          bool csaf_fee = true,
                                           bool broadcast = false);
 
       /** Update committee member voting options.
@@ -1208,6 +1234,7 @@ class wallet_api
       signed_transaction update_committee_member_votes(string voting_account,
                                           flat_set<string> committee_members_to_add,
                                           flat_set<string> committee_members_to_remove,
+                                          bool csaf_fee = true,
                                           bool broadcast = false);
 
       /** Set the voting proxy for an account.
@@ -1228,6 +1255,7 @@ class wallet_api
        */
       signed_transaction set_voting_proxy(string account_to_modify,
                                           optional<string> voting_account,
+                                          bool csaf_fee = true,
                                           bool broadcast = false);
       
       /** Signs a transaction.
@@ -1276,6 +1304,7 @@ class wallet_api
          optional<voting_opinion_type> proposer_opinion,
          const uint32_t execution_block_num = 0,
          const uint32_t expiration_block_num = 0,
+         bool csaf_fee = true,
          bool broadcast = false
       );
 
@@ -1291,6 +1320,7 @@ class wallet_api
          const string committee_member_account,
          const uint64_t proposal_number,
          const voting_opinion_type opinion,
+         bool csaf_fee = true,
          bool broadcast = false
          );
 
@@ -1298,6 +1328,7 @@ class wallet_api
                                          const vector<op_wrapper>  proposed_ops,
                                          time_point_sec            expiration_time,
                                          uint32_t                  review_period_seconds,
+                                         bool                      csaf_fee = true,
                                          bool                      broadcast = false
                                          );
 
@@ -1311,11 +1342,13 @@ class wallet_api
                                          const flat_set<account_uid_type>  owner_approvals_to_remove,
                                          const flat_set<public_key_type>   key_approvals_to_add,
                                          const flat_set<public_key_type>   key_approvals_to_remove,
-                                         bool                              broadcast = false
+                                         bool csaf_fee = true,
+                                         bool broadcast = false
                                          );
 
       signed_transaction proposal_delete(const string              fee_paying_account,
                                          proposal_id_type          proposal,
+                                         bool                      csaf_fee = true,
                                          bool                      broadcast = false
                                          );
 
@@ -1339,6 +1372,7 @@ class wallet_api
                                       post_pid_type    post_pid,
                                       int8_t           score,
                                       string           csaf,
+                                      bool csaf_fee = true,
                                       bool broadcast = false);
 
       /** Reward a post by from_account.
@@ -1360,6 +1394,7 @@ class wallet_api
                                      post_pid_type    post_pid,
                                      string           amount,
                                      string           asset_symbol,
+                                     bool csaf_fee = true,
                                      bool broadcast = false);
 
       /** Reward a post by platform.
@@ -1379,6 +1414,7 @@ class wallet_api
                                                        string           poster,
                                                        post_pid_type    post_pid,
                                                        string           amount,
+                                                       bool csaf_fee = true,
                                                        bool broadcast = false);
 
       /** buyout a post by from_account.
@@ -1398,6 +1434,7 @@ class wallet_api
                                      string           poster,
                                      post_pid_type    post_pid,
                                      string           receiptor_account,
+                                     bool csaf_fee = true,
                                      bool broadcast = false);
 
       /** create a license by platform.
@@ -1419,6 +1456,7 @@ class wallet_api
                                         string           title,
                                         string           body,
                                         string           extra_data,
+                                        bool csaf_fee = true,
                                         bool broadcast = false);
 
       /** create a post by poster and platform.
@@ -1448,6 +1486,7 @@ class wallet_api
                                      string           origin_poster = "",
                                      string           origin_post_pid = "",
                                      post_create_ext  ext = post_create_ext(),
+                                     bool csaf_fee = true,
                                      bool broadcast = false);
 
       /** update a post by poster and platform.
@@ -1473,11 +1512,13 @@ class wallet_api
                                      string           body = "",
                                      string           extra_data = "",
                                      post_update_ext ext = post_update_ext(),
+                                     bool csaf_fee = true,
                                      bool broadcast = false);
 
       signed_transaction account_manage(string executor,
                                         string account,
                                         account_manage_operation::opt options,
+                                        bool csaf_fee = true,
                                         bool broadcast = false
                                         );
 

@@ -473,10 +473,15 @@ public:
       return ob.template as<T>( GRAPHENE_MAX_NESTED_OBJECTS );
    }
 
-   void set_operation_fees( signed_transaction& tx, const fee_schedule& s  )
+   void set_operation_fees( signed_transaction& tx, const fee_schedule& s, bool csaf_fee )
    {
-      for( auto& op : tx.operations )
-         s.set_fee_with_csaf(op);
+      if (csaf_fee) {
+         for (auto& op : tx.operations)
+            s.set_fee_with_csaf(op);
+      } else {
+         for (auto& op : tx.operations)
+            s.set_fee(op);
+      }   
    }
 
    variant info() const
@@ -896,6 +901,7 @@ public:
                                        string  referrer_account,
                                        uint32_t referrer_percent,
                                        uint32_t seed,
+                                       bool csaf_fee = true,
                                        bool broadcast = false)
    { try {
       FC_ASSERT( !self.is_locked() );
@@ -941,7 +947,7 @@ public:
       tx.operations.push_back( account_create_op );
 
       auto current_fees = _remote_db->get_global_properties().parameters.current_fees;
-      set_operation_fees( tx, current_fees );
+      set_operation_fees( tx, current_fees, csaf_fee );
 
       vector<public_key_type> paying_keys = registrar_account_object.active.get_keys();
 
@@ -967,7 +973,7 @@ public:
       if( broadcast )
          _remote_net_broadcast->broadcast_transaction( tx );
       return tx;
-   } FC_CAPTURE_AND_RETHROW( (name)(owner)(active)(registrar_account)(referrer_account)(referrer_percent)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (name)(owner)(active)(registrar_account)(referrer_account)(referrer_percent)(csaf_fee)(broadcast) ) }
 
    // This function generates derived keys starting with index 0 and keeps incrementing
    // the index until it finds a key that isn't registered in the block chain.  To be
@@ -1009,6 +1015,7 @@ public:
                                                       string registrar_account,
                                                       string referrer_account,
                                                       uint32_t seed,
+                                                      bool csaf_fee = true,
                                                       bool broadcast = false,
                                                       bool save_wallet = true)
    { try {
@@ -1059,7 +1066,7 @@ public:
 
          tx.operations.push_back( account_create_op );
 
-         set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+         set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
 
          vector<public_key_type> paying_keys = registrar_account_object.active.get_keys();
 
@@ -1088,13 +1095,14 @@ public:
          if( broadcast )
             _remote_net_broadcast->broadcast_transaction( tx );
          return tx;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(registrar_account)(referrer_account)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(registrar_account)(referrer_account)(csaf_fee)(broadcast) ) }
 
    signed_transaction create_account_with_brain_key(string brain_key,
                                                     string account_name,
                                                     string registrar_account,
                                                     string referrer_account,
                                                     uint32_t seed,
+                                                    bool csaf_fee = true,
                                                     bool broadcast = false,
                                                     bool save_wallet = true)
    { try {
@@ -1102,7 +1110,7 @@ public:
       string normalized_brain_key = normalize_brain_key( brain_key );
       // TODO:  scan blockchain for accounts that exist with same brain key
       fc::ecc::private_key owner_privkey = derive_private_key( normalized_brain_key, 0 );
-      return create_account_with_private_key(owner_privkey, account_name, registrar_account, referrer_account, seed, broadcast, save_wallet);
+      return create_account_with_private_key(owner_privkey, account_name, registrar_account, referrer_account, seed, csaf_fee, broadcast, save_wallet);
    } FC_CAPTURE_AND_RETHROW( (account_name)(registrar_account)(referrer_account) ) }
 
 
@@ -1111,6 +1119,7 @@ public:
                                    uint8_t precision,
                                    asset_options common,
                                    share_type initial_supply,
+                                   bool csaf_fee,
                                    bool broadcast = false)
    { try {
       account_object issuer_account = get_account( issuer );
@@ -1130,15 +1139,16 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (issuer)(symbol)(precision)(common)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (issuer)(symbol)(precision)(common)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_asset(string symbol,
                                    optional<uint8_t> new_precision,
                                    asset_options new_options,
+                                   bool csaf_fee,
                                    bool broadcast /* = false */)
    { try {
       optional<asset_object_with_data> asset_to_update = find_asset(symbol);
@@ -1152,15 +1162,16 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (symbol)(new_precision)(new_options)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (symbol)(new_precision)(new_options)(csaf_fee)(broadcast) ) }
 
    signed_transaction reserve_asset(string from,
                                  string amount,
                                  string symbol,
+                                 bool csaf_fee,
                                  bool broadcast /* = false */)
    { try {
       account_object from_account = get_account(from);
@@ -1173,15 +1184,16 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( reserve_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (from)(amount)(symbol)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (from)(amount)(symbol)(csaf_fee)(broadcast) ) }
 
    signed_transaction whitelist_account(string authorizing_account,
                                         string account_to_list,
                                         account_whitelist_operation::account_listing new_listing_status,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
    { try {
       account_whitelist_operation whitelist_op;
@@ -1191,16 +1203,17 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( whitelist_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (authorizing_account)(account_to_list)(new_listing_status)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (authorizing_account)(account_to_list)(new_listing_status)(csaf_fee)(broadcast) ) }
 
    signed_transaction create_committee_member(string owner_account,
                                               string pledge_amount,
                                               string pledge_asset_symbol,
                                               string url,
+                                              bool csaf_fee,
                                               bool broadcast /* = false */)
    { try {
       account_object committee_member_account = get_account(owner_account);
@@ -1218,11 +1231,11 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( committee_member_create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (owner_account)(pledge_amount)(pledge_asset_symbol)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(pledge_amount)(pledge_asset_symbol)(csaf_fee)(broadcast) ) }
 
    witness_object get_witness(string owner_account)
    {
@@ -1349,6 +1362,7 @@ public:
                                                   string pledge_amount,
                                                   string pledge_asset_symbol,
                                                   string url,
+                                                  bool csaf_fee,
                                                   bool broadcast /* = false */)
    { try {
       account_object witness_account = get_account(owner_account);
@@ -1367,14 +1381,15 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( witness_create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (owner_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(csaf_fee)(broadcast) ) }
 
    signed_transaction create_witness(string owner_account,
                                      string url,
+                                     bool csaf_fee,
                                      bool broadcast /* = false */)
    { try {
       account_object witness_account = get_account(owner_account);
@@ -1393,13 +1408,13 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( witness_create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       _wallet.pending_witness_registrations[owner_account] = key_to_wif(witness_private_key);
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(csaf_fee)(broadcast) ) }
 
    signed_transaction create_platform(string owner_account,
                                         string name,
@@ -1407,6 +1422,7 @@ public:
                                         string pledge_asset_symbol,
                                         string url,
                                         string extra_data,
+                                        bool csaf_fee,
                                         bool broadcast )
 {
    try {
@@ -1427,11 +1443,11 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( platform_create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (owner_account)(name)(pledge_amount)(pledge_asset_symbol)(url)(extra_data)(broadcast) )
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(name)(pledge_amount)(pledge_asset_symbol)(url)(extra_data)(csaf_fee)(broadcast) )
 }
 
 signed_transaction update_platform(string platform_account,
@@ -1440,6 +1456,7 @@ signed_transaction update_platform(string platform_account,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
                                         optional<string> extra_data,
+                                        bool csaf_fee,
                                         bool broadcast )
 
 {
@@ -1466,22 +1483,23 @@ signed_transaction update_platform(string platform_account,
 
       signed_transaction tx;
       tx.operations.push_back( platform_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (platform_account)(name)(pledge_amount)(pledge_asset_symbol)(url)(extra_data)(broadcast) )
+   } FC_CAPTURE_AND_RETHROW( (platform_account)(name)(pledge_amount)(pledge_asset_symbol)(url)(extra_data)(csaf_fee)(broadcast) )
 }
 
 signed_transaction account_auth_platform(string account,
                                          string platform_owner,
-										 string limit_for_platform = 0,
+										                     string limit_for_platform = 0,
                                          uint32_t permission_flags = account_statistics_object::Platform_Permission_Forward |
                                                                      account_statistics_object::Platform_Permission_Liked |
                                                                      account_statistics_object::Platform_Permission_Buyout |
                                                                      account_statistics_object::Platform_Permission_Comment |
                                                                      account_statistics_object::Platform_Permission_Reward |
                                                                      account_statistics_object::Platform_Permission_Post,
+                                         bool csaf_fee = true,
                                          bool broadcast = false)
 {
    try {
@@ -1504,15 +1522,16 @@ signed_transaction account_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW((account)(platform_owner)(limit_for_platform)(permission_flags)(broadcast))
+   } FC_CAPTURE_AND_RETHROW((account)(platform_owner)(limit_for_platform)(permission_flags)(csaf_fee)(broadcast))
 }
 
 signed_transaction account_cancel_auth_platform(string account,
                                             string platform_owner,
+                                            bool csaf_fee = true,
                                             bool broadcast = false)
 {
    try {
@@ -1524,11 +1543,11 @@ signed_transaction account_cancel_auth_platform(string account,
       op.platform = platform_account.uid;
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (account)(platform_owner)(broadcast) )
+   } FC_CAPTURE_AND_RETHROW( (account)(platform_owner)(csaf_fee)(broadcast) )
 }
 
    signed_transaction update_committee_member(
@@ -1536,6 +1555,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
    { try {
       FC_ASSERT( pledge_amount.valid() == pledge_asset_symbol.valid(),
@@ -1558,11 +1578,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( committee_member_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(pledge_amount)(pledge_asset_symbol)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(pledge_amount)(pledge_asset_symbol)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_witness_with_details(
                                         string witness_account,
@@ -1570,6 +1590,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
    { try {
       FC_ASSERT( pledge_amount.valid() == pledge_asset_symbol.valid(),
@@ -1593,15 +1614,16 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( witness_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (witness_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (witness_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_witness(string witness_name,
                                      string url,
                                      string block_signing_key,
+                                     bool csaf_fee,
                                      bool broadcast /* = false */)
    { try {
       witness_object witness = get_witness(witness_name);
@@ -1617,15 +1639,16 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( witness_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (witness_name)(url)(block_signing_key)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (witness_name)(url)(block_signing_key)(csaf_fee)(broadcast) ) }
 
    signed_transaction collect_witness_pay(string witness_account,
                                         string pay_amount,
                                         string pay_asset_symbol,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
    { try {
       witness_object witness = get_witness(witness_account);
@@ -1639,17 +1662,18 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( witness_collect_pay_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (witness_account)(pay_amount)(pay_asset_symbol)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (witness_account)(pay_amount)(pay_asset_symbol)(csaf_fee)(broadcast) ) }
 
    signed_transaction collect_csaf(string from,
                                    string to,
                                    string amount,
                                    string asset_symbol,
                                    time_point_sec time,
+                                   bool csaf_fee,
                                    bool broadcast /* = false */)
    { try {
       FC_ASSERT( !self.is_locked(), "Should unlock first" );
@@ -1666,18 +1690,18 @@ signed_transaction account_cancel_auth_platform(string account,
       cc_op.amount = asset_obj->amount_from_string(amount);
       cc_op.time = time;
 
-      cc_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ cc_op }).at(0).min_fee));
       signed_transaction tx;
       tx.operations.push_back(cc_op);
-      //set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
-   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(time)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(time)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_witness_votes(string voting_account,
                                           flat_set<string> witnesses_to_add,
                                           flat_set<string> witnesses_to_remove,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
    { try {
       account_object voting_account_object = get_account(voting_account);
@@ -1697,15 +1721,16 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( witness_vote_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (voting_account)(witnesses_to_add)(witnesses_to_remove)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (voting_account)(witnesses_to_add)(witnesses_to_remove)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_platform_votes(string voting_account,
                                           flat_set<string> platforms_to_add,
                                           flat_set<string> platforms_to_remove,
+                                          bool csaf_fee,
                                           bool broadcast )
    { try {
       account_object voting_account_object = get_account( voting_account );
@@ -1725,15 +1750,16 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( platform_vote_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (voting_account)(platforms_to_add)(platforms_to_remove)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (voting_account)(platforms_to_add)(platforms_to_remove)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_committee_member_votes(string voting_account,
                                           flat_set<string> committee_members_to_add,
                                           flat_set<string> committee_members_to_remove,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
    { try {
       account_object voting_account_object = get_account(voting_account);
@@ -1753,14 +1779,15 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( committee_member_vote_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (voting_account)(committee_members_to_add)(committee_members_to_remove)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (voting_account)(committee_members_to_add)(committee_members_to_remove)(csaf_fee)(broadcast) ) }
 
    signed_transaction set_voting_proxy(string account_to_modify,
                                        optional<string> voting_account,
+                                       bool csaf_fee,
                                        bool broadcast /* = false */)
    { try {
 
@@ -1773,14 +1800,15 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( account_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (account_to_modify)(voting_account)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_to_modify)(voting_account)(csaf_fee)(broadcast) ) }
 
    signed_transaction enable_allowed_assets(string account,
                                           bool enable,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
    { try {
       account_enable_allowed_assets_operation op;
@@ -1789,15 +1817,16 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (account)(enable)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (account)(enable)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_allowed_assets(string account,
                                           flat_set<string> assets_to_add,
                                           flat_set<string> assets_to_remove,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
    { try {
       account_object account_obj = get_account( account );
@@ -1817,11 +1846,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (account)(assets_to_add)(assets_to_remove)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (account)(assets_to_add)(assets_to_remove)(csaf_fee)(broadcast) ) }
 
    signed_transaction sign_transaction( signed_transaction tx, bool broadcast = false )
    {
@@ -1942,7 +1971,7 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction transfer(string from, string to, string amount,
-                               string asset_symbol, string memo, bool broadcast = false)
+                               string asset_symbol, string memo, bool csaf_fee = true, bool broadcast = false)
    { try {
       FC_ASSERT( !self.is_locked(), "Should unlock first" );
       fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
@@ -1969,14 +1998,14 @@ signed_transaction account_cancel_auth_platform(string account,
       //xfer_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ xfer_op }).at(0).min_fee));
       signed_transaction tx;
       tx.operations.push_back(xfer_op);
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
-   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(csaf_fee)(broadcast) ) }
 
    signed_transaction transfer_extension(string from, string to, string amount,
-                               string asset_symbol, string memo, bool isfrom_balance = true, bool isto_balance = true, bool broadcast = false)
+                               string asset_symbol, string memo, bool isfrom_balance = true, bool isto_balance = true, bool csaf_fee = true, bool broadcast = false)
    {
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
@@ -2010,18 +2039,17 @@ signed_transaction account_cancel_auth_platform(string account,
                    to_account.memo_key, memo);
            }
 
-           xfer_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ xfer_op }).at(0).min_fee));
            signed_transaction tx;
            tx.operations.push_back(xfer_op);
-           //set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from)(to)(amount)(asset_symbol)(memo)(isfrom_balance)(isto_balance)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((from)(to)(amount)(asset_symbol)(memo)(isfrom_balance)(isto_balance)(csaf_fee)(broadcast))
    }
 
    signed_transaction override_transfer(string from, string to, string amount,
-                               string asset_symbol, string memo, bool broadcast = false)
+                               string asset_symbol, string memo, bool csaf_fee = true, bool broadcast = false)
    { try {
       FC_ASSERT( !self.is_locked(), "Should unlock first" );
       fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
@@ -2049,14 +2077,14 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(xfer_op);
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
-   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(csaf_fee)(broadcast) ) }
 
    signed_transaction issue_asset(string to_account, string amount, string symbol,
-                                  string memo, bool broadcast = false)
+                                  string memo, bool csaf_fee = true, bool broadcast = false)
    {
       auto asset_obj = get_asset(symbol);
 
@@ -2079,7 +2107,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(issue_op);
-      set_operation_fees(tx,_remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees(tx,_remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -2146,6 +2174,7 @@ signed_transaction account_cancel_auth_platform(string account,
          optional<voting_opinion_type> proposer_opinion,
          const uint32_t execution_block_num = 0,
          const uint32_t expiration_block_num = 0,
+         bool csaf_fee = true,
          bool broadcast = false
       )
    { try {
@@ -2159,17 +2188,18 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
 
-   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(items)(voting_closing_block_num)(proposer_opinion)(execution_block_num)(expiration_block_num)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(items)(voting_closing_block_num)(proposer_opinion)(execution_block_num)(expiration_block_num)(csaf_fee)(broadcast) ) }
 
    signed_transaction committee_proposal_vote(
       const string committee_member_account,
       const uint64_t proposal_number,
       const voting_opinion_type opinion,
+      bool csaf_fee = true,
       bool broadcast = false
       )
    { try {
@@ -2180,16 +2210,17 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(proposal_number)(opinion)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (committee_member_account)(proposal_number)(opinion)(csaf_fee)(broadcast) ) }
 
    signed_transaction proposal_create(const string              fee_paying_account,
                                       const vector<op_wrapper>  proposed_ops,
                                       time_point_sec            expiration_time,
                                       uint32_t                  review_period_seconds,
+                                      bool                      csaf_fee = true,
                                       bool                      broadcast = false
                                       )
    {
@@ -2202,12 +2233,12 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
 
-       } FC_CAPTURE_AND_RETHROW((fee_paying_account)(proposed_ops)(expiration_time)(review_period_seconds)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((fee_paying_account)(proposed_ops)(expiration_time)(review_period_seconds)(csaf_fee)(broadcast))
    }
 
    signed_transaction proposal_update(const string                      fee_paying_account,
@@ -2220,6 +2251,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                       const flat_set<account_uid_type>  owner_approvals_to_remove,
                                       const flat_set<public_key_type>   key_approvals_to_add,
                                       const flat_set<public_key_type>   key_approvals_to_remove,
+                                      bool                              csaf_fee = true,
                                       bool                              broadcast = false
                                       )
    {
@@ -2239,17 +2271,18 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
 
        } FC_CAPTURE_AND_RETHROW((fee_paying_account)(proposal)(secondary_approvals_to_add)(secondary_approvals_to_remove)(active_approvals_to_add)(active_approvals_to_remove)
-           (owner_approvals_to_add)(owner_approvals_to_remove)(key_approvals_to_add)(key_approvals_to_remove)(broadcast))
+           (owner_approvals_to_add)(owner_approvals_to_remove)(key_approvals_to_add)(key_approvals_to_remove)(csaf_fee)(broadcast))
    }
 
    signed_transaction proposal_delete(const string              fee_paying_account,
                                       proposal_id_type          proposal,
+                                      bool                      csaf_fee = true,
                                       bool                      broadcast = false
                                       )
    {
@@ -2260,12 +2293,12 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
 
-       } FC_CAPTURE_AND_RETHROW((fee_paying_account)(proposal)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((fee_paying_account)(proposal)(csaf_fee)(broadcast))
    }
 
    signed_transaction score_a_post(string from_account,
@@ -2274,6 +2307,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                    post_pid_type    post_pid,
                                    int8_t           score,
                                    string           csaf,
+                                   bool csaf_fee = true,
                                    bool broadcast = false)
    {
        try {
@@ -2290,11 +2324,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(create_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(score)(csaf)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(score)(csaf)(csaf_fee)(broadcast))
    }
 
    signed_transaction reward_post(string           from_account,
@@ -2303,6 +2337,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                   post_pid_type    post_pid,
                                   string           amount,
                                   string           asset_symbol,
+                                  bool csaf_fee = true,
                                   bool broadcast = false)
    {
        try {
@@ -2319,11 +2354,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(reward_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(asset_symbol)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(asset_symbol)(csaf_fee)(broadcast))
    }
 
    signed_transaction reward_post_proxy_by_platform(string           from_account,
@@ -2331,6 +2366,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                                     string           poster,
                                                     post_pid_type    post_pid,
                                                     string           amount,
+                                                    bool csaf_fee = true,
                                                     bool broadcast = false)
    {
        try {
@@ -2347,11 +2383,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(reward_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(csaf_fee)(broadcast))
    }
 
    signed_transaction buyout_post(string           from_account,
@@ -2359,6 +2395,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                   string           poster,
                                   post_pid_type    post_pid,
                                   string           receiptor_account,
+                                  bool csaf_fee = true,
                                   bool broadcast = false)
    {
        try {
@@ -2373,11 +2410,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(buyout_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(csaf_fee)(broadcast))
    }
 
    signed_transaction create_license(string           platform,
@@ -2386,6 +2423,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                      string           title,
                                      string           body,
                                      string           extra_data,
+                                     bool csaf_fee = true,
                                      bool broadcast = false)
    {
        try {
@@ -2404,11 +2442,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(create_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(csaf_fee)(broadcast))
    }
 
    signed_transaction create_post(string           platform,
@@ -2421,6 +2459,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                   string           origin_poster = "",
                                   string           origin_post_pid = "",
                                   post_create_ext  exts = post_create_ext(),
+                                  bool csaf_fee = true,
                                   bool broadcast = false)
    {
        try {
@@ -2474,11 +2513,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(create_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(poster)(hash_value)(title)(body)(extra_data)(origin_platform)(origin_poster)(origin_post_pid)(exts)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(poster)(hash_value)(title)(body)(extra_data)(origin_platform)(origin_poster)(origin_post_pid)(exts)(csaf_fee)(broadcast))
    }
 
    signed_transaction update_post(string           platform,
@@ -2489,6 +2528,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                   string           body = "",
                                   string           extra_data = "",
                                   post_update_ext ext = post_update_ext(),
+                                  bool csaf_fee = true,
                                   bool broadcast = false)
    {
        try {
@@ -2532,16 +2572,17 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(update_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext)(csaf_fee)(broadcast))
    }
 
    signed_transaction account_manage(string executor,
                                      string account,
                                      account_manage_operation::opt options,
+                                     bool csaf_fee = true,
                                      bool broadcast = false
                                      )
    {
@@ -2555,11 +2596,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(manage_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((executor)(account)(options)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((executor)(account)(options)(csaf_fee)(broadcast))
    }
 
    post_object get_post(string platform_owner,
@@ -2650,6 +2691,7 @@ signed_transaction account_cancel_auth_platform(string account,
       const string& fee_paying_account,
       const string& proposal_id,
       const approval_delta& delta,
+      bool csaf_fee = true,
       bool broadcast = false)
    {
       proposal_update_operation update_op;
@@ -2678,7 +2720,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(update_op);
-      set_operation_fees(tx, get_global_properties().parameters.current_fees);
+      set_operation_fees(tx, get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
       return sign_transaction(tx, broadcast);
    }
@@ -3399,42 +3441,44 @@ signed_transaction wallet_api::register_account(string name,
                                                 string  referrer_account,
                                                 uint32_t referrer_percent,
                                                 uint32_t seed,
+                                                bool csaf_fee,
                                                 bool broadcast)
 {
-   return my->register_account(name, owner_pubkey, active_pubkey, registrar_account, referrer_account, referrer_percent, seed, broadcast);
+   return my->register_account(name, owner_pubkey, active_pubkey, registrar_account, referrer_account, referrer_percent, seed, csaf_fee, broadcast);
 }
 signed_transaction wallet_api::create_account_with_brain_key(string brain_key, string account_name,
                                                              string registrar_account, string referrer_account,
                                                              uint32_t id,
+                                                             bool csaf_fee,
                                                              bool broadcast /* = false */)
 {
    return my->create_account_with_brain_key(
             brain_key, account_name, registrar_account,
-            referrer_account, id, broadcast
+            referrer_account, id, csaf_fee, broadcast
             );
 }
 signed_transaction wallet_api::issue_asset(string to_account, string amount, string symbol,
-                                           string memo, bool broadcast)
+                                           string memo, bool csaf_fee, bool broadcast)
 {
-   return my->issue_asset(to_account, amount, symbol, memo, broadcast);
+   return my->issue_asset(to_account, amount, symbol, memo, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::transfer(string from, string to, string amount,
-                                        string asset_symbol, string memo, bool broadcast /* = false */)
+                                        string asset_symbol, string memo, bool csaf_fee, bool broadcast /* = false */)
 {
-   return my->transfer(from, to, amount, asset_symbol, memo, broadcast);
+   return my->transfer(from, to, amount, asset_symbol, memo, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::transfer_extension(string from, string to, string amount,
-    string asset_symbol, string memo, bool isfrom_balance, bool isto_balance, bool broadcast)
+    string asset_symbol, string memo, bool isfrom_balance, bool isto_balance, bool csaf_fee, bool broadcast)
 {
-    return my->transfer_extension(from, to, amount, asset_symbol, memo, isfrom_balance, isto_balance, broadcast);
+    return my->transfer_extension(from, to, amount, asset_symbol, memo, isfrom_balance, isto_balance, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::override_transfer(string from, string to, string amount,
-                                        string asset_symbol, string memo, bool broadcast /* = false */)
+                                        string asset_symbol, string memo, bool csaf_fee, bool broadcast /* = false */)
 {
-   return my->override_transfer(from, to, amount, asset_symbol, memo, broadcast);
+   return my->override_transfer(from, to, amount, asset_symbol, memo, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::create_asset(string issuer,
@@ -3442,43 +3486,48 @@ signed_transaction wallet_api::create_asset(string issuer,
                                             uint8_t precision,
                                             asset_options common,
                                             share_type initial_supply,
+                                            bool csaf_fee,
                                             bool broadcast)
 
 {
-   return my->create_asset(issuer, symbol, precision, common, initial_supply, broadcast);
+   return my->create_asset(issuer, symbol, precision, common, initial_supply, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::update_asset(string symbol,
                                             optional<uint8_t> new_precision,
                                             asset_options new_options,
+                                            bool csaf_fee,
                                             bool broadcast /* = false */)
 {
-   return my->update_asset(symbol, new_precision, new_options, broadcast);
+   return my->update_asset(symbol, new_precision, new_options, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::reserve_asset(string from,
                                           string amount,
                                           string symbol,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
 {
-   return my->reserve_asset(from, amount, symbol, broadcast);
+   return my->reserve_asset(from, amount, symbol, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::whitelist_account(string authorizing_account,
                                                  string account_to_list,
                                                  account_whitelist_operation::account_listing new_listing_status,
+                                                 bool csaf_fee,
                                                  bool broadcast /* = false */)
 {
-   return my->whitelist_account(authorizing_account, account_to_list, new_listing_status, broadcast);
+   return my->whitelist_account(authorizing_account, account_to_list, new_listing_status, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::create_committee_member(string owner_account,
                                               string pledge_amount,
                                               string pledge_asset_symbol,
                                               string url,
+                                              bool csaf_fee,
                                               bool broadcast /* = false */)
 {
-   return my->create_committee_member(owner_account, pledge_amount, pledge_asset_symbol, url, broadcast);
+   return my->create_committee_member(owner_account, pledge_amount, pledge_asset_symbol, url, csaf_fee, broadcast);
 }
 
 vector<witness_object> wallet_api::list_witnesses(const account_uid_type lowerbound, uint32_t limit,
@@ -3529,9 +3578,10 @@ signed_transaction wallet_api::create_witness(string owner_account,
                                               string pledge_amount,
                                               string pledge_asset_symbol,
                                               string url,
+                                              bool csaf_fee,
                                               bool broadcast /* = false */)
 {
-   return my->create_witness_with_details(owner_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, broadcast);
+   return my->create_witness_with_details(owner_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, csaf_fee, broadcast);
    //return my->create_witness(owner_account, url, broadcast);
 }
 
@@ -3541,9 +3591,10 @@ signed_transaction wallet_api::create_platform(string owner_account,
                                         string pledge_asset_symbol,
                                         string url,
                                         string extra_data,
+                                        bool csaf_fee,
                                         bool broadcast )
 {
-   return my->create_platform( owner_account, name, pledge_amount, pledge_asset_symbol, url, extra_data, broadcast );
+   return my->create_platform( owner_account, name, pledge_amount, pledge_asset_symbol, url, extra_data, csaf_fee, broadcast );
 }
 
 signed_transaction wallet_api::update_platform(string platform_account,
@@ -3552,28 +3603,30 @@ signed_transaction wallet_api::update_platform(string platform_account,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
                                         optional<string> extra_data,
+                                        bool csaf_fee,
                                         bool broadcast )
 
 {
-   return my->update_platform( platform_account, name, pledge_amount, pledge_asset_symbol, url, extra_data, broadcast );
+   return my->update_platform( platform_account, name, pledge_amount, pledge_asset_symbol, url, extra_data, csaf_fee, broadcast );
 }
 
 signed_transaction wallet_api::update_platform_votes(string voting_account,
                                           flat_set<string> platforms_to_add,
                                           flat_set<string> platforms_to_remove,
+                                          bool csaf_fee,
                                           bool broadcast )
 {
-   return my->update_platform_votes( voting_account, platforms_to_add, platforms_to_remove, broadcast );
+   return my->update_platform_votes( voting_account, platforms_to_add, platforms_to_remove, csaf_fee, broadcast );
 }
 
-signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, string limit_for_platform, uint32_t permission_flags, bool broadcast)
+signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, string limit_for_platform, uint32_t permission_flags, bool csaf_fee, bool broadcast)
 {
-    return my->account_auth_platform(account, platform_owner, limit_for_platform, permission_flags, broadcast);
+    return my->account_auth_platform(account, platform_owner, limit_for_platform, permission_flags, csaf_fee, broadcast);
 }
 
-signed_transaction wallet_api::account_cancel_auth_platform(string account, string platform_owner, bool broadcast )
+signed_transaction wallet_api::account_cancel_auth_platform(string account, string platform_owner, bool csaf_fee, bool broadcast)
 {
-   return my->account_cancel_auth_platform( account, platform_owner, broadcast );
+   return my->account_cancel_auth_platform( account, platform_owner, csaf_fee, broadcast );
 }
 
 signed_transaction wallet_api::update_committee_member(
@@ -3581,9 +3634,10 @@ signed_transaction wallet_api::update_committee_member(
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
 {
-   return my->update_committee_member(committee_member_account, pledge_amount, pledge_asset_symbol, url, broadcast);
+   return my->update_committee_member(committee_member_account, pledge_amount, pledge_asset_symbol, url, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::update_witness(
@@ -3592,28 +3646,31 @@ signed_transaction wallet_api::update_witness(
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
 {
-   return my->update_witness_with_details(witness_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, broadcast);
+   return my->update_witness_with_details(witness_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, csaf_fee, broadcast);
    //return my->update_witness(witness_name, url, block_signing_key, broadcast);
 }
 
 signed_transaction wallet_api::collect_witness_pay(string witness_account,
                                         string pay_amount,
                                         string pay_asset_symbol,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
 {
-   return my->collect_witness_pay(witness_account, pay_amount, pay_asset_symbol, broadcast);
+   return my->collect_witness_pay(witness_account, pay_amount, pay_asset_symbol, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::collect_csaf(string from,
                                         string to,
                                         string amount,
                                         string asset_symbol,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
 {
    time_point_sec time( time_point::now().sec_since_epoch() / 60 * 60 );
-   return my->collect_csaf(from, to, amount, asset_symbol, time, broadcast);
+   return my->collect_csaf(from, to, amount, asset_symbol, time, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::collect_csaf_with_time(string from,
@@ -3621,47 +3678,53 @@ signed_transaction wallet_api::collect_csaf_with_time(string from,
                                         string amount,
                                         string asset_symbol,
                                         time_point_sec time,
+                                        bool csaf_fee,
                                         bool broadcast /* = false */)
 {
-   return my->collect_csaf(from, to, amount, asset_symbol, time, broadcast);
+   return my->collect_csaf(from, to, amount, asset_symbol, time, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::update_witness_votes(string voting_account,
                                           flat_set<string> witnesses_to_add,
                                           flat_set<string> witnesses_to_remove,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
 {
-   return my->update_witness_votes( voting_account, witnesses_to_add, witnesses_to_remove, broadcast );
+   return my->update_witness_votes( voting_account, witnesses_to_add, witnesses_to_remove, csaf_fee, broadcast );
 }
 
 signed_transaction wallet_api::update_committee_member_votes(string voting_account,
                                           flat_set<string> committee_members_to_add,
                                           flat_set<string> committee_members_to_remove,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
 {
-   return my->update_committee_member_votes( voting_account, committee_members_to_add, committee_members_to_remove, broadcast );
+   return my->update_committee_member_votes( voting_account, committee_members_to_add, committee_members_to_remove, csaf_fee, broadcast );
 }
 
 signed_transaction wallet_api::set_voting_proxy(string account_to_modify,
                                                 optional<string> voting_account,
+                                                bool csaf_fee,
                                                 bool broadcast /* = false */)
 {
-   return my->set_voting_proxy(account_to_modify, voting_account, broadcast);
+   return my->set_voting_proxy(account_to_modify, voting_account, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::enable_allowed_assets(string account,
                                           bool enable,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
 {
-   return my->enable_allowed_assets( account, enable, broadcast );
+   return my->enable_allowed_assets( account, enable, csaf_fee, broadcast );
 }
 
 signed_transaction wallet_api::update_allowed_assets(string account,
                                           flat_set<string> assets_to_add,
                                           flat_set<string> assets_to_remove,
+                                          bool csaf_fee,
                                           bool broadcast /* = false */)
 {
-   return my->update_allowed_assets( account, assets_to_add, assets_to_remove, broadcast );
+   return my->update_allowed_assets( account, assets_to_add, assets_to_remove, csaf_fee, broadcast );
 }
 
 void wallet_api::set_wallet_filename(string wallet_filename)
@@ -3728,6 +3791,7 @@ signed_transaction wallet_api::committee_proposal_create(
          optional<voting_opinion_type> proposer_opinion,
          const uint32_t execution_block_num,
          const uint32_t expiration_block_num,
+         bool csaf_fee,
          bool broadcast
       )
 {
@@ -3737,6 +3801,7 @@ signed_transaction wallet_api::committee_proposal_create(
                                          proposer_opinion,
                                          execution_block_num,
                                          expiration_block_num,
+                                         csaf_fee,
                                          broadcast );
 }
 
@@ -3744,20 +3809,22 @@ signed_transaction wallet_api::committee_proposal_vote(
    const string committee_member_account,
    const uint64_t proposal_number,
    const voting_opinion_type opinion,
+   bool csaf_fee,
    bool broadcast /* = false */
    )
 {
-   return my->committee_proposal_vote( committee_member_account, proposal_number, opinion, broadcast );
+   return my->committee_proposal_vote( committee_member_account, proposal_number, opinion, csaf_fee, broadcast );
 }
 
 signed_transaction wallet_api::proposal_create(const string              fee_paying_account,
                                                const vector<op_wrapper>  proposed_ops,
                                                time_point_sec            expiration_time,
                                                uint32_t                  review_period_seconds,
+                                               bool                      csaf_fee,
                                                bool                      broadcast
                                                )
 {
-    return my->proposal_create(fee_paying_account, proposed_ops, expiration_time, review_period_seconds, broadcast);
+    return my->proposal_create(fee_paying_account, proposed_ops, expiration_time, review_period_seconds, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::proposal_update(const string                      fee_paying_account,
@@ -3770,19 +3837,21 @@ signed_transaction wallet_api::proposal_update(const string                     
                                                const flat_set<account_uid_type>  owner_approvals_to_remove,
                                                const flat_set<public_key_type>   key_approvals_to_add,
                                                const flat_set<public_key_type>   key_approvals_to_remove,
+                                               bool                              csaf_fee,
                                                bool                              broadcast
                                                )
 {
     return my->proposal_update(fee_paying_account, proposal, secondary_approvals_to_add, secondary_approvals_to_remove, active_approvals_to_add,
-        active_approvals_to_remove, owner_approvals_to_add, owner_approvals_to_remove, key_approvals_to_add, key_approvals_to_remove, broadcast);
+        active_approvals_to_remove, owner_approvals_to_add, owner_approvals_to_remove, key_approvals_to_add, key_approvals_to_remove, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::proposal_delete(const string              fee_paying_account,
                                                proposal_id_type          proposal,
+                                               bool                      csaf_fee,
                                                bool                      broadcast
                                                )
 {
-    return my->proposal_delete(fee_paying_account, proposal, broadcast);
+    return my->proposal_delete(fee_paying_account, proposal, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::score_a_post(string         from_account,
@@ -3791,9 +3860,10 @@ signed_transaction wallet_api::score_a_post(string         from_account,
                                             post_pid_type  post_pid,
                                             int8_t         score,
                                             string         csaf,
+                                            bool           csaf_fee,
                                             bool           broadcast)
 {
-    return my->score_a_post(from_account, platform, poster, post_pid, score, csaf, broadcast);
+    return my->score_a_post(from_account, platform, poster, post_pid, score, csaf, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::reward_post(string           from_account,
@@ -3802,9 +3872,10 @@ signed_transaction wallet_api::reward_post(string           from_account,
                                            post_pid_type    post_pid,
                                            string           amount,
                                            string           asset_symbol,
+                                           bool             csaf_fee,
                                            bool             broadcast)
 {
-    return my->reward_post(from_account, platform, poster, post_pid, amount, asset_symbol, broadcast);
+    return my->reward_post(from_account, platform, poster, post_pid, amount, asset_symbol, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::reward_post_proxy_by_platform(string           from_account,
@@ -3812,9 +3883,10 @@ signed_transaction wallet_api::reward_post_proxy_by_platform(string           fr
                                                              string           poster,
                                                              post_pid_type    post_pid,
                                                              string           amount,
+                                                             bool             csaf_fee,
                                                              bool             broadcast)
 {
-    return my->reward_post_proxy_by_platform(from_account, platform, poster, post_pid, amount, broadcast);
+    return my->reward_post_proxy_by_platform(from_account, platform, poster, post_pid, amount, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::buyout_post(string           from_account,
@@ -3822,9 +3894,10 @@ signed_transaction wallet_api::buyout_post(string           from_account,
                                            string           poster,
                                            post_pid_type    post_pid,
                                            string           receiptor_account,
+                                           bool             csaf_fee,
                                            bool             broadcast)
 {
-    return my->buyout_post(from_account, platform, poster, post_pid, receiptor_account, broadcast);
+    return my->buyout_post(from_account, platform, poster, post_pid, receiptor_account, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::create_license(string           platform,
@@ -3833,9 +3906,10 @@ signed_transaction wallet_api::create_license(string           platform,
                                               string           title,
                                               string           body,
                                               string           extra_data,
+                                              bool             csaf_fee,
                                               bool             broadcast)
 {
-    return my->create_license(platform, license_type, hash_value, title, body, extra_data, broadcast);
+    return my->create_license(platform, license_type, hash_value, title, body, extra_data, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::create_post(string              platform,
@@ -3848,9 +3922,10 @@ signed_transaction wallet_api::create_post(string              platform,
                                            string              origin_poster,
                                            string              origin_post_pid,
                                            post_create_ext     ext,
+                                           bool                csaf_fee,
                                            bool                broadcast)
 {
-    return my->create_post(platform, poster, hash_value, title, body, extra_data, origin_platform, origin_poster, origin_post_pid, ext, broadcast);
+    return my->create_post(platform, poster, hash_value, title, body, extra_data, origin_platform, origin_poster, origin_post_pid, ext, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::update_post(string                     platform,
@@ -3861,18 +3936,20 @@ signed_transaction wallet_api::update_post(string                     platform,
                                            string                     body,
                                            string                     extra_data,
                                            post_update_ext            ext,
+                                           bool                       csaf_fee,
                                            bool                       broadcast)
 {
-    return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, broadcast);
+    return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::account_manage(string executor,
                                               string account,
                                               account_manage_operation::opt options,
+                                              bool csaf_fee,
                                               bool broadcast
                                               )
 {
-    return my->account_manage(executor,account, options, broadcast);
+    return my->account_manage(executor,account, options, csaf_fee, broadcast);
 }
 
 post_object wallet_api::get_post(string platform_owner,
@@ -3927,10 +4004,11 @@ signed_transaction wallet_api::approve_proposal(
    const string& fee_paying_account,
    const string& proposal_id,
    const approval_delta& delta,
+   bool  csaf_fee,
    bool broadcast /* = false */
    )
 {
-   return my->approve_proposal( fee_paying_account, proposal_id, delta, broadcast );
+   return my->approve_proposal( fee_paying_account, proposal_id, delta, csaf_fee, broadcast );
 }
 
 vector<proposal_object> wallet_api::list_proposals( string account_name_or_id )
