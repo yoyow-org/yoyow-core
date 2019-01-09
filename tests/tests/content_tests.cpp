@@ -422,6 +422,126 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
    }
 }
 
+
+//test api: process_platform_voted_awards()
+BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
+{
+   try{
+      //ACTORS((1001)(9000));
+
+      flat_map<account_uid_type, fc::ecc::private_key> platform_map1;
+      flat_map<account_uid_type, fc::ecc::private_key> platform_map2;
+      actor(8001, 5, platform_map1);
+      actor(9001, 5, platform_map2);
+      flat_set<account_uid_type> platform_set1;
+      flat_set<account_uid_type> platform_set2;
+      for (const auto&p : platform_map1)
+         platform_set1.insert(p.first);
+      for (const auto&p : platform_map2)
+         platform_set2.insert(p.first);
+
+      flat_map<account_uid_type, fc::ecc::private_key> vote_map1;
+      flat_map<account_uid_type, fc::ecc::private_key> vote_map2;
+      actor(1003, 20, vote_map1);
+      actor(2003, 20, vote_map2);
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+
+      for (int i = 0; i < 5; ++i)
+         add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
+         
+      for (const auto &p : platform_map1)
+      {
+         transfer(committee_account, p.first, _core(100000));
+         collect_csaf_from_committee(p.first, 1000);
+      }      
+      for (const auto &p : platform_map2)
+      {
+         transfer(committee_account, p.first, _core(100000));
+         collect_csaf_from_committee(p.first, 1000);
+      }        
+      for (const auto &v : vote_map1)
+      {
+         transfer(committee_account, v.first, _core(10000));
+         collect_csaf_from_committee(v.first, 1000);
+      }
+      for (const auto &v : vote_map2)
+      {
+         transfer(committee_account, v.first, _core(10000));
+         collect_csaf_from_committee(v.first, 1000);
+      }
+
+      uint32_t i = 0;
+      for (const auto &p : platform_map1)
+      {
+         create_platform(p.first, "platform" + i, _core(10000), "www.123456789.com" + i, "", { p.second });
+         i++;
+      }        
+      for (const auto &p : platform_map2)
+      {
+         create_platform(p.first, "platform" + i, _core(10000), "www.123456789.com" + i, "", { p.second });
+         i++;
+      }
+
+      uint32_t current_block_num = db.head_block_num();
+
+      BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 300, 300, 1000, 31536000, 10, 0, 0, 10000000000000, 1041521, 8 };
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num+10, voting_opinion_type::opinion_for, current_block_num+10, current_block_num+10);
+      for (int i = 1; i < 5; ++i)
+         committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+      generate_blocks(10);
+
+      flat_set<account_uid_type> empty;
+      for (const auto &v : vote_map1)
+      {
+         update_platform_votes(v.first, platform_set1, empty, { v.second });
+         //update_platform_votes(v.first, platform_set2, empty, { v.second });
+      }
+      for (const auto &v : vote_map2)
+      {
+         update_platform_votes(v.first, platform_set2, empty, { v.second });
+      }
+
+      generate_blocks(100);
+
+      uint128_t award = (uint128_t)10000000000000 * 300 / (86400 * 365);
+      uint128_t platform_award_basic = award * 2000 / 10000;
+      uint128_t basic = platform_award_basic / (platform_map1.size() + platform_map1.size());
+      uint128_t platform_award_by_votes = award - platform_award_basic;
+
+      //to check, dont know total vote 
+      uint32_t total_vote = 5786 * 20;
+      for (const auto&p : platform_map1)
+      {
+         uint32_t votes = vote_map1.size() + vote_map2.size();
+         uint128_t award_by_votes = platform_award_by_votes * votes / total_vote;
+         share_type balance = (award_by_votes + basic).convert_to<uint64_t>();
+         auto pla_act = db.get_account_statistics_by_uid(p.first);
+         BOOST_CHECK(pla_act.core_balance == balance + 10000000000);
+      }
+      for (const auto&p : platform_map2)
+      {
+         uint32_t votes = vote_map1.size();
+         uint128_t award_by_votes = platform_award_by_votes * votes / total_vote;
+         share_type balance = (award_by_votes + basic).convert_to<uint64_t>();
+         auto pla_act = db.get_account_statistics_by_uid(p.first);
+         BOOST_CHECK(pla_act.core_balance == balance + 10000000000);
+      }
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+
 BOOST_AUTO_TEST_CASE(transfer_extension_test)
 {
     try{
