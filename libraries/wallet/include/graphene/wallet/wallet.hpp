@@ -1485,13 +1485,26 @@ class wallet_api
                             string poster_uid,
                             string post_pid );
 
+      vector<post_object> get_posts_by_platform_poster(account_uid_type                          platform_owner,
+                                                       optional<account_uid_type>                poster,
+                                                       std::pair<time_point_sec, time_point_sec> create_time_range,
+                                                       uint32_t                                  limit);
+
       score_object get_score(string platform,
                              string poster_uid,
                              string post_pid,
                              string from_account);
 
+      vector<score_object> list_scores(string   platform,
+                                       string   poster_uid,
+                                       string   post_pid,
+                                       uint32_t limit,
+                                       bool     list_cur_period = true);
+
       license_object get_license(string platform,
                                  string license_lid);
+
+      vector<license_object> list_licenses(string platform, uint32_t limit);
 
       account_statistics_object get_account_statistics(string account);
          
@@ -1695,8 +1708,11 @@ FC_API( graphene::wallet::wallet_api,
         (update_post)
         (account_manage)
         (get_post)
+        (get_posts_by_platform_poster)
         (get_score)
+        (list_scores)
         (get_license)
+        (list_licenses)
         (get_account_statistics)
         (get_global_properties_extensions)
       )

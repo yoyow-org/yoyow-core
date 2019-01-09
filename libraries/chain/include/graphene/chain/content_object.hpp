@@ -365,13 +365,16 @@ namespace graphene { namespace chain {
 	   post_pid_type       post_pid;
 	   int8_t              score;
 	   share_type          csaf;
+       uint64_t            period_sequence;
 
 	   time_point_sec      create_time;
    };
 
    struct by_from_account_uid{};
-   struct by_posts_pid{};
+   //struct by_post_pid{};
    struct by_create_time{};
+   struct by_posts_pids{};
+   //struct by_period_sequence{};
 
    /**
    * @ingroup object_index
@@ -381,13 +384,28 @@ namespace graphene { namespace chain {
 	   indexed_by<
 	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
 		  ordered_non_unique< tag<by_from_account_uid>, member< score_object, account_uid_type, &score_object::from_account_uid> >,
-          ordered_unique< tag<by_posts_pid>, 
+          ordered_unique< tag<by_post_pid>, 
                               composite_key<
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::platform >,
                                   member< score_object, account_uid_type, &score_object::poster >,
                                   member< score_object, post_pid_type,    &score_object::post_pid >,
                                   member< score_object, account_uid_type, &score_object::from_account_uid >
+                              > >,
+          ordered_non_unique< tag<by_posts_pids>, 
+                              composite_key<
+                                  score_object,
+                                  member< score_object, account_uid_type, &score_object::platform >,
+                                  member< score_object, account_uid_type, &score_object::poster >,
+                                  member< score_object, post_pid_type,    &score_object::post_pid >
+                              > >,
+          ordered_non_unique< tag<by_period_sequence>, 
+                              composite_key<
+                                  score_object,
+                                  member< score_object, account_uid_type, &score_object::platform >,
+                                  member< score_object, account_uid_type, &score_object::poster >,
+                                  member< score_object, post_pid_type,    &score_object::post_pid >,
+                                  member< score_object,  uint64_t,        &score_object::period_sequence>
                               > >,
 		  ordered_non_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
        >

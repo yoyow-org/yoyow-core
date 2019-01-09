@@ -405,8 +405,16 @@ class database_api
                              const post_pid_type    post_pid,
                              const account_uid_type from_account)const;
 
+      vector<score_object> list_scores(const account_uid_type platform,
+                                       const account_uid_type poster_uid,
+                                       const post_pid_type    post_pid,
+                                       const uint32_t         limit,
+                                       const bool             list_cur_period = true)const;
+
       license_object get_license(const account_uid_type platform,
                                  const license_lid_type license_lid)const;
+
+      vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
 
       /**
        * @brief Get posts by platform plus poster
@@ -670,7 +678,9 @@ FC_API( graphene::app::database_api,
    (get_post)
    (get_posts_by_platform_poster)
    (get_score)
+   (list_scores)
    (get_license)
+   (list_licenses)
 
    // Balances
    (get_account_balances)

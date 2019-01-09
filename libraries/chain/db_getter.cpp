@@ -329,7 +329,7 @@ const score_object& database::get_score(account_uid_type platform,
                                         post_pid_type post_pid,
                                         account_uid_type from_account)const
 {
-    const auto& scores_by_pid = get_index_type<score_index>().indices().get<by_posts_pid>();
+    const auto& scores_by_pid = get_index_type<score_index>().indices().get<by_post_pid>();
     auto itr = scores_by_pid.find(std::make_tuple(platform, poster, post_pid, from_account));
     FC_ASSERT(itr != scores_by_pid.end(),
         "score ${platform}_${uid}_${post_pid}_${from_id} not found.",
@@ -350,7 +350,7 @@ const score_object* database::find_score(account_uid_type platform,
                                         post_pid_type post_pid,
                                         account_uid_type from_account)const
 {
-    const auto& scores_by_pid = get_index_type<score_index>().indices().get<by_posts_pid>();
+    const auto& scores_by_pid = get_index_type<score_index>().indices().get<by_post_pid>();
     auto itr = scores_by_pid.find(std::make_tuple(platform, poster, post_pid, from_account));
     if (itr != scores_by_pid.end())
         return &(*itr);

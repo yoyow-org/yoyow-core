@@ -793,6 +793,7 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
 		d.modify(*account_stats, [&](account_statistics_object& s) {
 			s.csaf -= op.csaf;
 		});
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
 		const auto& new_score_object = d.create<score_object>([&](score_object& obj)
 		{
 			obj.from_account_uid = op.from_account_uid;
@@ -801,6 +802,7 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
 			obj.post_pid         = op.post_pid;
 			obj.score            = op.score;
 			obj.csaf             = op.csaf;
+            obj.period_sequence  = dpo.current_active_post_sequence;
 			obj.create_time      = d.head_block_time();
 		});
 

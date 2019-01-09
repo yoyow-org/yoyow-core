@@ -130,8 +130,15 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                        const post_pid_type    post_pid,
                                        const account_uid_type from_account)const;
 
+      vector<score_object> list_scores(const account_uid_type platform,
+                                       const account_uid_type poster_uid,
+                                       const post_pid_type    post_pid,
+                                       const uint32_t         limit,
+                                       const bool             list_cur_period)const;
+
       optional<license_object> get_license(const account_uid_type platform,
                                            const license_lid_type license_lid)const;
+      vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
 
       // Balances
       vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
@@ -1092,7 +1099,7 @@ score_object database_api::get_score(const account_uid_type platform,
 
 optional<score_object> database_api_impl::get_score(const account_uid_type platform,
                                                     const account_uid_type poster_uid,
-                                                    const post_pid_type post_pid,
+                                                    const post_pid_type    post_pid,
                                                     const account_uid_type from_account)const
 {
     if (auto o = _db.find_score(platform, poster_uid, post_pid, from_account))
@@ -1100,6 +1107,50 @@ optional<score_object> database_api_impl::get_score(const account_uid_type platf
         return *o;
     }
     return{};
+}
+
+vector<score_object> database_api::list_scores(const account_uid_type platform,
+                                               const account_uid_type poster_uid,
+                                               const post_pid_type    post_pid,
+                                               const uint32_t         limit,
+                                               const bool             list_cur_period)const
+{
+    return my->list_scores(platform, poster_uid, post_pid, limit, list_cur_period);
+}
+
+vector<score_object> database_api_impl::list_scores(const account_uid_type platform,
+                                                    const account_uid_type poster_uid,
+                                                    const post_pid_type    post_pid,
+                                                    const uint32_t         limit,
+                                                    const bool             list_cur_period)const
+{
+    vector<score_object> result;
+    uint32_t count = 0;
+
+    if (list_cur_period){
+        const dynamic_global_property_object& dpo = _db.get_dynamic_global_properties();
+        const auto& idx = _db.get_index_type<score_index>().indices().get<by_period_sequence>();
+        auto itr = idx.lower_bound(std::make_tuple(platform, poster_uid, poster_uid, dpo.current_active_post_sequence));
+
+        while (itr != idx.end() && count < limit)
+        {
+            result.push_back(*itr);
+            ++itr;
+            ++count;
+        }
+    }
+    else{
+        const auto& idx = _db.get_index_type<score_index>().indices().get<by_posts_pids>();
+        auto itr = idx.lower_bound(std::make_tuple(platform, poster_uid, poster_uid));
+
+        while (itr != idx.end() && count < limit)
+        {
+            result.push_back(*itr);
+            ++itr;
+            ++count;
+        }
+    }
+    return result;
 }
 
 license_object database_api::get_license(const account_uid_type platform,
@@ -1116,6 +1167,27 @@ optional<license_object> database_api_impl::get_license(const account_uid_type p
         return *o;
     }
     return{};
+}
+
+vector<license_object> database_api::list_licenses(const account_uid_type platform, const uint32_t limit)const
+{
+    return my->list_licenses(platform, limit);
+}
+
+vector<license_object> database_api_impl::list_licenses(const account_uid_type platform, const uint32_t limit)const
+{
+    vector<license_object> result;
+    uint32_t count = 0;
+    const auto& idx = _db.get_index_type<license_index>().indices().get<by_platform>();
+    auto itr = idx.lower_bound(platform);
+
+    while (itr != idx.end() && count < limit)
+    {
+        result.push_back(*itr);
+        ++itr;
+        ++count;
+    }
+    return result;
 }
 
 vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_owner,

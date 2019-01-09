@@ -2575,6 +2575,17 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(post_pid))
    }
 
+   vector<post_object> get_posts_by_platform_poster(account_uid_type                          platform_owner,
+                                                    optional<account_uid_type>                poster,
+                                                    std::pair<time_point_sec, time_point_sec> create_time_range,
+                                                    uint32_t                                  limit)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           return _remote_db->get_posts_by_platform_poster(platform_owner,poster,create_time_range,limit);
+       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(create_time_range)(limit))
+   }
+
    score_object get_score(string platform,
                           string poster_uid,
                           string post_pid,
@@ -2590,6 +2601,21 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(from_account))
    }
 
+   vector<score_object> list_scores(string   platform,
+                                    string   poster_uid,
+                                    string   post_pid,
+                                    uint32_t limit,
+                                    bool     list_cur_period)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           post_pid_type postid = fc::to_uint64(fc::string(post_pid));
+           account_uid_type platform_uid = get_account_uid(platform);
+           account_uid_type poster = get_account_uid(poster_uid);
+           return _remote_db->list_scores(platform_uid, poster, postid, limit, list_cur_period);
+       } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid))
+   }
+
    license_object get_license(string platform,
                               string license_lid)
    {
@@ -2599,6 +2625,15 @@ signed_transaction account_cancel_auth_platform(string account,
            license_lid_type lid = fc::to_uint64(fc::string(license_lid));;
            return _remote_db->get_license(platform_uid, lid);
        } FC_CAPTURE_AND_RETHROW((platform)(license_lid))
+   }
+
+   vector<license_object> list_licenses(string platform, uint32_t limit)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           account_uid_type platform_uid = get_account_uid(platform);
+           return _remote_db->list_licenses(platform_uid, limit);
+       } FC_CAPTURE_AND_RETHROW((platform))
    }
 
    account_statistics_object get_account_statistics(string account)
@@ -3847,6 +3882,14 @@ post_object wallet_api::get_post(string platform_owner,
     return my->get_post(platform_owner, poster_uid, post_pid);
 }
 
+vector<post_object> wallet_api::get_posts_by_platform_poster(account_uid_type                          platform_owner,
+                                                                         optional<account_uid_type>                poster,
+                                                                         std::pair<time_point_sec, time_point_sec> create_time_range,
+                                                                         uint32_t                                  limit)
+{
+    return my->get_posts_by_platform_poster(platform_owner, poster, create_time_range, limit);
+}
+
 score_object wallet_api::get_score(string platform,
                                    string poster_uid,
                                    string post_pid,
@@ -3855,10 +3898,24 @@ score_object wallet_api::get_score(string platform,
     return my->get_score(platform, poster_uid, post_pid, from_account);
 }
 
+vector<score_object> wallet_api::list_scores(string platform,
+                                             string poster_uid,
+                                             string post_pid,
+                                             uint32_t limit,
+                                             bool list_cur_period)
+{
+    return my->list_scores(platform, poster_uid, post_pid, limit, list_cur_period);
+}
+
 license_object wallet_api::get_license(string platform,
                                        string license_lid)
 {
     return my->get_license(platform, license_lid);
+}
+
+vector<license_object> wallet_api::list_licenses(string platform, uint32_t limit)
+{
+    return my->list_licenses(platform, limit);
 }
 
 account_statistics_object wallet_api::get_account_statistics(string account)
