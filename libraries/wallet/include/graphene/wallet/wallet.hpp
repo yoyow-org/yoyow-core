@@ -1528,8 +1528,8 @@ class wallet_api
 
       vector<post_object> get_posts_by_platform_poster(string                                    platform_owner,
                                                        string                                    poster,
-                                                       time_point_sec                            begin_time_range,
-                                                       time_point_sec                            end_time_range,
+                                                       uint32_t                                  begin_time_range,
+                                                       uint32_t                                  end_time_range,
                                                        uint32_t                                  limit);
 
       score_object get_score(string platform,

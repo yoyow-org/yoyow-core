@@ -3964,11 +3964,13 @@ post_object wallet_api::get_post(string platform_owner,
 
 vector<post_object> wallet_api::get_posts_by_platform_poster(string                                    platform_owner,
                                                              string                                    poster,
-                                                             time_point_sec                            begin_time_range,
-                                                             time_point_sec                            end_time_range,
+                                                             uint32_t                                  begin_time_range,
+                                                             uint32_t                                  end_time_range,
                                                              uint32_t                                  limit)
 {
-    return my->get_posts_by_platform_poster(platform_owner, poster, begin_time_range, end_time_range, limit);
+    time_point_sec  begin_time(begin_time_range);
+    time_point_sec  end_time(end_time_range);
+    return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, limit);
 }
 
 score_object wallet_api::get_score(string platform,
