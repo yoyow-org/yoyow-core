@@ -455,6 +455,7 @@ namespace graphene { namespace chain {
          //////////////////// db_update.cpp ////////////////////
       public:
          void execute_committee_proposal( const committee_proposal_object& proposal, bool silent_fail = false );
+         void set_active_post_periods(const uint32_t& periods){ _latest_active_post_periods = periods; }
       private:
          void update_global_dynamic_data( const signed_block& b );
          void update_undo_db_size();
@@ -530,6 +531,8 @@ namespace graphene { namespace chain {
          flat_map<uint32_t,block_id_type>  _checkpoints;
 
          node_property_object              _node_property_object;
+
+         uint32_t                          _latest_active_post_periods = 10;
    };
 
    namespace detail

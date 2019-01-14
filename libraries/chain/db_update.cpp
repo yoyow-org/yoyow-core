@@ -240,7 +240,7 @@ void database::clear_active_post()
 {
 	const dynamic_global_property_object& dpo = get_dynamic_global_properties();
 	const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
-	const auto& apt_end= apt_idx.lower_bound(dpo.current_active_post_sequence - 10);
+  const auto& apt_end = apt_idx.lower_bound(dpo.current_active_post_sequence - _latest_active_post_periods);
 	auto apt_itr = apt_idx.begin();
 	while (apt_itr != apt_end)
 	{

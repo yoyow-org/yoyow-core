@@ -370,6 +370,8 @@ namespace detail {
                return genesis;
             }
          };
+         if (_options->count("active-post-periods"))
+            _chain_db->set_active_post_periods(_options->at("active-post-periods").as<uint32_t>());
 
          if( _options->count("resync-blockchain") )
             _chain_db->wipe(_data_dir / "blockchain", true);
@@ -946,6 +948,7 @@ void application::set_program_options(boost::program_options::options_descriptio
          ("resync-blockchain", "Delete all blocks and re-sync with network from scratch")
          ("force-validate", "Force validation of all transactions")
          ("genesis-timestamp", bpo::value<uint32_t>(), "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)")
+         ("active-post-periods", bpo::value<uint32_t>(), "Record active post object that be created in the last few periods")
          ;
    command_line_options.add(_cli_options);
    configuration_file_options.add(_cfg_options);
