@@ -1526,9 +1526,10 @@ class wallet_api
                             string poster_uid,
                             string post_pid );
 
-      vector<post_object> get_posts_by_platform_poster(account_uid_type                          platform_owner,
-                                                       optional<account_uid_type>                poster,
-                                                       std::pair<time_point_sec, time_point_sec> create_time_range,
+      vector<post_object> get_posts_by_platform_poster(string                                    platform_owner,
+                                                       string                                    poster,
+                                                       uint32_t                                  begin_time_range,
+                                                       uint32_t                                  end_time_range,
                                                        uint32_t                                  limit);
 
       score_object get_score(string platform,

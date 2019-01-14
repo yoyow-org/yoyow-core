@@ -2616,15 +2616,18 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(post_pid))
    }
 
-   vector<post_object> get_posts_by_platform_poster(account_uid_type                          platform_owner,
-                                                    optional<account_uid_type>                poster,
-                                                    std::pair<time_point_sec, time_point_sec> create_time_range,
+   vector<post_object> get_posts_by_platform_poster(string                                    platform_owner,
+                                                    string                                    poster_uid,
+                                                    time_point_sec                            begin_time_range,
+                                                    time_point_sec                            end_time_range,
                                                     uint32_t                                  limit)
    {
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
-           return _remote_db->get_posts_by_platform_poster(platform_owner,poster,create_time_range,limit);
-       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(create_time_range)(limit))
+           account_uid_type platform = get_account_uid(platform_owner);
+           account_uid_type poster = get_account_uid(poster_uid);
+           return _remote_db->get_posts_by_platform_poster(platform, poster, std::make_pair(begin_time_range, end_time_range), limit);
+       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(begin_time_range)(end_time_range)(limit))
    }
 
    score_object get_score(string platform,
@@ -3959,12 +3962,15 @@ post_object wallet_api::get_post(string platform_owner,
     return my->get_post(platform_owner, poster_uid, post_pid);
 }
 
-vector<post_object> wallet_api::get_posts_by_platform_poster(account_uid_type                          platform_owner,
-                                                                         optional<account_uid_type>                poster,
-                                                                         std::pair<time_point_sec, time_point_sec> create_time_range,
-                                                                         uint32_t                                  limit)
+vector<post_object> wallet_api::get_posts_by_platform_poster(string                                    platform_owner,
+                                                             string                                    poster,
+                                                             uint32_t                                  begin_time_range,
+                                                             uint32_t                                  end_time_range,
+                                                             uint32_t                                  limit)
 {
-    return my->get_posts_by_platform_poster(platform_owner, poster, create_time_range, limit);
+    time_point_sec  begin_time(begin_time_range);
+    time_point_sec  end_time(end_time_range);
+    return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, limit);
 }
 
 score_object wallet_api::get_score(string platform,

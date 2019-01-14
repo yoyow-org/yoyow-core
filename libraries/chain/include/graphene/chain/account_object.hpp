@@ -804,5 +804,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (releasing_platform_pledge)
                     (platform_pledge_release_block_number)
                     (last_post_sequence)
+                    (last_license_sequence)
                   )
 

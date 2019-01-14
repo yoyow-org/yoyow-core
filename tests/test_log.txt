@@ -17,76 +17,76 @@
 	{"private_key":"5JTpqf39D5ev1u1ub6BDceVFxmm12bZKLwssFCdKCQVUhNosgU9","public_key":"YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7"},
 
 
-    register_account test1 YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj init init 0 120 true
+    register_account test1 YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj init init 0 120 true true
 
-    register_account test2 YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT init init 0 121 true
+    register_account test2 YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT init init 0 121 true true
 
-    register_account test3 YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv init init 0 122 true
+    register_account test3 YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv init init 0 122 true true
 
-    register_account test4 YYW7AJq5qvubh1dyWejRoi79tCyuiKwxs3tNLDrbuYFupfa2T5hZm YYW7AJq5qvubh1dyWejRoi79tCyuiKwxs3tNLDrbuYFupfa2T5hZm init init 0 123 true
+    register_account test4 YYW7AJq5qvubh1dyWejRoi79tCyuiKwxs3tNLDrbuYFupfa2T5hZm YYW7AJq5qvubh1dyWejRoi79tCyuiKwxs3tNLDrbuYFupfa2T5hZm init init 0 123 true true
 
-    register_account test5 YYW6k64kZUJp8H9i7GLvmv8ZcideUrVEVwHmMJVqXvHcyzv6qURaD YYW6k64kZUJp8H9i7GLvmv8ZcideUrVEVwHmMJVqXvHcyzv6qURaD init init 0 124 true
+    register_account test5 YYW6k64kZUJp8H9i7GLvmv8ZcideUrVEVwHmMJVqXvHcyzv6qURaD YYW6k64kZUJp8H9i7GLvmv8ZcideUrVEVwHmMJVqXvHcyzv6qURaD init init 0 124 true true
 
-    register_account test6 YYW6K99BgoWJzca4QhLuRYq1j8ZbeqHLsLfB2r4biydVWRRBvvqTJ YYW6K99BgoWJzca4QhLuRYq1j8ZbeqHLsLfB2r4biydVWRRBvvqTJ init init 0 125 true
+    register_account test6 YYW6K99BgoWJzca4QhLuRYq1j8ZbeqHLsLfB2r4biydVWRRBvvqTJ YYW6K99BgoWJzca4QhLuRYq1j8ZbeqHLsLfB2r4biydVWRRBvvqTJ init init 0 125 true true
 
-    register_account test7 YYW7zX4N2NsXoeEhBLaR3VJoN2na9HP15suJSG6wQeJbj6bxvzBCL YYW7zX4N2NsXoeEhBLaR3VJoN2na9HP15suJSG6wQeJbj6bxvzBCL init init 0 126 true
+    register_account test7 YYW7zX4N2NsXoeEhBLaR3VJoN2na9HP15suJSG6wQeJbj6bxvzBCL YYW7zX4N2NsXoeEhBLaR3VJoN2na9HP15suJSG6wQeJbj6bxvzBCL init init 0 126 true true
 
-    register_account test8 YYW6ukbtJq1fhdoHPmvmH8ePssveuguvZrxJJatB8vxA9p7CEhD4W YYW6ukbtJq1fhdoHPmvmH8ePssveuguvZrxJJatB8vxA9p7CEhD4W init init 0 127 true
+    register_account test8 YYW6ukbtJq1fhdoHPmvmH8ePssveuguvZrxJJatB8vxA9p7CEhD4W YYW6ukbtJq1fhdoHPmvmH8ePssveuguvZrxJJatB8vxA9p7CEhD4W init init 0 127 true true
 
-    register_account test9 YYW7RpffbtehDchGh5tFETXZbGgQPUZJ9vLGMPfEyHxLLQmvFpxe1 YYW7RpffbtehDchGh5tFETXZbGgQPUZJ9vLGMPfEyHxLLQmvFpxe1 init init 0 128 true
+    register_account test9 YYW7RpffbtehDchGh5tFETXZbGgQPUZJ9vLGMPfEyHxLLQmvFpxe1 YYW7RpffbtehDchGh5tFETXZbGgQPUZJ9vLGMPfEyHxLLQmvFpxe1 init init 0 128 true true
 
-    register_account test10 YYW8BVzoM36ocAMo42DPsNaG1fFo19XicEmCs5CfKhSmMMkaBfAAb YYW8BVzoM36ocAMo42DPsNaG1fFo19XicEmCs5CfKhSmMMkaBfAAb init init 0 129 true
+    register_account test10 YYW8BVzoM36ocAMo42DPsNaG1fFo19XicEmCs5CfKhSmMMkaBfAAb YYW8BVzoM36ocAMo42DPsNaG1fFo19XicEmCs5CfKhSmMMkaBfAAb init init 0 129 true true
 
-    register_account platform_account1 YYW8K2cMvr5omtmvbAGxfqi1zN2XZMqoBwpLPfN87ivT644Ft5xmg YYW8K2cMvr5omtmvbAGxfqi1zN2XZMqoBwpLPfN87ivT644Ft5xmg init init 0 130 true
+    register_account platform_account1 YYW8K2cMvr5omtmvbAGxfqi1zN2XZMqoBwpLPfN87ivT644Ft5xmg YYW8K2cMvr5omtmvbAGxfqi1zN2XZMqoBwpLPfN87ivT644Ft5xmg init init 0 130 true true
 
-    register_account platform_account2 YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7 YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7 init init 0 131 true
+    register_account platform_account2 YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7 YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7 init init 0 131 true true
 	   
 
-#3.    collect_csaf init init 1000 YOYO 1545289965 true
-       collect_csaf init init1 1000 YOYO 1545289965 true
-       collect_csaf init init2 1000 YOYO 1545289965 true
-       collect_csaf init init3 1000 YOYO 1545289965 true
-       collect_csaf init init4 1000 YOYO 1545289965 true
-       collect_csaf init init5 1000 YOYO 1545289965 true
-       collect_csaf init init6 1000 YOYO 1545289965 true
-       collect_csaf init init7 1000 YOYO 1545289965 true
-       collect_csaf init init8 1000 YOYO 1545289965 true
-       collect_csaf init init9 1000 YOYO 1545289965 true
-       collect_csaf init init10 1000 YOYO 1545289965 true
+#3.    collect_csaf init init 1000 YOYO 1545289965 true true
+       collect_csaf init init1 1000 YOYO 1545289965 true true
+       collect_csaf init init2 1000 YOYO 1545289965 true true
+       collect_csaf init init3 1000 YOYO 1545289965 true true
+       collect_csaf init init4 1000 YOYO 1545289965 true true
+       collect_csaf init init5 1000 YOYO 1545289965 true true
+       collect_csaf init init6 1000 YOYO 1545289965 true true
+       collect_csaf init init7 1000 YOYO 1545289965 true true
+       collect_csaf init init8 1000 YOYO 1545289965 true true
+       collect_csaf init init9 1000 YOYO 1545289965 true true
+       collect_csaf init init10 1000 YOYO 1545289965 true true
 
-       collect_csaf init test1  1000 YOYO 1545289965 true
-       collect_csaf init test2  1000 YOYO 1545289965 true
-       collect_csaf init test3  1000 YOYO 1545289965 true
-       collect_csaf init test4  1000 YOYO 1545289965 true
-       collect_csaf init test5  1000 YOYO 1545289965 true
-       collect_csaf init test6  1000 YOYO 1545289965 true
-       collect_csaf init test7  1000 YOYO 1545289965 true
-       collect_csaf init test8  1000 YOYO 1545289965 true
-       collect_csaf init test9  1000 YOYO 1545289965 true
-       collect_csaf init test10 1000 YOYO 1545289965 true
-       collect_csaf init platform_account1  1000 YOYO 1545289965 true
-       collect_csaf init platform_account2 1000 YOYO 1545289965 true
+       collect_csaf init test1  1000 YOYO 1545289965 true true
+       collect_csaf init test2  1000 YOYO 1545289965 true true
+       collect_csaf init test3  1000 YOYO 1545289965 true true
+       collect_csaf init test4  1000 YOYO 1545289965 true true
+       collect_csaf init test5  1000 YOYO 1545289965 true true
+       collect_csaf init test6  1000 YOYO 1545289965 true true
+       collect_csaf init test7  1000 YOYO 1545289965 true true
+       collect_csaf init test8  1000 YOYO 1545289965 true true
+       collect_csaf init test9  1000 YOYO 1545289965 true true
+       collect_csaf init test10 1000 YOYO 1545289965 true true
+       collect_csaf init platform_account1  1000 YOYO 1545289965 true true
+       collect_csaf init platform_account2 1000 YOYO 1545289965 true true
 	   
-#3.    transfer init test1 100000 YOYO "" true
-       transfer init test2 100000 YOYO "" true
-       transfer init test3 100000 YOYO "" true
-       transfer init test4 100000 YOYO "" true
-       transfer init test5 100000 YOYO "" true
-       transfer init test6 100000 YOYO "" true
-       transfer init test7 100000 YOYO "" true
-       transfer init test8 100000 YOYO "" true
-       transfer init test9 100000 YOYO "" true
-       transfer init test10 100000 YOYO "" true
+#3.    transfer init test1 100000 YOYO "" true true
+       transfer init test2 100000 YOYO "" true true
+       transfer init test3 100000 YOYO "" true true
+       transfer init test4 100000 YOYO "" true true
+       transfer init test5 100000 YOYO "" true true
+       transfer init test6 100000 YOYO "" true true
+       transfer init test7 100000 YOYO "" true true
+       transfer init test8 100000 YOYO "" true true
+       transfer init test9 100000 YOYO "" true true
+       transfer init test10 100000 YOYO "" true true
 
-       transfer init platform_account1 100000 YOYO "" true
-       transfer init platform_account2 100000 YOYO "" true
+       transfer init platform_account1 100000 YOYO "" true true
+       transfer init platform_account2 100000 YOYO "" true true
 
 
 #4.    import_key platform_account1  5KbuHNCM1wxA5wM3nCXV4V3Dj7Rgs94wpvv5KxcFBuQPJH4XH8U
 	   import_key platform_account2 5JTpqf39D5ev1u1ub6BDceVFxmm12bZKLwssFCdKCQVUhNosgU9
 
-#5.    create_platform platform_account1 platform1 10000 YOYO "www.baidu.com" "" true
-       create_platform platform_account2 platform2 10000 YOYO "www.google.com" "" true
+#5.    create_platform platform_account1 platform1 10000 YOYO "www.baidu.com" "" true true
+       create_platform platform_account2 platform2 10000 YOYO "www.google.com" "" true true
 
 #6.    
        import_key test1 5KV3RG172g6wcsainBmdpPFYAFBniWxJkFSLJh2YY46VkkBJeVh
@@ -101,71 +101,71 @@
        import_key test9 5JKsA3Lnc7YmyRQ53DgFKBVwKmyd3mtUKbgYxQzk8Dd5p7Nfuh9
        import_key test10 5J2nZArL1yiVzJUoHwMR4fuSsAVVV6EgTbGw8DjFTL1qi6P8NQs
 
-	   account_auth_platform test1 platform_account1 10000 255 true
-	   account_auth_platform test2 platform_account1 10000 255 true
-       account_auth_platform test3 platform_account1 10000 255 true
-       account_auth_platform test4 platform_account1 10000 255 true
-       account_auth_platform test5 platform_account1 10000 255 true
-       account_auth_platform test6 platform_account1 10000 255 true
-	   account_auth_platform test7 platform_account1 10000 255 true
-       account_auth_platform test8 platform_account1 10000 255 true
-       account_auth_platform test9 platform_account1 10000 255 true
-       account_auth_platform test10 platform_account1 10000 255 true
+	   account_auth_platform test1 platform_account1 10000 255 true true
+	   account_auth_platform test2 platform_account1 10000 255 true true
+       account_auth_platform test3 platform_account1 10000 255 true true
+       account_auth_platform test4 platform_account1 10000 255 true true
+       account_auth_platform test5 platform_account1 10000 255 true true
+       account_auth_platform test6 platform_account1 10000 255 true true
+	   account_auth_platform test7 platform_account1 10000 255 true true
+       account_auth_platform test8 platform_account1 10000 255 true true
+       account_auth_platform test9 platform_account1 10000 255 true true
+       account_auth_platform test10 platform_account1 10000 255 true true
 	   
-	   account_auth_platform test6 platform_account2 10000 255 true
-	   account_auth_platform test7 platform_account2 10000 255 true
-	   account_auth_platform test8 platform_account2 10000 255 true
-	   account_auth_platform test9 platform_account2 10000 255 true
-	   account_auth_platform test10 platform_account2 10000 255 true
+	   account_auth_platform test6 platform_account2 10000 255 true true
+	   account_auth_platform test7 platform_account2 10000 255 true true
+	   account_auth_platform test8 platform_account2 10000 255 true true
+	   account_auth_platform test9 platform_account2 10000 255 true true
+	   account_auth_platform test10 platform_account2 10000 255 true true
 
 
-#7.    transfer_extension test1 test1 5000 YOYO "" true false true
-	   transfer_extension test2 test2 5000 YOYO "" true false true 
-       transfer_extension test3 test3 5000 YOYO "" true false true 
-       transfer_extension test4 test4 5000 YOYO "" true false true 
-       transfer_extension test5 test5 5000 YOYO "" true false true
-       transfer_extension test6 test6 5000 YOYO "" true false true
-       transfer_extension test7 test7 5000 YOYO "" true false true 
-       transfer_extension test8 test8 5000 YOYO "" true false true 
-       transfer_extension test9 test9 5000 YOYO "" true false true 
-       transfer_extension test10 test10 5000 YOYO "" true false true    
+#7.    transfer_extension test1 test1 5000 YOYO "" true false true true
+	   transfer_extension test2 test2 5000 YOYO "" true false true true
+       transfer_extension test3 test3 5000 YOYO "" true false true true
+       transfer_extension test4 test4 5000 YOYO "" true false true true
+       transfer_extension test5 test5 5000 YOYO "" true false true true
+       transfer_extension test6 test6 5000 YOYO "" true false true true
+       transfer_extension test7 test7 5000 YOYO "" true false true true
+       transfer_extension test8 test8 5000 YOYO "" true false true true
+       transfer_extension test9 test9 5000 YOYO "" true false true true
+       transfer_extension test10 test10 5000 YOYO "" true false true true
 	   
  
  #8.   committee_proposal_create init1 [[3 , {content_award_interval : 300,platform_award_interval : 300,max_csaf_per_approval : 1000,approval_expiration : 31536000,min_effective_csaf : 10,total_content_award_amount : 10000000000000,total_platform_content_award_amount : 10000000000000,total_platform_voted_award_amount : 10000000000000,platform_award_min_votes : 1,platform_award_requested_rank : 100, platform_award_basic_rate : 3000, casf_modulus : 30000, post_award_expiration : 62000000, approval_casf_min_weight : 4000, approval_casf_first_rate : 2000, approval_casf_second_rate : 8000, receiptor_award_modulus : 9000, disapprove_award_modulus : 11000}]] 200 1 200 200 true
  
  
- #9	   committee_proposal_vote init2 1 1 true
-       committee_proposal_vote init3 1 1 true
-       committee_proposal_vote init4 1 1 true
-       committee_proposal_vote init5 1 1 true
-       committee_proposal_vote init6 1 1 true
+ #9	   committee_proposal_vote init2 1 1 true true
+       committee_proposal_vote init3 1 1 true true
+       committee_proposal_vote init4 1 1 true true
+       committee_proposal_vote init5 1 1 true true
+       committee_proposal_vote init6 1 1 true true
 
 
- #10   create_license platform_account1 1 123456789 license_one dingdngdangdingdingdang extra true
+ #10   create_license platform_account1 1 123456789 license_one dingdngdangdingdingdang extra true true
 	   
 	   create_post platform_account1 test1 987456321 postname postbody postextry "" "" "" {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true
 	   
-	   account_manage init test1 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test2 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test3 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test4 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test5 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test6 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test7 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test8 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test9 {can_post : null, can_reply : true, can_rate : true} true
-	   account_manage init test10 {can_post : null, can_reply : true, can_rate : true} true
+	   account_manage init test1 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test2 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test3 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test4 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test5 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test6 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test7 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test8 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test9 {can_post : null, can_reply : true, can_rate : true} true true
+	   account_manage init test10 {can_post : null, can_reply : true, can_rate : true} true true
 
-	   create_post platform_account1 test2 945456321 commentname commentbody commentextry platform_account1 test1 2 {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true
+	   create_post platform_account1 test2 945456321 commentname commentbody commentextry platform_account1 test1 2 {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true true
 	   
-	   score_a_post test2 platform_account1 test1 2 5 10 true
+	   score_a_post test2 platform_account1 test1 2 5 10 true true
 	   
-	   reward_post test3 platform_account1 test1 2 1000 YOYO true
+	   reward_post test3 platform_account1 test1 2 1000 YOYO true true
 	   
-	   reward_post_proxy_by_platform test3 platform_account1 test1 2 1000 true
+	   reward_post_proxy_by_platform test3 platform_account1 test1 2 1000 true true
 	   
-	   update_post platform_account1 test1 2 "" "" "" "" {forward_price : 500, receiptor : test1, to_buyout : true, buyout_ratio : 3000, buyout_price : 300, buyout_expiration : 1546972000， license_lid : 1, permission_flags : null} true
+	   update_post platform_account1 test1 2 "" "" "" "" {forward_price : 500, receiptor : test1, to_buyout : true, buyout_ratio : 3000, buyout_price : 300, buyout_expiration : 1546972000， license_lid : 1, permission_flags : null} true true
 	   
-	   buyout_post test3 platform_account1 test1 2 test1 true
+	   buyout_post test3 platform_account1 test1 2 test1 true true
 	   
-	   create_post platform_account2 test6 66666666 forwardtitle forwardbody forwardextra platform_account1 test1 2 {post_type :2, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true
+	   create_post platform_account2 test6 66666666 forwardtitle forwardbody forwardextra platform_account1 test1 2 {post_type :2, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true true
