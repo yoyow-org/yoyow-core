@@ -442,7 +442,7 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
 
       flat_map<account_uid_type, fc::ecc::private_key> vote_map1;
       flat_map<account_uid_type, fc::ecc::private_key> vote_map2;
-      actor(1003, 20, vote_map1);
+      actor(1003, 10, vote_map1);
       actor(2003, 20, vote_map2);
 
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
@@ -491,18 +491,24 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
       uint32_t current_block_num = db.head_block_num();
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
-      committee_update_global_content_parameter_item_type item;
-      item.value = { 300, 300, 1000, 31536000, 10, 0, 0, 10000000000000, 1041521, 8 };
-      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num+10, voting_opinion_type::opinion_for, current_block_num+10, current_block_num+10);
+      committee_update_global_content_parameter_item_type content_item;
+      content_item.value = { 300, 300, 1000, 31536000, 10, 0, 0, 10000000000000, 100, 10 };
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { content_item }, current_block_num + 10, voting_opinion_type::opinion_for, current_block_num + 10, current_block_num + 10);
+      committee_update_global_parameter_item_type item;
+      item.value.governance_votes_update_interval = 20;
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num + 10, voting_opinion_type::opinion_for, current_block_num + 10, current_block_num + 10);
       for (int i = 1; i < 5; ++i)
+      {
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+         committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 2, voting_opinion_type::opinion_for);
+      }
+         
       generate_blocks(10);
 
       flat_set<account_uid_type> empty;
       for (const auto &v : vote_map1)
       {
          update_platform_votes(v.first, platform_set1, empty, { v.second });
-         //update_platform_votes(v.first, platform_set2, empty, { v.second });
       }
       for (const auto &v : vote_map2)
       {
@@ -513,14 +519,13 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
 
       uint128_t award = (uint128_t)10000000000000 * 300 / (86400 * 365);
       uint128_t platform_award_basic = award * 2000 / 10000;
-      uint128_t basic = platform_award_basic / (platform_map1.size() + platform_map1.size());
+      uint128_t basic = platform_award_basic / (platform_map1.size() + platform_map2.size());
       uint128_t platform_award_by_votes = award - platform_award_basic;
 
-      //to check, dont know total vote 
-      uint32_t total_vote = 5786 * 20;
+      uint32_t total_vote = 46293 * (10 + 20) * 5;
       for (const auto&p : platform_map1)
       {
-         uint32_t votes = vote_map1.size() + vote_map2.size();
+         uint32_t votes = 46293 * 10;
          uint128_t award_by_votes = platform_award_by_votes * votes / total_vote;
          share_type balance = (award_by_votes + basic).convert_to<uint64_t>();
          auto pla_act = db.get_account_statistics_by_uid(p.first);
@@ -528,7 +533,7 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
       }
       for (const auto&p : platform_map2)
       {
-         uint32_t votes = vote_map1.size();
+         uint32_t votes = 46293 * 20;
          uint128_t award_by_votes = platform_award_by_votes * votes / total_vote;
          share_type balance = (award_by_votes + basic).convert_to<uint64_t>();
          auto pla_act = db.get_account_statistics_by_uid(p.first);
