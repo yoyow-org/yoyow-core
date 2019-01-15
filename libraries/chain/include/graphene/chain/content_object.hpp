@@ -22,6 +22,13 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id  = platform_object_type;
 
+         struct Platform_Period_Profits
+         {
+             flat_map<asset_aid_type, share_type>   rewards_profits;
+             share_type                             foward_profit    = 0;
+             share_type                             post_profits     = 0;
+             share_type                             platform_profits = 0;
+         };
          
          /// The owner account's uid.
          account_uid_type owner = 0;
@@ -42,6 +49,9 @@ namespace graphene { namespace chain {
          uint64_t            average_pledge = 0;
          fc::time_point_sec  average_pledge_last_update;
          uint32_t            average_pledge_next_update_block;
+
+         map<time_point_sec, share_type>        vote_profits;
+         map<uint32_t, Platform_Period_Profits> period_profits;
 
          // Other information (api interface address, other URL, platform introduction, etc.)
          string extra_data = "{}";
