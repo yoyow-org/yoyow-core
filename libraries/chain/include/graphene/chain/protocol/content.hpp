@@ -287,7 +287,7 @@ namespace graphene { namespace chain {
 				  if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
 				  {
 					  const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
-					  if (ext.forward_price.valid() && a.find(poster) == a.end())
+					  if ((ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()) && a.find(poster) == a.end())
 					      a.insert(poster);
 					  if (ext.receiptor.valid() && a.find(*(ext.receiptor)) == a.end())
 						  a.insert(*(ext.receiptor));

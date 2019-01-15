@@ -674,7 +674,7 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
 		   if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
 		   {
 			   ext = &(ext_iter->get<post_update_operation::ext>());
-			   if (ext->receiptor.valid() && ext->buyout_ratio.valid())
+			   if (ext->receiptor.valid())
 			   {
 				   post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
 				   FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
@@ -682,9 +682,22 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
 				   FC_ASSERT(iter != post->receiptors.end(), 
                              "receiptor:${r} not found.", 
                              ("r", *(ext->receiptor)));
-				   FC_ASSERT(iter->second.cur_ratio >= *(ext->buyout_ratio), 
-                             "the ratio ${r} of receiptor ${p} is less then sell ${sp} .",
-					         ("r", iter->second.cur_ratio)("p", *(ext->receiptor))("sp", *(ext->buyout_ratio)));
+                   if (ext->buyout_ratio.valid())
+                   {
+                       FC_ASSERT(iter->second.cur_ratio >= *(ext->buyout_ratio),
+                           "the ratio ${r} of receiptor ${p} is less then sell ${sp} .",
+                           ("r", iter->second.cur_ratio)("p", *(ext->receiptor))("sp", *(ext->buyout_ratio)));
+                       if (ext->receiptor == op.poster)
+                       {
+                           FC_ASSERT((iter->second.cur_ratio - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) >= *(ext->buyout_ratio),
+                               "the ratio ${r} of poster ${p} will less then min ratio.",
+                               ("r", (iter->second.cur_ratio - *(ext->buyout_ratio)))("p", *(ext->receiptor)));
+                       }
+                       if (post->receiptors.find(*(ext->receiptor)) == post->receiptors.end()) //add a new receiptor
+                       {
+                           FC_ASSERT(post->receiptors.size() < 5, "the num of post`s receiptors should be less than or equal to 5");
+                       }
+                   }
 			   }
 		   }
 	   }
@@ -1073,6 +1086,12 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
         FC_ASSERT(iter->second.to_buyout && iter->second.buyout_ratio > 0 && iter->second.buyout_ratio <= iter->second.cur_ratio && iter->second.buyout_expiration >= d.head_block_time(),
 			      "post ${p} `s receiptor`s buyout parameter is invalid. ${b}",
                   ("p", op.post_pid)("b", iter->second));
+        if (op.receiptor_account_uid == post.poster)
+        {
+            FC_ASSERT((iter->second.cur_ratio - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) >= iter->second.buyout_ratio,
+                      "the ratio ${r} of poster ${p} will less then min ratio.",
+                      ("r", (iter->second.cur_ratio - iter->second.buyout_ratio))("p", post.poster));
+        }
 		if (iter->second.buyout_ratio < iter->second.cur_ratio)
 		{
 			if (post.receiptors.find(op.from_account_uid) == post.receiptors.end()) //add a new receiptor

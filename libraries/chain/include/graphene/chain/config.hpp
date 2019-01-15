@@ -331,5 +331,6 @@
 
 
 #define GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the ratio of platform`s recerpts from post_object 2500 means 25.00%
+#define GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the min ratio of poster`s recerpts from post_object 2500 means 25.00%
 #define GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID (uint64_t(-1)>>1)
 ///@}

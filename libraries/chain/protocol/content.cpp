@@ -170,7 +170,10 @@ void post_operation::validate()const
 				   FC_ASSERT(receiptor.size() >= 2 && receiptor.size() <= 5, "receiptors` size must be >= 2 and <= 5");
 				   auto itor = receiptor.find(platform);
 				   FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
-				   FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 30%");
+				   FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 25%");
+                   auto itor_poster = receiptor.find(poster);
+                   FC_ASSERT(itor_poster != receiptor.end(), "poster must be included by receiptors");
+                   FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster`s ratio must be >= 25%");
 				   uint32_t total = 0;
 				   for (auto iter : receiptor)
 				   {
@@ -204,7 +207,7 @@ void post_update_operation::validate()const
                extnum++;
                FC_ASSERT(extnum <= 1, "post_update_operation::ext must be only one in post_update_operation::extension_parameter");
 			   const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
-			   FC_ASSERT(ext.forward_price.valid() || (ext.receiptor.valid() && (ext.to_buyout.valid() ||
+			   FC_ASSERT(ext.forward_price.valid() || ext.license_lid.valid() || ext.permission_flags.valid() || (ext.receiptor.valid() && (ext.to_buyout.valid() ||
                          ext.buyout_ratio.valid() || ext.buyout_price.valid() || ext.buyout_expiration.valid())),
                         "Should change something");
 			   if (ext.receiptor.valid())
