@@ -785,7 +785,7 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 
 		const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
         uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
-		auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, op.post_pid, sequence));
+        auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, sequence, op.post_pid));
 		if (apt_itr != apt_idx.end())
 		{
 			active_post = &(*apt_itr);
@@ -885,7 +885,7 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
 
 		const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
         uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
-        auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, op.post_pid, sequence));
+        auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, sequence, op.post_pid));
 		if (apt_itr != apt_idx.end())
 		{
 			active_post = &(*apt_itr);
@@ -993,7 +993,7 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
 
         const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
         uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
-        auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, op.post_pid, sequence));
+        auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, sequence, op.post_pid));
         if (apt_itr != apt_idx.end())
         {
             active_post = &(*apt_itr);

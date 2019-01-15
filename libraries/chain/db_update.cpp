@@ -1454,8 +1454,7 @@ void database::process_content_platform_awards()
        //compute per period award amount 
        uint128_t content_award_amount_per_period = (uint128_t)(params.total_content_award_amount.value) *
           (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
-
-       const auto& active_post_by_pid = get_index_type<active_post_index>().indices().get<by_post_pid>();      
+ 
        for (auto itr = post_effective_casf.begin(); itr != post_effective_casf.end(); itr++)
        {
           share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /

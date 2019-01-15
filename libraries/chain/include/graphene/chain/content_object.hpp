@@ -315,10 +315,17 @@ namespace graphene { namespace chain {
 		 static const uint8_t space_id	= protocol_ids;
 		 static const uint8_t type_id		= active_post_object_type;
 
+     struct receiptor_detail
+     {
+        share_type  forward;
+        share_type  post_award;
+        flat_map<asset_aid_type, share_type> rewards;   
+     };
+
 		 /// The platform's pid.
 		 account_uid_type                       platform;
 		 /// The poster's uid.
-		 account_uid_type	poster;
+		 account_uid_type                       poster;
 		 /// The post's pid.
 		 post_pid_type                          post_pid;
 		 /// detail information of approvals, csaf.
@@ -329,6 +336,11 @@ namespace graphene { namespace chain {
 		 flat_map<asset_aid_type, share_type>   total_rewards;
 		 /// period sequence of a post.
 		 uint64_t                               period_sequence;
+
+     bool                                   positive_win;
+     share_type                             score_award;
+     share_type                             forward_award;
+     flat_map<account_uid_type, receiptor_detail> receiptor_details;
 	 };
 
 	 struct by_period_sequence{};
@@ -344,9 +356,9 @@ namespace graphene { namespace chain {
 				   composite_key<
 					    active_post_object,
 					    member< active_post_object, account_uid_type, &active_post_object::platform >,
-					    member< active_post_object, account_uid_type, &active_post_object::poster >,
-					    member< active_post_object, post_pid_type,    &active_post_object::post_pid >,
-                        member< active_post_object, uint64_t,         &active_post_object::period_sequence >
+					    member< active_post_object, account_uid_type, &active_post_object::poster >,				    
+              member< active_post_object, uint64_t,         &active_post_object::period_sequence >,
+              member< active_post_object, post_pid_type,    &active_post_object::post_pid >
 				   >
 				>,
 				ordered_non_unique< tag<by_period_sequence>, member<active_post_object, uint64_t, &active_post_object::period_sequence> >
