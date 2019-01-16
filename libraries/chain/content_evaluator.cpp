@@ -546,6 +546,15 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 	   }
    }
 
+   const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+   uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
+   auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, sequence, op.post_pid));
+   if (apt_itr != apt_idx.end())
+   {
+       active_post = &(*apt_itr);
+       FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
+       FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
+   }
    return void_result();
 
 }  FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -577,7 +586,29 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                   obj.prepaid -= forwardprice;
               });
 
+
               const post_object* post = &d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
+              const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+              if (!active_post)
+              {
+                  time_point_sec expiration_time = post->create_time;
+                  if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+                  {
+                      active_post = &d.create<active_post_object>([&](active_post_object& obj)
+                      {
+                          obj.platform = *o.origin_platform;
+                          obj.poster = *o.origin_poster;
+                          obj.post_pid = *o.origin_post_pid;
+                          obj.period_sequence = dpo.current_active_post_sequence;
+                      });
+                  }
+              }
+              if (active_post){
+                  d.modify(*active_post, [&](active_post_object& obj)
+                  {
+                      obj.forward_award += forwardprice.value;
+                  });
+              }
               uint128_t amount(forwardprice.value);
               uint128_t surplus = amount;
               for (auto iter : post->receiptors)
@@ -590,11 +621,29 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                   {
                       obj.prepaid += temp.convert_to<int64_t>();
                   });
+                  if (active_post)
+                  {
+                      d.modify(*active_post, [&](active_post_object& obj)
+                      {
+                          obj.insert_receiptor(iter.first, 0, temp.convert_to<int64_t>());
+                      });
+                  }
               }
               d.modify(d.get_account_statistics_by_uid(post->platform), [&](account_statistics_object& obj)
               {
                   obj.prepaid += surplus.convert_to<int64_t>();
               });
+              d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
+              {
+                  obj.add_period_profits(dpo.current_active_post_sequence, asset(), surplus.convert_to<int64_t>(), 0, 0);
+              });
+              if (active_post)
+              {
+                  d.modify(*active_post, [&](active_post_object& obj)
+                  {
+                      obj.insert_receiptor(post->platform, 0, surplus.convert_to<int64_t>());
+                  });
+              }
           }
 	  }
 
@@ -906,32 +955,18 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 		d.adjust_balance(*from_account, -op.amount);
 
 		const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
-		uint128_t amount(op.amount.amount.value);
-		uint128_t surplus = amount;
-		asset ast(share_type(0), op.amount.asset_id);
-		for (auto iter : post->receiptors)
-		{
-			if (iter.first == post->platform)
-				continue;
-			uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
-			ast.amount = temp.convert_to<int64_t>();
-			surplus -= temp;
-			d.adjust_balance(iter.first, ast);
-		}
-        ast.amount = surplus.convert_to<int64_t>();
-		d.adjust_balance(post->platform, ast);
 
-		if (active_post)
-		{
-			d.modify(*active_post, [&](active_post_object& s) {
-				if (s.total_rewards.find(op.amount.asset_id) != s.total_rewards.end())
-					s.total_rewards.at(op.amount.asset_id) += op.amount.amount;
-				else
-					s.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
-			});
-		}
-		else
-		{
+        if (active_post)
+        {
+            d.modify(*active_post, [&](active_post_object& s) {
+                if (s.total_rewards.find(op.amount.asset_id) != s.total_rewards.end())
+                    s.total_rewards.at(op.amount.asset_id) += op.amount.amount;
+                else
+                    s.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
+            });
+        }
+        else
+        {
             time_point_sec expiration_time = post->create_time;
             if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
             {
@@ -946,7 +981,42 @@ void_result reward_evaluator::do_apply(const operation_type& op)
                     obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
                 });
             }
+        }
+
+		uint128_t amount(op.amount.amount.value);
+		uint128_t surplus = amount;
+		asset ast(share_type(0), op.amount.asset_id);
+		for (auto iter : post->receiptors)
+		{
+			if (iter.first == post->platform)
+				continue;
+			uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
+			ast.amount = temp.convert_to<int64_t>();
+			surplus -= temp;
+			d.adjust_balance(iter.first, ast);
+            if (active_post)
+            {
+                d.modify(*active_post, [&](active_post_object& obj)
+                {
+                    obj.insert(iter.first, ast);
+                });
+            }
 		}
+        ast.amount = surplus.convert_to<int64_t>();
+		d.adjust_balance(post->platform, ast);
+
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+        d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
+        {
+            obj.add_period_profits(dpo.current_active_post_sequence, ast, 0, 0, 0);
+        });
+        if (active_post)
+        {
+            d.modify(*active_post, [&](active_post_object& obj)
+            {
+                obj.insert(post->platform, ast);
+            });
+        }
 
 		return void_result();
 	}FC_CAPTURE_AND_RETHROW((op))
@@ -1021,23 +1091,6 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
         });
 
         const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
-        uint128_t amount(op.amount.value);
-        uint128_t surplus = amount;
-        for (auto iter : post->receiptors)
-        {
-            if (iter.first == post->platform)
-                continue;
-            uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
-            surplus -= temp;
-            d.modify(d.get_account_statistics_by_uid(iter.first), [&](account_statistics_object& obj)
-            {
-                obj.prepaid += temp.convert_to<int64_t>();
-            });
-        }
-        d.modify(d.get_account_statistics_by_uid(post->platform), [&](account_statistics_object& obj)
-        {
-            obj.prepaid += surplus.convert_to<int64_t>();
-        });
 
         if (active_post)
         {
@@ -1064,6 +1117,44 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
                     obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
                 });
             }
+        }
+
+        uint128_t amount(op.amount.value);
+        uint128_t surplus = amount;
+        for (auto iter : post->receiptors)
+        {
+            if (iter.first == post->platform)
+                continue;
+            uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
+            surplus -= temp;
+            d.modify(d.get_account_statistics_by_uid(iter.first), [&](account_statistics_object& obj)
+            {
+                obj.prepaid += temp.convert_to<int64_t>();
+            });
+            if (active_post)
+            {
+                d.modify(*active_post, [&](active_post_object& obj)
+                {
+                    obj.insert_receiptor(iter.first, asset(temp.convert_to<int64_t>()));
+                });
+            }
+        }
+        d.modify(d.get_account_statistics_by_uid(post->platform), [&](account_statistics_object& obj)
+        {
+            obj.prepaid += surplus.convert_to<int64_t>();
+        });
+
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+        d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
+        {
+            obj.add_period_profits(dpo.current_active_post_sequence, asset(surplus.convert_to<int64_t>()), 0, 0, 0);
+        });
+        if (active_post)
+        {
+            d.modify(*active_post, [&](active_post_object& obj)
+            {
+                obj.insert_receiptor(post->platform, asset(surplus.convert_to<int64_t>()));
+            });
         }
 
         return void_result();

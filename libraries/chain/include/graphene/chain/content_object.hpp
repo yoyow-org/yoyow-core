@@ -69,8 +69,13 @@ namespace graphene { namespace chain {
              auto iter = period_profits.find(period);
              if (iter != period_profits.end())
              {
-                 if(reward_profit != asset())
-                     iter->second.rewards_profits.emplace(reward_profit.asset_id, reward_profit.amount);
+                 if (reward_profit != asset()){
+                     auto iter_reward = iter->second.rewards_profits.find(reward_profit.asset_id);
+                     if (iter_reward != iter->second.rewards_profits.end())
+                         iter_reward->second += reward_profit.amount;
+                     else
+                         iter->second.rewards_profits.emplace(reward_profit.asset_id, reward_profit.amount);
+                 }
                  iter->second.foward_profits   += forward_profit;
                  iter->second.post_profits     += post_profit;
                  iter->second.platform_profits += platform_profit;

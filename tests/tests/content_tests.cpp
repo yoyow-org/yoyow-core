@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(score_test)
       }
        
       const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 1));     
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 0, 1));     
       BOOST_CHECK(apt_itr != apt_idx.end());
       auto active_post = *apt_itr;
       BOOST_CHECK(active_post.total_amount == 10 * 10);
@@ -278,11 +278,28 @@ BOOST_AUTO_TEST_CASE(reward_test)
       }
 
       const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 1));
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 0, 1));
       BOOST_CHECK(apt_itr != apt_idx.end());
       auto active_post = *apt_itr;
       BOOST_CHECK(active_post.total_rewards.find(GRAPHENE_CORE_ASSET_AID) != active_post.total_rewards.end());
       BOOST_CHECK(active_post.total_rewards[GRAPHENE_CORE_ASSET_AID] == 10 * 1000 * prec);
+
+      BOOST_CHECK(active_post.receiptor_details.find(u_9000_id) != active_post.receiptor_details.end());
+      auto iter_reward = active_post.receiptor_details[u_9000_id].rewards.find(GRAPHENE_CORE_ASSET_AID);
+      BOOST_CHECK(iter_reward != active_post.receiptor_details[u_9000_id].rewards.end());
+      BOOST_CHECK(iter_reward->second == 10 * 250 * prec);
+
+      BOOST_CHECK(active_post.receiptor_details.find(u_1001_id) != active_post.receiptor_details.end());
+      auto iter_reward2 = active_post.receiptor_details[u_1001_id].rewards.find(GRAPHENE_CORE_ASSET_AID);
+      BOOST_CHECK(iter_reward2 != active_post.receiptor_details[u_1001_id].rewards.end());
+      BOOST_CHECK(iter_reward2->second == 10 * 750 * prec);
+
+      const platform_object& platform = db.get_platform_by_owner(u_9000_id);
+      auto iter_profit = platform.period_profits.find(1);
+      BOOST_CHECK(iter_profit != platform.period_profits.end());
+      auto iter_reward_profit = iter_profit->second.rewards_profits.find(GRAPHENE_CORE_ASSET_AID);
+      BOOST_CHECK(iter_reward_profit != iter_profit->second.rewards_profits.end());
+      BOOST_CHECK(iter_reward_profit->second == 10 * 250 * prec);
 
       post_object post_obj = db.get_post_by_platform(u_9000_id, u_1001_id, 1);
       int64_t poster_earned = (post_obj.receiptors[u_1001_id].cur_ratio * uint128_t(100000000) / 10000).convert_to<int64_t>();
@@ -956,6 +973,23 @@ BOOST_AUTO_TEST_CASE(forward_test)
             BOOST_CHECK(auth_data->second.cur_used == 10000*prec);
             BOOST_CHECK(sobj2.get_auth_platform_usable_prepaid(u_9001_id) == 0);
         }
+
+        const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
+        auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1000_id, 0, 1));
+        BOOST_CHECK(apt_itr != apt_idx.end());
+        auto active_post = *apt_itr;
+        BOOST_CHECK(active_post.forward_award == 10000 * prec);
+        auto iter_receiptor = active_post.receiptor_details.find(u_1000_id);
+        BOOST_CHECK(iter_receiptor != active_post.receiptor_details.end());
+        BOOST_CHECK(iter_receiptor->second.forward == 7500 * prec);
+        auto iter_receiptor2 = active_post.receiptor_details.find(u_9000_id);
+        BOOST_CHECK(iter_receiptor2 != active_post.receiptor_details.end());
+        BOOST_CHECK(iter_receiptor2->second.forward == 2500 * prec);
+
+        const platform_object& platform = db.get_platform_by_owner(u_9000_id);
+        auto iter_profit = platform.period_profits.find(1);
+        BOOST_CHECK(iter_profit != platform.period_profits.end());
+        BOOST_CHECK(iter_profit->second.foward_profits == 2500 * prec);
     }
     catch (fc::exception& e) {
         edump((e.to_detail_string()));
