@@ -1468,17 +1468,24 @@ void database::process_content_platform_awards()
 
           const auto& post = get_post_by_platform(std::get<0>(*itr)->platform, std::get<0>(*itr)->poster, std::get<0>(*itr)->post_pid);
           share_type temp = receiptor_earned;
+          flat_map<account_uid_type, share_type> receipor;
           for (const auto& r : post.receiptors)
           {
              if (r.first == post.platform)
                 continue;
              share_type to_add = ((uint128_t)receiptor_earned.value * r.second.cur_ratio / GRAPHENE_100_PERCENT).to_uint64();
              adjust_balance(r.first, asset(to_add));
+             receipor.emplace(r.first, to_add);
              temp -= to_add;
           }
           //platform earned from content
           adjust_balance(post.platform, asset(temp));
           actual_awards += receiptor_earned;
+
+          modify(*(std::get<0>(*itr)), [&](active_post_object& act)
+          {
+             act.positive_win = std::get<2>(*itr) >= 0;
+          });
 
           if (post.score_settlement)
              break;

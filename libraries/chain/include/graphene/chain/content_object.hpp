@@ -366,6 +366,38 @@ namespace graphene { namespace chain {
      share_type                             score_award;
      share_type                             forward_award;
      flat_map<account_uid_type, receiptor_detail> receiptor_details;
+
+     void insert(account_uid_type uid, share_type post_award = 0, share_type forward = 0)
+     {
+        if (receiptor_details.count(uid))
+        {
+           receiptor_details.at(uid).forward += forward;
+           receiptor_details.at(uid).post_award += post_award;
+        }
+        else
+        {
+           receiptor_detail detail;
+           detail.forward = forward;
+           detail.post_award = post_award;
+           receiptor_details.emplace(uid, detail);
+        }
+     }
+     void insert(account_uid_type uid, asset_aid_type aid, share_type amount = 0)
+     {
+        if (receiptor_details.count(uid))
+        {
+           if (receiptor_details.at(uid).rewards.count(aid))
+              receiptor_details.at(uid).rewards.at(aid) += amount;
+           else
+              receiptor_details.at(uid).rewards.emplace(aid, amount);
+        }
+        else
+        {
+           receiptor_detail detail;
+           detail.rewards.emplace(aid, amount);
+           receiptor_details.emplace(uid, detail);
+        }
+     }
 	 };
 
 	 struct by_period_sequence{};
