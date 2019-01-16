@@ -240,7 +240,7 @@ void database::clear_active_post()
 {
 	const dynamic_global_property_object& dpo = get_dynamic_global_properties();
 	const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
-  const auto& apt_end = apt_idx.lower_bound(dpo.current_active_post_sequence - _latest_active_post_periods);
+  const auto& apt_end = apt_idx.lower_bound(dpo.current_active_post_sequence - _latest_active_post_periods+1);
 	auto apt_itr = apt_idx.begin();
 	while (apt_itr != apt_end)
 	{
@@ -1532,7 +1532,7 @@ void database::process_content_platform_awards()
           const auto& platform = get_platform_by_owner(p.first);
           modify(platform, [&](platform_object& pla)
           {
-             pla.add_period_profits(dpo.current_active_post_sequence, asset(), 0, p.second, 0);
+             pla.add_period_profits(dpo.current_active_post_sequence, _latest_active_post_periods, asset(), 0, p.second, 0);
           });
        }
 		}
@@ -1553,7 +1553,7 @@ void database::process_content_platform_awards()
           const auto& platform = get_platform_by_owner(p.first);
           modify(platform, [&](platform_object& pla)
           {
-             pla.add_period_profits(dpo.current_active_post_sequence, asset(), 0, 0, to_add);
+             pla.add_period_profits(dpo.current_active_post_sequence, _latest_active_post_periods, asset(), 0, 0, to_add);
           });
        }
     }
@@ -1639,6 +1639,8 @@ void database::process_platform_voted_awards()
                 const auto& platform = get_platform_by_owner(p.first);
                 modify(platform, [&](platform_object& pla)
                 {
+                   if (pla.vote_profits.size() >= _latest_active_post_periods)
+                      pla.vote_profits.erase(pla.vote_profits.begin());
                    pla.vote_profits.emplace(head_block_time(), p.second);
                 });
              }
