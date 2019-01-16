@@ -25,9 +25,9 @@ namespace graphene { namespace chain {
          struct Platform_Period_Profits
          {
              flat_map<asset_aid_type, share_type>   rewards_profits;
-             share_type                             foward_profit    = 0;
-             share_type                             post_profits     = 0;
-             share_type                             platform_profits = 0;
+             share_type                             foward_profits    = 0;
+             share_type                             post_profits      = 0;
+             share_type                             platform_profits  = 0;
          };
          
          /// The owner account's uid.
@@ -60,6 +60,34 @@ namespace graphene { namespace chain {
          time_point_sec last_update_time;
 
          platform_id_type get_id()const { return id; }
+         void add_period_profits(uint32_t period,
+                                 asset reward_profit = asset(),
+                                 share_type forward_profit = 0,
+                                 share_type post_profit = 0,
+                                 share_type platform_profit = 0)
+         {
+             auto iter = period_profits.find(period);
+             if (iter != period_profits.end())
+             {
+                 if(reward_profit != asset())
+                     iter->second.rewards_profits.insert(make_pair(reward_profit.asset_id, reward_profit.amount));
+                 if (forward_profit != 0)
+                     iter->second.foward_profits   += forward_profit;
+                 if (post_profit != 0)
+                     iter->second.post_profits     += post_profit;
+                 if (platform_profit != 0)
+                     iter->second.platform_profits += platform_profit;
+             }
+             else
+             {
+                 Platform_Period_Profits profits;
+                 profits.rewards_profits.insert(make_pair(reward_profit.asset_id, reward_profit.amount));
+                 profits.foward_profits   = forward_profit;
+                 profits.post_profits     = post_profit;
+                 profits.platform_profits = platform_profit;
+                 period_profits.insert(make_pair(period, profits));
+             }
+         }
    };
 
 
