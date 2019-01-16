@@ -1455,6 +1455,7 @@ void database::process_content_platform_awards()
        uint128_t content_award_amount_per_period = (uint128_t)(params.total_content_award_amount.value) *
           (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
  
+       flat_map<account_uid_type, share_type> platform_receiptor_award;
        for (auto itr = post_effective_casf.begin(); itr != post_effective_casf.end(); itr++)
        {
           share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
@@ -1479,12 +1480,19 @@ void database::process_content_platform_awards()
              temp -= to_add;
           }
           //platform earned from content
-          adjust_balance(post.platform, asset(temp));
-          actual_awards += receiptor_earned;
+          if (platform_receiptor_award.count(post.platform))
+             platform_receiptor_award.at(post.platform) += temp;
+          else
+             platform_receiptor_award.emplace(post.platform, temp);
+          //adjust_balance(post.platform, asset(temp));
+          actual_awards += receiptor_earned;  
 
           modify(*(std::get<0>(*itr)), [&](active_post_object& act)
           {
              act.positive_win = std::get<2>(*itr) >= 0;
+             act.score_award = receiptor_earned;
+             for (const auto& r : receipor)
+                act.insert_receiptor(r.first, r.second);
           });
 
           if (post.score_settlement)
@@ -1492,6 +1500,7 @@ void database::process_content_platform_awards()
           //result <vector<score account id, effective csaf for the score, is or not approve>, total effective csaf to award>
           auto result = get_effective_csaf(std::get<0>(*itr)->scores, std::get<0>(*itr)->total_amount);
           uint128_t total_award_csaf = (uint128_t)std::get<1>(result).value;
+          share_type actual_score_earned = 0;
           for (const auto& e : std::get<0>(result))
           {
              uint128_t effective_csaf_per_account = (uint128_t)std::get<1>(e).value;
@@ -1502,12 +1511,28 @@ void database::process_content_platform_awards()
              else
                 to_add = (effective_csaf_per_account * score_earned.value / total_award_csaf).to_uint64();
              adjust_balance(std::get<0>(e), asset(to_add));
+             actual_score_earned += to_add;
              actual_awards += to_add;
           }
+
+          modify(*(std::get<0>(*itr)), [&](active_post_object& act)
+          {
+             act.score_award = actual_score_earned + receiptor_earned;
+          });
 
           modify(post, [&](post_object& act)
           {
              act.score_settlement = true;
+          });
+       }
+
+       for (const auto&p : platform_receiptor_award)
+       {
+          adjust_balance(p.first, asset(p.second));
+          const auto& platform = get_platform_by_owner(p.first);
+          modify(platform, [&](platform_object& pla)
+          {
+             pla.add_period_profits(dpo.current_active_post_sequence, asset(), 0, p.second, 0);
           });
        }
 		}
@@ -1524,6 +1549,12 @@ void database::process_content_platform_awards()
              total_csaf_amount.value).to_uint64();
           adjust_balance(p.first, asset(to_add));
           actual_awards += to_add;
+
+          const auto& platform = get_platform_by_owner(p.first);
+          modify(platform, [&](platform_object& pla)
+          {
+             pla.add_period_profits(dpo.current_active_post_sequence, asset(), 0, 0, to_add);
+          });
        }
     }
 
@@ -1583,8 +1614,12 @@ void database::process_platform_voted_awards()
              
              share_type platform_award_basic = (value * params.platform_award_basic_rate / GRAPHENE_100_PERCENT).to_uint64();
              share_type platform_average_award_basic = platform_award_basic / platforms.size();
+             flat_map<account_uid_type, share_type> platform_award;
              for (const auto& p : platforms)
+             {
                 adjust_balance(p.first, asset(platform_average_award_basic));
+                platform_award.emplace(p.first, platform_average_award_basic);
+             }   
              share_type actual_awards = platform_average_award_basic * platforms.size();
             
              if (total_votes > 0)
@@ -1595,7 +1630,17 @@ void database::process_platform_voted_awards()
                    share_type to_add = ((uint128_t)platform_award_by_votes.value * p.second / total_votes).to_uint64();
                    adjust_balance(p.first, asset(to_add));
                    actual_awards += to_add;
+                   platform_award.at(p.first) += to_add;
                 }       
+             }
+
+             for (const auto& p : platform_award)
+             {
+                const auto& platform = get_platform_by_owner(p.first);
+                modify(platform, [&](platform_object& pla)
+                {
+                   pla.vote_profits.emplace(head_block_time(), p.second);
+                });
              }
 
              const auto& core_asset = get_core_asset();

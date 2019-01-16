@@ -367,7 +367,7 @@ namespace graphene { namespace chain {
      share_type                             forward_award;
      flat_map<account_uid_type, receiptor_detail> receiptor_details;
 
-     void insert(account_uid_type uid, share_type post_award = 0, share_type forward = 0)
+     void insert_receiptor(account_uid_type uid, share_type post_award = 0, share_type forward = 0)
      {
         if (receiptor_details.count(uid))
         {
@@ -382,19 +382,19 @@ namespace graphene { namespace chain {
            receiptor_details.emplace(uid, detail);
         }
      }
-     void insert(account_uid_type uid, asset_aid_type aid, share_type amount = 0)
+     void insert_receiptor(account_uid_type uid, asset reward = asset())
      {
         if (receiptor_details.count(uid))
         {
-           if (receiptor_details.at(uid).rewards.count(aid))
-              receiptor_details.at(uid).rewards.at(aid) += amount;
+           if (receiptor_details.at(uid).rewards.count(reward.asset_id))
+              receiptor_details.at(uid).rewards.at(reward.asset_id) += reward.amount;
            else
-              receiptor_details.at(uid).rewards.emplace(aid, amount);
+              receiptor_details.at(uid).rewards.emplace(reward.asset_id, reward.amount);
         }
         else
         {
            receiptor_detail detail;
-           detail.rewards.emplace(aid, amount);
+           detail.rewards.emplace(reward.asset_id, reward.amount);
            receiptor_details.emplace(uid, detail);
         }
      }
