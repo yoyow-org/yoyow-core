@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(reward_test)
       BOOST_CHECK(iter_reward2->second == 10 * 750 * prec);
 
       const platform_object& platform = db.get_platform_by_owner(u_9000_id);
-      auto iter_profit = platform.period_profits.find(1);
+      auto iter_profit = platform.period_profits.find(0);
       BOOST_CHECK(iter_profit != platform.period_profits.end());
       auto iter_reward_profit = iter_profit->second.rewards_profits.find(GRAPHENE_CORE_ASSET_AID);
       BOOST_CHECK(iter_reward_profit != iter_profit->second.rewards_profits.end());
@@ -987,7 +987,7 @@ BOOST_AUTO_TEST_CASE(forward_test)
         BOOST_CHECK(iter_receiptor2->second.forward == 2500 * prec);
 
         const platform_object& platform = db.get_platform_by_owner(u_9000_id);
-        auto iter_profit = platform.period_profits.find(1);
+        auto iter_profit = platform.period_profits.find(0);
         BOOST_CHECK(iter_profit != platform.period_profits.end());
         BOOST_CHECK(iter_profit->second.foward_profits == 2500 * prec);
     }

@@ -971,7 +971,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
             if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
             {
                 const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-                d.create<active_post_object>([&](active_post_object& obj)
+                active_post = &d.create<active_post_object>([&](active_post_object& obj)
                 {
                     obj.platform = op.platform;
                     obj.poster = op.poster;
@@ -1107,7 +1107,7 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
             if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
             {
                 const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-                d.create<active_post_object>([&](active_post_object& obj)
+                active_post = &d.create<active_post_object>([&](active_post_object& obj)
                 {
                     obj.platform = op.platform;
                     obj.poster = op.poster;
