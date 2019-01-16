@@ -409,6 +409,8 @@ namespace graphene { namespace chain {
      }
 	 };
 
+   struct by_poster{};
+   struct by_platforms{};
 	 struct by_period_sequence{};
 
 	 /**
@@ -427,6 +429,20 @@ namespace graphene { namespace chain {
               member< active_post_object, post_pid_type,    &active_post_object::post_pid >
 				   >
 				>,
+        ordered_non_unique< tag<by_poster>,
+            composite_key<
+              active_post_object,
+              member< active_post_object, account_uid_type, &active_post_object::poster >,
+              member< active_post_object, uint64_t,         &active_post_object::period_sequence >
+           >
+        >,
+        ordered_non_unique< tag<by_platforms>,
+            composite_key<
+              active_post_object,
+              member< active_post_object, account_uid_type, &active_post_object::platform >,
+              member< active_post_object, uint64_t,         &active_post_object::period_sequence >
+           >
+        >,
 				ordered_non_unique< tag<by_period_sequence>, member<active_post_object, uint64_t, &active_post_object::period_sequence> >
 		 >
 	 > active_post_multi_index_type;
