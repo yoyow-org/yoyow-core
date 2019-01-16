@@ -70,22 +70,19 @@ namespace graphene { namespace chain {
              if (iter != period_profits.end())
              {
                  if(reward_profit != asset())
-                     iter->second.rewards_profits.insert(make_pair(reward_profit.asset_id, reward_profit.amount));
-                 if (forward_profit != 0)
-                     iter->second.foward_profits   += forward_profit;
-                 if (post_profit != 0)
-                     iter->second.post_profits     += post_profit;
-                 if (platform_profit != 0)
-                     iter->second.platform_profits += platform_profit;
+                     iter->second.rewards_profits.emplace(reward_profit.asset_id, reward_profit.amount);
+                 iter->second.foward_profits   += forward_profit;
+                 iter->second.post_profits     += post_profit;
+                 iter->second.platform_profits += platform_profit;
              }
              else
              {
                  Platform_Period_Profits profits;
-                 profits.rewards_profits.insert(make_pair(reward_profit.asset_id, reward_profit.amount));
+                 profits.rewards_profits.emplace(reward_profit.asset_id, reward_profit.amount);
                  profits.foward_profits   = forward_profit;
                  profits.post_profits     = post_profit;
                  profits.platform_profits = platform_profit;
-                 period_profits.insert(make_pair(period, profits));
+                 period_profits.emplace(period, profits);
              }
          }
    };
