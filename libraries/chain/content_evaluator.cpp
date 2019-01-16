@@ -998,7 +998,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
             {
                 d.modify(*active_post, [&](active_post_object& obj)
                 {
-                    obj.insert(iter.first, ast);
+                    obj.insert_receiptor(iter.first, ast);
                 });
             }
 		}
@@ -1014,7 +1014,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
         {
             d.modify(*active_post, [&](active_post_object& obj)
             {
-                obj.insert(post->platform, ast);
+                obj.insert_receiptor(post->platform, ast);
             });
         }
 
