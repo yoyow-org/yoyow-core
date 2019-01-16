@@ -635,7 +635,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
               });
               d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
               {
-                  obj.add_period_profits(dpo.current_active_post_sequence, asset(), surplus.convert_to<int64_t>(), 0, 0);
+                  obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(), surplus.convert_to<int64_t>(), 0, 0);
               });
               if (active_post)
               {
@@ -1008,7 +1008,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
         d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
         {
-            obj.add_period_profits(dpo.current_active_post_sequence, ast, 0, 0, 0);
+            obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), ast, 0, 0, 0);
         });
         if (active_post)
         {
@@ -1147,7 +1147,7 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
         d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
         {
-            obj.add_period_profits(dpo.current_active_post_sequence, asset(surplus.convert_to<int64_t>()), 0, 0, 0);
+            obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(surplus.convert_to<int64_t>()), 0, 0, 0);
         });
         if (active_post)
         {

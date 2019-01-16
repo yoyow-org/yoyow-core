@@ -456,7 +456,7 @@ namespace graphene { namespace chain {
       public:
          void execute_committee_proposal( const committee_proposal_object& proposal, bool silent_fail = false );
          void set_active_post_periods(const uint32_t& periods){ _latest_active_post_periods = periods; }
-         uint32_t get_active_post_periods(){ return _latest_active_post_periods; }
+         uint32_t get_active_post_periods()const{ return _latest_active_post_periods; }
       private:
          void update_global_dynamic_data( const signed_block& b );
          void update_undo_db_size();

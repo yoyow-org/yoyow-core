@@ -60,11 +60,13 @@ namespace graphene { namespace chain {
          time_point_sec last_update_time;
 
          platform_id_type get_id()const { return id; }
-         void add_period_profits(uint32_t period,
-                                 asset reward_profit = asset(),
+         void add_period_profits(uint32_t   period,
+                                 uint32_t   lastest_periods,
+                                 asset      reward_profit = asset(),
                                  share_type forward_profit = 0,
                                  share_type post_profit = 0,
-                                 share_type platform_profit = 0)
+                                 share_type platform_profit = 0
+                                 )
          {
              auto iter = period_profits.find(period);
              if (iter != period_profits.end())
@@ -82,6 +84,8 @@ namespace graphene { namespace chain {
              }
              else
              {
+                 if (period_profits.size() >= lastest_periods)
+                     period_profits.erase(period_profits.begin());
                  Platform_Period_Profits profits;
                  profits.rewards_profits.emplace(reward_profit.asset_id, reward_profit.amount);
                  profits.foward_profits   = forward_profit;
