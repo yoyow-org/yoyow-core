@@ -108,6 +108,31 @@ struct asset_object_with_data : public asset_object
    asset_dynamic_data_object dynamic_asset_data;
 };
 
+struct Platform_Period_Profit_Detail
+{
+    uint32_t                               cur_period;
+    account_uid_type                       platform_account;
+    string                                 platform_name;
+
+    flat_map<asset_aid_type, share_type>   rewards_profits;
+    share_type                             foward_profits = 0;
+    share_type                             post_profits = 0;
+    share_type                             platform_profits = 0;
+
+    vector<post_pid_type>                  active_post_object_pids;
+};
+
+struct Poster_Period_Profit_Detail
+{
+    uint32_t                               cur_period;
+    account_uid_type                       poster_account;
+
+    share_type                             total_forward = 0;
+    flat_map<asset_aid_type, share_type>   total_rewards;
+    share_type                             total_post_award = 0;
+
+    vector<post_pid_type>                  active_post_object_pids;
+};
 /**
  * @brief The database_api class implements the RPC API for the chain database.
  *
