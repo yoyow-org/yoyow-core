@@ -1251,7 +1251,7 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
     FC_ASSERT(begin_period <= end_period);
 
     vector<Platform_Period_Profit_Detail> vtr_profit_details;
-    for (int i = begin_period; begin_period <= end_period; i++)
+    for (int i = begin_period; i <= end_period; i++)
     {
         const platform_object& platform_obj = _db.get_platform_by_owner(platform);
         auto iter_profit = platform_obj.period_profits.find(i);
