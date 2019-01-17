@@ -1269,9 +1269,10 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
             auto itr_end = idx.upper_bound(std::make_tuple(platform, i));
             while (itr_begin != itr_end)
             {
-                detail.active_post_object_pids.emplace_back((*itr_begin).post_pid);
+                detail.active_post_pids.emplace_back((*itr_begin).post_pid);
                 ++itr_begin;
             }
+            vtr_profit_details.emplace_back(detail);
         }
     }
     return vtr_profit_details;
@@ -1307,7 +1308,7 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
        {
           ppd.total_forward += itr->forward_award;
           ppd.total_post_award += itr->score_award;
-          ppd.active_post_object_pids.push_back(itr->post_pid);
+          ppd.active_post_pids.push_back(itr->post_pid);
           for (const auto& r : itr->total_rewards)
           {
              if (ppd.total_rewards.count(r.first))

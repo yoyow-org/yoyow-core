@@ -119,7 +119,7 @@ struct Platform_Period_Profit_Detail
     share_type                             post_profits = 0;
     share_type                             platform_profits = 0;
 
-    vector<post_pid_type>                  active_post_object_pids;
+    vector<post_pid_type>                  active_post_pids;
 };
 
 struct Poster_Period_Profit_Detail
@@ -131,7 +131,7 @@ struct Poster_Period_Profit_Detail
     flat_map<asset_aid_type, share_type>   total_rewards;
     share_type                             total_post_award = 0;
 
-    vector<post_pid_type>                  active_post_object_pids;
+    vector<post_pid_type>                  active_post_pids;
 };
 /**
  * @brief The database_api class implements the RPC API for the chain database.
@@ -662,14 +662,14 @@ FC_REFLECT(graphene::app::Platform_Period_Profit_Detail,
           (foward_profits)
           (post_profits)
           (platform_profits)
-          (active_post_object_pids));
+          (active_post_pids));
 FC_REFLECT(graphene::app::Poster_Period_Profit_Detail,
           (cur_period)
           (poster_account)
           (total_forward)
           (total_rewards)
           (total_post_award)
-          (active_post_object_pids));
+          (active_post_pids));
 
 FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_uid)
