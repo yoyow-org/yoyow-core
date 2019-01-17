@@ -546,15 +546,19 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 	   }
    }
 
-   const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-   uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
-   auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, sequence, op.post_pid));
-   if (apt_itr != apt_idx.end())
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+   if (dpo.content_award_enable)
    {
-       active_post = &(*apt_itr);
-       FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
-       FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
+       const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+       auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
+       if (apt_itr != apt_idx.end())
+       {
+           active_post = &(*apt_itr);
+           FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
+           FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
+       }
    }
+
    return void_result();
 
 }  FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -589,26 +593,30 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 
               const post_object* post = &d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
               const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-              if (!active_post)
+              if (dpo.content_award_enable)
               {
-                  time_point_sec expiration_time = post->create_time;
-                  if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+                  if (!active_post)
                   {
-                      active_post = &d.create<active_post_object>([&](active_post_object& obj)
+                      time_point_sec expiration_time = post->create_time;
+                      if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
                       {
-                          obj.platform = *o.origin_platform;
-                          obj.poster = *o.origin_poster;
-                          obj.post_pid = *o.origin_post_pid;
-                          obj.period_sequence = dpo.current_active_post_sequence;
+                          active_post = &d.create<active_post_object>([&](active_post_object& obj)
+                          {
+                              obj.platform = *o.origin_platform;
+                              obj.poster = *o.origin_poster;
+                              obj.post_pid = *o.origin_post_pid;
+                              obj.period_sequence = dpo.current_active_post_sequence;
+                          });
+                      }
+                  }
+                  if (active_post){
+                      d.modify(*active_post, [&](active_post_object& obj)
+                      {
+                          obj.forward_award += forwardprice.value;
                       });
                   }
               }
-              if (active_post){
-                  d.modify(*active_post, [&](active_post_object& obj)
-                  {
-                      obj.forward_award += forwardprice.value;
-                  });
-              }
+              
               uint128_t amount(forwardprice.value);
               uint128_t surplus = amount;
               for (auto iter : post->receiptors)
@@ -621,7 +629,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                   {
                       obj.prepaid += temp.convert_to<int64_t>();
                   });
-                  if (active_post)
+                  if (active_post && dpo.content_award_enable)
                   {
                       d.modify(*active_post, [&](active_post_object& obj)
                       {
@@ -637,7 +645,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
               {
                   obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(), surplus.convert_to<int64_t>(), 0, 0);
               });
-              if (active_post)
+              if (active_post && dpo.content_award_enable)
               {
                   d.modify(*active_post, [&](active_post_object& obj)
                   {
@@ -832,15 +840,18 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 
         FC_ASSERT(d.find_score(op.platform, op.poster, op.post_pid, op.from_account_uid)==nullptr, "only score a post once");
 
-		const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-        uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
-        auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, sequence, op.post_pid));
-		if (apt_itr != apt_idx.end())
-		{
-			active_post = &(*apt_itr);
-			FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
-			FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
-		}
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+        if (dpo.content_award_enable)
+        {
+            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
+            if (apt_itr != apt_idx.end())
+            {
+                active_post = &(*apt_itr);
+                FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
+                FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
+            }
+        }
 
 		return void_result();
 	}FC_CAPTURE_AND_RETHROW((op))
@@ -868,31 +879,34 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
 			obj.create_time      = d.head_block_time();
 		});
 
-		if (active_post)
-		{
-			d.modify(*active_post, [&](active_post_object& s) {
-				s.total_amount += op.csaf;
-				s.scores.push_back(new_score_object.id);
-			});
-		}
-		else
-		{
-            const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
-            time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration ) >= d.head_block_time())
+        if (dpo.content_award_enable)
+        {
+            if (active_post)
             {
-                const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-                d.create<active_post_object>([&](active_post_object& obj)
-                {
-                    obj.platform = op.platform;
-                    obj.poster = op.poster;
-                    obj.post_pid = op.post_pid;
-                    obj.total_amount = op.csaf;
-                    obj.period_sequence = dpo.current_active_post_sequence;
-                    obj.scores.push_back(new_score_object.id);
+                d.modify(*active_post, [&](active_post_object& s) {
+                    s.total_amount += op.csaf;
+                    s.scores.push_back(new_score_object.id);
                 });
             }
-		}
+            else
+            {
+                const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
+                time_point_sec expiration_time = post->create_time;
+                if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+                {
+                    const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+                    d.create<active_post_object>([&](active_post_object& obj)
+                    {
+                        obj.platform = op.platform;
+                        obj.poster = op.poster;
+                        obj.post_pid = op.post_pid;
+                        obj.total_amount = op.csaf;
+                        obj.period_sequence = dpo.current_active_post_sequence;
+                        obj.scores.push_back(new_score_object.id);
+                    });
+                }
+            }
+        }
 
 		return new_score_object.id;
 	}FC_CAPTURE_AND_RETHROW((op))
@@ -932,15 +946,18 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
 				      ("f", op.from_account_uid)("c", from_balance.amount)("n", op.amount.amount));
 		}
 
-		const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-        uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
-        auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, sequence, op.post_pid));
-		if (apt_itr != apt_idx.end())
-		{
-			active_post = &(*apt_itr);
-			FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
-			FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
-		}
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+        if (dpo.content_award_enable)
+        {
+            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
+            if (apt_itr != apt_idx.end())
+            {
+                active_post = &(*apt_itr);
+                FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
+                FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
+            }
+        }	
 
 		return void_result();
 	}FC_CAPTURE_AND_RETHROW((op))
@@ -955,33 +972,35 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 		d.adjust_balance(*from_account, -op.amount);
 
 		const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
-
-        if (active_post)
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+        if (dpo.content_award_enable)
         {
-            d.modify(*active_post, [&](active_post_object& s) {
-                if (s.total_rewards.find(op.amount.asset_id) != s.total_rewards.end())
-                    s.total_rewards.at(op.amount.asset_id) += op.amount.amount;
-                else
-                    s.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
-            });
-        }
-        else
-        {
-            time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            if (active_post)
             {
-                const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-                active_post = &d.create<active_post_object>([&](active_post_object& obj)
-                {
-                    obj.platform = op.platform;
-                    obj.poster = op.poster;
-                    obj.post_pid = op.post_pid;
-                    obj.total_amount = 0;
-                    obj.period_sequence = dpo.current_active_post_sequence;
-                    obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
+                d.modify(*active_post, [&](active_post_object& s) {
+                    if (s.total_rewards.find(op.amount.asset_id) != s.total_rewards.end())
+                        s.total_rewards.at(op.amount.asset_id) += op.amount.amount;
+                    else
+                        s.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
                 });
             }
-        }
+            else
+            {
+                time_point_sec expiration_time = post->create_time;
+                if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+                {
+                    active_post = &d.create<active_post_object>([&](active_post_object& obj)
+                    {
+                        obj.platform = op.platform;
+                        obj.poster = op.poster;
+                        obj.post_pid = op.post_pid;
+                        obj.total_amount = 0;
+                        obj.period_sequence = dpo.current_active_post_sequence;
+                        obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
+                    });
+                }
+            }
+        }     
 
 		uint128_t amount(op.amount.amount.value);
 		uint128_t surplus = amount;
@@ -994,7 +1013,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 			ast.amount = temp.convert_to<int64_t>();
 			surplus -= temp;
 			d.adjust_balance(iter.first, ast);
-            if (active_post)
+            if (active_post && dpo.content_award_enable)
             {
                 d.modify(*active_post, [&](active_post_object& obj)
                 {
@@ -1005,12 +1024,11 @@ void_result reward_evaluator::do_apply(const operation_type& op)
         ast.amount = surplus.convert_to<int64_t>();
 		d.adjust_balance(post->platform, ast);
 
-        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
         d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
         {
             obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), ast, 0, 0, 0);
         });
-        if (active_post)
+        if (active_post && dpo.content_award_enable)
         {
             d.modify(*active_post, [&](active_post_object& obj)
             {
@@ -1061,16 +1079,19 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
                       ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.poster)("n", op.amount));
         }   
 
-        const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-        uint64_t sequence = d.get_dynamic_global_properties().current_active_post_sequence;
-        auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, sequence, op.post_pid));
-        if (apt_itr != apt_idx.end())
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+        if (dpo.content_award_enable)
         {
-            active_post = &(*apt_itr);
-            FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
-            FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
+            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
+            if (apt_itr != apt_idx.end())
+            {
+                active_post = &(*apt_itr);
+                FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
+                FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
+            }
         }
-
+        
         return void_result();
     }FC_CAPTURE_AND_RETHROW((op))
 }
@@ -1091,31 +1112,33 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
         });
 
         const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
-
-        if (active_post)
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+        if (dpo.content_award_enable)
         {
-            d.modify(*active_post, [&](active_post_object& s) {
-                if (s.total_rewards.find(GRAPHENE_CORE_ASSET_AID) != s.total_rewards.end())
-                    s.total_rewards.at(GRAPHENE_CORE_ASSET_AID) += op.amount;
-                else
-                    s.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
-            });
-        }
-        else
-        {
-            time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            if (active_post)
             {
-                const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-                active_post = &d.create<active_post_object>([&](active_post_object& obj)
-                {
-                    obj.platform = op.platform;
-                    obj.poster = op.poster;
-                    obj.post_pid = op.post_pid;
-                    obj.total_amount = 0;
-                    obj.period_sequence = dpo.current_active_post_sequence;
-                    obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
+                d.modify(*active_post, [&](active_post_object& s) {
+                    if (s.total_rewards.find(GRAPHENE_CORE_ASSET_AID) != s.total_rewards.end())
+                        s.total_rewards.at(GRAPHENE_CORE_ASSET_AID) += op.amount;
+                    else
+                        s.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
                 });
+            }
+            else
+            {
+                time_point_sec expiration_time = post->create_time;
+                if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+                {
+                    active_post = &d.create<active_post_object>([&](active_post_object& obj)
+                    {
+                        obj.platform = op.platform;
+                        obj.poster = op.poster;
+                        obj.post_pid = op.post_pid;
+                        obj.total_amount = 0;
+                        obj.period_sequence = dpo.current_active_post_sequence;
+                        obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
+                    });
+                }
             }
         }
 
@@ -1131,7 +1154,7 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
             {
                 obj.prepaid += temp.convert_to<int64_t>();
             });
-            if (active_post)
+            if (active_post && dpo.content_award_enable)
             {
                 d.modify(*active_post, [&](active_post_object& obj)
                 {
@@ -1144,12 +1167,11 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
             obj.prepaid += surplus.convert_to<int64_t>();
         });
 
-        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
         d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
         {
             obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(surplus.convert_to<int64_t>()), 0, 0, 0);
         });
-        if (active_post)
+        if (active_post && dpo.content_award_enable)
         {
             d.modify(*active_post, [&](active_post_object& obj)
             {

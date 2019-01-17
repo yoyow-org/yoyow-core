@@ -3,6 +3,14 @@
      
 
 #2.    	
+
+    import_key init1 5J9rkFTZqn9VY4w8Kyw2K2nnFLDQ4BHwjVezTsn4Z6cy6bHkqjR
+	import_key init2 5J9rkFTZqn9VY4w8Kyw2K2nnFLDQ4BHwjVezTsn4Z6cy6bHkqjR
+	import_key init3 5J9rkFTZqn9VY4w8Kyw2K2nnFLDQ4BHwjVezTsn4Z6cy6bHkqjR
+	import_key init4 5J9rkFTZqn9VY4w8Kyw2K2nnFLDQ4BHwjVezTsn4Z6cy6bHkqjR
+	import_key init5 5J9rkFTZqn9VY4w8Kyw2K2nnFLDQ4BHwjVezTsn4Z6cy6bHkqjR
+	import_key init6 5J9rkFTZqn9VY4w8Kyw2K2nnFLDQ4BHwjVezTsn4Z6cy6bHkqjR
+	
 	{"private_key":"5KV3RG172g6wcsainBmdpPFYAFBniWxJkFSLJh2YY46VkkBJeVh","public_key":"YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj"},
 	{"private_key":"5JDJdcFrx6HEbQ9etbMuhQ5EMwmqTGBNYAAVQLWjtc5wLaZBiAf","public_key":"YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT"},
 	{"private_key":"5KVFzJdUnaiNrMBEvoUjPbMT9fXP296hCxDVtTh21h45NSDeVse","public_key":"YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv"},
@@ -131,19 +139,18 @@
        transfer_extension test10 test10 5000 YOYO "" true false true true
 	   
  
- #8.   committee_proposal_create init1 [[3 , {content_award_interval : 300,platform_award_interval : 300,max_csaf_per_approval : 1000,approval_expiration : 31536000,min_effective_csaf : 10,total_content_award_amount : 10000000000000,total_platform_content_award_amount : 10000000000000,total_platform_voted_award_amount : 10000000000000,platform_award_min_votes : 1,platform_award_requested_rank : 100, platform_award_basic_rate : 3000, casf_modulus : 30000, post_award_expiration : 62000000, approval_casf_min_weight : 4000, approval_casf_first_rate : 2000, approval_casf_second_rate : 8000, receiptor_award_modulus : 9000, disapprove_award_modulus : 11000}]] 200 1 200 200 true
+ #8.   committee_proposal_create init1 [[3 , {content_award_interval : 300,platform_award_interval : 300,max_csaf_per_approval : 100000000,approval_expiration : 31536000,min_effective_csaf : 10,total_content_award_amount : 10000000000000,total_platform_content_award_amount : 10000000000000,total_platform_voted_award_amount : 10000000000000,platform_award_min_votes : 1,platform_award_requested_rank : 100, platform_award_basic_rate : 3000, casf_modulus : 30000, post_award_expiration : 62000000, approval_casf_min_weight : 4000, approval_casf_first_rate : 2000, approval_casf_second_rate : 8000, receiptor_award_modulus : 9000, disapprove_award_modulus : 11000}]] 1300 1 1300 1300 true true
  
  
  #9	   committee_proposal_vote init2 1 1 true true
        committee_proposal_vote init3 1 1 true true
        committee_proposal_vote init4 1 1 true true
        committee_proposal_vote init5 1 1 true true
-       committee_proposal_vote init6 1 1 true true
 
 
  #10   create_license platform_account1 1 123456789 license_one dingdngdangdingdingdang extra true true
 	   
-	   create_post platform_account1 test1 987456321 postname postbody postextry "" "" "" {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true
+	   create_post platform_account1 test1 987456321 postname postbody postextry "" "" "" {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true true
 	   
 	   account_manage init test1 {can_post : null, can_reply : true, can_rate : true} true true
 	   account_manage init test2 {can_post : null, can_reply : true, can_rate : true} true true
@@ -156,7 +163,7 @@
 	   account_manage init test9 {can_post : null, can_reply : true, can_rate : true} true true
 	   account_manage init test10 {can_post : null, can_reply : true, can_rate : true} true true
 
-	   create_post platform_account1 test2 945456321 commentname commentbody commentextry platform_account1 test1 2 {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true true
+	   create_post platform_account1 test2 945456321 commentname commentbody commentextry platform_account1 test1 1 {post_type :0, forward_price :null, receiptors :null, license_lid :1, permission_flags :255} true true
 	   
 	   score_a_post test2 platform_account1 test1 2 5 10 true true
 	   
