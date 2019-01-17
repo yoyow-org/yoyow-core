@@ -239,8 +239,11 @@ void database::clear_expired_proposals()
 void database::clear_active_post()
 {
 	const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-	const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
-  const auto& apt_end = apt_idx.lower_bound(dpo.current_active_post_sequence - _latest_active_post_periods+1);
+  if (dpo.current_active_post_sequence <= _latest_active_post_periods)
+     return;
+
+  const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
+  const auto& apt_end = apt_idx.lower_bound(dpo.current_active_post_sequence - _latest_active_post_periods + 1);
 	auto apt_itr = apt_idx.begin();
 	while (apt_itr != apt_end)
 	{
@@ -1396,6 +1399,7 @@ void database::process_content_platform_awards()
 				{
 					_dpo.last_content_award_time = time_point_sec(0);
 					_dpo.next_content_award_time = time_point_sec(0);
+          _dpo.content_award_enable = false;
 				});
 			}
 			return;
@@ -1409,6 +1413,7 @@ void database::process_content_platform_awards()
 				_dpo.last_content_award_time = head_block_time();
 				_dpo.next_content_award_time = head_block_time() + params.content_award_interval;
 				_dpo.current_active_post_sequence++;
+        _dpo.content_award_enable = true;
 			});
 			return;
 		}

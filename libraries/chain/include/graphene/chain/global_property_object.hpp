@@ -88,6 +88,8 @@ namespace graphene { namespace chain {
 				 time_point_sec									 next_platform_voted_award_time = time_point_sec(0);
 				 time_point_sec									 last_platform_voted_award_time = time_point_sec(0);
 				 uint64_t												 current_active_post_sequence = 0;
+
+         bool                            content_award_enable = false;
          /**
           *  Every time a block is missed this increases by
           *  RECENTLY_MISSED_COUNT_INCREMENT,
