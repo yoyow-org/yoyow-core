@@ -1222,19 +1222,19 @@ vector<active_post_object> database_api_impl::get_post_profits_detail(const uint
                                                                       const account_uid_type poster,
                                                                       const post_pid_type    post_pid)const
 {
-    vector<active_post_object> vtr_active_objects;
-    if (begin_period <= end_period){
-        const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_post>();
-        auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster, post_pid, begin_period));
-        auto itr_end = idx.upper_bound(std::make_tuple(platform, poster, post_pid, end_period));
+   FC_ASSERT(begin_period <= end_period);
 
-        while (itr_begin != itr_end)
-        {
-            vtr_active_objects.push_back(*itr_begin);
-            ++itr_begin;
-        }
-    }
-    return vtr_active_objects;
+   vector<active_post_object> vtr_active_objects;
+   const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_post>();
+   auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster, post_pid, begin_period));
+   auto itr_end = idx.upper_bound(std::make_tuple(platform, poster, post_pid, end_period));
+
+   while (itr_begin != itr_end)
+   {
+      vtr_active_objects.push_back(*itr_begin);
+      ++itr_begin;
+   }
+   return vtr_active_objects;
 }
 
 vector<Platform_Period_Profit_Detail> database_api::get_platform_profits_detail(const uint32_t         begin_period,
@@ -1248,6 +1248,8 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
                                                                                      const uint32_t         end_period,
                                                                                      const account_uid_type platform)const
 {
+    FC_ASSERT(begin_period <= end_period);
+
     vector<Platform_Period_Profit_Detail> vtr_profit_details;
     for (int i = begin_period; begin_period <= end_period; i++)
     {
@@ -1304,6 +1306,7 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
        auto itr = apt_idx.lower_bound(std::make_tuple(poster, start));
        auto itr_end = apt_idx.upper_bound(std::make_tuple(poster, start));
        bool exist = itr != itr_end;
+
        while (itr != itr_end)
        {
           ppd.total_forward += itr->forward_award;
