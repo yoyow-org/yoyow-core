@@ -371,7 +371,10 @@ namespace detail {
             }
          };
          if (_options->count("active-post-periods"))
+         {
+            FC_ASSERT(_options->at("active-post-periods").as<uint32_t>() > 0);
             _chain_db->set_active_post_periods(_options->at("active-post-periods").as<uint32_t>());
+         }
 
          if( _options->count("resync-blockchain") )
             _chain_db->wipe(_data_dir / "blockchain", true);
