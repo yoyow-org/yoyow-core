@@ -1309,9 +1309,13 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
 
        while (itr != itr_end)
        {
-          ppd.total_forward += itr->forward_award;
-          ppd.total_post_award += itr->score_award;
+          if (itr->receiptor_details.count(poster))
+          {
+             ppd.total_forward += itr->receiptor_details.at(poster).forward;
+             ppd.total_post_award += itr->receiptor_details.at(poster).post_award;
+          }   
           ppd.active_post_pids.push_back(itr->post_pid);
+
           for (const auto& r : itr->total_rewards)
           {
              if (ppd.total_rewards.count(r.first))
