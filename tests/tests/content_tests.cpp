@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       }
       for (auto a : score_map2)
       {
-      score_a_post({ a.second, u_9000_private_key }, a.first, u_9000_id, u_1001_id, 1, -5, 10);
+         score_a_post({ a.second, u_9000_private_key }, a.first, u_9000_id, u_1001_id, 1, -5, 10);
       }
       
       generate_blocks(100);
@@ -422,16 +422,29 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          scores.push_back(score_id);
       }
       auto result = get_effective_csaf(scores, 50 * 20 + 10 * 20);
+      share_type total_score_balance = 0;
       for (auto a : std::get<0>(result))
       {
          auto balance = score_earned.convert_to<uint64_t>() * std::get<1>(a) / std::get<1>(result);
          auto score_act = db.get_account_statistics_by_uid(std::get<0>(a));
+         total_score_balance += balance;
          BOOST_CHECK(score_act.core_balance == balance);
       }
 
       auto platform_act = db.get_account_statistics_by_uid(u_9000_id);
       auto platform_core_balance = receiptor_earned.convert_to<uint64_t>() - poster_earned + award_average.convert_to<uint64_t>() + 10000000000;
       BOOST_CHECK(platform_act.core_balance == platform_core_balance);
+
+      auto platform_obj = db.get_platform_by_owner(u_9000_id);
+      auto post_profit = receiptor_earned.convert_to<uint64_t>() - poster_earned;
+      BOOST_CHECK(platform_obj.period_profits.begin()->second.post_profits == post_profit);
+      BOOST_CHECK(platform_obj.period_profits.begin()->second.platform_profits == award_average.convert_to<uint64_t>());
+
+      const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_id>();
+      auto active_post_obj = *(apt_idx.begin());
+      BOOST_CHECK(active_post_obj.positive_win == true);
+      BOOST_CHECK(active_post_obj.receiptor_details.at(u_1001_id).post_award == poster_earned);
+      BOOST_CHECK(active_post_obj.score_award == (receiptor_earned.convert_to<uint64_t>() + total_score_balance));
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
@@ -547,6 +560,8 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
          share_type balance = (award_by_votes + basic).convert_to<uint64_t>();
          auto pla_act = db.get_account_statistics_by_uid(p.first);
          BOOST_CHECK(pla_act.core_balance == balance + 10000000000);
+         auto platform_obj = db.get_platform_by_owner(p.first);
+         BOOST_CHECK(platform_obj.vote_profits.begin()->second == balance);
       }
       for (const auto&p : platform_map2)
       {
@@ -555,6 +570,8 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
          share_type balance = (award_by_votes + basic).convert_to<uint64_t>();
          auto pla_act = db.get_account_statistics_by_uid(p.first);
          BOOST_CHECK(pla_act.core_balance == balance + 10000000000);
+         auto platform_obj = db.get_platform_by_owner(p.first);
+         BOOST_CHECK(platform_obj.vote_profits.begin()->second == balance);
       }
    }
    catch (fc::exception& e) {
