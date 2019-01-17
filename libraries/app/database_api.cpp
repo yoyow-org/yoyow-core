@@ -1260,9 +1260,42 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
                                                                                  const uint32_t         end_period,
                                                                                  const account_uid_type poster)const
 {
-    vector<Poster_Period_Profit_Detail> vtr_profit_details;
+    FC_ASSERT(begin_period <= end_period);
 
-    return vtr_profit_details;
+    vector<Poster_Period_Profit_Detail> result;
+    const auto& apt_idx = _db.get_index_type<active_post_index>().indices().get<by_poster>();
+
+    uint32_t start = begin_period;
+    while (start <= end_period)
+    {
+       Poster_Period_Profit_Detail ppd;
+       ppd.cur_period = start;
+       ppd.poster_account = poster;
+
+       auto itr = apt_idx.lower_bound(std::make_tuple(poster, start));
+       auto itr_end = apt_idx.upper_bound(std::make_tuple(poster, start));
+       bool exist = itr != itr_end;
+       while (itr != itr_end)
+       {
+          ppd.total_forward += itr->forward_award;
+          ppd.total_post_award += itr->score_award;
+          ppd.active_post_object_pids.push_back(itr->post_pid);
+          for (const auto& r : itr->total_rewards)
+          {
+             if (ppd.total_rewards.count(r.first))
+                ppd.total_rewards[r.first] += r.second;
+             else
+                ppd.total_rewards.emplace(r.first, r.second);
+          }         
+          ++itr;
+       }
+       
+       if (exist)
+          result.push_back(ppd);
+       ++start;
+    }
+    
+    return result;
 }
 
 vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_owner,
