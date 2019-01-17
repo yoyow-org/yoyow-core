@@ -140,6 +140,20 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                            const license_lid_type license_lid)const;
       vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
 
+      vector<active_post_object> get_post_profits_detail(const uint32_t         begin_period,
+                                                         const uint32_t         end_period,
+                                                         const account_uid_type platform,
+                                                         const account_uid_type poster,
+                                                         const post_pid_type    post_pid)const;
+
+      vector<Platform_Period_Profit_Detail> get_platform_profits_detail(const uint32_t         begin_period,
+                                                                        const uint32_t         end_period,
+                                                                        const account_uid_type platform)const;
+
+      vector<Poster_Period_Profit_Detail> get_poster_profits_detail(const uint32_t         begin_period,
+                                                                    const uint32_t         end_period,
+                                                                    const account_uid_type poster)const;
+
       // Balances
       vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
       vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const;
@@ -1188,6 +1202,67 @@ vector<license_object> database_api_impl::list_licenses(const account_uid_type p
         ++count;
     }
     return result;
+}
+
+vector<active_post_object> database_api::get_post_profits_detail(const uint32_t         begin_period,
+                                                                 const uint32_t         end_period,
+                                                                 const account_uid_type platform,
+                                                                 const account_uid_type poster,
+                                                                 const post_pid_type    post_pid)const
+{
+    return my->get_post_profits_detail(begin_period, end_period, platform, poster, post_pid);
+}
+
+vector<active_post_object> database_api_impl::get_post_profits_detail(const uint32_t         begin_period,
+                                                                      const uint32_t         end_period,
+                                                                      const account_uid_type platform,
+                                                                      const account_uid_type poster,
+                                                                      const post_pid_type    post_pid)const
+{
+    vector<active_post_object> vtr_active_objects;
+    for (int i = begin_period; i <= end_period; i++)
+    {
+        const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_post_pid>();
+        auto itr = idx.lower_bound(std::make_tuple(platform, poster, i, post_pid));
+        while (itr != idx.end())
+        {
+            vtr_active_objects.push_back(*itr);
+            ++itr;
+        }
+    }
+    return vtr_active_objects;
+}
+
+vector<Platform_Period_Profit_Detail> database_api::get_platform_profits_detail(const uint32_t         begin_period,
+                                                                                const uint32_t         end_period,
+                                                                                const account_uid_type platform)const
+{
+    return my->get_platform_profits_detail(begin_period, end_period, platform);
+}
+
+vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_detail(const uint32_t         begin_period,
+                                                                                     const uint32_t         end_period,
+                                                                                     const account_uid_type platform)const
+{
+    vector<Platform_Period_Profit_Detail> vtr_profit_details;
+
+    return vtr_profit_details;
+}
+
+vector<Poster_Period_Profit_Detail> database_api::get_poster_profits_detail(const uint32_t         begin_period,
+                                                                            const uint32_t         end_period,
+                                                                            const account_uid_type poster)const
+{
+    return my->get_poster_profits_detail(begin_period, end_period, poster);
+}
+
+vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail(const uint32_t         begin_period,
+                                                                                 const uint32_t         end_period,
+                                                                                 const account_uid_type poster)const
+{
+    vector<Poster_Period_Profit_Detail> vtr_profit_details;
+
+    return vtr_profit_details;
 }
 
 vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_owner,

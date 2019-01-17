@@ -441,6 +441,21 @@ class database_api
 
       vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
 
+
+      vector<active_post_object> get_post_profits_detail(const uint32_t         begin_period,
+                                                         const uint32_t         end_period,
+                                                         const account_uid_type platform,
+                                                         const account_uid_type poster,
+                                                         const post_pid_type    post_pid)const;
+
+      vector<Platform_Period_Profit_Detail> get_platform_profits_detail(const uint32_t         begin_period,
+                                                                        const uint32_t         end_period,
+                                                                        const account_uid_type platform)const;
+
+      vector<Poster_Period_Profit_Detail> get_poster_profits_detail(const uint32_t         begin_period,
+                                                                    const uint32_t         end_period,
+                                                                    const account_uid_type poster)const;
+
       /**
        * @brief Get posts by platform plus poster
        * @param platform_owner uid of a platform
