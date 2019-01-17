@@ -1548,6 +1548,20 @@ class wallet_api
 
       vector<license_object> list_licenses(string platform, uint32_t limit);
 
+      vector<active_post_object> get_post_profits_detail(uint32_t         begin_period,
+                                                         uint32_t         end_period,
+                                                         string           platform,
+                                                         string           poster,
+                                                         string           post_pid);
+
+      vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
+                                                                        uint32_t         end_period,
+                                                                        string           platform);
+
+      vector<Poster_Period_Profit_Detail> get_poster_profits_detail(uint32_t         begin_period,
+                                                                    uint32_t         end_period,
+                                                                    string           poster);
+
       account_statistics_object get_account_statistics(string account);
          
       void dbg_make_uia(string creator, string symbol);
@@ -1755,6 +1769,9 @@ FC_API( graphene::wallet::wallet_api,
         (list_scores)
         (get_license)
         (list_licenses)
+        (get_post_profits_detail)
+        (get_platform_profits_detail)
+        (get_poster_profits_detail)
         (get_account_statistics)
         (get_global_properties_extensions)
       )

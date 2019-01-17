@@ -654,6 +654,23 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_balances)
           );
 
+FC_REFLECT(graphene::app::Platform_Period_Profit_Detail,
+          (cur_period)
+          (platform_account)
+          (platform_name)
+          (rewards_profits)
+          (foward_profits)
+          (post_profits)
+          (platform_profits)
+          (active_post_object_pids));
+FC_REFLECT(graphene::app::Poster_Period_Profit_Detail,
+          (cur_period)
+          (poster_account)
+          (total_forward)
+          (total_rewards)
+          (total_post_award)
+          (active_post_object_pids));
+
 FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_uid)
                  (order_by_votes)
@@ -721,6 +738,9 @@ FC_API( graphene::app::database_api,
    (list_scores)
    (get_license)
    (list_licenses)
+   (get_post_profits_detail)
+   (get_platform_profits_detail)
+   (get_poster_profits_detail)
 
    // Balances
    (get_account_balances)

@@ -87,7 +87,8 @@ namespace graphene { namespace chain {
                  if (period_profits.size() >= lastest_periods)
                      period_profits.erase(period_profits.begin());
                  Platform_Period_Profits profits;
-                 profits.rewards_profits.emplace(reward_profit.asset_id, reward_profit.amount);
+                 if (reward_profit != asset())
+                     profits.rewards_profits.emplace(reward_profit.asset_id, reward_profit.amount);
                  profits.foward_profits   = forward_profit;
                  profits.post_profits     = post_profit;
                  profits.platform_profits = platform_profit;
@@ -411,7 +412,8 @@ namespace graphene { namespace chain {
 
    struct by_poster{};
    struct by_platforms{};
-	 struct by_period_sequence{};
+   struct by_period_sequence{};
+   struct by_post{};
 
 	 /**
 	 * @ingroup object_index
@@ -427,6 +429,15 @@ namespace graphene { namespace chain {
 					    member< active_post_object, account_uid_type, &active_post_object::poster >,				    
               member< active_post_object, uint64_t,         &active_post_object::period_sequence >,
               member< active_post_object, post_pid_type,    &active_post_object::post_pid >
+				   >
+				>,
+                ordered_non_unique< tag<by_post>,
+				   composite_key<
+					    active_post_object,
+					    member< active_post_object, account_uid_type, &active_post_object::platform >,
+					    member< active_post_object, account_uid_type, &active_post_object::poster >,
+                        member< active_post_object, post_pid_type,    &active_post_object::post_pid >,
+                        member< active_post_object, uint64_t,         &active_post_object::period_sequence >
 				   >
 				>,
         ordered_non_unique< tag<by_poster>,

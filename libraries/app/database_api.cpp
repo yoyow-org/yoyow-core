@@ -1144,23 +1144,25 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
     if (list_cur_period){
         const dynamic_global_property_object& dpo = _db.get_dynamic_global_properties();
         const auto& idx = _db.get_index_type<score_index>().indices().get<by_period_sequence>();
-        auto itr = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence));
+        auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence));
+        auto itr_end = idx.upper_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence));
 
-        while (itr != idx.end() && count < limit)
+        while (itr_begin != itr_end && count < limit)
         {
-            result.push_back(*itr);
-            ++itr;
+            result.push_back(*itr_begin);
+            ++itr_begin;
             ++count;
         }
     }
     else{
         const auto& idx = _db.get_index_type<score_index>().indices().get<by_posts_pids>();
-        auto itr = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid));
+        auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid));
+        auto itr_end = idx.upper_bound(std::make_tuple(platform, poster_uid, post_pid));
 
-        while (itr != idx.end() && count < limit)
+        while (itr_begin != itr_end && count < limit)
         {
-            result.push_back(*itr);
-            ++itr;
+            result.push_back(*itr_begin);
+            ++itr_begin;
             ++count;
         }
     }
@@ -1193,12 +1195,13 @@ vector<license_object> database_api_impl::list_licenses(const account_uid_type p
     vector<license_object> result;
     uint32_t count = 0;
     const auto& idx = _db.get_index_type<license_index>().indices().get<by_platform>();
-    auto itr = idx.lower_bound(platform);
+    auto itr_begin = idx.lower_bound(platform);
+    auto itr_end = idx.upper_bound(platform);
 
-    while (itr != idx.end() && count < limit)
+    while (itr_begin != itr_end && count < limit)
     {
-        result.push_back(*itr);
-        ++itr;
+        result.push_back(*itr_begin);
+        ++itr_begin;
         ++count;
     }
     return result;
@@ -1220,14 +1223,15 @@ vector<active_post_object> database_api_impl::get_post_profits_detail(const uint
                                                                       const post_pid_type    post_pid)const
 {
     vector<active_post_object> vtr_active_objects;
-    for (int i = begin_period; i <= end_period; i++)
-    {
-        const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-        auto itr = idx.lower_bound(std::make_tuple(platform, poster, i, post_pid));
-        while (itr != idx.end())
+    if (begin_period <= end_period){
+        const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_post>();
+        auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster, post_pid, begin_period));
+        auto itr_end = idx.upper_bound(std::make_tuple(platform, poster, post_pid, end_period));
+
+        while (itr_begin != itr_end)
         {
-            vtr_active_objects.push_back(*itr);
-            ++itr;
+            vtr_active_objects.push_back(*itr_begin);
+            ++itr_begin;
         }
     }
     return vtr_active_objects;
@@ -1245,7 +1249,31 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
                                                                                      const account_uid_type platform)const
 {
     vector<Platform_Period_Profit_Detail> vtr_profit_details;
+    for (int i = begin_period; begin_period <= end_period; i++)
+    {
+        const platform_object& platform_obj = _db.get_platform_by_owner(platform);
+        auto iter_profit = platform_obj.period_profits.find(i);
 
+        if (iter_profit != platform_obj.period_profits.end()){
+            Platform_Period_Profit_Detail detail;
+            detail.cur_period       = i;
+            detail.platform_account = platform;
+            detail.platform_name    = platform_obj.name;
+            detail.foward_profits   = iter_profit->second.foward_profits;
+            detail.post_profits     = iter_profit->second.post_profits;
+            detail.platform_profits = iter_profit->second.platform_profits;
+            detail.rewards_profits  = iter_profit->second.rewards_profits;
+
+            const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_platforms>();
+            auto itr_begin = idx.lower_bound(std::make_tuple(platform, i));
+            auto itr_end = idx.upper_bound(std::make_tuple(platform, i));
+            while (itr_begin != itr_end)
+            {
+                detail.active_post_object_pids.emplace_back((*itr_begin).post_pid);
+                ++itr_begin;
+            }
+        }
+    }
     return vtr_profit_details;
 }
 

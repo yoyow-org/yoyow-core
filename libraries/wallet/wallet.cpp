@@ -2680,6 +2680,43 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform))
    }
 
+   vector<active_post_object> get_post_profits_detail(uint32_t         begin_period,
+                                                      uint32_t         end_period,
+                                                      string           platform,
+                                                      string           poster,
+                                                      string           post_pid)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           account_uid_type platform_uid = get_account_uid(platform);
+           account_uid_type poster_uid = get_account_uid(poster);
+           post_pid_type postid = fc::to_uint64(fc::string(post_pid));
+           return _remote_db->get_post_profits_detail(begin_period, end_period, platform_uid, poster_uid, postid);
+       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(poster)(post_pid))
+   }
+
+   vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
+                                                                     uint32_t         end_period,
+                                                                     string           platform)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           account_uid_type platform_uid = get_account_uid(platform);
+           return _remote_db->get_platform_profits_detail(begin_period, end_period, platform_uid);
+       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform))
+   }
+
+   vector<Poster_Period_Profit_Detail> get_poster_profits_detail(uint32_t         begin_period,
+                                                                 uint32_t         end_period,
+                                                                 string           poster)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           account_uid_type poster_uid = get_account_uid(poster);
+           return _remote_db->get_poster_profits_detail(begin_period, end_period, poster_uid);
+       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(poster))
+   }
+
    account_statistics_object get_account_statistics(string account)
    {
        try {
@@ -3999,6 +4036,29 @@ license_object wallet_api::get_license(string platform,
 vector<license_object> wallet_api::list_licenses(string platform, uint32_t limit)
 {
     return my->list_licenses(platform, limit);
+}
+
+vector<active_post_object> wallet_api::get_post_profits_detail(uint32_t         begin_period,
+                                                               uint32_t         end_period,
+                                                               string           platform,
+                                                               string           poster,
+                                                               string           post_pid)
+{
+    return my->get_post_profits_detail(begin_period, end_period, platform, poster, post_pid);
+}
+
+vector<Platform_Period_Profit_Detail> wallet_api::get_platform_profits_detail(uint32_t         begin_period,
+                                                                              uint32_t         end_period,
+                                                                              string           platform)
+{
+    return my->get_platform_profits_detail(begin_period, end_period, platform);
+}
+
+vector<Poster_Period_Profit_Detail> wallet_api::get_poster_profits_detail(uint32_t         begin_period,
+                                                                          uint32_t         end_period,
+                                                                          string           poster)
+{
+    return my->get_poster_profits_detail(begin_period, end_period, poster);
 }
 
 account_statistics_object wallet_api::get_account_statistics(string account)
