@@ -421,14 +421,14 @@ class database_api
        * @param post_pid pid of the post
        * @return The post corresponding to the provided parameters.
        */
-      post_object get_post( const account_uid_type platform_owner,
-                            const account_uid_type poster_uid,
-                            const post_pid_type    post_pid )const;
+      optional<post_object> get_post(const account_uid_type platform_owner,
+                                     const account_uid_type poster_uid,
+                                     const post_pid_type    post_pid )const;
 
-      score_object get_score(const account_uid_type platform,
-                             const account_uid_type poster_uid,
-                             const post_pid_type    post_pid,
-                             const account_uid_type from_account)const;
+      optional<score_object> get_score(const account_uid_type platform,
+                                       const account_uid_type poster_uid,
+                                       const post_pid_type    post_pid,
+                                       const account_uid_type from_account)const;
 
       vector<score_object> list_scores(const account_uid_type platform,
                                        const account_uid_type poster_uid,
@@ -436,7 +436,7 @@ class database_api
                                        const uint32_t         limit,
                                        const bool             list_cur_period = true)const;
 
-      license_object get_license(const account_uid_type platform,
+      optional<license_object> get_license(const account_uid_type platform,
                                  const license_lid_type license_lid)const;
 
       vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;

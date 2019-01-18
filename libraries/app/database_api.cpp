@@ -1085,11 +1085,11 @@ uint64_t database_api_impl::get_platform_count()const
    return _db.get_index_type< platform_index >().indices().get< by_valid >().count( true );
 }
 
-post_object database_api::get_post( const account_uid_type platform_owner,
-                                    const account_uid_type poster_uid,
-                                    const post_pid_type post_pid )const
+optional<post_object> database_api::get_post(const account_uid_type platform_owner,
+                                             const account_uid_type poster_uid,
+                                             const post_pid_type post_pid )const
 {
-    return my->get_post(platform_owner, poster_uid, post_pid).valid() ? *(my->get_post(platform_owner, poster_uid, post_pid)) : post_object{};
+    return my->get_post(platform_owner, poster_uid, post_pid);
 }
 
 optional<post_object> database_api_impl::get_post(const account_uid_type platform_owner,
@@ -1103,12 +1103,12 @@ optional<post_object> database_api_impl::get_post(const account_uid_type platfor
    return {};
 }
 
-score_object database_api::get_score(const account_uid_type platform,
-                                     const account_uid_type poster_uid,
-                                     const post_pid_type post_pid,
-                                     const account_uid_type from_account)const
+optional<score_object> database_api::get_score(const account_uid_type platform,
+                                               const account_uid_type poster_uid,
+                                               const post_pid_type post_pid,
+                                               const account_uid_type from_account)const
 {
-    return my->get_score(platform, poster_uid, post_pid, from_account).valid() ? *(my->get_score(platform, poster_uid, post_pid, from_account)) : score_object{};
+   return my->get_score(platform, poster_uid, post_pid, from_account);
 }
 
 optional<score_object> database_api_impl::get_score(const account_uid_type platform,
@@ -1169,10 +1169,9 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
     return result;
 }
 
-license_object database_api::get_license(const account_uid_type platform,
-                                         const license_lid_type license_lid)const
+optional<license_object> database_api::get_license(const account_uid_type platform, const license_lid_type license_lid)const
 {
-    return my->get_license(platform, license_lid).valid() ? *(my->get_license(platform, license_lid)) : license_object{};
+   return my->get_license(platform, license_lid);
 }
 
 optional<license_object> database_api_impl::get_license(const account_uid_type platform,

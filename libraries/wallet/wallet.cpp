@@ -2612,7 +2612,12 @@ signed_transaction account_cancel_auth_platform(string account,
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
            account_uid_type platform = get_account_uid(platform_owner);
            account_uid_type poster = get_account_uid(poster_uid);
-           return _remote_db->get_post(platform, poster, postid);
+           fc::optional<post_object> post = _remote_db->get_post(platform, poster, postid);
+           if (post)
+              return *post;
+           else
+              FC_THROW("poster: ${poster} don't publish post: ${post} in platform: ${platform}", 
+              ("poster", poster_uid)("post", post_pid)("platform", platform_owner));
        } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(post_pid))
    }
 
@@ -2641,7 +2646,12 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type platform_uid = get_account_uid(platform);
            account_uid_type poster = get_account_uid(poster_uid);
            account_uid_type from_uid = get_account_uid(from_account);
-           return _remote_db->get_score(platform_uid, poster, postid, from_uid);
+           fc::optional<score_object> score = _remote_db->get_score(platform_uid, poster, postid, from_uid);
+           if (score)
+              return *score;
+           else
+              FC_THROW("score that form account : ${from_account} for post£º${post} created by poster: ${poster} in platform: ${platform} not found", 
+              ("from_account", from_account)("post", post_pid)("poster", poster_uid)("platform", platform));
        } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(from_account))
    }
 
@@ -2667,7 +2677,11 @@ signed_transaction account_cancel_auth_platform(string account,
            FC_ASSERT(!self.is_locked(), "Should unlock first");
            account_uid_type platform_uid = get_account_uid(platform);
            license_lid_type lid = fc::to_uint64(fc::string(license_lid));;
-           return _remote_db->get_license(platform_uid, lid);
+           fc::optional<license_object> license = _remote_db->get_license(platform_uid, lid);
+           if (license)
+              return *license;
+           else
+              FC_THROW("license: ${license} not found in platform: ${platform}",("license", license_lid)("platform", platform));
        } FC_CAPTURE_AND_RETHROW((platform)(license_lid))
    }
 

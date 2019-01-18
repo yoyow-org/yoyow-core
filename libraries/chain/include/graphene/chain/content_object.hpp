@@ -582,12 +582,16 @@ namespace graphene { namespace chain {
    typedef generic_index<license_object, license_multi_index_type> license_index;
 }}
 
+FC_REFLECT( graphene::chain::platform_object::Platform_Period_Profits,
+                    (rewards_profits)(foward_profits)(post_profits)(platform_profits))
+
 FC_REFLECT_DERIVED( graphene::chain::platform_object,
                     (graphene::db::object),
                     (owner)(name)(sequence)(is_valid)(total_votes)(url)
                     (pledge)(pledge_last_update)(average_pledge)(average_pledge_last_update)(average_pledge_next_update_block)
                     (extra_data)
                     (create_time)(last_update_time)
+                    (vote_profits)(period_profits)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::platform_vote_object, (graphene::db::object),
@@ -601,7 +605,7 @@ FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
                     (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
                     (hash_value)(extra_data)(title)(body)
-                    (create_time)(last_update_time)(receiptors)(forward_price)(license_lid)(permission_flags)
+                    (create_time)(last_update_time)(receiptors)(forward_price)(license_lid)(permission_flags)(score_settlement)
                   )
 
 FC_REFLECT( graphene::chain::active_post_object::receiptor_detail,
