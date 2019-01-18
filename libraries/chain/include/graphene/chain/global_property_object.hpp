@@ -161,6 +161,7 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
 										(next_platform_voted_award_time)
 										(last_platform_voted_award_time)
 										(current_active_post_sequence)
+                    (content_award_enable)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::global_property_object, (graphene::db::object),

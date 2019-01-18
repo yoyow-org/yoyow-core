@@ -366,14 +366,14 @@ namespace graphene { namespace chain {
 		 /// detail information of approvals, csaf.
 		 vector<score_id_type>                  scores;
 		 /// approvals of a post, csaf.
-		 share_type                             total_amount;
+		 share_type                             total_csaf;
 		 /// rewards of a post.
 		 flat_map<asset_aid_type, share_type>   total_rewards;
 		 /// period sequence of a post.
 		 uint64_t                               period_sequence;
 
      bool                                   positive_win;
-     share_type                             score_award;
+     share_type                             post_award;
      share_type                             forward_award;
      flat_map<account_uid_type, receiptor_detail> receiptor_details;
 
@@ -604,9 +604,13 @@ FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (create_time)(last_update_time)(receiptors)(forward_price)(license_lid)(permission_flags)
                   )
 
+FC_REFLECT( graphene::chain::active_post_object::receiptor_detail,
+                   (forward)(post_award)(rewards))
+
 FC_REFLECT_DERIVED( graphene::chain::active_post_object,
 										(graphene::db::object),
-										(platform)(poster)(post_pid)(scores)(total_amount)(total_rewards)(period_sequence)
+										(platform)(poster)(post_pid)(scores)(total_csaf)(total_rewards)(period_sequence)
+                    (positive_win)(post_award)(forward_award)(receiptor_details)
 									)
 
 FC_REFLECT_DERIVED(graphene::chain::score_object,

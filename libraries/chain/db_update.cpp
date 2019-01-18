@@ -1428,7 +1428,7 @@ void database::process_content_platform_awards()
 		auto apt_itr = apt_idx.lower_bound(dpo.current_active_post_sequence);
 		while (apt_itr != apt_idx.end())
 		{
-			if (apt_itr->total_amount >= params.min_effective_csaf)
+			if (apt_itr->total_csaf >= params.min_effective_csaf)
 			{		
         share_type approval_amount = 0;
         for (const auto& s : apt_itr->scores)
@@ -1436,7 +1436,7 @@ void database::process_content_platform_awards()
            const auto& score_obj = get_score(s);
            approval_amount += score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT);
         }
-        share_type csaf = apt_itr->total_amount + approval_amount;
+        share_type csaf = apt_itr->total_csaf + approval_amount;
         if (csaf > 0)
         {
            total_effective_csaf_amount += csaf;
@@ -1445,10 +1445,10 @@ void database::process_content_platform_awards()
 			}
 
       if (platform_csaf_amount.find(apt_itr->platform) != platform_csaf_amount.end())
-         platform_csaf_amount.at(apt_itr->platform) += apt_itr->total_amount;
+         platform_csaf_amount.at(apt_itr->platform) += apt_itr->total_csaf;
       else
-         platform_csaf_amount.emplace(apt_itr->platform, apt_itr->total_amount);
-      total_csaf_amount += apt_itr->total_amount;
+         platform_csaf_amount.emplace(apt_itr->platform, apt_itr->total_csaf);
+      total_csaf_amount += apt_itr->total_csaf;
 
 			++apt_itr;
 		}
@@ -1495,7 +1495,7 @@ void database::process_content_platform_awards()
           modify(*(std::get<0>(*itr)), [&](active_post_object& act)
           {
              act.positive_win = std::get<2>(*itr) >= 0;
-             act.score_award = receiptor_earned;
+             act.post_award = receiptor_earned;
              for (const auto& r : receipor)
                 act.insert_receiptor(r.first, r.second);
           });
@@ -1503,7 +1503,7 @@ void database::process_content_platform_awards()
           if (post.score_settlement)
              break;
           //result <vector<score account id, effective csaf for the score, is or not approve>, total effective csaf to award>
-          auto result = get_effective_csaf(std::get<0>(*itr)->scores, std::get<0>(*itr)->total_amount);
+          auto result = get_effective_csaf(std::get<0>(*itr)->scores, std::get<0>(*itr)->total_csaf);
           uint128_t total_award_csaf = (uint128_t)std::get<1>(result).value;
           share_type actual_score_earned = 0;
           for (const auto& e : std::get<0>(result))
@@ -1522,7 +1522,7 @@ void database::process_content_platform_awards()
 
           modify(*(std::get<0>(*itr)), [&](active_post_object& act)
           {
-             act.score_award = actual_score_earned + receiptor_earned;
+             act.post_award = actual_score_earned + receiptor_earned;
           });
 
           modify(post, [&](post_object& act)
