@@ -501,7 +501,7 @@ void database::_apply_block( const signed_block& next_block )
 
    update_global_dynamic_data(next_block);
 
-   dlog("before apply_transaction");
+   //dlog("before apply_transaction");
    for( const auto& trx : next_block.transactions )
    {
       /* We do not need to push the undo state for each transaction
@@ -514,19 +514,19 @@ void database::_apply_block( const signed_block& next_block )
       ++_current_trx_in_block;
    }
 
-   dlog("after apply_transaction");
+   //dlog("after apply_transaction");
    execute_committee_proposals();
    update_undo_db_size();
    update_signing_witness(signing_witness, next_block);
    update_last_irreversible_block();
 
-   dlog("after perform_chain_maintenance");
+   //dlog("after perform_chain_maintenance");
    create_block_summary(next_block);
    clear_expired_transactions();
    clear_expired_proposals();
    clear_expired_scores();
 
-   dlog("after update_withdraw_permissions");
+   //dlog("after update_withdraw_permissions");
    clear_expired_csaf_leases();
    update_average_witness_pledges();
    release_witness_pledges();
@@ -544,24 +544,24 @@ void database::_apply_block( const signed_block& next_block )
 	 process_content_platform_awards();
 	 process_platform_voted_awards();
 
-   dlog("before update_witness_schedule");
+   //dlog("before update_witness_schedule");
    update_witness_schedule();
    if( !_node_property_object.debug_updates.empty() )
       apply_debug_updates();
 
-   dlog("before check invariants");
+   //dlog("before check invariants");
    if( !( skip & skip_invariants_check ) )
    {
       check_invariants();
    }
 
-   dlog("before notify applied block");
+   //dlog("before notify applied block");
    // notify observers that the block has been applied
    // TODO catch exceptions thrown by plugins but not the core
    applied_block( next_block ); //emit
    _applied_ops.clear();
 
-   dlog("before notify changed objects");
+   //dlog("before notify changed objects");
    notify_changed_objects();
 } FC_CAPTURE_AND_RETHROW( (next_block.block_num())(next_block) )  }
 

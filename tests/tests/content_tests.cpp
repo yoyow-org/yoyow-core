@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(score_test)
       auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 0, 1));     
       BOOST_CHECK(apt_itr != apt_idx.end());
       auto active_post = *apt_itr;
-      BOOST_CHECK(active_post.total_amount == 10 * 10);
+      BOOST_CHECK(active_post.total_csaf == 10 * 10);
     
       for (auto a : score_map)
       {
@@ -444,7 +444,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       auto active_post_obj = *(apt_idx.begin());
       BOOST_CHECK(active_post_obj.positive_win == true);
       BOOST_CHECK(active_post_obj.receiptor_details.at(u_1001_id).post_award == poster_earned);
-      BOOST_CHECK(active_post_obj.score_award == (receiptor_earned.convert_to<uint64_t>() + total_score_balance));
+      BOOST_CHECK(active_post_obj.post_award == (receiptor_earned.convert_to<uint64_t>() + total_score_balance));
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
