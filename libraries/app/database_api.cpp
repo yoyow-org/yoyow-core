@@ -1306,22 +1306,19 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
        auto itr_end = apt_idx.upper_bound(std::make_tuple(poster, start));
        bool exist = itr != itr_end;
 
-       while (itr != itr_end)
+       while (itr != itr_end && itr->receiptor_details.count(poster))
        {
-          if (itr->receiptor_details.count(poster))
-          {
-             ppd.total_forward += itr->receiptor_details.at(poster).forward;
-             ppd.total_post_award += itr->receiptor_details.at(poster).post_award;
-          }   
+          ppd.total_forward += itr->receiptor_details.at(poster).forward;
+          ppd.total_post_award += itr->receiptor_details.at(poster).post_award;
           ppd.active_post_pids.push_back(itr->post_pid);
 
-          for (const auto& r : itr->total_rewards)
+          for (const auto& r : itr->receiptor_details.at(poster).rewards)
           {
              if (ppd.total_rewards.count(r.first))
                 ppd.total_rewards[r.first] += r.second;
              else
                 ppd.total_rewards.emplace(r.first, r.second);
-          }         
+          }
           ++itr;
        }
        
