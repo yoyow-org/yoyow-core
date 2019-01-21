@@ -108,6 +108,13 @@ struct asset_object_with_data : public asset_object
    asset_dynamic_data_object dynamic_asset_data;
 };
 
+struct Post_Object_Index
+{
+    account_uid_type platform;
+    account_uid_type poster;
+    post_pid_type    postid;
+};
+
 struct Platform_Period_Profit_Detail
 {
     uint32_t                               cur_period;
@@ -119,7 +126,7 @@ struct Platform_Period_Profit_Detail
     share_type                             post_profits = 0;
     share_type                             platform_profits = 0;
 
-    vector<post_pid_type>                  active_post_pids;
+    vector<Post_Object_Index>              active_post_pids;
 };
 
 struct Poster_Period_Profit_Detail
@@ -131,7 +138,7 @@ struct Poster_Period_Profit_Detail
     flat_map<asset_aid_type, share_type>   total_rewards;
     share_type                             total_post_award = 0;
 
-    vector<post_pid_type>                  active_post_pids;
+    vector<Post_Object_Index>              active_post_pids;
 };
 /**
  * @brief The database_api class implements the RPC API for the chain database.
@@ -653,6 +660,11 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_assets)
             (fetch_balances)
           );
+
+FC_REFLECT(graphene::app::Post_Object_Index,
+          (platform)
+          (poster)
+          (postid));
 
 FC_REFLECT(graphene::app::Platform_Period_Profit_Detail,
           (cur_period)
