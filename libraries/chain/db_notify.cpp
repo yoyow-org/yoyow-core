@@ -52,6 +52,15 @@ struct get_impacted_account_uid_visitor
    {
       _impacted.insert( op.poster ); // fee payer
       _impacted.insert( op.platform );
+      for (auto ext_iter = op.extensions->begin(); ext_iter != op.extensions->end(); ext_iter++)
+      {
+          if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
+          {
+              const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
+              if (ext.receiptor.valid())
+                  _impacted.insert(*(ext.receiptor));
+          }
+      }
    }
 
    void operator()( const account_manage_operation& op )
@@ -274,24 +283,33 @@ struct get_impacted_account_uid_visitor
    void operator()(const score_create_operation& op)
    {
 	   _impacted.insert(op.fee_payer_uid()); // fee payer
+       _impacted.insert(op.platform);
+       _impacted.insert(op.poster);
    }
 
    // TODO review
    void operator()(const reward_operation& op)
    {
 	   _impacted.insert(op.fee_payer_uid()); // fee payer
+       _impacted.insert(op.platform);
+       _impacted.insert(op.poster);
    }
 
    // TODO review
    void operator()(const reward_proxy_operation& op)
    {
        _impacted.insert(op.fee_payer_uid()); // fee payer
+       _impacted.insert(op.platform);
+       _impacted.insert(op.poster);
    }
 
    // TODO review
    void operator()(const buyout_operation& op)
    {
 	   _impacted.insert(op.fee_payer_uid()); // fee payer
+       _impacted.insert(op.platform);
+       _impacted.insert(op.poster);
+       _impacted.insert(op.receiptor_account_uid);
    }
 
    void operator()(const license_create_operation& op)

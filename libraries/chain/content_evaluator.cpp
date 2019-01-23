@@ -827,13 +827,16 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 		FC_ASSERT(op.csaf <= global_params.max_csaf_per_approval, "The score_create_operation`s member points is over the maximum limit");
 
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
-        auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
-        FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(), 
-                  "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
-                  ("p", op.platform)("a", op.poster));
-        FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Liked)>0, 
-                  "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
-                   ("p", op.platform)("a", op.poster));
+        account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
+        if (sign_account != op.from_account_uid){
+            auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
+            FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(),
+                "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
+                ("p", op.platform)("a", op.poster));
+            FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Liked) > 0,
+                "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
+                ("p", op.platform)("a", op.poster));
+        }
 		FC_ASSERT(account_stats->csaf >= op.csaf,
                   "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
 			      ("f",op.from_account_uid)("c",account_stats->csaf)("n",op.csaf));

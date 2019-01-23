@@ -332,7 +332,6 @@ namespace graphene { namespace chain {
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
 	   void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
 	   {
-		   a.insert(from_account_uid);    // Requires authors to change the permissions
 		   a.insert(platform);  // Requires platform to change the permissions
 	   }
    };
