@@ -1304,7 +1304,7 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
 
        auto itr = apt_idx.lower_bound(std::make_tuple(poster, start));
        auto itr_end = apt_idx.upper_bound(std::make_tuple(poster, start));
-       bool exist = itr != itr_end;
+       bool exist = false;
 
        while (itr != itr_end && itr->receiptor_details.count(poster))
        {
@@ -1319,6 +1319,8 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
              else
                 ppd.total_rewards.emplace(r.first, r.second);
           }
+          if (!exist)
+             exist = true;
           ++itr;
        }
        
