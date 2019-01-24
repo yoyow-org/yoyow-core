@@ -828,14 +828,14 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
-        if (sign_account != op.from_account_uid){
-            auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
+        if (sign_account != 0 && sign_account != op.from_account_uid){
+            auto auth_data = account_stats->prepaids_for_platform.find(sign_account);
             FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(),
                 "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
-                ("p", op.platform)("a", op.poster));
+                ("p", sign_account)("a", op.from_account_uid));
             FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Liked) > 0,
                 "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
-                ("p", op.platform)("a", op.poster));
+                ("p", sign_account)("a", op.from_account_uid));
         }
 		FC_ASSERT(account_stats->csaf >= op.csaf,
                   "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
