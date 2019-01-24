@@ -176,8 +176,18 @@ BOOST_AUTO_TEST_CASE(score_test)
       auto _core = [&](int64_t x) -> asset
       {  return asset(x*prec);    };
 
-      //transfer(committee_account, u_1000_id, _core(100000));
+      for (int i = 0; i < 5; ++i)
+          add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
       transfer(committee_account, u_9000_id, _core(100000));
+      generate_blocks(10);
+
+      BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
+      for (int i = 1; i < 5; ++i)
+          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+      generate_blocks(89);
 
       for (auto a : score_map)
          add_csaf_for_account(a.first, 10000);
@@ -204,11 +214,11 @@ BOOST_AUTO_TEST_CASE(score_test)
       {
          account_auth_platform({a.second}, a.first, u_9000_id, 1000 * prec, 0x1F);
          account_manage(a.first, {true, true, true});
-         score_a_post({a.second, u_9000_private_key}, a.first, u_9000_id, u_1001_id, 1, 5, 10);
+         score_a_post({a.second}, a.first, u_9000_id, u_1001_id, 1, 5, 10);
       }
        
       const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 0, 1));     
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 1, 1));     
       BOOST_CHECK(apt_itr != apt_idx.end());
       auto active_post = *apt_itr;
       BOOST_CHECK(active_post.total_csaf == 10 * 10);
@@ -248,6 +258,15 @@ BOOST_AUTO_TEST_CASE(reward_test)
       {  return asset(x*prec);    };
 
       transfer(committee_account, u_9000_id, _core(100000));
+      generate_blocks(10);
+
+      BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
+      for (int i = 1; i < 5; ++i)
+          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+      generate_blocks(89);
 
       for (auto a : reward_map)
          add_csaf_for_account(a.first, 10000);
@@ -278,7 +297,7 @@ BOOST_AUTO_TEST_CASE(reward_test)
       }
 
       const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 0, 1));
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 1, 1));
       BOOST_CHECK(apt_itr != apt_idx.end());
       auto active_post = *apt_itr;
       BOOST_CHECK(active_post.total_rewards.find(GRAPHENE_CORE_ASSET_AID) != active_post.total_rewards.end());
@@ -295,7 +314,7 @@ BOOST_AUTO_TEST_CASE(reward_test)
       BOOST_CHECK(iter_reward2->second == 10 * 750 * prec);
 
       const platform_object& platform = db.get_platform_by_owner(u_9000_id);
-      auto iter_profit = platform.period_profits.find(0);
+      auto iter_profit = platform.period_profits.find(1);
       BOOST_CHECK(iter_profit != platform.period_profits.end());
       auto iter_reward_profit = iter_profit->second.rewards_profits.find(GRAPHENE_CORE_ASSET_AID);
       BOOST_CHECK(iter_reward_profit != iter_profit->second.rewards_profits.end());
@@ -392,11 +411,11 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
 
       for (auto a : score_map1)
       {
-         score_a_post({ a.second, u_9000_private_key }, a.first, u_9000_id, u_1001_id, 1, 5, 50);
+         score_a_post({ a.second }, a.first, u_9000_id, u_1001_id, 1, 5, 50);
       }
       for (auto a : score_map2)
       {
-         score_a_post({ a.second, u_9000_private_key }, a.first, u_9000_id, u_1001_id, 1, -5, 10);
+         score_a_post({ a.second }, a.first, u_9000_id, u_1001_id, 1, -5, 10);
       }
       
       generate_blocks(100);
@@ -437,8 +456,10 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
 
       auto platform_obj = db.get_platform_by_owner(u_9000_id);
       auto post_profit = receiptor_earned.convert_to<uint64_t>() - poster_earned;
-      BOOST_CHECK(platform_obj.period_profits.begin()->second.post_profits == post_profit);
-      BOOST_CHECK(platform_obj.period_profits.begin()->second.platform_profits == award_average.convert_to<uint64_t>());
+      auto iter_profit = platform_obj.period_profits.begin();
+      BOOST_CHECK(iter_profit != platform_obj.period_profits.end());
+      BOOST_CHECK(iter_profit->second.post_profits == post_profit);
+      BOOST_CHECK(iter_profit->second.platform_profits == award_average.convert_to<uint64_t>());
 
       const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_id>();
       auto active_post_obj = *(apt_idx.begin());
@@ -901,6 +922,17 @@ BOOST_AUTO_TEST_CASE(forward_test)
         const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
         auto _core = [&](int64_t x) -> asset
         {  return asset(x*prec);    };
+
+        generate_blocks(10);
+
+        BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
+        committee_update_global_content_parameter_item_type item;
+        item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
+        committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
+        for (int i = 1; i < 5; ++i)
+            committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+        generate_blocks(89);
+
         transfer(committee_account, u_1000_id, _core(10000));
         transfer(committee_account, u_2000_id, _core(10000));
         transfer(committee_account, u_9000_id, _core(10000));
@@ -992,7 +1024,7 @@ BOOST_AUTO_TEST_CASE(forward_test)
         }
 
         const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-        auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1000_id, 0, 1));
+        auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1000_id, 1, 1));
         BOOST_CHECK(apt_itr != apt_idx.end());
         auto active_post = *apt_itr;
         BOOST_CHECK(active_post.forward_award == 10000 * prec);
@@ -1004,7 +1036,7 @@ BOOST_AUTO_TEST_CASE(forward_test)
         BOOST_CHECK(iter_receiptor2->second.forward == 2500 * prec);
 
         const platform_object& platform = db.get_platform_by_owner(u_9000_id);
-        auto iter_profit = platform.period_profits.find(0);
+        auto iter_profit = platform.period_profits.find(1);
         BOOST_CHECK(iter_profit != platform.period_profits.end());
         BOOST_CHECK(iter_profit->second.foward_profits == 2500 * prec);
     }
