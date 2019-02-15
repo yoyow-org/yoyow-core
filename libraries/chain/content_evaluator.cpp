@@ -1236,7 +1236,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
                   ("p", op.platform)("a", op.poster));
         FC_ASSERT(account_stats->prepaid >= iter->second.buyout_price, 
                   "Insufficient balance: unable to buyout, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
-                  ("c", (account_stats->prepaid))("a", op.poster)("n", iter->second.buyout_price));
+                  ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", iter->second.buyout_price));
         if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
         {
             share_type usable_prepaid = account_stats->get_auth_platform_usable_prepaid(*sign_platform_uid);
