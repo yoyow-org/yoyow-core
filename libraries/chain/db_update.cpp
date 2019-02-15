@@ -259,31 +259,60 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
    const auto& params = gpo.parameters.get_award_params();
 
    uint128_t  total_csaf = 0;
+   uint128_t  last_total_csaf = 0;
    share_type total_effective_csaf = 0;
    uint128_t  turn_point_first = (uint128_t)amount.value * params.approval_casf_first_rate / GRAPHENE_100_PERCENT;
    uint128_t  turn_point_second = (uint128_t)amount.value * params.approval_casf_second_rate / GRAPHENE_100_PERCENT;
+
+   auto get_part_effective_csaf = [=](uint128_t begin, uint128_t end) {
+      uint128_t average_point = (begin + end) / 2;
+      auto slope = ((turn_point_second - average_point) * (GRAPHENE_100_PERCENT - params.approval_casf_min_weight) /
+         (turn_point_second - turn_point_first) + params.approval_casf_min_weight).to_uint64();
+      return ((end - begin) * slope / GRAPHENE_100_PERCENT).to_uint64();
+   };
    
    vector<std::tuple<account_uid_type, share_type, bool>> effective_csaf_container;
    for (const auto& score : scores)
    {
       const auto& score_obj = get_score(score);
-      bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
+      //bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
+      bool approve = score_obj.score >= 0;
       share_type effective_casf = 0;
+      total_csaf = total_csaf + score_obj.csaf.value;
       if (total_csaf <= turn_point_first)
       {
          effective_casf = score_obj.csaf;
       }
-      else if (total_csaf < turn_point_second)
+      else if (total_csaf <= turn_point_second)
       {
-         auto slope = ((turn_point_second - total_csaf) * (GRAPHENE_100_PERCENT - params.approval_casf_min_weight) /
-            (turn_point_second - turn_point_first) + params.approval_casf_min_weight).to_uint64();
-         effective_casf = score_obj.csaf * slope / GRAPHENE_100_PERCENT;
+         if (last_total_csaf < turn_point_first)
+         {
+            effective_casf = (turn_point_first - last_total_csaf).to_uint64();
+            effective_casf += get_part_effective_csaf(turn_point_first, total_csaf);
+         }
+         else
+            effective_casf = get_part_effective_csaf(last_total_csaf, total_csaf);      
       }
-      else
+      else//total_csaf > turn_point_second
       {
-         effective_casf = score_obj.csaf * params.approval_casf_min_weight / GRAPHENE_100_PERCENT;
+         if (last_total_csaf < turn_point_first)
+         {
+            effective_casf += (turn_point_first - last_total_csaf).to_uint64();
+            effective_casf += get_part_effective_csaf(turn_point_first, turn_point_second);            
+            effective_casf += ((total_csaf - turn_point_second) * params.approval_casf_min_weight / GRAPHENE_100_PERCENT).to_uint64();
+         }
+         else if (last_total_csaf < turn_point_second)
+         {
+            effective_casf += get_part_effective_csaf(last_total_csaf, turn_point_second);       
+            effective_casf += ((total_csaf - turn_point_second) * params.approval_casf_min_weight / GRAPHENE_100_PERCENT).to_uint64();
+         }
+         else
+         {
+            effective_casf = score_obj.csaf * params.approval_casf_min_weight / GRAPHENE_100_PERCENT;
+         }        
       }
-      total_csaf = total_csaf + score_obj.csaf.value;
+
+      last_total_csaf = last_total_csaf + score_obj.csaf.value;
       total_effective_csaf = total_effective_csaf + effective_casf;
       
       effective_csaf_container.emplace_back(std::make_tuple(
