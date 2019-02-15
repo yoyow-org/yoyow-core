@@ -194,7 +194,7 @@ void post_update_operation::validate()const
    validate_account_uid( poster, "poster " );
    validate_account_uid( platform, "platform " );
    FC_ASSERT( post_pid > uint64_t( 0 ), "post_pid must be greater than 0 ");
-   FC_ASSERT(hash_value.valid() || (extra_data.valid() && (title.valid() || body.valid() || extensions.valid())),
+   FC_ASSERT(hash_value.valid() || extra_data.valid() || title.valid() || body.valid() || extensions.valid(),
              "Should change something");
 
    if (extensions.valid())
