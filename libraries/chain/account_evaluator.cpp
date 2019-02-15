@@ -366,6 +366,8 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
                    plat_data->max_limit = *(ext->limit_for_platform);
                if (ext->permission_flags.valid())
                    plat_data->permission_flags = *(ext->permission_flags);
+               if (ext->memo.valid())
+                   plat_data->memo = *(ext->memo);
            });
        }
    }

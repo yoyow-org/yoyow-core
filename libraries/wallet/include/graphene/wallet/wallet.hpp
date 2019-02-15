@@ -1145,6 +1145,7 @@ class wallet_api
        */ 
       signed_transaction account_auth_platform(string account,
                                                string platform_owner,
+                                               string memo,
                                                string limit_for_platform,
                                                uint32_t permission_flags = account_statistics_object::Platform_Permission_Forward |
                                                                            account_statistics_object::Platform_Permission_Liked |

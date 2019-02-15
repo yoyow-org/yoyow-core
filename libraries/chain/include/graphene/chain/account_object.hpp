@@ -63,6 +63,7 @@ namespace graphene { namespace chain {
                                                account_statistics_object::Platform_Permission_Comment |
                                                account_statistics_object::Platform_Permission_Reward |
                                                account_statistics_object::Platform_Permission_Post;
+              optional<memo_data>    memo;
 		  };
 
          static const uint8_t space_id = implementation_ids;
@@ -775,7 +776,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (owner)(asset_type)(balance) )
 
 FC_REFLECT(graphene::chain::account_statistics_object::Platform_Auth_Data,
-                    (max_limit)(cur_used)(permission_flags))
+                    (max_limit)(cur_used)(permission_flags)(memo))
 
 FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (graphene::chain::object),

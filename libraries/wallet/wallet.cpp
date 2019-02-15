@@ -1492,7 +1492,8 @@ signed_transaction update_platform(string platform_account,
 
 signed_transaction account_auth_platform(string account,
                                          string platform_owner,
-										                     string limit_for_platform = 0,
+                                         string memo,
+                                         string limit_for_platform = 0,
                                          uint32_t permission_flags = account_statistics_object::Platform_Permission_Forward |
                                                                      account_statistics_object::Platform_Permission_Liked |
                                                                      account_statistics_object::Platform_Permission_Buyout |
@@ -1517,6 +1518,14 @@ signed_transaction account_auth_platform(string account,
 	  account_auth_platform_operation::ext ext;
       ext.limit_for_platform = asset_obj->amount_from_string(limit_for_platform).amount;
       ext.permission_flags = permission_flags;
+      if (memo.size())
+      {
+          ext.memo = memo_data();
+          ext.memo->from = user.memo_key;
+          ext.memo->to = platform_account.memo_key;
+          ext.memo->set_message(get_private_key(user.memo_key),platform_account.memo_key, memo);
+      }
+
       op.extensions = flat_set<account_auth_platform_operation::extension_parameter>();
 	  op.extensions->insert(ext);
 
@@ -3676,9 +3685,9 @@ signed_transaction wallet_api::update_platform_votes(string voting_account,
    return my->update_platform_votes( voting_account, platforms_to_add, platforms_to_remove, csaf_fee, broadcast );
 }
 
-signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, string limit_for_platform, uint32_t permission_flags, bool csaf_fee, bool broadcast)
+signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, string memo, string limit_for_platform, uint32_t permission_flags, bool csaf_fee, bool broadcast)
 {
-    return my->account_auth_platform(account, platform_owner, limit_for_platform, permission_flags, csaf_fee, broadcast);
+    return my->account_auth_platform(account, platform_owner, memo, limit_for_platform, permission_flags, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::account_cancel_auth_platform(string account, string platform_owner, bool csaf_fee, bool broadcast)
