@@ -274,11 +274,9 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
    vector<std::tuple<account_uid_type, share_type, bool>> effective_csaf_container;
    for (const auto& score : scores)
    {
-      const auto& score_obj = get_score(score);
-      //bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
-      bool approve = score_obj.score >= 0;
-      share_type effective_casf = 0;
+      const auto& score_obj = get_score(score);        
       total_csaf = total_csaf + score_obj.csaf.value;
+      share_type effective_casf = 0;
       if (total_csaf <= turn_point_first)
       {
          effective_casf = score_obj.csaf;
@@ -315,6 +313,8 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       last_total_csaf = last_total_csaf + score_obj.csaf.value;
       total_effective_csaf = total_effective_csaf + effective_casf;
       
+      //bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
+      bool approve = score_obj.score >= 0;
       effective_csaf_container.emplace_back(std::make_tuple(
          score_obj.from_account_uid, 
          effective_casf, 
