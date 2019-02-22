@@ -350,12 +350,12 @@ namespace graphene { namespace chain {
 		 static const uint8_t space_id	= protocol_ids;
 		 static const uint8_t type_id		= active_post_object_type;
 
-     struct receiptor_detail
-     {
-        share_type  forward;
-        share_type  post_award;
-        flat_map<asset_aid_type, share_type> rewards;   
-     };
+         struct receiptor_detail
+         {
+            share_type  forward;
+            share_type  post_award;
+            flat_map<asset_aid_type, share_type> rewards;   
+         };
 
 		 /// The platform's pid.
 		 account_uid_type                       platform;
@@ -427,8 +427,8 @@ namespace graphene { namespace chain {
 					    active_post_object,
 					    member< active_post_object, account_uid_type, &active_post_object::platform >,
 					    member< active_post_object, account_uid_type, &active_post_object::poster >,				    
-              member< active_post_object, uint64_t,         &active_post_object::period_sequence >,
-              member< active_post_object, post_pid_type,    &active_post_object::post_pid >
+                        member< active_post_object, uint64_t,         &active_post_object::period_sequence >,
+                        member< active_post_object, post_pid_type,    &active_post_object::post_pid >
 				   >
 				>,
                 ordered_non_unique< tag<by_post>,
@@ -481,6 +481,7 @@ namespace graphene { namespace chain {
 	   int8_t              score;
 	   share_type          csaf;
        uint64_t            period_sequence;
+       share_type          profits;
 
 	   time_point_sec      create_time;
    };
@@ -498,7 +499,12 @@ namespace graphene { namespace chain {
 	   score_object,
 	   indexed_by<
 	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-		  ordered_non_unique< tag<by_from_account_uid>, member< score_object, account_uid_type, &score_object::from_account_uid> >,
+		  ordered_non_unique< tag<by_from_account_uid>, 
+                                 composite_key< 
+                                     score_object,
+                                     member< score_object, account_uid_type, &score_object::from_account_uid >,
+                                     member< score_object, uint64_t,         &score_object::period_sequence >>
+                                 >,
           ordered_unique< tag<by_post_pid>, 
                               composite_key<
                                   score_object,
@@ -520,7 +526,7 @@ namespace graphene { namespace chain {
                                   member< score_object, account_uid_type, &score_object::platform >,
                                   member< score_object, account_uid_type, &score_object::poster >,
                                   member< score_object, post_pid_type,    &score_object::post_pid >,
-                                  member< score_object,  uint64_t,        &score_object::period_sequence>
+                                  member< score_object, uint64_t,         &score_object::period_sequence>
                               > >,
 		  ordered_non_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
        >
@@ -613,13 +619,13 @@ FC_REFLECT( graphene::chain::active_post_object::receiptor_detail,
 
 FC_REFLECT_DERIVED( graphene::chain::active_post_object,
 										(graphene::db::object),
-										(platform)(poster)(post_pid)(scores)(total_csaf)(total_rewards)(period_sequence)
+                                        (platform)(poster)(post_pid)(scores)(total_csaf)(total_rewards)(period_sequence)
                     (positive_win)(post_award)(forward_award)(receiptor_details)
 									)
 
 FC_REFLECT_DERIVED(graphene::chain::score_object,
 					(graphene::db::object),
-                    (from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(create_time)
+                    (from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(profits)(create_time)
 					)
 
 FC_REFLECT_DERIVED(graphene::chain::license_object,
