@@ -154,6 +154,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                                                     const uint32_t         end_period,
                                                                     const account_uid_type poster)const;
 
+      share_type get_score_profit(account_uid_type account, uint32_t period)const;
+
       // Balances
       vector<asset> get_account_balances(account_uid_type uid, const flat_set<asset_aid_type>& assets)const;
       vector<asset> get_named_account_balances(const std::string& name, const flat_set<asset_aid_type>& assets)const;
@@ -1330,6 +1332,27 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
     }
     
     return result;
+}
+
+share_type database_api::get_score_profit(account_uid_type account, uint32_t period)const
+{
+    return my->get_score_profit(account, period);
+}
+
+share_type database_api_impl::get_score_profit(account_uid_type account, uint32_t period)const
+{
+   const auto& sce_idx = _db.get_index_type<score_index>().indices().get<by_from_account_uid>();
+   auto itr = sce_idx.lower_bound(std::make_tuple(account, period));
+   auto itr_end = sce_idx.upper_bound(std::make_tuple(account, period));
+
+   share_type amount = 0;
+   while (itr != itr_end)
+   {
+      amount += itr->profits;
+      itr++;
+   }
+
+   return amount;
 }
 
 vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_owner,

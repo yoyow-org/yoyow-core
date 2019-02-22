@@ -2743,6 +2743,16 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(poster))
    }
 
+   share_type get_score_profit(string account, uint32_t period)
+   {
+      try {
+         account_uid_type account_uid = get_account_uid(account);
+         auto dynamic_props = _remote_db->get_dynamic_global_properties();
+         FC_ASSERT(period <= dynamic_props.current_active_post_sequence, "period does not exist");
+         return _remote_db->get_score_profit(account_uid, period);
+      } FC_CAPTURE_AND_RETHROW((account)(period))
+   }
+
    account_statistics_object get_account_statistics(string account)
    {
        try {
@@ -4085,6 +4095,11 @@ vector<Poster_Period_Profit_Detail> wallet_api::get_poster_profits_detail(uint32
                                                                           string           poster)
 {
     return my->get_poster_profits_detail(begin_period, end_period, poster);
+}
+
+share_type wallet_api::get_score_profit(string account, uint32_t period)
+{
+    return my->get_score_profit(account, period);
 }
 
 account_statistics_object wallet_api::get_account_statistics(string account)

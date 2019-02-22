@@ -1563,6 +1563,8 @@ class wallet_api
                                                                     uint32_t         end_period,
                                                                     string           poster);
 
+      share_type get_score_profit(string account, uint32_t period);
+
       account_statistics_object get_account_statistics(string account);
          
       void dbg_make_uia(string creator, string symbol);
@@ -1773,6 +1775,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_post_profits_detail)
         (get_platform_profits_detail)
         (get_poster_profits_detail)
+        (get_score_profit)
         (get_account_statistics)
         (get_global_properties_extensions)
       )

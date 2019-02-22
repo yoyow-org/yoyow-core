@@ -463,6 +463,8 @@ class database_api
                                                                     const uint32_t         end_period,
                                                                     const account_uid_type poster)const;
 
+      share_type get_score_profit(account_uid_type account, uint32_t period)const;
+
       /**
        * @brief Get posts by platform plus poster
        * @param platform_owner uid of a platform
@@ -753,6 +755,7 @@ FC_API( graphene::app::database_api,
    (get_post_profits_detail)
    (get_platform_profits_detail)
    (get_poster_profits_detail)
+   (get_score_profit)
 
    // Balances
    (get_account_balances)
