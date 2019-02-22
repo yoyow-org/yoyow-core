@@ -252,7 +252,7 @@ void database::clear_active_post()
 	}
 }
 
-std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type> 
+std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
    database::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)
 {
    const global_property_object& gpo = get_global_properties();
@@ -271,7 +271,7 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       return ((end - begin) * slope / GRAPHENE_100_PERCENT).to_uint64();
    };
    
-   vector<std::tuple<account_uid_type, share_type, bool>> effective_csaf_container;
+   vector<std::tuple<score_id_type, share_type, bool>> effective_csaf_container;
    for (const auto& score : scores)
    {
       const auto& score_obj = get_score(score);        
@@ -314,11 +314,7 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       total_effective_csaf = total_effective_csaf + effective_casf;
       
       //bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
-      bool approve = score_obj.score >= 0;
-      effective_csaf_container.emplace_back(std::make_tuple(
-         score_obj.from_account_uid, 
-         effective_casf, 
-         approve));
+      effective_csaf_container.emplace_back(std::make_tuple(score, effective_casf, score_obj.score >= 0));
    }
 
    return std::make_tuple(effective_csaf_container, total_effective_csaf);
@@ -1544,7 +1540,12 @@ void database::process_content_platform_awards()
                 (total_award_csaf * GRAPHENE_100_PERCENT)).to_uint64();
              else
                 to_add = (effective_csaf_per_account * score_earned.value / total_award_csaf).to_uint64();
-             adjust_balance(std::get<0>(e), asset(to_add));
+             const auto& score_obj = get_score(std::get<0>(e));
+             modify(score_obj, [&](score_object& obj)
+             {
+                obj.profits = to_add;
+             });
+             adjust_balance(score_obj.from_account_uid, asset(to_add));
              actual_score_earned += to_add;
              actual_awards += to_add;
           }
