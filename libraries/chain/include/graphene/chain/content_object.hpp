@@ -588,6 +588,15 @@ namespace graphene { namespace chain {
    typedef generic_index<license_object, license_multi_index_type> license_index;
 
 
+   enum advertising_state
+   {
+      advertising_idle         = 0,
+      advertising_undetermined = 1,
+      advertising_using        = 2,
+      advertising_expired      = 3,
+      advertising_removed      = 4
+   };
+
    /**
    * @brief This class advertising space
    * @ingroup object
@@ -597,7 +606,7 @@ namespace graphene { namespace chain {
    {
    public:
       static const uint8_t space_id = implementation_ids;
-      static const uint8_t type_id = impl_license_object_type;
+      static const uint8_t type_id = impl_advertising_object_type;
 
       account_uid_type     platform;
       account_uid_type     user;
@@ -605,7 +614,7 @@ namespace graphene { namespace chain {
       share_type           sell_price;
       time_point_sec       start_time;
       time_point_sec       end_time;
-      uint8_t              state = advertising_free;
+      uint8_t              state  = advertising_idle;
       share_type           released_balance;
       
       string               description;
@@ -674,4 +683,12 @@ FC_REFLECT_DERIVED(graphene::chain::license_object,
 FC_REFLECT_DERIVED( graphene::chain::advertising_object,
                    (graphene::db::object), 
                    (platform)(user)(publish_time)(sell_price)(start_time)(end_time)(state)(released_balance)(description)
+          )
+
+FC_REFLECT_ENUM( graphene::chain::advertising_state,
+          (advertising_idle)
+          (advertising_undetermined)
+          (advertising_using)
+          (advertising_expired)
+          (advertising_removed)
           )

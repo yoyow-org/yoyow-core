@@ -126,15 +126,6 @@ namespace graphene { namespace chain {
       scheduled_by_pledge    = 2
    };
 
-   enum advertising_state
-   {
-      advertising_free         = 0,
-      advertising_undetermined = 1,
-      advertising_using        = 2,
-      advertising_expired      = 3,
-      advertising_removed      = 4
-   };
-
    enum reserved_spaces
    {
       relative_protocol_ids = 0,
@@ -188,6 +179,7 @@ namespace graphene { namespace chain {
       impl_platform_vote_object_type,
 	  impl_score_object_type,
       impl_license_object_type,
+      impl_advertising_object_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
    };
 
@@ -202,6 +194,7 @@ namespace graphene { namespace chain {
    class operation_history_object;
    class active_post_object;
    class license_object;
+   class advertising_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -254,6 +247,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
    typedef object_id< implementation_ids, impl_score_object_type, score_object>                                         score_id_type;
    typedef object_id< implementation_ids, impl_license_object_type, license_object>			                            license_id_type;
+   typedef object_id< implementation_ids, impl_advertising_object_type,      advertising_object>			                  advertising_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -374,6 +368,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_platform_vote_object_type)
 				 (impl_score_object_type)
                  (impl_license_object_type)
+                 (impl_advertising_object_type)
                  (impl_committee_member_vote_object_type)
                  (impl_registrar_takeover_object_type)
                  (impl_csaf_lease_object_type)
@@ -407,6 +402,8 @@ FC_REFLECT_TYPENAME( graphene::chain::voter_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::witness_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::platform_vote_id_type)
 FC_REFLECT_TYPENAME(graphene::chain::score_id_type)
+FC_REFLECT_TYPENAME(graphene::chain::license_id_type)
+FC_REFLECT_TYPENAME(graphene::chain::advertising_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::registrar_takeover_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::csaf_lease_id_type )
@@ -435,11 +432,3 @@ FC_REFLECT_ENUM( graphene::chain::scheduled_witness_type,
    (scheduled_by_vote_rest)
    (scheduled_by_pledge)
    )
-
-FC_REFLECT_ENUM( graphene::chain::advertising_state,
-   (advertising_free)
-   (advertising_undetermined)
-   (advertising_using)
-   (advertising_expired)
-   (advertising_removed)
-)
