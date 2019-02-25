@@ -57,6 +57,9 @@ namespace graphene { namespace chain {
      uint32_t   approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;
      uint32_t   receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;
      uint32_t   disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;
+
+     uint32_t   advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;
+     share_type advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;
 	 };
 	 typedef static_variant<content_parameter_extension_type>  parameter_extension;
 
@@ -155,7 +158,9 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
             (approval_casf_first_rate)
             (approval_casf_second_rate)
             (receiptor_award_modulus)
-            (disapprove_award_modulus))
+            (disapprove_award_modulus)
+            (advertising_confirmed_fee_rate)
+            (advertising_confirmed_min_fee))
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)
             (block_interval)

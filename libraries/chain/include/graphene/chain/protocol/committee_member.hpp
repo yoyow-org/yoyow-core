@@ -243,6 +243,9 @@ namespace graphene { namespace chain {
      optional< uint32_t     >     receiptor_award_modulus;
      optional< uint32_t     >     disapprove_award_modulus;
 
+     optional< uint32_t     >     advertising_confirmed_fee_rate;
+     optional< share_type		>			advertising_confirmed_min_fee;
+
      void validate()const;
 	 };
 	 typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
@@ -422,7 +425,9 @@ FC_REFLECT(graphene::chain::committee_updatable_content_parameters,
             (approval_casf_first_rate)
             (approval_casf_second_rate)
             (receiptor_award_modulus)
-            (disapprove_award_modulus))
+            (disapprove_award_modulus)
+            (advertising_confirmed_fee_rate)
+            (advertising_confirmed_min_fee))
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )
