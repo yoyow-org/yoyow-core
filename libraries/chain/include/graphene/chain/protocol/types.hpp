@@ -126,6 +126,15 @@ namespace graphene { namespace chain {
       scheduled_by_pledge    = 2
    };
 
+   enum advertising_state
+   {
+      advertising_free         = 0,
+      advertising_undetermined = 1,
+      advertising_using        = 2,
+      advertising_expired      = 3,
+      advertising_removed      = 4
+   };
+
    enum reserved_spaces
    {
       relative_protocol_ids = 0,
@@ -426,3 +435,11 @@ FC_REFLECT_ENUM( graphene::chain::scheduled_witness_type,
    (scheduled_by_vote_rest)
    (scheduled_by_pledge)
    )
+
+FC_REFLECT_ENUM( graphene::chain::advertising_state,
+   (advertising_free)
+   (advertising_undetermined)
+   (advertising_using)
+   (advertising_expired)
+   (advertising_removed)
+)
