@@ -493,6 +493,138 @@ namespace graphene { namespace chain {
        }
    };
 
+   struct advertising_create_operation : public base_operation
+   {
+       struct fee_parameters_type {
+           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t min_real_fee = 0;
+           uint16_t min_rf_percent = 0;
+           extensions_type   extensions;
+       };
+
+       fee_type                     fee;
+
+       account_uid_type             platform;
+       string                       description;
+       share_type                   price;
+       time_point_sec               start_time;
+       time_point_sec               end_time;
+
+       extensions_type              extensions;
+
+       account_uid_type fee_payer_uid()const { return platform; }
+       void             validate()const;
+       share_type       calculate_fee(const fee_parameters_type& k)const;
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       {
+           a.insert(platform);    // Requires platform to change the permissions
+       }
+   };
+
+   struct advertising_update_operation : public base_operation
+   {
+       struct fee_parameters_type {
+           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t min_real_fee = 0;
+           uint16_t min_rf_percent = 0;
+           extensions_type   extensions;
+       };
+
+       fee_type                     fee;
+
+       account_uid_type             platform;
+       account_uid_type             advertising_pid; //TODO change id_type
+
+       optional<string>             new_description;
+       optional<share_type>         new_price;
+       optional<uint32_t>           new_start_time;
+       optional<uint32_t>           new_end_time;
+       optional<uint8_t>            ad_state;
+
+       extensions_type              extensions;
+
+       account_uid_type fee_payer_uid()const { return platform; }
+       void             validate()const;
+       share_type       calculate_fee(const fee_parameters_type& k)const;
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       {
+           a.insert(platform);    // Requires platform to change the permissions
+       }
+   };
+
+   struct advertising_buy_operation : public base_operation
+   {
+       struct fee_parameters_type {
+           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           extensions_type   extensions;
+       };
+
+       fee_type                     fee;
+
+       account_uid_type             from_account;
+       account_uid_type             platform;
+       account_uid_type             advertising_pid; //TODO change id_type
+
+       extensions_type              extensions;
+
+       account_uid_type fee_payer_uid()const { return from_account; }
+       void             validate()const;
+       share_type       calculate_fee(const fee_parameters_type& k)const;
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       {
+           a.insert(platform);    // Requires platform to change the permissions
+       }
+   };
+
+   struct advertising_comfirm_operation : public base_operation
+   {
+       struct fee_parameters_type {
+           uint64_t fee = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           extensions_type   extensions;
+       };
+
+       fee_type                     fee;
+
+       account_uid_type             platform;
+       account_uid_type             advertising_pid; //TODO change id_type
+       bool                         iscomfirm;
+
+       extensions_type              extensions;
+
+       account_uid_type fee_payer_uid()const { return platform; }
+       void             validate()const;
+       share_type       calculate_fee(const fee_parameters_type& k)const;
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       {
+           a.insert(platform);    // Requires platform to change the permissions
+       }
+   };
+
+   struct advertising_ransom_operation : public base_operation
+   {
+       struct fee_parameters_type {
+           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           extensions_type   extensions;
+       };
+
+       fee_type                     fee;
+
+       account_uid_type             from_account;
+       account_uid_type             platform;
+       account_uid_type             advertising_pid; //TODO change id_type
+
+       extensions_type              extensions;
+
+       account_uid_type fee_payer_uid()const { return from_account; }
+       void             validate()const;
+       share_type       calculate_fee(const fee_parameters_type& k)const;
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       {
+           a.insert(from_account);    // Requires from_account to ransom 
+       }
+   };
 }} // graphene::chain
 
 FC_REFLECT( graphene::chain::platform_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(price_per_kbyte)(extensions) )
@@ -537,3 +669,18 @@ FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(
 
 FC_REFLECT(graphene::chain::license_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::license_create_operation, (fee)(license_lid)(platform)(type)(hash_value)(extra_data)(title)(body)(extensions))
+
+FC_REFLECT(graphene::chain::advertising_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::advertising_create_operation, (fee)(platform)(description)(price)(start_time)(end_time)(extensions))
+
+FC_REFLECT(graphene::chain::advertising_update_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::advertising_update_operation, (fee)(platform)(advertising_pid)(new_description)(new_price)(new_start_time)(new_end_time)(ad_state)(extensions))
+
+FC_REFLECT(graphene::chain::advertising_buy_operation::fee_parameters_type, (fee)(extensions))
+FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(from_account)(platform)(advertising_pid)(extensions))
+
+FC_REFLECT(graphene::chain::advertising_comfirm_operation::fee_parameters_type, (fee)(extensions))
+FC_REFLECT(graphene::chain::advertising_comfirm_operation, (fee)(platform)(advertising_pid)(iscomfirm)(extensions))
+
+FC_REFLECT(graphene::chain::advertising_ransom_operation::fee_parameters_type, (fee)(extensions))
+FC_REFLECT(graphene::chain::advertising_ransom_operation, (fee)(from_account)(platform)(advertising_pid)(extensions))

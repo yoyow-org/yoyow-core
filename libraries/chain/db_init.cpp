@@ -178,6 +178,11 @@ void database::initialize_evaluators()
    register_evaluator<witness_collect_pay_evaluator>();
    register_evaluator<witness_report_evaluator>();
    register_evaluator<license_create_evaluator>();
+   register_evaluator<advertising_create_evaluator>();
+   register_evaluator<advertising_update_evaluator>();
+   register_evaluator<advertising_buy_evaluator>();
+   register_evaluator<advertising_comfirm_evaluator>();
+   register_evaluator<advertising_ransom_evaluator>();
 }
 
 void database::initialize_indexes()

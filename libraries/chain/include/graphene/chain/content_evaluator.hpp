@@ -134,4 +134,59 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
        const account_statistics_object* account_stats = nullptr;
    };
+
+   class advertising_create_evaluator : public evaluator < advertising_create_evaluator >
+   {
+   public:
+       typedef advertising_create_operation operation_type;
+
+       void_result do_evaluate(const operation_type& op);
+       object_id_type do_apply(const operation_type& op);
+
+       const advertising_object* advertising_obj = nullptr;
+   };
+
+   class advertising_update_evaluator : public evaluator < advertising_update_evaluator >
+   {
+   public:
+       typedef advertising_update_operation operation_type;
+
+       void_result do_evaluate(const operation_type& op);
+       void_result do_apply(const operation_type& op);
+
+       const advertising_object* advertising_obj = nullptr;
+   };
+
+   class advertising_buy_evaluator : public evaluator < advertising_buy_evaluator >
+   {
+   public:
+       typedef advertising_buy_operation operation_type;
+
+       void_result do_evaluate(const operation_type& op);
+       void_result do_apply(const operation_type& op);
+
+       const advertising_object* advertising_obj = nullptr;
+   };
+
+   class advertising_comfirm_evaluator : public evaluator < advertising_comfirm_evaluator >
+   {
+   public:
+       typedef advertising_comfirm_operation operation_type;
+
+       void_result do_evaluate(const operation_type& op);
+       void_result do_apply(const operation_type& op);
+
+       const advertising_object* advertising_obj = nullptr;
+   };
+
+   class advertising_ransom_evaluator : public evaluator < advertising_ransom_evaluator >
+   {
+   public:
+       typedef advertising_ransom_operation operation_type;
+
+       void_result do_evaluate(const operation_type& op);
+       void_result do_apply(const operation_type& op);
+
+       const advertising_object* advertising_obj = nullptr;
+   };
 } } // graphene::chain

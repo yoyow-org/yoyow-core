@@ -1334,4 +1334,115 @@ object_id_type license_create_evaluator::do_apply(const operation_type& op)
 
 } FC_CAPTURE_AND_RETHROW((op)) }
 
+void_result advertising_create_evaluator::do_evaluate(const operation_type& op)
+{
+    try {
+        const database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
+        FC_ASSERT(op.start_time > d.head_block_time(), "advertising start time must later then head_block_time");
+
+        return void_result();
+
+    }FC_CAPTURE_AND_RETHROW((op))
+}
+
+object_id_type advertising_create_evaluator::do_apply(const operation_type& op)
+{
+    try {
+        database& d = db();
+        const auto& advertising_obj = d.create<advertising_object>([&](advertising_object& obj)
+        {
+            obj.platform = op.platform;
+            obj.publish_time = d.head_block_time();
+            obj.sell_price = op.price;
+            obj.start_time = op.start_time;
+            obj.end_time = op.end_time;
+            obj.state = advertising_idle;
+
+            obj.last_update_time = d.head_block_time();
+        });
+        return advertising_obj.id;
+    } FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result advertising_update_evaluator::do_evaluate(const operation_type& op)
+{
+    try {
+        const database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
+        FC_ASSERT((op.ad_state == graphene::chain::advertising_idle) || (op.ad_state == graphene::chain::advertising_removed), "only change ad_state to free or remove");
+
+        return void_result();
+
+    }FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result advertising_update_evaluator::do_apply(const operation_type& op)
+{
+    try {
+        database& d = db();
+
+    } FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
+{
+    try {
+        const database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
+
+
+        return void_result();
+
+    }FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result advertising_buy_evaluator::do_apply(const operation_type& op)
+{
+    try {
+        database& d = db();
+
+    } FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result advertising_comfirm_evaluator::do_evaluate(const operation_type& op)
+{
+    try {
+        const database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
+
+
+        return void_result();
+
+    }FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result advertising_comfirm_evaluator::do_apply(const operation_type& op)
+{
+    try {
+        database& d = db();
+
+    } FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result advertising_ransom_evaluator::do_evaluate(const operation_type& op)
+{
+    try {
+        const database& d = db();
+        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
+
+
+        return void_result();
+
+    }FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
+{
+    try {
+        database& d = db();
+
+    } FC_CAPTURE_AND_RETHROW((op))
+}
+
 } } // graphene::chain

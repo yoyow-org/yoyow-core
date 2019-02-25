@@ -316,6 +316,33 @@ struct get_impacted_account_uid_visitor
    {
      _impacted.insert(op.fee_payer_uid()); // fee payer
    }
+
+   void operator()(const advertising_create_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
+
+   void operator()(const advertising_update_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
+
+   void operator()(const advertising_buy_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // fee payer
+       _impacted.insert(op.platform);
+   }
+
+   void operator()(const advertising_comfirm_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
+
+   void operator()(const advertising_ransom_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // fee payer
+       _impacted.insert(op.platform);
+   }
 };
 
 void operation_get_impacted_account_uids( const operation& op, flat_set<account_uid_type>& result )

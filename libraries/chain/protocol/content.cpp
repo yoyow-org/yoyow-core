@@ -262,7 +262,7 @@ share_type score_create_operation::calculate_fee(const fee_parameters_type& k)co
 
 void reward_operation::validate()const
 {
-	validate_op_fee(fee, "score ");
+	validate_op_fee(fee, "reward ");
 	validate_account_uid(poster, "poster ");
 	validate_account_uid(platform, "platform");
 	validate_account_uid(from_account_uid, "from account ");
@@ -278,7 +278,7 @@ share_type reward_operation::calculate_fee(const fee_parameters_type& k)const
 
 void reward_proxy_operation::validate()const
 {
-    validate_op_fee(fee, "score ");
+    validate_op_fee(fee, "reward_proxy ");
     validate_account_uid(poster, "poster ");
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account_uid, "from account ");
@@ -294,7 +294,7 @@ share_type reward_proxy_operation::calculate_fee(const fee_parameters_type& k)co
 
 void buyout_operation::validate()const
 {
-	validate_op_fee(fee, "score ");
+	validate_op_fee(fee, "buyout ");
 	validate_account_uid(poster, "poster ");
 	validate_account_uid(platform, "platform");
 	validate_account_uid(from_account_uid, "from account ");
@@ -312,9 +312,9 @@ share_type buyout_operation::calculate_fee(const fee_parameters_type& k)const
 
 void license_create_operation::validate()const
 {
-    validate_op_fee(fee, "post ");
+    validate_op_fee(fee, "license_create ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(platform > uint64_t(0), "post_pid must be greater than 0 ");
+    FC_ASSERT(license_lid > uint64_t(0), "license_lid must be greater than 0 ");
 }
 
 share_type license_create_operation::calculate_fee(const fee_parameters_type& k)const
@@ -327,6 +327,85 @@ share_type license_create_operation::calculate_fee(const fee_parameters_type& k)
     core_fee_required += calculate_data_fee(fc::raw::pack_size(title), k.price_per_kbyte);
     core_fee_required += calculate_data_fee(fc::raw::pack_size(body), k.price_per_kbyte);
     return core_fee_required;
+}
+
+void advertising_create_operation::validate()const
+{
+    validate_op_fee(fee, "advertising_create ");
+    validate_account_uid(platform, "platform");
+    FC_ASSERT(price > 0, "price must be grater then 0");
+    FC_ASSERT(start_time < end_time, "start time must less then end time");
+}
+
+share_type advertising_create_operation::calculate_fee(const fee_parameters_type& k)const
+{
+    share_type core_fee_required = k.fee;
+    auto hash_size = fc::raw::pack_size(description);
+    if (hash_size > 65)
+        core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
+    return core_fee_required;
+}
+
+void advertising_update_operation::validate()const
+{
+    validate_op_fee(fee, "advertising_update ");
+    validate_account_uid(platform, "platform");
+    FC_ASSERT(new_description.valid() || new_price.valid() || new_start_time.valid() || new_end_time.valid() || ad_state.valid(), "must update some parameter");
+    if (new_price.valid()){
+        FC_ASSERT(*new_price > 0, "new price must be greater then 0");
+    }
+    if (new_start_time.valid() && new_end_time.valid()){
+        FC_ASSERT(*new_start_time < *new_end_time,"new start time must less then end time");
+    }
+}
+
+share_type advertising_update_operation::calculate_fee(const fee_parameters_type& k)const
+{
+    share_type core_fee_required = k.fee;
+    if (new_description.valid())
+    {
+        auto hash_size = fc::raw::pack_size(*new_description);
+        if (hash_size > 65)
+            core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
+    }
+    return core_fee_required;
+}
+
+void advertising_buy_operation::validate()const
+{
+    validate_op_fee(fee, "advertising_buy ");
+    validate_account_uid(platform, "platform");
+    validate_account_uid(from_account, "from_account");
+}
+
+share_type advertising_buy_operation::calculate_fee(const fee_parameters_type& k)const
+{
+    return k.fee;
+}
+
+void advertising_comfirm_operation::validate()const
+{
+    validate_op_fee(fee, "advertising_comfirm ");
+    validate_account_uid(platform, "platform");
+    FC_ASSERT(advertising_pid > 0, "advertising_pid must be more then 0");
+}
+
+share_type advertising_comfirm_operation::calculate_fee(const fee_parameters_type& k)const
+{
+    return k.fee;
+}
+
+void advertising_ransom_operation::validate()const
+{
+    validate_op_fee(fee, "advertising_ransom ");
+    validate_account_uid(platform, "platform");
+    validate_account_uid(from_account, "from_account");
+    FC_ASSERT(advertising_pid > 0, "advertising_pid must be more then 0");
+}
+
+share_type advertising_ransom_operation::calculate_fee(const fee_parameters_type& k)const
+{
+    return k.fee;
 }
 
 } } // graphene::chain

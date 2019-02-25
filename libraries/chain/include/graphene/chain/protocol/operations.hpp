@@ -82,7 +82,12 @@ namespace graphene { namespace chain {
 			reward_operation,
             reward_proxy_operation,
 			buyout_operation,
-            license_create_operation
+            license_create_operation,
+            advertising_create_operation,
+            advertising_update_operation,
+            advertising_buy_operation,
+            advertising_comfirm_operation,
+            advertising_ransom_operation
          > operation;
 
    /// @} // operations group
