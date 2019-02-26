@@ -362,6 +362,9 @@ namespace graphene { namespace chain {
                                         post_pid_type post_pid,
                                         account_uid_type from_account)const;
 
+         const advertising_object& get_advertising(account_uid_type platform,  advertising_id_type tid)const;
+         const advertising_object* find_advertising(account_uid_type platform, advertising_id_type tid)const;
+
          //////////////////// db_init.cpp ////////////////////
 
          void initialize_evaluators();
