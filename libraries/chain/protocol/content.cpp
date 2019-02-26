@@ -333,7 +333,7 @@ void advertising_create_operation::validate()const
 {
     validate_op_fee(fee, "advertising_create ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(price > 0, "price must be grater then 0");
+    FC_ASSERT(sell_price > 0, "sell price must be grater then 0");
     FC_ASSERT(start_time < end_time, "start time must less then end time");
     FC_ASSERT(advertising_tid > 0, "advertising_pid must be more then 0");
 }

@@ -1360,7 +1360,7 @@ object_id_type advertising_create_evaluator::do_apply(const operation_type& op)
             obj.advertising_tid = op.advertising_tid;
             obj.platform = op.platform;
             obj.publish_time = d.head_block_time();
-            obj.sell_price = op.price;
+            obj.sell_price = op.sell_price;
             obj.start_time = op.start_time;
             obj.end_time = op.end_time;
             obj.state = advertising_idle;
@@ -1539,7 +1539,7 @@ void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
 {
     try {
         database& d = db();
-        share_type price = advertising_obj->sell_price;
+        share_type sell_price = advertising_obj->sell_price;
         d.modify(*advertising_obj, [&](advertising_object& obj) {
             obj.state = advertising_expired;
             obj.user = account_uid_type(0);
@@ -1547,7 +1547,7 @@ void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
 
             obj.last_update_time = d.head_block_time();
         });
-        d.adjust_balance(op.from_account, asset(price));
+        d.adjust_balance(op.from_account, asset(sell_price));
     } FC_CAPTURE_AND_RETHROW((op))
 }
 

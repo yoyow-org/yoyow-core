@@ -2855,7 +2855,7 @@ signed_transaction account_cancel_auth_platform(string account,
            create_op.advertising_tid = plat_account_statistics.last_advertising_sequence + 1;
            create_op.platform = platform_uid;
            create_op.description = description;
-           create_op.price = asset_obj->amount_from_string(price).amount;
+           create_op.sell_price = asset_obj->amount_from_string(price).amount;
            create_op.start_time = time_point_sec(start_time);
            create_op.end_time = time_point_sec(end_time);
 
@@ -2890,7 +2890,7 @@ signed_transaction account_cancel_auth_platform(string account,
            if (new_description.valid())
                update_op.new_description = *new_description;
            if (new_price.valid())
-               update_op.new_price = asset_obj->amount_from_string(*new_price).amount;;
+               update_op.new_price = asset_obj->amount_from_string(*new_price).amount;
            if (new_start_time.valid())
                update_op.new_start_time = *new_start_time;
            if (new_end_time.valid())

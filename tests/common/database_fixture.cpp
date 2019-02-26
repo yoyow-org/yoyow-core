@@ -1501,6 +1501,93 @@ void database_fixture::collect_csaf_from_committee(account_uid_type to_account, 
     } FC_CAPTURE_AND_RETHROW((to_account)(amount))
 }
 
+void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_keys,
+                                          account_uid_type               platform,
+                                          string                         description,
+                                          share_type                     sell_price,
+                                          time_point_sec                 start_time,
+                                          time_point_sec                 end_time)
+{
+    try {
+        const account_statistics_object& plat_account_statistics = db.get_account_statistics_by_uid(platform);
+        advertising_create_operation create_op;
+        create_op.advertising_tid = plat_account_statistics.last_advertising_sequence + 1;
+        create_op.platform = platform;
+        create_op.description = description;
+        create_op.sell_price = sell_price;
+        create_op.start_time = start_time;
+        create_op.end_time = end_time;
+
+        signed_transaction tx;
+        tx.operations.push_back(create_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+
+        db.push_transaction(tx);
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(platform)(description)(sell_price)(start_time)(end_time))
+}
+
+void database_fixture::update_advertising(flat_set<fc::ecc::private_key> sign_keys,
+                                          account_uid_type               platform,
+                                          advertising_tid_type           advertising_tid,
+                                          string                         new_description,
+                                          share_type                     new_price,
+                                          time_point_sec                 new_start_time,
+                                          time_point_sec                 new_end_time,
+                                          uint8_t                        new_state
+    )
+{
+    try {
+        advertising_update_operation update_op;
+        update_op.platform = platform;
+        update_op.advertising_tid = advertising_tid;
+        update_op.new_description = new_description;
+        update_op.new_price = new_price;
+        update_op.new_start_time = new_start_time;
+        update_op.new_end_time = new_end_time;
+        update_op.new_state = new_state;
+
+        signed_transaction tx;
+        tx.operations.push_back(update_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+
+        db.push_transaction(tx);
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_tid)(new_description)(new_price)(new_start_time)(new_end_time)(new_state))
+}
+
+void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_keys,
+                                          account_uid_type               platform,
+                                          account_uid_type               from_account,
+                                          advertising_tid_type           advertising_tid)
+{
+    try {
+        advertising_ransom_operation ransom_op;
+        ransom_op.platform = platform;
+        ransom_op.from_account = from_account;
+        ransom_op.advertising_tid = advertising_tid;
+
+        signed_transaction tx;
+        tx.operations.push_back(ransom_op);
+        set_operation_fees(tx, db.current_fee_schedule());
+        set_expiration(db, tx);
+        tx.validate();
+
+        for (auto key : sign_keys)
+            sign(tx, key);
+
+        db.push_transaction(tx);
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_tid))
+}
+
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
    database_fixture::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)
 {
