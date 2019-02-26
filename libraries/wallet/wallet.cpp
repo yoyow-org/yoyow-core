@@ -2685,7 +2685,7 @@ signed_transaction account_cancel_auth_platform(string account,
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
            account_uid_type platform_uid = get_account_uid(platform);
-           license_lid_type lid = fc::to_uint64(fc::string(license_lid));;
+           license_lid_type lid = fc::to_uint64(fc::string(license_lid));
            fc::optional<license_object> license = _remote_db->get_license(platform_uid, lid);
            if (license)
               return *license;
@@ -2701,6 +2701,29 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type platform_uid = get_account_uid(platform);
            return _remote_db->list_licenses(platform_uid, limit);
        } FC_CAPTURE_AND_RETHROW((platform))
+   }
+
+   advertising_object get_advertising(string platform, string advertising_tid)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           account_uid_type platform_uid = get_account_uid(platform);
+           advertising_tid_type tid = fc::to_uint64(fc::string(advertising_tid));
+           fc::optional<advertising_object> ad = _remote_db->get_advertising(platform_uid, tid);
+           if (ad)
+               return *ad;
+           else
+               FC_THROW("advertising: ${ad} not found in platform: ${platform}", ("ad", advertising_tid)("platform", platform));
+       } FC_CAPTURE_AND_RETHROW((platform)(advertising_tid))
+   }
+
+   vector<advertising_object> list_advertisings(string platform, uint32_t limit)
+   {
+       try {
+           FC_ASSERT(!self.is_locked(), "Should unlock first");
+           account_uid_type platform_uid = get_account_uid(platform);
+           return _remote_db->list_advertisings(platform_uid, limit);
+       } FC_CAPTURE_AND_RETHROW((platform)(limit))
    }
 
    vector<active_post_object> get_post_profits_detail(uint32_t         begin_period,
@@ -4072,6 +4095,16 @@ license_object wallet_api::get_license(string platform,
 vector<license_object> wallet_api::list_licenses(string platform, uint32_t limit)
 {
     return my->list_licenses(platform, limit);
+}
+
+advertising_object wallet_api::get_advertising(string platform, string advertising_tid)
+{
+    return my->get_advertising(platform, advertising_tid);
+}
+
+vector<advertising_object> wallet_api::list_advertisings(string platform, uint32_t limit)
+{
+    return my->list_advertisings(platform, limit);
 }
 
 vector<active_post_object> wallet_api::get_post_profits_detail(uint32_t         begin_period,

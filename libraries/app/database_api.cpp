@@ -140,6 +140,10 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                            const license_lid_type license_lid)const;
       vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
 
+      optional<advertising_object> get_advertising(const account_uid_type platform, const advertising_tid_type advertising_tid)const;
+
+      vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
+
       vector<active_post_object> get_post_profits_detail(const uint32_t         begin_period,
                                                          const uint32_t         end_period,
                                                          const account_uid_type platform,
@@ -1196,6 +1200,42 @@ vector<license_object> database_api_impl::list_licenses(const account_uid_type p
     vector<license_object> result;
     uint32_t count = 0;
     const auto& idx = _db.get_index_type<license_index>().indices().get<by_platform>();
+    auto itr_begin = idx.lower_bound(platform);
+    auto itr_end = idx.upper_bound(platform);
+
+    while (itr_begin != itr_end && count < limit)
+    {
+        result.push_back(*itr_begin);
+        ++itr_begin;
+        ++count;
+    }
+    return result;
+}
+
+optional<advertising_object> database_api::get_advertising(const account_uid_type platform, const advertising_tid_type advertising_tid)const
+{
+    return my->get_advertising(platform, advertising_tid);
+}
+
+optional<advertising_object> database_api_impl::get_advertising(const account_uid_type platform, const advertising_tid_type advertising_tid)const
+{
+    if (auto o = _db.find_advertising(platform, advertising_tid))
+    {
+        return *o;
+    }
+    return{};
+}
+
+vector<advertising_object> database_api::list_advertisings(const account_uid_type platform, const uint32_t limit)const
+{
+    return my->list_advertisings(platform, limit);
+}
+
+vector<advertising_object> database_api_impl::list_advertisings(const account_uid_type platform, const uint32_t limit)const
+{
+    vector<advertising_object> result;
+    uint32_t count = 0;
+    const auto& idx = _db.get_index_type<advertising_index>().indices().get<by_advertising_tid>();
     auto itr_begin = idx.lower_bound(platform);
     auto itr_end = idx.upper_bound(platform);
 

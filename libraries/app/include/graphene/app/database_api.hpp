@@ -444,9 +444,14 @@ class database_api
                                        const bool             list_cur_period = true)const;
 
       optional<license_object> get_license(const account_uid_type platform,
-                                 const license_lid_type license_lid)const;
+                                           const license_lid_type license_lid)const;
 
       vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
+
+      optional<advertising_object> get_advertising(const account_uid_type platform,
+                                                   const advertising_tid_type advertising_tid)const;
+
+      vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
 
 
       vector<active_post_object> get_post_profits_detail(const uint32_t         begin_period,
@@ -752,6 +757,8 @@ FC_API( graphene::app::database_api,
    (list_scores)
    (get_license)
    (list_licenses)
+   (get_advertising)
+   (list_advertisings)
    (get_post_profits_detail)
    (get_platform_profits_detail)
    (get_poster_profits_detail)
