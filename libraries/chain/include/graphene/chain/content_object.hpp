@@ -610,7 +610,7 @@ namespace graphene { namespace chain {
 
       account_uid_type     platform;
       account_uid_type     user;
-      advertising_id_type  advertising_tid;
+      advertising_tid_type advertising_tid;
       time_point_sec       publish_time;
       share_type           sell_price;
       time_point_sec       start_time;
@@ -634,8 +634,8 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_advertising_tid>,
             composite_key<
                advertising_object,
-               member< advertising_object, account_uid_type,    &advertising_object::platform >,
-               member< advertising_object, advertising_id_type, &advertising_object::advertising_tid >
+               member< advertising_object, account_uid_type,     &advertising_object::platform >,
+               member< advertising_object, advertising_tid_type, &advertising_object::advertising_tid >
          >>
        >
       > advertising_multi_index_type;

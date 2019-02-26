@@ -243,6 +243,7 @@ namespace graphene { namespace chain {
           */
          post_pid_type last_post_sequence = 0;
          license_lid_type last_license_sequence = 0;
+         advertising_tid_type last_advertising_sequence = 0;
 
          /**
           * Compute coin_seconds_earned.  Used to

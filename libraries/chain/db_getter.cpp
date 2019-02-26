@@ -358,7 +358,7 @@ const score_object* database::find_score(account_uid_type platform,
         return nullptr;
 }
 
-const advertising_object& database::get_advertising(account_uid_type platform, advertising_id_type tid)const
+const advertising_object& database::get_advertising(account_uid_type platform, advertising_tid_type tid)const
 {
    const auto& ads_by_tid = get_index_type<advertising_index>().indices().get<by_advertising_tid>();
    auto itr = ads_by_tid.find(std::make_tuple(platform, tid));
@@ -368,7 +368,7 @@ const advertising_object& database::get_advertising(account_uid_type platform, a
    return *itr;
 }
 
-const advertising_object* database::find_advertising(account_uid_type platform, advertising_id_type tid)const
+const advertising_object* database::find_advertising(account_uid_type platform, advertising_tid_type tid)const
 {
    const auto& ads_by_tid = get_index_type<advertising_index>().indices().get<by_advertising_tid>();
    auto itr = ads_by_tid.find(std::make_tuple(platform, tid));

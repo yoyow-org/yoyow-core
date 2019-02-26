@@ -91,6 +91,7 @@ namespace graphene { namespace chain {
    typedef uint64_t                    asset_aid_type;
    typedef uint64_t                    post_pid_type;
    typedef uint64_t                    license_lid_type;
+   typedef uint64_t                    advertising_tid_type;
    typedef uint64_t                    committee_proposal_number_type;
 
    account_uid_type                    calc_account_uid( uint64_t id_without_checksum );
@@ -247,7 +248,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_platform_vote_object_type,    platform_vote_object>                      platform_vote_id_type;
    typedef object_id< implementation_ids, impl_score_object_type, score_object>                                         score_id_type;
    typedef object_id< implementation_ids, impl_license_object_type, license_object>			                            license_id_type;
-   typedef object_id< implementation_ids, impl_advertising_object_type,      advertising_object>			                  advertising_id_type;
+   typedef object_id< implementation_ids, impl_advertising_object_type,      advertising_object>			            advertising_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
