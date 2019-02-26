@@ -1523,6 +1523,20 @@ class wallet_api
                                         bool broadcast = false
                                         );
 
+      signed_transaction buy_advertising(string   account,
+                                         string   platform,
+                                         uint32_t advertising_tid,
+                                         bool csaf_fee = true,
+                                         bool broadcast = false
+                                        );
+
+      signed_transaction confirm_advertising(string   platform,
+                                             uint32_t advertising_tid,
+                                             bool comfirm,
+                                             bool csaf_fee = true,
+                                             bool broadcast = false
+                                             );
+
       post_object get_post( string platform_owner,
                             string poster_uid,
                             string post_pid );
@@ -1810,6 +1824,8 @@ FC_API( graphene::wallet::wallet_api,
         (get_account_statistics)
         (create_advertising)
         (update_advertising)
+        (buy_advertising)
+        (confirm_advertising)
         (ransom_advertising)
         (get_global_properties_extensions)
       )

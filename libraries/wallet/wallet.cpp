@@ -2612,6 +2612,56 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((executor)(account)(options)(csaf_fee)(broadcast))
    }
 
+   signed_transaction buy_advertising(string   account,
+                                      string   platform,
+                                      uint32_t advertising_tid,
+                                      bool csaf_fee = true,
+                                      bool broadcast = false
+                                      )
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         advertising_buy_operation buy_op;
+         buy_op.from_account = get_account_uid(account);
+         buy_op.platform = get_account_uid(platform);
+         buy_op.advertising_tid = advertising_tid;
+
+         signed_transaction tx;
+         tx.operations.push_back(buy_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((account)(platform)(advertising_tid)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction confirm_advertising(string   platform,
+                                          uint32_t advertising_tid,
+                                          bool comfirm,
+                                          bool csaf_fee = true,
+                                          bool broadcast = false
+                                         )
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         advertising_confirm_operation confirm_op;
+         confirm_op.platform = get_account_uid(platform);
+         confirm_op.advertising_tid = advertising_tid;
+         confirm_op.iscomfirm = comfirm;
+
+         signed_transaction tx;
+         tx.operations.push_back(confirm_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((platform)(advertising_tid)(comfirm)(csaf_fee)(broadcast))
+   }
+
    post_object get_post(string platform_owner,
                         string poster_uid,
                         string post_pid)
@@ -4145,6 +4195,26 @@ signed_transaction wallet_api::account_manage(string executor,
                                               )
 {
     return my->account_manage(executor,account, options, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::buy_advertising(string   account,
+                                               string   platform,
+                                               uint32_t advertising_tid,
+                                               bool csaf_fee,
+                                               bool broadcast
+                                               )
+{
+   return my->buy_advertising(account, platform, advertising_tid, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::confirm_advertising(string   platform,
+                                       uint32_t advertising_tid,
+                                       bool comfirm,
+                                       bool csaf_fee,
+                                       bool broadcast
+                                      )
+{
+   return my->confirm_advertising(platform, advertising_tid, comfirm, csaf_fee, broadcast);
 }
 
 post_object wallet_api::get_post(string platform_owner,
