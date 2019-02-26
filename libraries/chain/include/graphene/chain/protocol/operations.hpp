@@ -86,7 +86,7 @@ namespace graphene { namespace chain {
             advertising_create_operation,
             advertising_update_operation,
             advertising_buy_operation,
-            advertising_comfirm_operation,
+            advertising_confirm_operation,
             advertising_ransom_operation
          > operation;
 

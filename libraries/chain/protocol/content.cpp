@@ -386,14 +386,14 @@ share_type advertising_buy_operation::calculate_fee(const fee_parameters_type& k
     return k.fee;
 }
 
-void advertising_comfirm_operation::validate()const
+void advertising_confirm_operation::validate()const
 {
     validate_op_fee(fee, "advertising_comfirm ");
     validate_account_uid(platform, "platform");
     FC_ASSERT(advertising_tid > 0, "advertising_pid must be more then 0");
 }
 
-share_type advertising_comfirm_operation::calculate_fee(const fee_parameters_type& k)const
+share_type advertising_confirm_operation::calculate_fee(const fee_parameters_type& k)const
 {
     return k.fee;
 }

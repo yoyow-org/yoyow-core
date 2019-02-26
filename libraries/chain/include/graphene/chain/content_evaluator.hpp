@@ -169,10 +169,10 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
        const advertising_object* advertising_obj = nullptr;
    };
 
-   class advertising_comfirm_evaluator : public evaluator < advertising_comfirm_evaluator >
+   class advertising_confirm_evaluator : public evaluator < advertising_confirm_evaluator >
    {
    public:
-       typedef advertising_comfirm_operation operation_type;
+       typedef advertising_confirm_operation operation_type;
 
        void_result do_evaluate(const operation_type& op);
        void_result do_apply(const operation_type& op);

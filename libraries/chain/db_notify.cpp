@@ -333,7 +333,7 @@ struct get_impacted_account_uid_visitor
        _impacted.insert(op.platform);
    }
 
-   void operator()(const advertising_comfirm_operation& op)
+   void operator()(const advertising_confirm_operation& op)
    {
        _impacted.insert(op.fee_payer_uid()); // fee payer
    }

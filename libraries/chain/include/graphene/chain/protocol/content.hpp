@@ -579,7 +579,7 @@ namespace graphene { namespace chain {
        }
    };
 
-   struct advertising_comfirm_operation : public base_operation
+   struct advertising_confirm_operation : public base_operation
    {
        struct fee_parameters_type {
            uint64_t fee = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -680,8 +680,8 @@ FC_REFLECT(graphene::chain::advertising_update_operation, (fee)(platform)(advert
 FC_REFLECT(graphene::chain::advertising_buy_operation::fee_parameters_type, (fee)(extensions))
 FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(from_account)(platform)(advertising_tid)(extensions))
 
-FC_REFLECT(graphene::chain::advertising_comfirm_operation::fee_parameters_type, (fee)(extensions))
-FC_REFLECT(graphene::chain::advertising_comfirm_operation, (fee)(platform)(advertising_tid)(iscomfirm)(extensions))
+FC_REFLECT(graphene::chain::advertising_confirm_operation::fee_parameters_type, (fee)(extensions))
+FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_tid)(iscomfirm)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_ransom_operation::fee_parameters_type, (fee)(extensions))
 FC_REFLECT(graphene::chain::advertising_ransom_operation, (fee)(from_account)(platform)(advertising_tid)(extensions))

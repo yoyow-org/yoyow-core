@@ -1410,25 +1410,15 @@ void_result advertising_update_evaluator::do_apply(const operation_type& op)
         database& d = db();
         d.modify(*advertising_obj, [&](advertising_object& ad) {
             if (op.new_description.valid())
-            {
                 ad.description = *(op.new_description);
-            }
             if (op.new_price.valid())
-            {
                 ad.sell_price = *(op.new_price);
-            }
             if (op.new_start_time.valid())
-            {
                 ad.start_time = *(op.new_start_time);
-            }
             if (op.new_end_time.valid())
-            {
                 ad.end_time = *(op.new_end_time);
-            }
             if (op.new_state.valid())
-            {
                 ad.state = *(op.new_state);
-            }
             ad.last_update_time = d.head_block_time();
         });
     } FC_CAPTURE_AND_RETHROW((op))
@@ -1436,42 +1426,98 @@ void_result advertising_update_evaluator::do_apply(const operation_type& op)
 
 void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
 {
-    try {
-        const database& d = db();
-        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buy advertising after HARDFORK_0_4_TIME");
+   try {
+      const database& d = db();
 
+      FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buy advertising after HARDFORK_0_4_TIME");
+      advertising_obj = d.find_advertising(op.platform, op.advertising_tid);
+      FC_ASSERT(advertising_obj != nullptr, "advertising ${tid} on platform ${platform} is invalid.",
+         ("tid", op.advertising_tid)("platform", op.platform));
+      FC_ASSERT(advertising_obj->state == graphene::chain::advertising_idle, "advertising state should be idle");
 
-        return void_result();
+      const auto& from_balance = d.get_balance(op.from_account, GRAPHENE_CORE_ASSET_AID);
+      bool sufficient_balance = (from_balance.amount >= advertising_obj->sell_price);
+      FC_ASSERT(sufficient_balance,
+         "Insufficient Balance: ${balance}, not enough to buy advertising ${tid} that ${need} needed.",
+         ("need", advertising_obj->sell_price)("balance", d.to_pretty_string(from_balance)));
 
-    }FC_CAPTURE_AND_RETHROW((op))
+      return void_result();
+
+   }FC_CAPTURE_AND_RETHROW((op))
 }
 
 void_result advertising_buy_evaluator::do_apply(const operation_type& op)
 {
-    try {
-        database& d = db();
+   try {
+      database& d = db();
 
-    } FC_CAPTURE_AND_RETHROW((op))
+      d.modify(*advertising_obj, [&](advertising_object& obj)
+      {
+         obj.user = op.from_account;
+         obj.buy_request_time = d.head_block_time();
+         obj.last_update_time = d.head_block_time();
+         obj.released_balance = obj.sell_price;
+         obj.state = graphene::chain::advertising_undetermined;
+      });
+      d.adjust_balance(op.from_account, -asset(advertising_obj->sell_price));
+
+      return void_result();
+
+   } FC_CAPTURE_AND_RETHROW((op))
 }
 
-void_result advertising_comfirm_evaluator::do_evaluate(const operation_type& op)
+void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
 {
-    try {
-        const database& d = db();
-        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only comfirm advertising after HARDFORK_0_4_TIME");
+   try {
+      const database& d = db();
 
+      FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only advertising comfirm after HARDFORK_0_4_TIME");
+      advertising_obj = d.find_advertising(op.platform, op.advertising_tid);
+      FC_ASSERT(advertising_obj != nullptr, "advertising ${tid} on platform ${platform} is invalid.",
+         ("tid", op.advertising_tid)("platform", op.platform));
+      FC_ASSERT(advertising_obj->state == graphene::chain::advertising_undetermined, "advertising state should be undetermined");
 
-        return void_result();
+      return void_result();
 
-    }FC_CAPTURE_AND_RETHROW((op))
+   }FC_CAPTURE_AND_RETHROW((op))
 }
 
-void_result advertising_comfirm_evaluator::do_apply(const operation_type& op)
+void_result advertising_confirm_evaluator::do_apply(const operation_type& op)
 {
-    try {
-        database& d = db();
+   try {
+      database& d = db();
 
-    } FC_CAPTURE_AND_RETHROW((op))
+      d.modify(*advertising_obj, [&](advertising_object& obj)
+      {
+         obj.last_update_time = d.head_block_time();
+         obj.released_balance = 0;
+         if (op.iscomfirm)
+            obj.state = graphene::chain::advertising_using;
+         else
+            obj.state = graphene::chain::advertising_idle;
+      });
+      if (op.iscomfirm)
+      {
+         const auto& params = d.get_global_properties().parameters.get_award_params();
+         share_type fee = ((uint128_t)advertising_obj->sell_price.value * params.advertising_confirmed_fee_rate
+            / GRAPHENE_100_PERCENT).convert_to<int64_t>();
+         if (fee < params.advertising_confirmed_min_fee)
+            fee = params.advertising_confirmed_min_fee;
+
+         d.adjust_balance(op.platform, asset(advertising_obj->sell_price - fee));
+         const auto& core_asset = d.get_core_asset();
+         const auto& core_dyn_data = core_asset.dynamic_data(d);
+         d.modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
+         {
+            dyn.current_supply -= fee;
+         });
+      }
+      else
+         d.adjust_balance(advertising_obj->user, asset(advertising_obj->sell_price));
+
+      return void_result();
+
+   } FC_CAPTURE_AND_RETHROW((op))
 }
 
 void_result advertising_ransom_evaluator::do_evaluate(const operation_type& op)
