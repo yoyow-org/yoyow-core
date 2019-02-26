@@ -618,6 +618,7 @@ namespace graphene { namespace chain {
       share_type           released_balance;
       
       string               description;
+      time_point_sec       buy_request_time;
       time_point_sec       last_update_time;
    };
 
@@ -683,7 +684,7 @@ FC_REFLECT_DERIVED(graphene::chain::license_object,
 
 FC_REFLECT_DERIVED( graphene::chain::advertising_object,
                    (graphene::db::object), 
-                   (platform)(user)(publish_time)(sell_price)(start_time)(end_time)(state)(released_balance)(description)(last_update_time)
+                   (platform)(user)(publish_time)(sell_price)(start_time)(end_time)(state)(released_balance)(description)(buy_request_time)(last_update_time)
           )
 
 FC_REFLECT_ENUM( graphene::chain::advertising_state,
