@@ -388,6 +388,17 @@ struct database_fixture {
                      int8_t           score,
                      share_type       csaf);
 
+   void buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
+                        account_uid_type   account,
+                        account_uid_type   platform,
+                        uint32_t advertising_tid);
+
+   void confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
+                            account_uid_type   platform,
+                            uint32_t advertising_tid,
+                            bool comfirm);
+
+
    void account_manage(account_uid_type account, account_manage_operation::opt options);
    void database_fixture::account_manage(account_uid_type executor,
       account_uid_type account,

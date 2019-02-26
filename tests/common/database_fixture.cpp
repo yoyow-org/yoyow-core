@@ -1356,6 +1356,56 @@ void database_fixture::score_a_post(flat_set<fc::ecc::private_key> sign_keys,
     }FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(platform)(poster)(post_pid)(score)(csaf))
 }
 
+void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type   account,
+   account_uid_type   platform,
+   uint32_t advertising_tid)
+{
+   try {
+      advertising_buy_operation buy_op;
+      buy_op.from_account = account;
+      buy_op.platform = platform;
+      buy_op.advertising_tid = advertising_tid;
+
+      signed_transaction tx;
+      tx.operations.push_back(buy_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform)(advertising_tid))
+}
+
+void database_fixture::confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type   platform,
+   uint32_t advertising_tid,
+   bool comfirm)
+{
+   try {
+      advertising_confirm_operation confirm_op;
+      confirm_op.platform = platform;
+      confirm_op.advertising_tid = advertising_tid;
+      confirm_op.iscomfirm = comfirm;
+
+      signed_transaction tx;
+      tx.operations.push_back(confirm_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_tid)(comfirm))
+}
+
 void database_fixture::account_manage(account_uid_type account, account_manage_operation::opt options)
 {
    db.modify(db.get_account_by_uid(account), [&](account_object& a){
