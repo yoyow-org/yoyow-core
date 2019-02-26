@@ -1571,6 +1571,30 @@ class wallet_api
       share_type get_score_profit(string account, uint32_t period);
 
       account_statistics_object get_account_statistics(string account);
+
+      signed_transaction create_advertising(string           platform,
+                                            string           description,
+                                            string           price,
+                                            uint32_t         start_time,
+                                            uint32_t         end_time,
+                                            bool csaf_fee = true,
+                                            bool broadcast = false);
+
+      signed_transaction update_advertising(string                     platform,
+                                            string                     advertising_tid,
+                                            optional<string>           new_description,
+                                            optional<string>           new_price,
+                                            optional<time_point_sec>   new_start_time,
+                                            optional<time_point_sec>   new_end_time,
+                                            optional<uint8_t>          new_state,
+                                            bool csaf_fee = true,
+                                            bool broadcast = false);
+
+      signed_transaction ransom_advertising(string           platform,
+                                            string           from_account,
+                                            string           advertising_tid,
+                                            bool csaf_fee = true,
+                                            bool broadcast = false);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -1784,5 +1808,8 @@ FC_API( graphene::wallet::wallet_api,
         (get_poster_profits_detail)
         (get_score_profit)
         (get_account_statistics)
+        (create_advertising)
+        (update_advertising)
+        (ransom_advertising)
         (get_global_properties_extensions)
       )
