@@ -140,7 +140,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                            const license_lid_type license_lid)const;
       vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
 
-      optional<advertising_object> get_advertising(const account_uid_type platform, const advertising_tid_type advertising_tid)const;
+      optional<advertising_object> get_advertising(object_id_type id)const;
 
       vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
 
@@ -1212,14 +1212,14 @@ vector<license_object> database_api_impl::list_licenses(const account_uid_type p
     return result;
 }
 
-optional<advertising_object> database_api::get_advertising(const account_uid_type platform, const advertising_tid_type advertising_tid)const
+optional<advertising_object> database_api::get_advertising(object_id_type id)const
 {
-    return my->get_advertising(platform, advertising_tid);
+    return my->get_advertising(id);
 }
 
-optional<advertising_object> database_api_impl::get_advertising(const account_uid_type platform, const advertising_tid_type advertising_tid)const
+optional<advertising_object> database_api_impl::get_advertising(object_id_type id)const
 {
-    if (auto o = _db.find_advertising(platform, advertising_tid))
+    if (auto o = _db.find_advertising(id))
     {
         return *o;
     }
@@ -1234,8 +1234,8 @@ vector<advertising_object> database_api::list_advertisings(const account_uid_typ
 vector<advertising_object> database_api_impl::list_advertisings(const account_uid_type platform, const uint32_t limit)const
 {
     vector<advertising_object> result;
-    uint32_t count = 0;
-    const auto& idx = _db.get_index_type<advertising_index>().indices().get<by_advertising_tid>();
+   /* uint32_t count = 0;
+    const auto& idx = _db.get_index_type<advertising_index>().indices().get<by_id>();
     auto itr_begin = idx.lower_bound(platform);
     auto itr_end = idx.upper_bound(platform);
 
@@ -1244,7 +1244,7 @@ vector<advertising_object> database_api_impl::list_advertisings(const account_ui
         result.push_back(*itr_begin);
         ++itr_begin;
         ++count;
-    }
+    }*/
     return result;
 }
 

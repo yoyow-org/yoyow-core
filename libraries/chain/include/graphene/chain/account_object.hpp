@@ -243,7 +243,6 @@ namespace graphene { namespace chain {
           */
          post_pid_type last_post_sequence = 0;
          license_lid_type last_license_sequence = 0;
-         advertising_tid_type last_advertising_sequence = 0;
 
          /**
           * Compute coin_seconds_earned.  Used to
@@ -807,6 +806,5 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (platform_pledge_release_block_number)
                     (last_post_sequence)
                     (last_license_sequence)
-                    (last_advertising_sequence)
                   )
 

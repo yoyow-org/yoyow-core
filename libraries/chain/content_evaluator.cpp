@@ -1339,7 +1339,6 @@ void_result advertising_create_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         account_stats = &d.get_account_statistics_by_uid(op.platform);
-        FC_ASSERT(op.advertising_tid == (account_stats->last_advertising_sequence + 1), "error advertising_tid. ");
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create advertising after HARDFORK_0_4_TIME");
         FC_ASSERT(op.start_time > d.head_block_time(), "advertising start time must later then head_block_time");
 
@@ -1352,12 +1351,8 @@ object_id_type advertising_create_evaluator::do_apply(const operation_type& op)
 {
     try {
         database& d = db();
-        d.modify(*account_stats, [&](account_statistics_object& s) {
-            s.last_advertising_sequence += 1;
-        });
         const auto& advertising_obj = d.create<advertising_object>([&](advertising_object& obj)
         {
-            obj.advertising_tid = op.advertising_tid;
             obj.platform = op.platform;
             obj.user = account_uid_type(0);
             obj.publish_time = d.head_block_time();
@@ -1378,12 +1373,10 @@ void_result advertising_update_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only update advertising after HARDFORK_0_4_TIME");
-        FC_ASSERT((op.new_state == graphene::chain::advertising_idle) || (op.new_state == graphene::chain::advertising_removed), "only change new_state to free or remove");
-        advertising_obj = d.find_advertising(op.platform, op.advertising_tid);
+        advertising_obj = d.find_advertising(op.advertising_id);
         FC_ASSERT(advertising_obj != nullptr, "advertising_object doesn`t exsit");
         FC_ASSERT(advertising_obj->state != advertising_undetermined , "advertising state is undetermined. ");
         FC_ASSERT(advertising_obj->state != advertising_using,         "advertising state is using. ");
-        FC_ASSERT(advertising_obj->state != advertising_expired,       "advertising state is expired. ");
         if (op.new_price.valid()){
             FC_ASSERT(*(op.new_price) > 0, "new price must more then 0. ");
         }
@@ -1422,6 +1415,9 @@ void_result advertising_update_evaluator::do_apply(const operation_type& op)
                 ad.state = *(op.new_state);
             ad.last_update_time = d.head_block_time();
         });
+
+        return void_result();
+
     } FC_CAPTURE_AND_RETHROW((op))
 }
 
@@ -1431,9 +1427,9 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
 
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buy advertising after HARDFORK_0_4_TIME");
-      advertising_obj = d.find_advertising(op.platform, op.advertising_tid);
+      advertising_obj = d.find_advertising(op.advertising_id);
       FC_ASSERT(advertising_obj != nullptr, "advertising ${tid} on platform ${platform} is invalid.",
-         ("tid", op.advertising_tid)("platform", op.platform));
+         ("tid", op.advertising_id)("platform", op.platform));
       FC_ASSERT(advertising_obj->state == graphene::chain::advertising_idle, "advertising state should be idle");
 
       const auto& from_balance = d.get_balance(op.from_account, GRAPHENE_CORE_ASSET_AID);
@@ -1473,9 +1469,9 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
 
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only advertising comfirm after HARDFORK_0_4_TIME");
-      advertising_obj = d.find_advertising(op.platform, op.advertising_tid);
-      FC_ASSERT(advertising_obj != nullptr, "advertising ${tid} on platform ${platform} is invalid.",
-         ("tid", op.advertising_tid)("platform", op.platform));
+      advertising_obj = d.find_advertising(op.advertising_id);
+      FC_ASSERT(advertising_obj != nullptr, "advertising ${id} on platform ${platform} is invalid.",
+         ("id", op.advertising_id)("platform", op.platform));
       FC_ASSERT(advertising_obj->state == graphene::chain::advertising_undetermined, "advertising state should be undetermined");
 
       return void_result();
@@ -1535,10 +1531,10 @@ void_result advertising_ransom_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only ransom advertising after HARDFORK_0_4_TIME");
-        advertising_obj = d.find_advertising(op.platform, op.advertising_tid);
+        advertising_obj = d.find_advertising(op.advertising_id);
         FC_ASSERT(advertising_obj != nullptr, "advertising_object doesn`t exsit");
         FC_ASSERT(advertising_obj->user == op.from_account, "your account isn`t the advertising`s user. ");
-        FC_ASSERT((advertising_obj->state == advertising_undetermined) || (advertising_obj->state == advertising_expired), "error advertising state for ransom. ");
+        FC_ASSERT(advertising_obj->state == advertising_undetermined, "error advertising state for ransom. ");
         FC_ASSERT(advertising_obj->buy_request_time + GRAPHENE_ADVERTISING_COMFIRM_TIME < d.head_block_time(), "the buy advertising is undetermined. Can`t ransom now.");
         return void_result();
 
@@ -1551,7 +1547,7 @@ void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
         database& d = db();
         share_type sell_price = advertising_obj->sell_price;
         d.modify(*advertising_obj, [&](advertising_object& obj) {
-            obj.state = advertising_expired;
+            obj.state = advertising_removed;
             obj.user = account_uid_type(0);
             obj.released_balance = 0;
 

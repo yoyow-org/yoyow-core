@@ -448,8 +448,7 @@ class database_api
 
       vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
 
-      optional<advertising_object> get_advertising(const account_uid_type platform,
-                                                   const advertising_tid_type advertising_tid)const;
+      optional<advertising_object> get_advertising(object_id_type id)const;
 
       vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
 

@@ -91,7 +91,6 @@ namespace graphene { namespace chain {
    typedef uint64_t                    asset_aid_type;
    typedef uint64_t                    post_pid_type;
    typedef uint64_t                    license_lid_type;
-   typedef uint64_t                    advertising_tid_type;
    typedef uint64_t                    committee_proposal_number_type;
 
    account_uid_type                    calc_account_uid( uint64_t id_without_checksum );

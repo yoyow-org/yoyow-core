@@ -335,7 +335,6 @@ void advertising_create_operation::validate()const
     validate_account_uid(platform, "platform");
     FC_ASSERT(sell_price > 0, "sell price must be grater then 0");
     FC_ASSERT(start_time < end_time, "start time must less then end time");
-    FC_ASSERT(advertising_tid > 0, "advertising_pid must be more then 0");
 }
 
 share_type advertising_create_operation::calculate_fee(const fee_parameters_type& k)const
@@ -351,7 +350,6 @@ void advertising_update_operation::validate()const
 {
     validate_op_fee(fee, "advertising_update ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(advertising_tid > 0, "advertising_pid must be more then 0");
     FC_ASSERT(new_description.valid() || new_price.valid() || new_start_time.valid() || new_end_time.valid() || new_state.valid(), "must update some parameter");
     if (new_price.valid()){
         FC_ASSERT(*new_price > 0, "new price must be greater then 0");
@@ -378,7 +376,6 @@ void advertising_buy_operation::validate()const
     validate_op_fee(fee, "advertising_buy ");
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account, "from_account");
-    FC_ASSERT(advertising_tid > 0, "advertising_pid must be more then 0");
 }
 
 share_type advertising_buy_operation::calculate_fee(const fee_parameters_type& k)const
@@ -391,7 +388,6 @@ void advertising_confirm_operation::validate()const
 {
     validate_op_fee(fee, "advertising_comfirm ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(advertising_tid > 0, "advertising_pid must be more then 0");
 }
 
 share_type advertising_confirm_operation::calculate_fee(const fee_parameters_type& k)const
@@ -405,7 +401,6 @@ void advertising_ransom_operation::validate()const
     validate_op_fee(fee, "advertising_ransom ");
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account, "from_account");
-    FC_ASSERT(advertising_tid > 0, "advertising_pid must be more then 0");
 }
 
 share_type advertising_ransom_operation::calculate_fee(const fee_parameters_type& k)const

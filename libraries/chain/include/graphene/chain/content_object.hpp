@@ -593,7 +593,6 @@ namespace graphene { namespace chain {
       advertising_idle         = 0,
       advertising_undetermined = 1,
       advertising_using        = 2,
-      advertising_expired      = 3,
       advertising_removed      = 4
    };
 
@@ -610,7 +609,6 @@ namespace graphene { namespace chain {
 
       account_uid_type     platform;
       account_uid_type     user;
-      advertising_tid_type advertising_tid;
       time_point_sec       publish_time;
       share_type           sell_price;
       time_point_sec       start_time;
@@ -623,7 +621,8 @@ namespace graphene { namespace chain {
       time_point_sec       last_update_time;
    };
 
-   struct by_advertising_tid{};
+   struct by_advertising_state{};
+   struct by_advertising_user{};
    /**
    * @ingroup object_index
    */
@@ -631,12 +630,14 @@ namespace graphene { namespace chain {
       advertising_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_advertising_tid>,
+         ordered_unique< tag<by_advertising_state>,
             composite_key<
                advertising_object,
-               member< advertising_object, account_uid_type,     &advertising_object::platform >,
-               member< advertising_object, advertising_tid_type, &advertising_object::advertising_tid >
-         >>
+               member< advertising_object, account_uid_type, &advertising_object::platform >,
+               member< advertising_object, uint8_t,          &advertising_object::state >
+         >>,
+         ordered_non_unique< tag<by_advertising_user>, 
+            member< advertising_object, account_uid_type,    &advertising_object::user> >
        >
       > advertising_multi_index_type;
 
@@ -693,7 +694,7 @@ FC_REFLECT_DERIVED(graphene::chain::license_object,
 
 FC_REFLECT_DERIVED( graphene::chain::advertising_object,
                    (graphene::db::object), 
-                   (platform)(user)(advertising_tid)(publish_time)(sell_price)(start_time)
+                   (platform)(user)(publish_time)(sell_price)(start_time)
                    (end_time)(state)(released_balance)(description)(buy_request_time)(last_update_time)
           )
 
@@ -701,6 +702,5 @@ FC_REFLECT_ENUM( graphene::chain::advertising_state,
           (advertising_idle)
           (advertising_undetermined)
           (advertising_using)
-          (advertising_expired)
           (advertising_removed)
           )
