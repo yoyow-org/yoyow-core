@@ -383,7 +383,8 @@ void advertising_buy_operation::validate()const
 
 share_type advertising_buy_operation::calculate_fee(const fee_parameters_type& k)const
 {
-    return k.fee;
+    share_type core_fee_required = k.fee;
+    return core_fee_required;
 }
 
 void advertising_confirm_operation::validate()const
@@ -395,7 +396,8 @@ void advertising_confirm_operation::validate()const
 
 share_type advertising_confirm_operation::calculate_fee(const fee_parameters_type& k)const
 {
-    return k.fee;
+    share_type core_fee_required = k.fee;
+    return core_fee_required;
 }
 
 void advertising_ransom_operation::validate()const
@@ -408,7 +410,8 @@ void advertising_ransom_operation::validate()const
 
 share_type advertising_ransom_operation::calculate_fee(const fee_parameters_type& k)const
 {
-    return k.fee;
+    share_type core_fee_required = k.fee;
+    return core_fee_required;
 }
 
 } } // graphene::chain
