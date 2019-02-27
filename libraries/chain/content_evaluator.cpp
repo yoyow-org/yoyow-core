@@ -1487,17 +1487,15 @@ void_result advertising_confirm_evaluator::do_apply(const operation_type& op)
    try {
       database& d = db();
 
-      d.modify(*advertising_obj, [&](advertising_object& obj)
-      {
-         obj.last_update_time = d.head_block_time();
-         obj.released_balance = 0;
-         if (op.iscomfirm)
-            obj.state = graphene::chain::advertising_using;
-         else
-            obj.state = graphene::chain::advertising_idle;
-      });
       if (op.iscomfirm)
       {
+         d.modify(*advertising_obj, [&](advertising_object& obj)
+         {
+            obj.last_update_time = d.head_block_time();
+            obj.released_balance = 0;          
+            obj.state = graphene::chain::advertising_using;
+         });
+
          const auto& params = d.get_global_properties().parameters.get_award_params();
          share_type fee = ((uint128_t)advertising_obj->sell_price.value * params.advertising_confirmed_fee_rate
             / GRAPHENE_100_PERCENT).convert_to<int64_t>();
@@ -1513,7 +1511,18 @@ void_result advertising_confirm_evaluator::do_apply(const operation_type& op)
          });
       }
       else
+      {
+         d.modify(*advertising_obj, [&](advertising_object& obj)
+         {         
+            obj.user = account_uid_type(0);
+            obj.released_balance = 0;
+            obj.state = graphene::chain::advertising_idle;          
+            obj.buy_request_time = time_point_sec(0);
+            obj.last_update_time = d.head_block_time();
+            
+         });
          d.adjust_balance(advertising_obj->user, asset(advertising_obj->sell_price));
+      }    
 
       return void_result();
 
@@ -1543,7 +1552,7 @@ void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
         d.modify(*advertising_obj, [&](advertising_object& obj) {
             obj.state = advertising_expired;
             obj.user = account_uid_type(0);
-            obj.sell_price = share_type(0);
+            obj.released_balance = 0;
 
             obj.last_update_time = d.head_block_time();
         });
