@@ -1513,16 +1513,16 @@ void_result advertising_confirm_evaluator::do_apply(const operation_type& op)
       }
       else
       {
-         d.modify(*advertising_obj, [&](advertising_object& obj)
-         {         
-            obj.user = account_uid_type(0);
-            obj.released_balance = 0;
-            obj.state = graphene::chain::advertising_idle;          
-            obj.buy_request_time = time_point_sec(0);
-            obj.last_update_time = d.head_block_time();
-            
-         });
          d.adjust_balance(advertising_obj->user, asset(advertising_obj->sell_price));
+         d.modify(*advertising_obj, [&](advertising_object& obj)
+         {
+             obj.user = account_uid_type(0);
+             obj.released_balance = 0;
+             obj.state = graphene::chain::advertising_idle;
+             obj.buy_request_time = time_point_sec(0);
+             obj.last_update_time = d.head_block_time();
+
+         });
       }    
 
       return void_result();
