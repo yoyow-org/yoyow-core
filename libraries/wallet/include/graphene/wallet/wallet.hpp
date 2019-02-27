@@ -1598,8 +1598,8 @@ class wallet_api
                                             string                     advertising_tid,
                                             optional<string>           new_description,
                                             optional<string>           new_price,
-                                            optional<time_point_sec>   new_start_time,
-                                            optional<time_point_sec>   new_end_time,
+                                            optional<uint32_t>         new_start_time,
+                                            optional<uint32_t>         new_end_time,
                                             optional<uint8_t>          new_state,
                                             bool csaf_fee = true,
                                             bool broadcast = false);

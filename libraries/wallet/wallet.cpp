@@ -2872,8 +2872,8 @@ signed_transaction account_cancel_auth_platform(string account,
                                          string                     advertising_tid,
                                          optional<string>           new_description,
                                          optional<string>           new_price,
-                                         optional<time_point_sec>   new_start_time,
-                                         optional<time_point_sec>   new_end_time,
+                                         optional<uint32_t>         new_start_time,
+                                         optional<uint32_t>         new_end_time,
                                          optional<uint8_t>          new_state,
                                          bool                       csaf_fee,
                                          bool                       broadcast)
@@ -2892,9 +2892,9 @@ signed_transaction account_cancel_auth_platform(string account,
            if (new_price.valid())
                update_op.new_price = asset_obj->amount_from_string(*new_price).amount;
            if (new_start_time.valid())
-               update_op.new_start_time = *new_start_time;
+               update_op.new_start_time = time_point_sec(*new_start_time);
            if (new_end_time.valid())
-               update_op.new_end_time = *new_end_time;
+               update_op.new_end_time = time_point_sec(*new_end_time);
            if (new_state.valid())
                update_op.new_state = *new_state;
 
@@ -4321,8 +4321,8 @@ signed_transaction wallet_api::update_advertising(string                     pla
                                                   string                     advertising_tid,
                                                   optional<string>           new_description,
                                                   optional<string>           new_price,
-                                                  optional<time_point_sec>   new_start_time,
-                                                  optional<time_point_sec>   new_end_time,
+                                                  optional<uint32_t>         new_start_time,
+                                                  optional<uint32_t>         new_end_time,
                                                   optional<uint8_t>          new_state,
                                                   bool                       csaf_fee,
                                                   bool                       broadcast)
