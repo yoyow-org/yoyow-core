@@ -558,7 +558,7 @@ namespace graphene { namespace chain {
    struct advertising_buy_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = 5 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
            extensions_type   extensions;
