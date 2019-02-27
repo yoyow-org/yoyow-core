@@ -1359,6 +1359,7 @@ object_id_type advertising_create_evaluator::do_apply(const operation_type& op)
         {
             obj.advertising_tid = op.advertising_tid;
             obj.platform = op.platform;
+            obj.user = account_uid_type(0);
             obj.publish_time = d.head_block_time();
             obj.sell_price = op.sell_price;
             obj.start_time = op.start_time;
