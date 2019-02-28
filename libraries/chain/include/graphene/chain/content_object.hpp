@@ -600,7 +600,6 @@ namespace graphene { namespace chain {
 
       struct Advertising_Order
       {
-          uint32_t               order_sequence;
           account_uid_type       user;
           share_type             released_balance;
           time_point_sec         start_time;
@@ -620,9 +619,8 @@ namespace graphene { namespace chain {
       time_point_sec             publish_time;
       time_point_sec             last_update_time;
 
-
-      vector<Advertising_Order>  effective_orders;
-      vector<Advertising_Order>  undetermined_orders;
+      flat_map<uint32_t, Advertising_Order>  effective_orders;
+      flat_map<uint32_t, Advertising_Order>  undetermined_orders;
    };
 
    struct by_advertising_state{};
@@ -697,7 +695,7 @@ FC_REFLECT_DERIVED(graphene::chain::license_object,
 					)
 
 FC_REFLECT_DERIVED(graphene::chain::advertising_object::Advertising_Order,
-                   (order_sequence)(user)(released_balance)(start_time)(end_time)
+                   (user)(released_balance)(start_time)(end_time)
                    (memo)(extra_data)(released_balance)(description)(buy_request_time)(last_update_time)
                    )
 
@@ -705,10 +703,3 @@ FC_REFLECT_DERIVED( graphene::chain::advertising_object,
                    (graphene::db::object), 
                    (platform)(state)(unit_time)(unit_price)(description)
                    (publish_time)(last_update_time)(effective_orders)(undetermined_orders))
-
-FC_REFLECT_ENUM( graphene::chain::advertising_state,
-          (advertising_idle)
-          (advertising_undetermined)
-          (advertising_using)
-          (advertising_removed)
-          )
