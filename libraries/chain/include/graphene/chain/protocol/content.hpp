@@ -506,11 +506,9 @@ namespace graphene { namespace chain {
        fee_type                     fee;
 
        account_uid_type             platform;
-       object_id_type               advertising_id;
+       uint32_t                     unit_time;
+       share_type                   unit_price;
        string                       description;
-       share_type                   sell_price;
-       time_point_sec               start_time;
-       time_point_sec               end_time;
 
        extensions_type              extensions;
 
@@ -538,11 +536,10 @@ namespace graphene { namespace chain {
        account_uid_type             platform;
        object_id_type               advertising_id;
 
-       optional<string>             new_description;
-       optional<share_type>         new_price;
-       optional<time_point_sec>     new_start_time;
-       optional<time_point_sec>     new_end_time;
-       optional<uint8_t>            new_state;
+       optional<string>             description;
+       optional<share_type>         unit_price;
+       optional<uint32_t>           unit_time;
+       optional<bool>               on_sell;
 
        extensions_type              extensions;
 
@@ -621,6 +618,7 @@ namespace graphene { namespace chain {
        account_uid_type             from_account;
        account_uid_type             platform;
        object_id_type               advertising_id;
+       uint32_t                     order_sequence;
 
        extensions_type              extensions;
 
@@ -678,16 +676,16 @@ FC_REFLECT(graphene::chain::license_create_operation::fee_parameters_type, (fee)
 FC_REFLECT(graphene::chain::license_create_operation, (fee)(license_lid)(platform)(type)(hash_value)(extra_data)(title)(body)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_create_operation, (fee)(platform)(advertising_id)(description)(sell_price)(start_time)(end_time)(extensions))
+FC_REFLECT(graphene::chain::advertising_create_operation, (fee)(platform)(unit_time)(unit_price)(description)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_update_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_update_operation, (fee)(platform)(advertising_id)(new_description)(new_price)(new_start_time)(new_end_time)(new_state)(extensions))
+FC_REFLECT(graphene::chain::advertising_update_operation, (fee)(platform)(advertising_id)(description)(unit_price)(unit_time)(on_sell)(extensions))
 
-FC_REFLECT(graphene::chain::advertising_buy_operation::fee_parameters_type, (fee)(extensions))
+FC_REFLECT(graphene::chain::advertising_buy_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(from_account)(platform)(advertising_id)(extensions))
 
-FC_REFLECT(graphene::chain::advertising_confirm_operation::fee_parameters_type, (fee)(extensions))
+FC_REFLECT(graphene::chain::advertising_confirm_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_id)(iscomfirm)(extensions))
 
-FC_REFLECT(graphene::chain::advertising_ransom_operation::fee_parameters_type, (fee)(extensions))
-FC_REFLECT(graphene::chain::advertising_ransom_operation, (fee)(from_account)(platform)(advertising_id)(extensions))
+FC_REFLECT(graphene::chain::advertising_ransom_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::advertising_ransom_operation, (fee)(from_account)(platform)(advertising_id)(order_sequence)(extensions))

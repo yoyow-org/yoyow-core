@@ -333,8 +333,8 @@ void advertising_create_operation::validate()const
 {
     validate_op_fee(fee, "advertising_create ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(sell_price > 0, "sell price must be grater then 0");
-    FC_ASSERT(start_time < end_time, "start time must less then end time");
+    FC_ASSERT(unit_time > 0, "unit time must be grater then 0");
+    FC_ASSERT(unit_price > 0, "unit price must be grater then 0");
 }
 
 share_type advertising_create_operation::calculate_fee(const fee_parameters_type& k)const
@@ -350,21 +350,21 @@ void advertising_update_operation::validate()const
 {
     validate_op_fee(fee, "advertising_update ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(new_description.valid() || new_price.valid() || new_start_time.valid() || new_end_time.valid() || new_state.valid(), "must update some parameter");
-    if (new_price.valid()){
-        FC_ASSERT(*new_price > 0, "new price must be greater then 0");
+    FC_ASSERT(description.valid() || unit_price.valid() || unit_time.valid() || on_sell.valid(), "must update some parameter");
+    if (unit_price.valid()){
+        FC_ASSERT(*unit_price > 0, "unit price must be greater then 0");
     }
-    if (new_start_time.valid() && new_end_time.valid()){
-        FC_ASSERT(*new_start_time < *new_end_time,"new start time must less then end time");
+    if (unit_time.valid()){
+        FC_ASSERT(*unit_time > 0, "unit time must be greater then 0");
     }
 }
 
 share_type advertising_update_operation::calculate_fee(const fee_parameters_type& k)const
 {
     share_type core_fee_required = k.fee;
-    if (new_description.valid())
+    if (description.valid())
     {
-        auto hash_size = fc::raw::pack_size(*new_description);
+        auto hash_size = fc::raw::pack_size(*description);
         if (hash_size > 65)
             core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
     }
@@ -401,6 +401,7 @@ void advertising_ransom_operation::validate()const
     validate_op_fee(fee, "advertising_ransom ");
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account, "from_account");
+    FC_ASSERT(order_sequence > 0, "the order sequence must be more then 0. ");
 }
 
 share_type advertising_ransom_operation::calculate_fee(const fee_parameters_type& k)const

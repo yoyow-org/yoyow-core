@@ -142,9 +142,6 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
        void_result do_evaluate(const operation_type& op);
        object_id_type do_apply(const operation_type& op);
-
-       const account_statistics_object* account_stats = nullptr;
-       const advertising_object* advertising_obj = nullptr;
    };
 
    class advertising_update_evaluator : public evaluator < advertising_update_evaluator >
@@ -189,5 +186,6 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
        void_result do_apply(const operation_type& op);
 
        const advertising_object* advertising_obj = nullptr;
+       const advertising_object::Advertising_Order*  ad_order = nullptr;
    };
 } } // graphene::chain

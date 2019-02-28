@@ -1338,12 +1338,9 @@ void_result advertising_create_evaluator::do_evaluate(const operation_type& op)
 {
     try {
         const database& d = db();
-        account_stats = &d.get_account_statistics_by_uid(op.platform);
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create advertising after HARDFORK_0_4_TIME");
-        FC_ASSERT(op.start_time > d.head_block_time(), "advertising start time must later then head_block_time");
-
+        d.get_platform_by_owner(op.platform); // make sure pid exists
         return void_result();
-
     }FC_CAPTURE_AND_RETHROW((op))
 }
 
@@ -1354,14 +1351,12 @@ object_id_type advertising_create_evaluator::do_apply(const operation_type& op)
         const auto& advertising_obj = d.create<advertising_object>([&](advertising_object& obj)
         {
             obj.platform = op.platform;
-            obj.user = account_uid_type(0);
-            obj.publish_time = d.head_block_time();
-            obj.sell_price = op.sell_price;
-            obj.start_time = op.start_time;
-            obj.end_time = op.end_time;
-            obj.state = advertising_idle;
+            obj.on_sell = true;
+            obj.unit_time = op.unit_time;
+            obj.unit_price = op.unit_price;
             obj.description = op.description;
 
+            obj.publish_time = d.head_block_time();
             obj.last_update_time = d.head_block_time();
         });
         return advertising_obj.id;
@@ -1373,25 +1368,12 @@ void_result advertising_update_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only update advertising after HARDFORK_0_4_TIME");
+        d.get_platform_by_owner(op.platform); // make sure pid exists
         advertising_obj = d.find_advertising(op.advertising_id);
         FC_ASSERT(advertising_obj != nullptr, "advertising_object doesn`t exsit");
-        FC_ASSERT(advertising_obj->state != advertising_undetermined , "advertising state is undetermined. ");
-        FC_ASSERT(advertising_obj->state != advertising_using,         "advertising state is using. ");
-        if (op.new_price.valid()){
-            FC_ASSERT(*(op.new_price) > 0, "new price must more then 0. ");
-        }
-        if (!op.new_start_time.valid() && op.new_end_time.valid()){
-            FC_ASSERT(advertising_obj->start_time < *(op.new_end_time), "start time must be less then end time. ");
-        }
-        else if (op.new_start_time.valid() && !op.new_end_time.valid()){
-            FC_ASSERT(*(op.new_start_time) < advertising_obj->end_time, "start time must be less then end time. ");
-        }
-        else if (op.new_start_time.valid() && op.new_end_time.valid()){
-            FC_ASSERT(*(op.new_start_time) < *(op.new_end_time), "start time must be less then end time. ");
-        }
-        if (op.new_state.valid()){
-            FC_ASSERT(*(op.new_state) == advertising_idle || *(op.new_state) == advertising_removed, "error advertising state. ");
-        }
+
+        if (op.on_sell.valid())
+            FC_ASSERT(*(op.on_sell) != advertising_obj->on_sell, "advertising state needn`t update. ");
         
         return void_result();
 
@@ -1403,16 +1385,14 @@ void_result advertising_update_evaluator::do_apply(const operation_type& op)
     try {
         database& d = db();
         d.modify(*advertising_obj, [&](advertising_object& ad) {
-            if (op.new_description.valid())
-                ad.description = *(op.new_description);
-            if (op.new_price.valid())
-                ad.sell_price = *(op.new_price);
-            if (op.new_start_time.valid())
-                ad.start_time = *(op.new_start_time);
-            if (op.new_end_time.valid())
-                ad.end_time = *(op.new_end_time);
-            if (op.new_state.valid())
-                ad.state = *(op.new_state);
+            if (op.description.valid())
+                ad.description = *(op.description);
+            if (op.unit_price.valid())
+                ad.unit_price = *(op.unit_price);
+            if (op.unit_time.valid())
+                ad.unit_time = *(op.unit_time);
+            if (op.on_sell.valid())
+                ad.on_sell = *(op.on_sell);
             ad.last_update_time = d.head_block_time();
         });
 
@@ -1426,19 +1406,19 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
    try {
       const database& d = db();
 
-      FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buy advertising after HARDFORK_0_4_TIME");
-      advertising_obj = d.find_advertising(op.advertising_id);
-      FC_ASSERT(advertising_obj != nullptr, "advertising ${tid} on platform ${platform} is invalid.",
-         ("tid", op.advertising_id)("platform", op.platform));
-      FC_ASSERT(advertising_obj->state == graphene::chain::advertising_idle, "advertising state should be idle");
+      //FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buy advertising after HARDFORK_0_4_TIME");
+      //advertising_obj = d.find_advertising(op.advertising_id);
+      //FC_ASSERT(advertising_obj != nullptr, "advertising ${tid} on platform ${platform} is invalid.",
+      //   ("tid", op.advertising_id)("platform", op.platform));
+      //FC_ASSERT(advertising_obj->state == graphene::chain::advertising_idle, "advertising state should be idle");
 
-      const auto& from_balance = d.get_balance(op.from_account, GRAPHENE_CORE_ASSET_AID);
-      bool sufficient_balance = (from_balance.amount >= advertising_obj->sell_price);
-      FC_ASSERT(sufficient_balance,
-         "Insufficient Balance: ${balance}, not enough to buy advertising ${tid} that ${need} needed.",
-         ("need", advertising_obj->sell_price)("balance", d.to_pretty_string(from_balance)));
+      //const auto& from_balance = d.get_balance(op.from_account, GRAPHENE_CORE_ASSET_AID);
+      //bool sufficient_balance = (from_balance.amount >= advertising_obj->sell_price);
+      //FC_ASSERT(sufficient_balance,
+      //   "Insufficient Balance: ${balance}, not enough to buy advertising ${tid} that ${need} needed.",
+      //   ("need", advertising_obj->sell_price)("balance", d.to_pretty_string(from_balance)));
 
-      return void_result();
+      //return void_result();
 
    }FC_CAPTURE_AND_RETHROW((op))
 }
@@ -1448,17 +1428,17 @@ void_result advertising_buy_evaluator::do_apply(const operation_type& op)
    try {
       database& d = db();
 
-      d.modify(*advertising_obj, [&](advertising_object& obj)
-      {
-         obj.user = op.from_account;
-         obj.buy_request_time = d.head_block_time();
-         obj.last_update_time = d.head_block_time();
-         obj.released_balance = obj.sell_price;
-         obj.state = graphene::chain::advertising_undetermined;
-      });
-      d.adjust_balance(op.from_account, -asset(advertising_obj->sell_price));
+      //d.modify(*advertising_obj, [&](advertising_object& obj)
+      //{
+      //   obj.user = op.from_account;
+      //   obj.buy_request_time = d.head_block_time();
+      //   obj.last_update_time = d.head_block_time();
+      //   obj.released_balance = obj.sell_price;
+      //   obj.state = graphene::chain::advertising_undetermined;
+      //});
+      //d.adjust_balance(op.from_account, -asset(advertising_obj->sell_price));
 
-      return void_result();
+      //return void_result();
 
    } FC_CAPTURE_AND_RETHROW((op))
 }
@@ -1468,13 +1448,13 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
    try {
       const database& d = db();
 
-      FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only advertising comfirm after HARDFORK_0_4_TIME");
-      advertising_obj = d.find_advertising(op.advertising_id);
-      FC_ASSERT(advertising_obj != nullptr, "advertising ${id} on platform ${platform} is invalid.",
-         ("id", op.advertising_id)("platform", op.platform));
-      FC_ASSERT(advertising_obj->state == graphene::chain::advertising_undetermined, "advertising state should be undetermined");
+      //FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only advertising comfirm after HARDFORK_0_4_TIME");
+      //advertising_obj = d.find_advertising(op.advertising_id);
+      //FC_ASSERT(advertising_obj != nullptr, "advertising ${id} on platform ${platform} is invalid.",
+      //   ("id", op.advertising_id)("platform", op.platform));
+      //FC_ASSERT(advertising_obj->state == graphene::chain::advertising_undetermined, "advertising state should be undetermined");
 
-      return void_result();
+      //return void_result();
 
    }FC_CAPTURE_AND_RETHROW((op))
 }
@@ -1483,43 +1463,43 @@ void_result advertising_confirm_evaluator::do_apply(const operation_type& op)
 {
    try {
       database& d = db();
-
-      if (op.iscomfirm)
-      {
-         d.modify(*advertising_obj, [&](advertising_object& obj)
-         {
+      /*
+            if (op.iscomfirm)
+            {
+            d.modify(*advertising_obj, [&](advertising_object& obj)
+            {
             obj.last_update_time = d.head_block_time();
-            obj.released_balance = 0;          
+            obj.released_balance = 0;
             obj.state = graphene::chain::advertising_using;
-         });
+            });
 
-         const auto& params = d.get_global_properties().parameters.get_award_params();
-         share_type fee = ((uint128_t)advertising_obj->sell_price.value * params.advertising_confirmed_fee_rate
+            const auto& params = d.get_global_properties().parameters.get_award_params();
+            share_type fee = ((uint128_t)advertising_obj->sell_price.value * params.advertising_confirmed_fee_rate
             / GRAPHENE_100_PERCENT).convert_to<int64_t>();
-         if (fee < params.advertising_confirmed_min_fee)
+            if (fee < params.advertising_confirmed_min_fee)
             fee = params.advertising_confirmed_min_fee;
 
-         d.adjust_balance(op.platform, asset(advertising_obj->sell_price - fee));
-         const auto& core_asset = d.get_core_asset();
-         const auto& core_dyn_data = core_asset.dynamic_data(d);
-         d.modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
-         {
+            d.adjust_balance(op.platform, asset(advertising_obj->sell_price - fee));
+            const auto& core_asset = d.get_core_asset();
+            const auto& core_dyn_data = core_asset.dynamic_data(d);
+            d.modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
+            {
             dyn.current_supply -= fee;
-         });
-      }
-      else
-      {
-         d.adjust_balance(advertising_obj->user, asset(advertising_obj->sell_price));
-         d.modify(*advertising_obj, [&](advertising_object& obj)
-         {
-             obj.user = account_uid_type(0);
-             obj.released_balance = 0;
-             obj.state = graphene::chain::advertising_idle;
-             obj.buy_request_time = time_point_sec(0);
-             obj.last_update_time = d.head_block_time();
+            });
+            }
+            else
+            {
+            d.adjust_balance(advertising_obj->user, asset(advertising_obj->sell_price));
+            d.modify(*advertising_obj, [&](advertising_object& obj)
+            {
+            obj.user = account_uid_type(0);
+            obj.released_balance = 0;
+            obj.state = graphene::chain::advertising_idle;
+            obj.buy_request_time = time_point_sec(0);
+            obj.last_update_time = d.head_block_time();
 
-         });
-      }    
+            });
+            }  */
 
       return void_result();
 
@@ -1531,11 +1511,19 @@ void_result advertising_ransom_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only ransom advertising after HARDFORK_0_4_TIME");
+        d.get_platform_by_owner(op.platform); // make sure pid exists
+        d.get_account_by_uid(op.from_account);
         advertising_obj = d.find_advertising(op.advertising_id);
         FC_ASSERT(advertising_obj != nullptr, "advertising_object doesn`t exsit");
-        FC_ASSERT(advertising_obj->user == op.from_account, "your account isn`t the advertising`s user. ");
-        FC_ASSERT(advertising_obj->state == advertising_undetermined, "error advertising state for ransom. ");
-        FC_ASSERT(advertising_obj->buy_request_time + GRAPHENE_ADVERTISING_COMFIRM_TIME < d.head_block_time(), "the buy advertising is undetermined. Can`t ransom now.");
+        bool isfound = false;
+        auto iter_ad = advertising_obj->undetermined_orders.find(op.order_sequence);
+        if (iter_ad != advertising_obj->undetermined_orders.end()){
+            isfound = true;
+            ad_order = &(iter_ad->second);
+            FC_ASSERT(ad_order->user == op.from_account, "your can only ransom your own order. ");
+            FC_ASSERT(ad_order->buy_request_time + GRAPHENE_ADVERTISING_COMFIRM_TIME < d.head_block_time(), "the buy advertising is undetermined. Can`t ransom now.");
+        }
+        FC_ASSERT(isfound, "Advertising order isn`t found in advertising_object`s undetermined_orders. ");
         return void_result();
 
     }FC_CAPTURE_AND_RETHROW((op))
@@ -1545,12 +1533,10 @@ void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
 {
     try {
         database& d = db();
-        share_type sell_price = advertising_obj->sell_price;
+        share_type sell_price = ad_order->released_balance;
         d.modify(*advertising_obj, [&](advertising_object& obj) {
-            obj.state = advertising_removed;
-            obj.user = account_uid_type(0);
-            obj.released_balance = 0;
-
+            auto iter_ad = obj.undetermined_orders.find(op.order_sequence);
+            obj.undetermined_orders.erase(iter_ad);
             obj.last_update_time = d.head_block_time();
         });
         d.adjust_balance(op.from_account, asset(sell_price));

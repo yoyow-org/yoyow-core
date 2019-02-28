@@ -1119,8 +1119,8 @@ void database::check_invariants()
    const auto& adt_idx = get_index_type<advertising_index>().indices();
    for (const auto& s : adt_idx)
    {
-      FC_ASSERT(s.released_balance >= 0);
-      total_advertising_released += s.released_balance;
+       FC_ASSERT(s.released_balance >= 0);
+       total_advertising_released += s.released_balance;
    }
 
    share_type current_supply = get_core_asset().dynamic_data(*this).current_supply;
