@@ -1504,19 +1504,15 @@ void database_fixture::collect_csaf_from_committee(account_uid_type to_account, 
 void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_keys,
                                           account_uid_type               platform,
                                           string                         description,
-                                          share_type                     sell_price,
-                                          time_point_sec                 start_time,
-                                          time_point_sec                 end_time)
+                                          share_type                     unit_price,
+                                          uint32_t                       unit_time)                                      
 {
     try {
-        const account_statistics_object& plat_account_statistics = db.get_account_statistics_by_uid(platform);
         advertising_create_operation create_op;
-        create_op.advertising_tid = plat_account_statistics.last_advertising_sequence + 1;
         create_op.platform = platform;
         create_op.description = description;
-        create_op.sell_price = sell_price;
-        create_op.start_time = start_time;
-        create_op.end_time = end_time;
+        create_op.unit_price = unit_price;
+        create_op.unit_time = unit_time;
 
         signed_transaction tx;
         tx.operations.push_back(create_op);
@@ -1528,28 +1524,29 @@ void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_ke
             sign(tx, key);
 
         db.push_transaction(tx);
-    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(platform)(description)(sell_price)(start_time)(end_time))
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(description)(unit_price)(unit_time))
 }
 
 void database_fixture::update_advertising(flat_set<fc::ecc::private_key> sign_keys,
                                           account_uid_type               platform,
-                                          advertising_tid_type           advertising_tid,
-                                          string                         new_description,
-                                          share_type                     new_price,
-                                          time_point_sec                 new_start_time,
-                                          time_point_sec                 new_end_time,
-                                          uint8_t                        new_state
-    )
+                                          object_id_type                 advertising_id,
+                                          optional<string>               description,
+                                          optional<share_type>           unit_price,
+                                          optional<uint32_t>             unit_time,
+                                          optional<bool>                 on_sell)
 {
     try {
         advertising_update_operation update_op;
         update_op.platform = platform;
-        update_op.advertising_tid = advertising_tid;
-        update_op.new_description = new_description;
-        update_op.new_price = new_price;
-        update_op.new_start_time = new_start_time;
-        update_op.new_end_time = new_end_time;
-        update_op.new_state = new_state;
+        update_op.advertising_id = advertising_id;
+        if (description.valid())
+            update_op.description = *description;
+        if (unit_price.valid())
+            update_op.unit_price = *unit_price;
+        if (unit_time.valid())
+            update_op.unit_time = *unit_time;
+        if (on_sell.valid())
+            update_op.on_sell = *on_sell;
 
         signed_transaction tx;
         tx.operations.push_back(update_op);
@@ -1561,19 +1558,21 @@ void database_fixture::update_advertising(flat_set<fc::ecc::private_key> sign_ke
             sign(tx, key);
 
         db.push_transaction(tx);
-    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_tid)(new_description)(new_price)(new_start_time)(new_end_time)(new_state))
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_id)(description)(unit_price)(unit_time)(on_sell))
 }
 
 void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_keys,
                                           account_uid_type               platform,
                                           account_uid_type               from_account,
-                                          advertising_tid_type           advertising_tid)
+                                          object_id_type                 advertising_id,
+                                          uint32_t                       order_sequence)
 {
     try {
         advertising_ransom_operation ransom_op;
         ransom_op.platform = platform;
         ransom_op.from_account = from_account;
-        ransom_op.advertising_tid = advertising_tid;
+        ransom_op.advertising_id = advertising_id;
+        ransom_op.order_sequence = order_sequence;
 
         signed_transaction tx;
         tx.operations.push_back(ransom_op);
@@ -1585,7 +1584,7 @@ void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_ke
             sign(tx, key);
 
         db.push_transaction(tx);
-    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_tid))
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_id)(order_sequence))
 }
 
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>

@@ -2838,9 +2838,8 @@ signed_transaction account_cancel_auth_platform(string account,
 
    signed_transaction create_advertising(string           platform,
                                          string           description,
-                                         string           price,
-                                         uint32_t         start_time,
-                                         uint32_t         end_time,
+                                         string           unit_price,
+                                         uint32_t         unit_time,
                                          bool             csaf_fee,
                                          bool             broadcast)
    {
@@ -2852,12 +2851,10 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type platform_uid = get_account_uid(platform);
            const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
            advertising_create_operation create_op;
-           create_op.advertising_tid = plat_account_statistics.last_advertising_sequence + 1;
            create_op.platform = platform_uid;
            create_op.description = description;
-           create_op.sell_price = asset_obj->amount_from_string(price).amount;
-           create_op.start_time = time_point_sec(start_time);
-           create_op.end_time = time_point_sec(end_time);
+           create_op.unit_price = asset_obj->amount_from_string(unit_price).amount;
+           create_op.unit_time = unit_time;
 
            signed_transaction tx;
            tx.operations.push_back(create_op);
@@ -2865,16 +2862,15 @@ signed_transaction account_cancel_auth_platform(string account,
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(description)(price)(start_time)(end_time)(csaf_fee)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(description)(unit_price)(unit_time)(csaf_fee)(broadcast))
    }
 
    signed_transaction update_advertising(string                     platform,
-                                         string                     advertising_tid,
-                                         optional<string>           new_description,
-                                         optional<string>           new_price,
-                                         optional<uint32_t>         new_start_time,
-                                         optional<uint32_t>         new_end_time,
-                                         optional<uint8_t>          new_state,
+                                         object_id_type             advertising_id,
+                                         optional<string>           description,
+                                         optional<string>           unit_price,
+                                         optional<uint32_t>         unit_time,
+                                         optional<bool>             on_sell,
                                          bool                       csaf_fee,
                                          bool                       broadcast)
    {
@@ -2886,17 +2882,15 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type platform_uid = get_account_uid(platform);
            advertising_update_operation update_op;
            update_op.platform = platform_uid;
-           update_op.advertising_tid = fc::to_uint64(fc::string(advertising_tid));
-           if (new_description.valid())
-               update_op.new_description = *new_description;
-           if (new_price.valid())
-               update_op.new_price = asset_obj->amount_from_string(*new_price).amount;
-           if (new_start_time.valid())
-               update_op.new_start_time = time_point_sec(*new_start_time);
-           if (new_end_time.valid())
-               update_op.new_end_time = time_point_sec(*new_end_time);
-           if (new_state.valid())
-               update_op.new_state = *new_state;
+           update_op.advertising_id = advertising_id;
+           if (description.valid())
+               update_op.description = *description;
+           if (unit_price.valid())
+               update_op.unit_price = asset_obj->amount_from_string(*unit_price).amount;
+           if (unit_time.valid())
+               update_op.unit_time = *unit_time;
+           if (on_sell.valid())
+               update_op.on_sell = *on_sell;
 
            signed_transaction tx;
            tx.operations.push_back(update_op);
@@ -2904,12 +2898,13 @@ signed_transaction account_cancel_auth_platform(string account,
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(advertising_tid)(new_description)(new_price)(new_start_time)(new_end_time)(new_state)(csaf_fee)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(advertising_id)(description)(unit_price)(unit_time)(on_sell)(csaf_fee)(broadcast))
    }
 
    signed_transaction ransom_advertising(string           platform,
                                          string           from_account,
-                                         string           advertising_tid,
+                                         object_id_type   advertising_id,
+                                         uint32_t         order_sequence,
                                          bool             csaf_fee,
                                          bool             broadcast)
    {
@@ -2921,7 +2916,8 @@ signed_transaction account_cancel_auth_platform(string account,
            advertising_ransom_operation ransom_op;
            ransom_op.platform = platform_uid;
            ransom_op.from_account = from_account_uid;
-           ransom_op.advertising_tid = fc::to_uint64(fc::string(advertising_tid));
+           ransom_op.advertising_id = advertising_id;
+           ransom_op.order_sequence = order_sequence;
 
            signed_transaction tx;
            tx.operations.push_back(ransom_op);
@@ -2929,7 +2925,7 @@ signed_transaction account_cancel_auth_platform(string account,
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_tid)(csaf_fee)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_id)(order_sequence)(csaf_fee)(broadcast))
    }
 
    signed_transaction approve_proposal(
@@ -4308,35 +4304,34 @@ account_statistics_object wallet_api::get_account_statistics(string account)
 
 signed_transaction wallet_api::create_advertising(string           platform,
                                                   string           description,
-                                                  string           price,
-                                                  uint32_t         start_time,
-                                                  uint32_t         end_time,
+                                                  string           unit_price,
+                                                  uint32_t         unit_time,
                                                   bool             csaf_fee,
                                                   bool             broadcast)
 {
-    return my->create_advertising(platform, description, price, start_time, end_time, csaf_fee, broadcast);
+    return my->create_advertising(platform, description, unit_price, unit_time, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::update_advertising(string                     platform,
-                                                  string                     advertising_tid,
-                                                  optional<string>           new_description,
-                                                  optional<string>           new_price,
-                                                  optional<uint32_t>         new_start_time,
-                                                  optional<uint32_t>         new_end_time,
-                                                  optional<uint8_t>          new_state,
+                                                  object_id_type             advertising_id,
+                                                  optional<string>           description,
+                                                  optional<string>           unit_price,
+                                                  optional<uint32_t>         unit_time,
+                                                  optional<bool>             on_sell,
                                                   bool                       csaf_fee,
                                                   bool                       broadcast)
 {
-    return my->update_advertising(platform, advertising_tid, new_description, new_price, new_start_time, new_end_time, new_state, csaf_fee, broadcast);
+    return my->update_advertising(platform, advertising_id, description, unit_price, unit_time, on_sell, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::ransom_advertising(string           platform,
                                                   string           from_account,
-                                                  string           advertising_tid,
+                                                  object_id_type   advertising_id,
+                                                  uint32_t         order_sequence,
                                                   bool             csaf_fee,
                                                   bool             broadcast)
 {
-    return my->ransom_advertising(platform, from_account, advertising_tid, csaf_fee, broadcast);
+    return my->ransom_advertising(platform, from_account, advertising_id, order_sequence, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::approve_proposal(

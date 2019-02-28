@@ -697,10 +697,10 @@ FC_REFLECT_DERIVED(graphene::chain::license_object,
 
 FC_REFLECT(graphene::chain::advertising_object::Advertising_Order,
                    (user)(released_balance)(start_time)(end_time)
-                   (memo)(extra_data)(released_balance)(description)(buy_request_time)(last_update_time)
+                   (buy_request_time)(memo)(extra_data)
                    )
 
 FC_REFLECT_DERIVED( graphene::chain::advertising_object,
                    (graphene::db::object), 
-                   (platform)(state)(unit_time)(unit_price)(description)
+                   (platform)(on_sell)(unit_time)(unit_price)(description)
                    (publish_time)(last_update_time)(order_sequence)(effective_orders)(undetermined_orders))

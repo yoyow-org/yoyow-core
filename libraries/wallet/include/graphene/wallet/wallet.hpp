@@ -1588,25 +1588,24 @@ class wallet_api
 
       signed_transaction create_advertising(string           platform,
                                             string           description,
-                                            string           price,
-                                            uint32_t         start_time,
-                                            uint32_t         end_time,
+                                            string           unit_price,
+                                            uint32_t         unit_time,
                                             bool csaf_fee = true,
                                             bool broadcast = false);
 
       signed_transaction update_advertising(string                     platform,
-                                            string                     advertising_tid,
-                                            optional<string>           new_description,
-                                            optional<string>           new_price,
-                                            optional<uint32_t>         new_start_time,
-                                            optional<uint32_t>         new_end_time,
-                                            optional<uint8_t>          new_state,
+                                            object_id_type             advertising_id,
+                                            optional<string>           description,
+                                            optional<string>           unit_price,
+                                            optional<uint32_t>         unit_time,
+                                            optional<bool>             on_sell,
                                             bool csaf_fee = true,
                                             bool broadcast = false);
 
       signed_transaction ransom_advertising(string           platform,
                                             string           from_account,
-                                            string           advertising_tid,
+                                            object_id_type   advertising_id,
+                                            uint32_t         order_sequence,
                                             bool csaf_fee = true,
                                             bool broadcast = false);
          

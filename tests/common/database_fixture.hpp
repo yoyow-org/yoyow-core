@@ -427,24 +427,22 @@ struct database_fixture {
    void create_advertising(flat_set<fc::ecc::private_key> sign_keys, 
                            account_uid_type               platform, 
                            string                         description, 
-                           share_type                     sell_price, 
-                           time_point_sec                 start_time,
-                           time_point_sec                 end_time);
+                           share_type                     unit_price, 
+                           uint32_t                       unit_time);
 
    void update_advertising(flat_set<fc::ecc::private_key> sign_keys,
                            account_uid_type               platform,
-                           advertising_tid_type           advertising_tid,
-                           string                         new_description,
-                           share_type                     new_price,
-                           time_point_sec                 new_start_time,
-                           time_point_sec                 new_end_time,
-                           uint8_t                        new_state
-       );
+                           object_id_type                 advertising_tid,
+                           optional<string>               description,
+                           optional<share_type>           unit_price,
+                           optional<uint32_t>             unit_time,
+                           optional<bool>                 on_sell);
 
    void ransom_advertising(flat_set<fc::ecc::private_key> sign_keys,
                            account_uid_type               platform,
                            account_uid_type               from_account,
-                           advertising_tid_type           advertising_tid);
+                           object_id_type                 advertising_id,
+                           uint32_t                       order_sequence);
 
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);
