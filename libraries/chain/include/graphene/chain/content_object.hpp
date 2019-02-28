@@ -605,6 +605,7 @@ namespace graphene { namespace chain {
           share_type             released_balance;
           time_point_sec         start_time;
           time_point_sec         end_time;
+          time_point_sec         buy_request_time;
                                  
           memo_data              memo;
           string                 extra_data;
@@ -619,6 +620,7 @@ namespace graphene { namespace chain {
       time_point_sec             publish_time;
       time_point_sec             last_update_time;
 
+
       vector<Advertising_Order>  effective_orders;
       vector<Advertising_Order>  undetermined_orders;
    };
@@ -631,15 +633,15 @@ namespace graphene { namespace chain {
    typedef multi_index_container<
       advertising_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_advertising_state>,
-            composite_key<
-               advertising_object,
-               member< advertising_object, account_uid_type, &advertising_object::platform >,
-               member< advertising_object, uint8_t,          &advertising_object::state >
-         >>,
-         ordered_non_unique< tag<by_advertising_user>, 
-            member< advertising_object, account_uid_type,    &advertising_object::user> >
+      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >/*,
+      ordered_unique< tag<by_advertising_state>,
+      composite_key<
+      advertising_object,
+      member< advertising_object, account_uid_type, &advertising_object::platform >,
+      member< advertising_object, uint8_t,          &advertising_object::state >
+      >>,
+      ordered_non_unique< tag<by_advertising_user>,
+      member< advertising_object, account_uid_type,    &advertising_object::user> >*/
        >
       > advertising_multi_index_type;
 
