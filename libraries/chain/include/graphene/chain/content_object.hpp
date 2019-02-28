@@ -587,15 +587,6 @@ namespace graphene { namespace chain {
    */
    typedef generic_index<license_object, license_multi_index_type> license_index;
 
-
-   enum advertising_state
-   {
-      advertising_idle         = 0,
-      advertising_undetermined = 1,
-      advertising_using        = 2,
-      advertising_removed      = 4
-   };
-
    /**
    * @brief This class advertising space
    * @ingroup object
@@ -620,7 +611,7 @@ namespace graphene { namespace chain {
       };                         
                                  
       account_uid_type           platform;
-      uint8_t                    state = advertising_idle;
+      bool                       on_sell;
       uint32_t                   unit_time;
       share_type                 unit_price;
       string                     description;
