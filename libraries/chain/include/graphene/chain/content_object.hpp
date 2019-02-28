@@ -606,7 +606,7 @@ namespace graphene { namespace chain {
           time_point_sec         end_time;
           time_point_sec         buy_request_time;
                                  
-          memo_data              memo;
+          optional<memo_data>    memo;
           string                 extra_data;
       };                         
                                  
@@ -618,6 +618,7 @@ namespace graphene { namespace chain {
                                  
       time_point_sec             publish_time;
       time_point_sec             last_update_time;
+      uint32_t                   order_sequence = 0;
 
       flat_map<uint32_t, Advertising_Order>  effective_orders;
       flat_map<uint32_t, Advertising_Order>  undetermined_orders;
@@ -694,7 +695,7 @@ FC_REFLECT_DERIVED(graphene::chain::license_object,
                     (graphene::db::object), (license_lid)(platform)(license_type)(hash_value)(extra_data)(title)(body)(create_time)
 					)
 
-FC_REFLECT_DERIVED(graphene::chain::advertising_object::Advertising_Order,
+FC_REFLECT(graphene::chain::advertising_object::Advertising_Order,
                    (user)(released_balance)(start_time)(end_time)
                    (memo)(extra_data)(released_balance)(description)(buy_request_time)(last_update_time)
                    )
@@ -702,4 +703,4 @@ FC_REFLECT_DERIVED(graphene::chain::advertising_object::Advertising_Order,
 FC_REFLECT_DERIVED( graphene::chain::advertising_object,
                    (graphene::db::object), 
                    (platform)(state)(unit_time)(unit_price)(description)
-                   (publish_time)(last_update_time)(effective_orders)(undetermined_orders))
+                   (publish_time)(last_update_time)(order_sequence)(effective_orders)(undetermined_orders))
