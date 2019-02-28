@@ -85,7 +85,8 @@ namespace graphene { namespace chain {
     */
 
    struct void_result{};
-   typedef fc::static_variant<void_result,object_id_type,asset> operation_result;
+   typedef flat_map<account_uid_type, share_type> advertising_confirm_result;
+   typedef fc::static_variant<void_result,object_id_type,asset,advertising_confirm_result> operation_result;
 
    struct fee_extension_type
    {
@@ -185,6 +186,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_TYPENAME( graphene::chain::operation_result )
 FC_REFLECT_TYPENAME( graphene::chain::future_extensions )
+FC_REFLECT_TYPENAME( graphene::chain::advertising_confirm_result )
 FC_REFLECT( graphene::chain::void_result, )
 FC_REFLECT( graphene::chain::default_extension_type, )
 

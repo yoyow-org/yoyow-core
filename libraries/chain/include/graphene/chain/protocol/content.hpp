@@ -566,7 +566,12 @@ namespace graphene { namespace chain {
        account_uid_type             from_account;
        account_uid_type             platform;
        object_id_type               advertising_id;
+       time_point_sec               start_time;
+       uint32_t                     buy_number;
 
+       string                       extra_data;
+       optional<memo_data>          memo;
+       
        extensions_type              extensions;
 
        account_uid_type fee_payer_uid()const { return from_account; }
@@ -591,6 +596,7 @@ namespace graphene { namespace chain {
 
        account_uid_type             platform;
        object_id_type               advertising_id;
+       uint32_t                     order_sequence;
        bool                         iscomfirm;
 
        extensions_type              extensions;
@@ -684,8 +690,8 @@ FC_REFLECT(graphene::chain::advertising_update_operation, (fee)(platform)(advert
 FC_REFLECT(graphene::chain::advertising_buy_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(from_account)(platform)(advertising_id)(extensions))
 
-FC_REFLECT(graphene::chain::advertising_confirm_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_id)(iscomfirm)(extensions))
+FC_REFLECT(graphene::chain::advertising_confirm_operation::fee_parameters_type, (fee)(extensions))
+FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_id)(order_sequence)(iscomfirm)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_ransom_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::advertising_ransom_operation, (fee)(from_account)(platform)(advertising_id)(order_sequence)(extensions))
