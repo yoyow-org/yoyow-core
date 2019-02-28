@@ -607,18 +607,29 @@ namespace graphene { namespace chain {
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id = impl_advertising_object_type;
 
-      account_uid_type     platform;
-      account_uid_type     user;
-      time_point_sec       publish_time;
-      share_type           sell_price;
-      time_point_sec       start_time;
-      time_point_sec       end_time;
-      uint8_t              state  = advertising_idle;
-      share_type           released_balance;
-      
-      string               description;
-      time_point_sec       buy_request_time;
-      time_point_sec       last_update_time;
+      struct Advertising_Order
+      {
+          uint32_t               order_sequence;
+          account_uid_type       user;
+          share_type             released_balance;
+          time_point_sec         start_time;
+          time_point_sec         end_time;
+                                 
+          memo_data              memo;
+          string                 extra_data;
+      };                         
+                                 
+      account_uid_type           platform;
+      uint8_t                    state = advertising_idle;
+      uint32_t                   unit_time;
+      share_type                 unit_price;
+      string                     description;
+                                 
+      time_point_sec             publish_time;
+      time_point_sec             last_update_time;
+
+      vector<Advertising_Order>  effective_orders;
+      vector<Advertising_Order>  undetermined_orders;
    };
 
    struct by_advertising_state{};
@@ -692,11 +703,15 @@ FC_REFLECT_DERIVED(graphene::chain::license_object,
                     (graphene::db::object), (license_lid)(platform)(license_type)(hash_value)(extra_data)(title)(body)(create_time)
 					)
 
+FC_REFLECT_DERIVED(graphene::chain::advertising_object::Advertising_Order,
+                   (order_sequence)(user)(released_balance)(start_time)(end_time)
+                   (memo)(extra_data)(released_balance)(description)(buy_request_time)(last_update_time)
+                   )
+
 FC_REFLECT_DERIVED( graphene::chain::advertising_object,
                    (graphene::db::object), 
-                   (platform)(user)(publish_time)(sell_price)(start_time)
-                   (end_time)(state)(released_balance)(description)(buy_request_time)(last_update_time)
-          )
+                   (platform)(state)(unit_time)(unit_price)(description)
+                   (publish_time)(last_update_time)(effective_orders)(undetermined_orders))
 
 FC_REFLECT_ENUM( graphene::chain::advertising_state,
           (advertising_idle)
