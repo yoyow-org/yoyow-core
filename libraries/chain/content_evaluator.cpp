@@ -1416,12 +1416,9 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
 
       time_point_sec end_time = op.start_time + advertising_obj->unit_time * op.buy_number;
       for (const auto &o : advertising_obj->effective_orders) {
-         if (op.start_time > o.second.start_time)
-            FC_ASSERT(op.start_time >= o.second.end_time, "purchasing date have a conflict, buy advertising failed");
-         else if (op.start_time < o.second.start_time)
-            FC_ASSERT(end_time <= o.second.start_time, "purchasing date have a conflict, buy advertising failed");
-         else
-            FC_ASSERT("purchasing date have a conflict, buy advertising failed");
+         if (op.start_time >= o.second.end_time || end_time <= o.second.start_time)
+            continue;
+         FC_ASSERT("purchasing date have a conflict, buy advertising failed");
       }
 
       const auto& from_balance = d.get_balance(op.from_account, GRAPHENE_CORE_ASSET_AID);
