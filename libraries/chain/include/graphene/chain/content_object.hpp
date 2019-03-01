@@ -624,23 +624,24 @@ namespace graphene { namespace chain {
       flat_map<uint32_t, Advertising_Order>        undetermined_orders;
    };
 
+   struct by_advertising_platform{};
    struct by_advertising_state{};
-   struct by_advertising_user{};
+   
    /**
    * @ingroup object_index
    */
    typedef multi_index_container<
       advertising_object,
       indexed_by<
-      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >/*,
+      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+      ordered_non_unique< tag<by_advertising_platform>,
+         member< advertising_object, account_uid_type, &advertising_object::platform> >,
       ordered_unique< tag<by_advertising_state>,
-      composite_key<
-      advertising_object,
-      member< advertising_object, account_uid_type, &advertising_object::platform >,
-      member< advertising_object, uint8_t,          &advertising_object::state >
-      >>,
-      ordered_non_unique< tag<by_advertising_user>,
-      member< advertising_object, account_uid_type,    &advertising_object::user> >*/
+         composite_key<
+            advertising_object,
+            member< advertising_object, account_uid_type, &advertising_object::platform >,
+            member< advertising_object, bool, &advertising_object::on_sell >>
+       > 
        >
       > advertising_multi_index_type;
 
