@@ -1475,17 +1475,6 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
       bool found = advertising_obj->undetermined_orders.find(op.order_sequence) != advertising_obj->undetermined_orders.end();
       FC_ASSERT(found, "order {order} is not in undetermined queues", ("order", op.order_sequence));
 
-     /* advertising_object::Advertising_Order confirm_order = advertising_obj->undetermined_orders.at(op.order_sequence);
-      for (const auto &o : advertising_obj->effective_orders)
-      {
-         if (confirm_order.start_time > o.second.start_time)
-            FC_ASSERT(confirm_order.start_time >= o.second.end_time, "purchasing date have a conflict, confirm advertising failed");
-         else if (confirm_order.start_time < o.second.start_time)
-            FC_ASSERT(confirm_order.end_time <= o.second.start_time, "purchasing date have a conflict, confirm advertising failed");
-         else
-            FC_ASSERT("purchasing date have a conflict, confirm advertising failed");
-      }*/
-
       return void_result();
 
    }FC_CAPTURE_AND_RETHROW((op))
@@ -1502,7 +1491,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
       {
          d.modify(*advertising_obj, [&](advertising_object& obj)
          {      
-            confirm_order.released_balance = 0;
+            obj.undetermined_orders.at(op.order_sequence).released_balance = 0;
             obj.effective_orders.emplace(confirm_order.start_time, confirm_order);
             obj.undetermined_orders.erase(op.order_sequence);
 

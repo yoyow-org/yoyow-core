@@ -3,6 +3,7 @@
  */
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
+#include <graphene/chain/protocol/memo.hpp>
 
 namespace graphene { namespace chain {
 
@@ -688,7 +689,7 @@ FC_REFLECT(graphene::chain::advertising_update_operation::fee_parameters_type, (
 FC_REFLECT(graphene::chain::advertising_update_operation, (fee)(platform)(advertising_id)(description)(unit_price)(unit_time)(on_sell)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_buy_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(from_account)(platform)(advertising_id)(extensions))
+FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(from_account)(platform)(advertising_id)(start_time)(buy_number)(extra_data)(memo)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_confirm_operation::fee_parameters_type, (fee)(extensions))
 FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_id)(order_sequence)(iscomfirm)(extensions))
