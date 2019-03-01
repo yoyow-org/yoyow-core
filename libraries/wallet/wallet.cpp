@@ -98,6 +98,7 @@ public:
    std::string operator()(const void_result& x) const;
    std::string operator()(const object_id_type& oid);
    std::string operator()(const asset& a);
+   std::string operator()(const advertising_confirm_result& a);
 };
 
 // BLOCK  TRX  OP  VOP
@@ -2612,11 +2613,15 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((executor)(account)(options)(csaf_fee)(broadcast))
    }
 
-   signed_transaction buy_advertising(string   account,
-                                      string   platform,
-                                      uint32_t advertising_tid,
-                                      bool csaf_fee = true,
-                                      bool broadcast = false
+   signed_transaction buy_advertising(string               account,
+                                      string               platform,
+                                      object_id_type       advertising_id,
+                                      uint32_t             start_time,
+                                      uint32_t             buy_number,
+                                      string               extra_data,
+                                      string               memo,
+                                      bool                 csaf_fee = true,
+                                      bool                 broadcast = false
                                       )
    {
       try {
@@ -2625,7 +2630,20 @@ signed_transaction account_cancel_auth_platform(string account,
          advertising_buy_operation buy_op;
          buy_op.from_account = get_account_uid(account);
          buy_op.platform = get_account_uid(platform);
-         buy_op.advertising_tid = advertising_tid;
+         buy_op.advertising_id = advertising_id;
+         buy_op.start_time = time_point_sec(start_time);
+         buy_op.buy_number = buy_number;
+         buy_op.extra_data = extra_data;
+
+         account_object user = get_account(account);
+         account_object platform_account = get_account(platform);
+         if (memo.size())
+         {
+             buy_op.memo = memo_data();
+             buy_op.memo->from = user.memo_key;
+             buy_op.memo->to = platform_account.memo_key;
+             buy_op.memo->set_message(get_private_key(user.memo_key), platform_account.memo_key, memo);
+         }
 
          signed_transaction tx;
          tx.operations.push_back(buy_op);
@@ -2634,14 +2652,15 @@ signed_transaction account_cancel_auth_platform(string account,
 
          return sign_transaction(tx, broadcast);
 
-      } FC_CAPTURE_AND_RETHROW((account)(platform)(advertising_tid)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((account)(platform)(advertising_id)(start_time)(buy_number)(extra_data)(memo)(csaf_fee)(broadcast))
    }
 
-   signed_transaction confirm_advertising(string   platform,
-                                          uint32_t advertising_tid,
-                                          bool comfirm,
-                                          bool csaf_fee = true,
-                                          bool broadcast = false
+   signed_transaction confirm_advertising(string         platform,
+                                          object_id_type advertising_id,
+                                          uint32_t       order_sequence,
+                                          bool           comfirm,
+                                          bool           csaf_fee = true,
+                                          bool           broadcast = false
                                          )
    {
       try {
@@ -2649,7 +2668,8 @@ signed_transaction account_cancel_auth_platform(string account,
 
          advertising_confirm_operation confirm_op;
          confirm_op.platform = get_account_uid(platform);
-         confirm_op.advertising_tid = advertising_tid;
+         confirm_op.advertising_id = advertising_id;
+         confirm_op.order_sequence = order_sequence;
          confirm_op.iscomfirm = comfirm;
 
          signed_transaction tx;
@@ -2659,7 +2679,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          return sign_transaction(tx, broadcast);
 
-      } FC_CAPTURE_AND_RETHROW((platform)(advertising_tid)(comfirm)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((platform)(advertising_id)(order_sequence)(comfirm)(csaf_fee)(broadcast))
    }
 
    post_object get_post(string platform_owner,
@@ -2753,18 +2773,16 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform))
    }
 
-   advertising_object get_advertising(string platform, string advertising_tid)
+   advertising_object get_advertising(object_id_type advertising_id)
    {
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
-           account_uid_type platform_uid = get_account_uid(platform);
-           advertising_tid_type tid = fc::to_uint64(fc::string(advertising_tid));
-           fc::optional<advertising_object> ad = _remote_db->get_advertising(platform_uid, tid);
+           fc::optional<advertising_object> ad = _remote_db->get_advertising(advertising_id);
            if (ad)
                return *ad;
            else
-               FC_THROW("advertising: ${ad} not found in platform: ${platform}", ("ad", advertising_tid)("platform", platform));
-       } FC_CAPTURE_AND_RETHROW((platform)(advertising_tid))
+               FC_THROW("advertising: ${ad} not found .", ("ad", advertising_id));
+       } FC_CAPTURE_AND_RETHROW((advertising_id))
    }
 
    vector<advertising_object> list_advertisings(string platform, uint32_t limit)
@@ -3291,6 +3309,16 @@ std::string operation_result_printer::operator()(const object_id_type& oid)
 std::string operation_result_printer::operator()(const asset& a)
 {
    return _wallet.get_asset(a.asset_id).amount_to_pretty_string(a);
+}
+
+std::string operation_result_printer::operator()(const advertising_confirm_result& a)
+{
+    std::string str = "Return the deposit money: \n";
+    for (auto iter : a)
+    {
+        str += "  account: " + to_string(iter.first) + " : " + to_string(iter.second.value) + "\n";
+    }
+    return str;
 }
 
 }}}
@@ -4193,24 +4221,27 @@ signed_transaction wallet_api::account_manage(string executor,
     return my->account_manage(executor,account, options, csaf_fee, broadcast);
 }
 
-signed_transaction wallet_api::buy_advertising(string   account,
-                                               string   platform,
-                                               uint32_t advertising_tid,
-                                               bool csaf_fee,
-                                               bool broadcast
-                                               )
+signed_transaction wallet_api::buy_advertising(string               account,
+                                               string               platform,
+                                               object_id_type       advertising_id,
+                                               uint32_t             start_time,
+                                               uint32_t             buy_number,
+                                               string               extra_data,
+                                               string               memo,
+                                               bool                 csaf_fee,
+                                               bool                 broadcast)
 {
-   return my->buy_advertising(account, platform, advertising_tid, csaf_fee, broadcast);
+    return my->buy_advertising(account, platform, advertising_id, start_time, buy_number, extra_data, memo, csaf_fee, broadcast);
 }
 
-signed_transaction wallet_api::confirm_advertising(string   platform,
-                                       uint32_t advertising_tid,
-                                       bool comfirm,
-                                       bool csaf_fee,
-                                       bool broadcast
-                                      )
+signed_transaction wallet_api::confirm_advertising(string         platform,
+                                                   object_id_type advertising_id,
+                                                   uint32_t       order_sequence,
+                                                   bool           comfirm,
+                                                   bool           csaf_fee,
+                                                   bool           broadcast)
 {
-   return my->confirm_advertising(platform, advertising_tid, comfirm, csaf_fee, broadcast);
+    return my->confirm_advertising(platform, advertising_id, order_sequence, comfirm, csaf_fee, broadcast);
 }
 
 post_object wallet_api::get_post(string platform_owner,
@@ -4259,9 +4290,9 @@ vector<license_object> wallet_api::list_licenses(string platform, uint32_t limit
     return my->list_licenses(platform, limit);
 }
 
-advertising_object wallet_api::get_advertising(string platform, string advertising_tid)
+advertising_object wallet_api::get_advertising(object_id_type advertising_id)
 {
-    return my->get_advertising(platform, advertising_tid);
+    return my->get_advertising(advertising_id);
 }
 
 vector<advertising_object> wallet_api::list_advertisings(string platform, uint32_t limit)

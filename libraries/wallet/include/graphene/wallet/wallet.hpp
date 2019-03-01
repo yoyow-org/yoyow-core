@@ -1523,18 +1523,23 @@ class wallet_api
                                         bool broadcast = false
                                         );
 
-      signed_transaction buy_advertising(string   account,
-                                         string   platform,
-                                         uint32_t advertising_tid,
-                                         bool csaf_fee = true,
-                                         bool broadcast = false
+      signed_transaction buy_advertising(string               account,
+                                         string               platform,
+                                         object_id_type       advertising_id,
+                                         uint32_t             start_time,
+                                         uint32_t             buy_number,
+                                         string               extra_data,
+                                         string               memo,
+                                         bool                 csaf_fee = true,
+                                         bool                 broadcast = false
                                         );
 
-      signed_transaction confirm_advertising(string   platform,
-                                             uint32_t advertising_tid,
-                                             bool comfirm,
-                                             bool csaf_fee = true,
-                                             bool broadcast = false
+      signed_transaction confirm_advertising(string         platform,
+                                             object_id_type advertising_id,
+                                             uint32_t       order_sequence,
+                                             bool           comfirm,
+                                             bool           csaf_fee = true,
+                                             bool           broadcast = false
                                              );
 
       post_object get_post( string platform_owner,
@@ -1563,8 +1568,7 @@ class wallet_api
 
       vector<license_object> list_licenses(string platform, uint32_t limit);
 
-      advertising_object get_advertising(string platform,
-                                         string advertising_tid);
+      advertising_object get_advertising(object_id_type advertising_id);
                       
       vector<advertising_object> list_advertisings(string platform, uint32_t limit = 100);
 
