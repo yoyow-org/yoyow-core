@@ -391,12 +391,17 @@ struct database_fixture {
    void buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
                         account_uid_type   account,
                         account_uid_type   platform,
-                        uint32_t advertising_tid);
+                        advertising_id_type  advertising_id,
+                        time_point_sec       start_time,
+                        uint32_t             buy_number,
+                        string               extra_data,
+                        string               memo);
 
    void confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
                             account_uid_type   platform,
-                            uint32_t advertising_tid,
-                            bool comfirm);
+                            advertising_id_type advertising_id,
+                            uint32_t       order_sequence,
+                            bool           comfirm);
 
 
    void account_manage(account_uid_type account, account_manage_operation::opt options);

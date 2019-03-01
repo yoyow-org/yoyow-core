@@ -1357,15 +1357,21 @@ void database_fixture::score_a_post(flat_set<fc::ecc::private_key> sign_keys,
 }
 
 void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
-   account_uid_type   account,
-   account_uid_type   platform,
-   uint32_t advertising_tid)
+   account_uid_type     account,
+   account_uid_type     platform,
+   advertising_id_type  advertising_id,
+   time_point_sec       start_time,
+   uint32_t             buy_number,
+   string               extra_data,
+   string               memo)
 {
    try {
       advertising_buy_operation buy_op;
       buy_op.from_account = account;
       buy_op.platform = platform;
-      buy_op.advertising_tid = advertising_tid;
+      buy_op.advertising_id = advertising_id;
+      buy_op.buy_number = buy_number;
+      buy_op.extra_data = extra_data;
 
       signed_transaction tx;
       tx.operations.push_back(buy_op);
@@ -1378,18 +1384,20 @@ void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
 
       db.push_transaction(tx);
 
-   } FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform)(advertising_tid))
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform)(advertising_id)(start_time)(buy_number)(extra_data)(memo))
 }
 
 void database_fixture::confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
-   account_uid_type   platform,
-   uint32_t advertising_tid,
-   bool comfirm)
+   account_uid_type  platform,
+   advertising_id_type advertising_id,
+   uint32_t         order_sequence,
+   bool             comfirm)
 {
    try {
       advertising_confirm_operation confirm_op;
       confirm_op.platform = platform;
-      confirm_op.advertising_tid = advertising_tid;
+      confirm_op.advertising_id = advertising_id;
+      confirm_op.order_sequence = order_sequence;
       confirm_op.iscomfirm = comfirm;
 
       signed_transaction tx;
@@ -1403,7 +1411,7 @@ void database_fixture::confirm_advertising(flat_set<fc::ecc::private_key> sign_k
 
       db.push_transaction(tx);
 
-   } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_tid)(comfirm))
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_id)(order_sequence)(comfirm))
 }
 
 void database_fixture::account_manage(account_uid_type account, account_manage_operation::opt options)

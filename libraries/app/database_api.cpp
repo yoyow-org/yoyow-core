@@ -1234,17 +1234,17 @@ vector<advertising_object> database_api::list_advertisings(const account_uid_typ
 vector<advertising_object> database_api_impl::list_advertisings(const account_uid_type platform, const uint32_t limit)const
 {
     vector<advertising_object> result;
-   /* uint32_t count = 0;
-    const auto& idx = _db.get_index_type<advertising_index>().indices().get<by_id>();
+    uint32_t count = 0;
+    const auto& idx = _db.get_index_type<advertising_index>().indices().get<by_advertising_platform>();
     auto itr_begin = idx.lower_bound(platform);
     auto itr_end = idx.upper_bound(platform);
 
     while (itr_begin != itr_end && count < limit)
     {
-        result.push_back(*itr_begin);
-        ++itr_begin;
-        ++count;
-    }*/
+       result.push_back(*itr_begin);
+       ++itr_begin;
+       ++count;
+    }
     return result;
 }
 

@@ -1525,7 +1525,7 @@ class wallet_api
 
       signed_transaction buy_advertising(string               account,
                                          string               platform,
-                                         object_id_type       advertising_id,
+                                         advertising_id_type  advertising_id,
                                          uint32_t             start_time,
                                          uint32_t             buy_number,
                                          string               extra_data,
@@ -1535,7 +1535,7 @@ class wallet_api
                                         );
 
       signed_transaction confirm_advertising(string         platform,
-                                             object_id_type advertising_id,
+                                             advertising_id_type advertising_id,
                                              uint32_t       order_sequence,
                                              bool           comfirm,
                                              bool           csaf_fee = true,
