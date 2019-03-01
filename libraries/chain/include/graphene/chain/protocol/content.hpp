@@ -497,7 +497,7 @@ namespace graphene { namespace chain {
    struct advertising_create_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = 50 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
@@ -525,7 +525,7 @@ namespace graphene { namespace chain {
    struct advertising_update_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
@@ -535,7 +535,7 @@ namespace graphene { namespace chain {
        fee_type                     fee;
 
        account_uid_type             platform;
-       object_id_type               advertising_id;
+       advertising_id_type          advertising_id;
 
        optional<string>             description;
        optional<share_type>         unit_price;
@@ -556,7 +556,7 @@ namespace graphene { namespace chain {
    struct advertising_buy_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 5 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
            extensions_type   extensions;
@@ -566,7 +566,7 @@ namespace graphene { namespace chain {
 
        account_uid_type             from_account;
        account_uid_type             platform;
-       object_id_type               advertising_id;
+       advertising_id_type          advertising_id;
        time_point_sec               start_time;
        uint32_t                     buy_number;
 
@@ -587,7 +587,7 @@ namespace graphene { namespace chain {
    struct advertising_confirm_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
            extensions_type   extensions;
@@ -596,7 +596,7 @@ namespace graphene { namespace chain {
        fee_type                     fee;
 
        account_uid_type             platform;
-       object_id_type               advertising_id;
+       advertising_id_type          advertising_id;
        uint32_t                     order_sequence;
        bool                         iscomfirm;
 
@@ -624,7 +624,7 @@ namespace graphene { namespace chain {
 
        account_uid_type             from_account;
        account_uid_type             platform;
-       object_id_type               advertising_id;
+       advertising_id_type          advertising_id;
        uint32_t                     order_sequence;
 
        extensions_type              extensions;

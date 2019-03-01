@@ -1371,6 +1371,7 @@ void_result advertising_update_evaluator::do_evaluate(const operation_type& op)
         d.get_platform_by_owner(op.platform); // make sure pid exists
         advertising_obj = d.find_advertising(op.advertising_id);
         FC_ASSERT(advertising_obj != nullptr, "advertising_object doesn`t exsit");
+        FC_ASSERT(advertising_obj->platform == op.platform, "Can`t update other`s advetising. ");
 
         if (op.on_sell.valid())
             FC_ASSERT(*(op.on_sell) != advertising_obj->on_sell, "advertising state needn`t update. ");
@@ -1425,6 +1426,7 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
 
       const auto& from_balance = d.get_balance(op.from_account, GRAPHENE_CORE_ASSET_AID);
       necessary_balance = advertising_obj->unit_price * op.buy_number;
+      FC_ASSERT("purchasing date have a conflict, buy advertising failed");
       FC_ASSERT(from_balance.amount >= necessary_balance,
          "Insufficient Balance: ${balance}, not enough to buy advertising ${tid} that ${need} needed.",
          ("need", necessary_balance)("balance", d.to_pretty_string(from_balance)));
