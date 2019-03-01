@@ -182,12 +182,12 @@
 	   
 	   ########################################################################################
 	   
-	   create_advertising platform_account1 abcdefg 1000 1551283200 1552283200 true true
+	   create_advertising platform_account1 ad_sell 100 86400 true true
 	   
-	   update_advertising platform_account1 1 abcd 2000 1551285200 1551385200 0 true true
+	   update_advertising platform_account1 2.18.0 ad_update 10 86400 null true true
 	   
-	   buy_advertising test1 platform_account1 1 true true
+	   buy_advertising test1 platform_account1 2.18.0 1551974400 30 notes null true true
 	   
-	   confirm_advertising platform_account1 1 true true true
+	   confirm_advertising platform_account1 2.18.0 1 true true true
 	   
-	   ransom_advertising platform_account1 test2 3 true true
+	   ransom_advertising platform_account1 test2 2.18.0 1 true true
