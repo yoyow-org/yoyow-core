@@ -204,7 +204,7 @@ void committee_updatable_content_parameters::validate()const
       //do nothing
    }     
    else
-      FC_ASSERT("min weight,first rate and second rate should be updated together");
+      FC_ASSERT(false, "min weight,first rate and second rate should be updated together");
 
    if (receiptor_award_modulus.valid() && disapprove_award_modulus.valid())
    {
@@ -222,7 +222,7 @@ void committee_updatable_content_parameters::validate()const
       //do nothing
    }
    else
-      FC_ASSERT("receiptor award modulus and disapprove award modulus should be updated together");
+      FC_ASSERT(false, "receiptor award modulus and disapprove award modulus should be updated together");
 }
 
 void committee_proposal_create_operation::validate()const
