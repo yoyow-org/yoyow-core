@@ -1426,10 +1426,13 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
 
       const auto& from_balance = d.get_balance(op.from_account, GRAPHENE_CORE_ASSET_AID);
       necessary_balance = advertising_obj->unit_price * op.buy_number;
-      FC_ASSERT("purchasing date have a conflict, buy advertising failed");
       FC_ASSERT(from_balance.amount >= necessary_balance,
          "Insufficient Balance: ${balance}, not enough to buy advertising ${tid} that ${need} needed.",
          ("need", necessary_balance)("balance", d.to_pretty_string(from_balance)));
+
+      const auto& params = d.get_global_properties().parameters.get_award_params();
+      FC_ASSERT(necessary_balance > params.advertising_confirmed_min_fee, 
+         "buy price is not enough to pay The lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
 
       return void_result();
 
@@ -1476,6 +1479,13 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
       
       bool found = advertising_obj->undetermined_orders.find(op.order_sequence) != advertising_obj->undetermined_orders.end();
       FC_ASSERT(found, "order {order} is not in undetermined queues", ("order", op.order_sequence));
+
+      if (op.iscomfirm) {
+         share_type necessary_balance = advertising_obj->undetermined_orders.at(op.order_sequence).released_balance;
+         const auto& params = d.get_global_properties().parameters.get_award_params();
+         FC_ASSERT(necessary_balance > params.advertising_confirmed_min_fee,
+            "buy price is not enough to pay The lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
+      }
 
       return void_result();
 
