@@ -1532,7 +1532,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
             {
                d.adjust_balance(itr->second.user, asset(itr->second.released_balance));
                result.emplace(itr->second.user, itr->second.released_balance);
-               undermined_order.erase(itr++);
+               itr = undermined_order.erase(itr);//undermined_order.erase(itr++);
             }           
          }
 

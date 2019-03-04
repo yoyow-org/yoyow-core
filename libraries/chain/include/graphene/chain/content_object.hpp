@@ -636,7 +636,7 @@ namespace graphene { namespace chain {
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
       ordered_non_unique< tag<by_advertising_platform>,
          member< advertising_object, account_uid_type, &advertising_object::platform> >,
-      ordered_unique< tag<by_advertising_state>,
+      ordered_non_unique< tag<by_advertising_state>,
          composite_key<
             advertising_object,
             member< advertising_object, account_uid_type, &advertising_object::platform >,
