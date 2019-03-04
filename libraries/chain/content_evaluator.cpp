@@ -1500,8 +1500,8 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
       {
          d.modify(*advertising_obj, [&](advertising_object& obj)
          {      
-            obj.undetermined_orders.at(op.order_sequence).released_balance = 0;
             obj.effective_orders.emplace(confirm_order.start_time, confirm_order);
+            obj.effective_orders.at(confirm_order.start_time).released_balance = 0;
             obj.undetermined_orders.erase(op.order_sequence);
 
             obj.last_update_time = d.head_block_time();

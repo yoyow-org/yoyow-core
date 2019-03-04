@@ -1148,4 +1148,94 @@ BOOST_AUTO_TEST_CASE(buyout_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(advertising_test)
+{
+   try{
+      ACTORS((1000)(2000)(3000)(4000)(9000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+      transfer(committee_account, u_1000_id, _core(10000));
+      transfer(committee_account, u_2000_id, _core(10000));
+      transfer(committee_account, u_3000_id, _core(10000));
+      transfer(committee_account, u_4000_id, _core(10000));
+      transfer(committee_account, u_9000_id, _core(10000));
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+      add_csaf_for_account(u_3000_id, 10000);
+      add_csaf_for_account(u_4000_id, 10000);
+      add_csaf_for_account(u_9000_id, 10000);
+
+      create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
+      create_advertising({ u_9000_private_key }, u_9000_id, "this is a test", share_type(100000000), 100000);
+      generate_blocks(10);
+      const auto& idx = db.get_index_type<advertising_index>().indices().get<by_advertising_platform>();
+      const auto& obj = *(idx.begin());
+      BOOST_CHECK(obj.description == "this is a test");
+      BOOST_CHECK(obj.unit_time == 100000);
+      BOOST_CHECK(obj.unit_price.value == 100000000);
+      BOOST_CHECK(obj.order_sequence == 0);
+
+      buy_advertising({ u_1000_private_key }, u_1000_id, u_9000_id, advertising_id_type(obj.id), time_point_sec(1551752731), 2, "", "");
+      buy_advertising({ u_2000_private_key }, u_2000_id, u_9000_id, advertising_id_type(obj.id), time_point_sec(1551752731), 2, "", "");
+      buy_advertising({ u_3000_private_key }, u_3000_id, u_9000_id, advertising_id_type(obj.id), time_point_sec(1551752731), 2, "", "");
+      buy_advertising({ u_4000_private_key }, u_4000_id, u_9000_id, advertising_id_type(obj.id), time_point_sec(1677911410), 2, "", "");
+      
+      BOOST_CHECK(obj.order_sequence == 4);
+      BOOST_CHECK(obj.undetermined_orders.at(1).user == u_1000_id);
+      BOOST_CHECK(obj.undetermined_orders.at(2).user == u_2000_id);
+      BOOST_CHECK(obj.undetermined_orders.at(3).user == u_3000_id);
+      BOOST_CHECK(obj.undetermined_orders.at(4).user == u_4000_id);
+      BOOST_CHECK(obj.undetermined_orders.at(1).released_balance == 100000000 * 2);
+      BOOST_CHECK(obj.undetermined_orders.at(2).released_balance == 100000000 * 2);
+      BOOST_CHECK(obj.undetermined_orders.at(3).released_balance == 100000000 * 2);
+      BOOST_CHECK(obj.undetermined_orders.at(4).released_balance == 100000000 * 2);
+      BOOST_CHECK(obj.undetermined_orders.at(1).start_time == time_point_sec(1551752731));
+      BOOST_CHECK(obj.undetermined_orders.at(2).start_time == time_point_sec(1551752731));
+      BOOST_CHECK(obj.undetermined_orders.at(3).start_time == time_point_sec(1551752731));
+      BOOST_CHECK(obj.undetermined_orders.at(4).start_time == time_point_sec(1677911410));
+
+      const auto& user1 = db.get_account_statistics_by_uid(u_1000_id);
+      BOOST_CHECK(user1.core_balance == 8000 * prec);
+      const auto& user2 = db.get_account_statistics_by_uid(u_2000_id);
+      BOOST_CHECK(user2.core_balance == 8000 * prec);
+      const auto& user3 = db.get_account_statistics_by_uid(u_3000_id);
+      BOOST_CHECK(user3.core_balance == 8000 * prec);
+      const auto& user4 = db.get_account_statistics_by_uid(u_4000_id);
+      BOOST_CHECK(user4.core_balance == 8000 * prec);
+
+      confirm_advertising({ u_9000_private_key }, u_9000_id, advertising_id_type(obj.id), 1, true);
+
+      BOOST_CHECK(obj.effective_orders.size() == 1);
+      BOOST_CHECK(obj.effective_orders.at(time_point_sec(1551752731)).user == u_1000_id);
+      BOOST_CHECK(obj.effective_orders.at(time_point_sec(1551752731)).released_balance == 0);
+      BOOST_CHECK(obj.undetermined_orders.size() == 1);
+      BOOST_CHECK(obj.undetermined_orders.at(4).user == u_4000_id);
+
+      confirm_advertising({ u_9000_private_key }, u_9000_id, advertising_id_type(obj.id), 4, false);
+      BOOST_CHECK(obj.undetermined_orders.size() == 0);
+
+      BOOST_CHECK(user1.core_balance == 8000 * prec);
+      BOOST_CHECK(user2.core_balance == 10000 * prec);
+      BOOST_CHECK(user3.core_balance == 10000 * prec);
+      BOOST_CHECK(user4.core_balance == 10000 * prec);
+
+      const auto& platform = db.get_account_statistics_by_uid(u_9000_id);
+      BOOST_CHECK(platform.core_balance == (12000 - 20) * prec);
+
+      update_advertising({ u_9000_private_key }, u_9000_id, advertising_id_type(obj.id), "this is advertising test", share_type(200000000), 100000, optional<bool>());
+
+
+      BOOST_CHECK(obj.description == "this is advertising test");
+      BOOST_CHECK(obj.unit_time == 200000);
+      BOOST_CHECK(obj.unit_price.value == 200000000);
+ 
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
