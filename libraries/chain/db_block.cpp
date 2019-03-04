@@ -550,7 +550,7 @@ void database::_apply_block( const signed_block& next_block )
       apply_debug_updates();
 
    //dlog("before check invariants");
-   if(enable_check_invariants)
+   if(_enable_check_invariants)
    {
       check_invariants();
    }
