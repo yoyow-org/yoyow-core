@@ -1372,6 +1372,7 @@ void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
       buy_op.advertising_id = advertising_id;
       buy_op.buy_number = buy_number;
       buy_op.extra_data = extra_data;
+      buy_op.start_time = start_time;
 
       signed_transaction tx;
       tx.operations.push_back(buy_op);

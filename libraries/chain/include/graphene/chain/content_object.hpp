@@ -620,8 +620,8 @@ namespace graphene { namespace chain {
       time_point_sec             last_update_time;
       uint32_t                   order_sequence = 0;
 
-      flat_map<time_point_sec, Advertising_Order>  effective_orders;
-      flat_map<uint32_t, Advertising_Order>        undetermined_orders;
+      map<time_point_sec, Advertising_Order>  effective_orders;
+      map<uint32_t, Advertising_Order>        undetermined_orders;
    };
 
    struct by_advertising_platform{};
