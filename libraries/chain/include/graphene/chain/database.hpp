@@ -426,7 +426,7 @@ namespace graphene { namespace chain {
          optional<undo_database::session>       _pending_tx_session;
          vector< unique_ptr<op_evaluator> >     _operation_evaluators;
 
-         bool                                   enable_check_invariants = false;
+         bool                                   _enable_check_invariants = false;
 
          template<class Index>
          vector<std::reference_wrapper<const typename Index::object_type>> sort_votable_objects(size_t count)const;
@@ -437,7 +437,7 @@ namespace graphene { namespace chain {
          processed_transaction apply_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing );
          operation_result      apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs = signed_information());
 
-         void set_check_invariants(bool check){ enable_check_invariants = check; }
+         void set_check_invariants(bool check){ _enable_check_invariants = check; }
          /**
           *  This method validates transactions without adding it to the pending state.
           *  @return true if the transaction would validate
