@@ -1529,6 +1529,7 @@ void database::process_content_platform_awards()
              receipor.emplace(r.first, to_add);
              temp -= to_add;
           }
+          receipor.emplace(post.platform, temp);
           //platform earned from content
           if (platform_receiptor_award.count(post.platform))
              platform_receiptor_award.at(post.platform) += temp;

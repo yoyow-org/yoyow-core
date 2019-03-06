@@ -689,7 +689,7 @@ FC_REFLECT_DERIVED( graphene::chain::active_post_object,
 
 FC_REFLECT_DERIVED(graphene::chain::score_object,
 					(graphene::db::object),
-                    (from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(profits)(create_time)
+          (from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(period_sequence)(profits)(create_time)
 					)
 
 FC_REFLECT_DERIVED(graphene::chain::license_object,
