@@ -134,6 +134,13 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
          for( auto& item : a.account_uid_auths )
             impacted_uids.insert( item.first.uid );
 
+      if (op.result.which() == operation_result::tag<advertising_confirm_result>::value)
+      {
+         auto result = op.result.get< advertising_confirm_result >();
+         for (auto& r : result)
+            impacted_uids.insert(r.first);
+      }
+
       // for each operation this account applies to that is in the config link it into the history
       if( _tracked_accounts.size() == 0 )
       {
