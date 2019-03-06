@@ -823,7 +823,7 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 		auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
         const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
         FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Liked) > 0, "post_object ${p} not allowed to liked.", ("p", op.post_pid));
-		FC_ASSERT((from_account.can_rate), "poster ${uid} is not allowed to appraise.", ("uid", op.poster));
+        FC_ASSERT((from_account.can_rate), "account ${uid} is not allowed to appraise.", ("uid", op.from_account_uid));
 		FC_ASSERT(op.csaf <= global_params.max_csaf_per_approval, "The score_create_operation`s member points is over the maximum limit");
 
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
@@ -1073,13 +1073,13 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
                   ("p", op.platform)("a", op.poster));
         FC_ASSERT(account_stats->prepaid >= op.amount, 
                   "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
-                  ("c", (account_stats->prepaid))("a", op.poster)("n", op.amount));
+                  ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", op.amount));
         if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
         {
             share_type usable_prepaid = account_stats->get_auth_platform_usable_prepaid(*sign_platform_uid);
             FC_ASSERT(usable_prepaid >= op.amount,
                       "Insufficient balance: unable to reward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
-                      ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.poster)("n", op.amount));
+                      ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.from_account_uid)("n", op.amount));
         }   
 
         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
@@ -1230,10 +1230,10 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
         auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
         FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(), 
                   "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
-                  ("p", op.platform)("a", op.poster));
+                  ("p", op.platform)("a", op.from_account_uid));
         FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Buyout) > 0, 
                   "the buyout permisson of platform ${p} authorized by account ${a} is invalid. ",
-                  ("p", op.platform)("a", op.poster));
+                  ("p", op.platform)("a", op.from_account_uid));
         FC_ASSERT(account_stats->prepaid >= iter->second.buyout_price, 
                   "Insufficient balance: unable to buyout, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", iter->second.buyout_price));
@@ -1242,7 +1242,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
             share_type usable_prepaid = account_stats->get_auth_platform_usable_prepaid(*sign_platform_uid);
             FC_ASSERT(usable_prepaid >= iter->second.buyout_price,
                       "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
-                      ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.poster)("n", iter->second.buyout_price));
+                      ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.from_account_uid)("n", iter->second.buyout_price));
         }
             
 

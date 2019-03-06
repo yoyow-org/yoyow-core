@@ -2687,7 +2687,6 @@ signed_transaction account_cancel_auth_platform(string account,
                         string post_pid)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
            account_uid_type platform = get_account_uid(platform_owner);
            account_uid_type poster = get_account_uid(poster_uid);
@@ -2707,7 +2706,6 @@ signed_transaction account_cancel_auth_platform(string account,
                                                     uint32_t                                  limit)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            account_uid_type platform = get_account_uid(platform_owner);
            account_uid_type poster = get_account_uid(poster_uid);
            return _remote_db->get_posts_by_platform_poster(platform, poster, std::make_pair(begin_time_range, end_time_range), limit);
@@ -2720,7 +2718,6 @@ signed_transaction account_cancel_auth_platform(string account,
                           string from_account)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
            account_uid_type platform_uid = get_account_uid(platform);
            account_uid_type poster = get_account_uid(poster_uid);
@@ -2741,7 +2738,6 @@ signed_transaction account_cancel_auth_platform(string account,
                                     bool     list_cur_period)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
            account_uid_type platform_uid = get_account_uid(platform);
            account_uid_type poster = get_account_uid(poster_uid);
@@ -2753,7 +2749,6 @@ signed_transaction account_cancel_auth_platform(string account,
                               string license_lid)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            account_uid_type platform_uid = get_account_uid(platform);
            license_lid_type lid = fc::to_uint64(fc::string(license_lid));
            fc::optional<license_object> license = _remote_db->get_license(platform_uid, lid);
@@ -2767,7 +2762,6 @@ signed_transaction account_cancel_auth_platform(string account,
    vector<license_object> list_licenses(string platform, uint32_t limit)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            account_uid_type platform_uid = get_account_uid(platform);
            return _remote_db->list_licenses(platform_uid, limit);
        } FC_CAPTURE_AND_RETHROW((platform))
@@ -2776,7 +2770,6 @@ signed_transaction account_cancel_auth_platform(string account,
    advertising_object get_advertising(object_id_type advertising_id)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            fc::optional<advertising_object> ad = _remote_db->get_advertising(advertising_id);
            if (ad)
                return *ad;
@@ -2788,7 +2781,6 @@ signed_transaction account_cancel_auth_platform(string account,
    vector<advertising_object> list_advertisings(string platform, uint32_t limit)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            account_uid_type platform_uid = get_account_uid(platform);
            return _remote_db->list_advertisings(platform_uid, limit);
        } FC_CAPTURE_AND_RETHROW((platform)(limit))
@@ -2801,7 +2793,6 @@ signed_transaction account_cancel_auth_platform(string account,
                                                       string           post_pid)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
            account_uid_type platform_uid = get_account_uid(platform);
            account_uid_type poster_uid = get_account_uid(poster);
@@ -2815,7 +2806,6 @@ signed_transaction account_cancel_auth_platform(string account,
                                                                      string           platform)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
            account_uid_type platform_uid = get_account_uid(platform);
            return _remote_db->get_platform_profits_detail(begin_period, end_period, platform_uid);
@@ -2827,7 +2817,6 @@ signed_transaction account_cancel_auth_platform(string account,
                                                                  string           poster)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
            account_uid_type poster_uid = get_account_uid(poster);
            return _remote_db->get_poster_profits_detail(begin_period, end_period, poster_uid);
@@ -2847,7 +2836,6 @@ signed_transaction account_cancel_auth_platform(string account,
    account_statistics_object get_account_statistics(string account)
    {
        try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
            account_uid_type account_uid = get_account_uid(account);
            account_statistics_object plat_account_statistics = _remote_db->get_account_statistics_by_uid(account_uid);
            return plat_account_statistics;
