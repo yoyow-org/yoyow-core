@@ -161,7 +161,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
        typedef advertising_buy_operation operation_type;
 
        void_result do_evaluate(const operation_type& op);
-       void_result do_apply(const operation_type& op);
+       asset do_apply(const operation_type& op);
 
        share_type necessary_balance = 0;
        const advertising_object* advertising_obj = nullptr;

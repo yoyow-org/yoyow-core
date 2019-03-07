@@ -1436,7 +1436,7 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
    }FC_CAPTURE_AND_RETHROW((op))
 }
 
-void_result advertising_buy_evaluator::do_apply(const operation_type& op)
+asset advertising_buy_evaluator::do_apply(const operation_type& op)
 {
    try {
       database& d = db();
@@ -1459,7 +1459,7 @@ void_result advertising_buy_evaluator::do_apply(const operation_type& op)
       });
       d.adjust_balance(op.from_account, -asset(necessary_balance));
 
-      return void_result();
+      return asset(necessary_balance);
 
    } FC_CAPTURE_AND_RETHROW((op))
 }
@@ -1520,6 +1520,8 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
          {
             dyn.current_supply -= fee;
          });
+
+         result.emplace(confirm_order.user, 0);
 
          auto undermined_order = advertising_obj->undetermined_orders;
          auto itr = undermined_order.begin();
