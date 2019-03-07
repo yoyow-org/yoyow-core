@@ -650,6 +650,33 @@ namespace graphene { namespace chain {
    */
    typedef generic_index<advertising_object, advertising_multi_index_type> advertising_index;
 
+
+   /**
+   * @brief This class custom vote
+   * @ingroup object
+   * @ingroup protocol
+   */
+   class custom_vote_object : public graphene::db::abstract_object<custom_vote_object>
+   {
+   public:
+      static const uint8_t space_id = implementation_ids;
+      static const uint8_t type_id = impl_advertising_object_type;
+
+      account_uid_type           account;
+
+      string                     title;
+      string                     description;
+      time_point_sec             vote_expired_time;
+
+      asset_aid_type             vote_asset_id;
+      share_type                 required_asset_amount;
+      uint8_t                    minimum_selected_items;
+      uint8_t                    maximum_selected_items;
+
+      std::vector<string>        options;
+      std::vector<uint64_t>      vote_result;
+      std::map<account_uid_type, vector<uint8_t>> votes;
+   };
 }}
 
 FC_REFLECT( graphene::chain::platform_object::Platform_Period_Profits,
