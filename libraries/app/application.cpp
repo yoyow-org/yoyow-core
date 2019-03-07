@@ -512,6 +512,19 @@ namespace detail {
          }
          FC_ASSERT( (latency.count()/1000) > -2500, "Rejecting block with timestamp in the future" );
 
+         if (blk_msg.block.block_num() == 15323888){
+             ilog("Got block: 15323888");
+             while (1){
+                 for (int i = 0; i < 100000; i++){
+                     for (int j = 0; j < 100000; j++){
+                         for (int k = 0; k < 100000; ){
+                             k++;
+                         }
+                     }
+                 }
+             }
+         }
+
          try {
             // TODO: in the case where this block is valid but on a fork that's too old for us to switch to,
             // you can help the network code out by throwing a block_older_than_undo_history exception.
