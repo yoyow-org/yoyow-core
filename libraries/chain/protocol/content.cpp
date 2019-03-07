@@ -376,6 +376,7 @@ void advertising_buy_operation::validate()const
     validate_op_fee(fee, "advertising_buy ");
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account, "from_account");
+    FC_ASSERT(platform != from_account, "platform can`t buy own advertising. ");
     FC_ASSERT(buy_number > 0, "buy number must greater then 0. ");
 }
 
