@@ -149,42 +149,35 @@ void post_operation::validate()const
 
    if (extensions.valid())
    {
-       int extnum = 0;
-	   for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
-	   {
-		   if (ext_iter->which() == post_operation::extension_parameter::tag<post_operation::ext>::value)
-		   {
-               extnum++;
-               FC_ASSERT(extnum <= 1,"post_operation::ext must be only one in post_operation::extension_parameter");
-			   const post_operation::ext& ext = ext_iter->get<post_operation::ext>();
-               FC_ASSERT(ext.post_type >= Post_Type::Post_Type_Post && ext.post_type < Post_Type::Post_Type_Default, "post_operation`s extension post_type is invalid");
-			   if (ext.post_type == Post_Type::Post_Type_Comment 
-				   || ext.post_type == Post_Type::Post_Type_forward 
-				   || ext.post_type == Post_Type::Post_Type_forward_And_Modify)
-				   FC_ASSERT(origin_post_pid.valid() && origin_poster.valid() && origin_platform.valid(), 
-				   "${type} post operation must include origin_post_pid, origin_poster and origin_platform", ("type",ext.post_type));
+       const post_operation::ext& ext = extensions->value;
+       FC_ASSERT(ext.post_type.valid(), "post_operation`s extension post_type shouldn`t be null. ");
+       FC_ASSERT(*(ext.post_type) >= Post_Type::Post_Type_Post && *(ext.post_type) < Post_Type::Post_Type_Default, 
+                 "post_operation`s extension post_type is invalid");
+       if (*(ext.post_type) == Post_Type::Post_Type_Comment
+           || *(ext.post_type) == Post_Type::Post_Type_forward
+           || *(ext.post_type) == Post_Type::Post_Type_forward_And_Modify)
+           FC_ASSERT(origin_post_pid.valid() && origin_poster.valid() && origin_platform.valid(),
+           "${type} post operation must include origin_post_pid, origin_poster and origin_platform", ("type", *(ext.post_type)));
 
-			   if (ext.receiptors.valid())
-			   {
-				   const map<account_uid_type, Recerptor_Parameter>& receiptor = *(ext.receiptors);
-				   FC_ASSERT(receiptor.size() >= 2 && receiptor.size() <= 5, "receiptors` size must be >= 2 and <= 5");
-				   auto itor = receiptor.find(platform);
-				   FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
-				   FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 25%");
-                   auto itor_poster = receiptor.find(poster);
-                   FC_ASSERT(itor_poster != receiptor.end(), "poster must be included by receiptors");
-                   FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster`s ratio must be >= 25%");
-				   uint32_t total = 0;
-				   for (auto iter : receiptor)
-				   {
-                       iter.second.validate();
-					   total += iter.second.cur_ratio;
-				   }
-				   FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
-			   }
-               FC_ASSERT(ext.license_lid.valid(), "license_lid is invalid.");
-		   }
-	   }
+       if (ext.receiptors.valid())
+       {
+           const map<account_uid_type, Recerptor_Parameter>& receiptor = *(ext.receiptors);
+           FC_ASSERT(receiptor.size() >= 2 && receiptor.size() <= 5, "receiptors` size must be >= 2 and <= 5");
+           auto itor = receiptor.find(platform);
+           FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
+           FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 25%");
+           auto itor_poster = receiptor.find(poster);
+           FC_ASSERT(itor_poster != receiptor.end(), "poster must be included by receiptors");
+           FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster`s ratio must be >= 25%");
+           uint32_t total = 0;
+           for (auto iter : receiptor)
+           {
+               iter.second.validate();
+               total += iter.second.cur_ratio;
+           }
+           FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
+       }
+       FC_ASSERT(ext.license_lid.valid(), "post operation`s license_lid is invalid.");
    }
 }
 
@@ -199,25 +192,16 @@ void post_update_operation::validate()const
 
    if (extensions.valid())
    {
-       int extnum = 0;
-	   for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
-	   {
-		   if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
-		   {
-               extnum++;
-               FC_ASSERT(extnum <= 1, "post_update_operation::ext must be only one in post_update_operation::extension_parameter");
-			   const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
-			   FC_ASSERT(ext.forward_price.valid() || ext.license_lid.valid() || ext.permission_flags.valid() || (ext.receiptor.valid() && (ext.to_buyout.valid() ||
-                         ext.buyout_ratio.valid() || ext.buyout_price.valid() || ext.buyout_expiration.valid())),
-                        "Should change something");
-			   if (ext.receiptor.valid())
-			   {
-				   FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
-				   if (ext.buyout_ratio.valid())
-					   FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The sum of receiptors` ratio must be 100%");
-			   }
-		   }
-	   }
+       const post_update_operation::ext& ext = extensions->value;
+       FC_ASSERT(ext.forward_price.valid() || ext.license_lid.valid() || ext.permission_flags.valid() || (ext.receiptor.valid() && ( ext.to_buyout.valid() ||
+           ext.buyout_ratio.valid() || ext.buyout_price.valid() || ext.buyout_expiration.valid())),
+           "Should change something");
+       if (ext.receiptor.valid())
+       {
+           FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
+       }
+       if (ext.buyout_ratio.valid())
+           FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "buyout_ratio is more then max. ");
    }
 }
 
@@ -326,89 +310,6 @@ share_type license_create_operation::calculate_fee(const fee_parameters_type& k)
     core_fee_required += calculate_data_fee(fc::raw::pack_size(extra_data), k.price_per_kbyte);
     core_fee_required += calculate_data_fee(fc::raw::pack_size(title), k.price_per_kbyte);
     core_fee_required += calculate_data_fee(fc::raw::pack_size(body), k.price_per_kbyte);
-    return core_fee_required;
-}
-
-void advertising_create_operation::validate()const
-{
-    validate_op_fee(fee, "advertising_create ");
-    validate_account_uid(platform, "platform");
-    FC_ASSERT(unit_time > 0, "unit time must be grater then 0");
-    FC_ASSERT(unit_price > 0, "unit price must be grater then 0");
-}
-
-share_type advertising_create_operation::calculate_fee(const fee_parameters_type& k)const
-{
-    share_type core_fee_required = k.fee;
-    auto hash_size = fc::raw::pack_size(description);
-    if (hash_size > 65)
-        core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
-    return core_fee_required;
-}
-
-void advertising_update_operation::validate()const
-{
-    validate_op_fee(fee, "advertising_update ");
-    validate_account_uid(platform, "platform");
-    FC_ASSERT(description.valid() || unit_price.valid() || unit_time.valid() || on_sell.valid(), "must update some parameter");
-    if (unit_price.valid()){
-        FC_ASSERT(*unit_price > 0, "unit price must be greater then 0");
-    }
-    if (unit_time.valid()){
-        FC_ASSERT(*unit_time > 0, "unit time must be greater then 0");
-    }
-}
-
-share_type advertising_update_operation::calculate_fee(const fee_parameters_type& k)const
-{
-    share_type core_fee_required = k.fee;
-    if (description.valid())
-    {
-        auto hash_size = fc::raw::pack_size(*description);
-        if (hash_size > 65)
-            core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
-    }
-    return core_fee_required;
-}
-
-void advertising_buy_operation::validate()const
-{
-    validate_op_fee(fee, "advertising_buy ");
-    validate_account_uid(platform, "platform");
-    validate_account_uid(from_account, "from_account");
-    FC_ASSERT(platform != from_account, "platform can`t buy own advertising. ");
-    FC_ASSERT(buy_number > 0, "buy number must greater then 0. ");
-}
-
-share_type advertising_buy_operation::calculate_fee(const fee_parameters_type& k)const
-{
-    share_type core_fee_required = k.fee;
-    return core_fee_required;
-}
-
-void advertising_confirm_operation::validate()const
-{
-    validate_op_fee(fee, "advertising_comfirm ");
-    validate_account_uid(platform, "platform");
-}
-
-share_type advertising_confirm_operation::calculate_fee(const fee_parameters_type& k)const
-{
-    share_type core_fee_required = k.fee;
-    return core_fee_required;
-}
-
-void advertising_ransom_operation::validate()const
-{
-    validate_op_fee(fee, "advertising_ransom ");
-    validate_account_uid(platform, "platform");
-    validate_account_uid(from_account, "from_account");
-    FC_ASSERT(order_sequence > 0, "the order sequence must be more then 0. ");
-}
-
-share_type advertising_ransom_operation::calculate_fee(const fee_parameters_type& k)const
-{
-    share_type core_fee_required = k.fee;
     return core_fee_required;
 }
 

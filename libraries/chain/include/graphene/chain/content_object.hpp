@@ -363,6 +363,8 @@ namespace graphene { namespace chain {
 		 account_uid_type                       poster;
 		 /// The post's pid.
 		 post_pid_type                          post_pid;
+		 /// detail information of approvals, csaf.
+		 vector<score_id_type>                  scores;
 		 /// approvals of a post, csaf.
 		 share_type                             total_csaf;
 		 /// rewards of a post.
@@ -524,7 +526,8 @@ namespace graphene { namespace chain {
                                   member< score_object, account_uid_type, &score_object::platform >,
                                   member< score_object, account_uid_type, &score_object::poster >,
                                   member< score_object, post_pid_type,    &score_object::post_pid >,
-                                  member< score_object, uint64_t,         &score_object::period_sequence>
+                                  member< score_object, uint64_t,         &score_object::period_sequence>,
+                                  member< object,       object_id_type,   &object::id >
                               > >,
 		  ordered_non_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
        >
@@ -584,97 +587,6 @@ namespace graphene { namespace chain {
    * @ingroup object_index
    */
    typedef generic_index<license_object, license_multi_index_type> license_index;
-
-   /**
-   * @brief This class advertising space
-   * @ingroup object
-   * @ingroup protocol
-   */
-   class advertising_object : public graphene::db::abstract_object<advertising_object>
-   {
-   public:
-      static const uint8_t space_id = implementation_ids;
-      static const uint8_t type_id = impl_advertising_object_type;
-
-      struct Advertising_Order
-      {
-          account_uid_type       user;
-          share_type             released_balance;
-          time_point_sec         start_time;
-          time_point_sec         end_time;
-          time_point_sec         buy_request_time;
-                                 
-          optional<memo_data>    memo;
-          string                 extra_data;
-      };                         
-                                 
-      account_uid_type           platform;
-      bool                       on_sell;
-      uint32_t                   unit_time;
-      share_type                 unit_price;
-      string                     description;
-                                 
-      time_point_sec             publish_time;
-      time_point_sec             last_update_time;
-      uint32_t                   order_sequence = 0;
-
-      map<time_point_sec, Advertising_Order>  effective_orders;
-      map<uint32_t, Advertising_Order>        undetermined_orders;
-   };
-
-   struct by_advertising_platform{};
-   struct by_advertising_state{};
-   
-   /**
-   * @ingroup object_index
-   */
-   typedef multi_index_container<
-      advertising_object,
-      indexed_by<
-      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-      ordered_non_unique< tag<by_advertising_platform>,
-         member< advertising_object, account_uid_type, &advertising_object::platform> >,
-      ordered_non_unique< tag<by_advertising_state>,
-         composite_key<
-            advertising_object,
-            member< advertising_object, account_uid_type, &advertising_object::platform >,
-            member< advertising_object, bool, &advertising_object::on_sell >>
-       > 
-       >
-      > advertising_multi_index_type;
-
-   /**
-   * @ingroup object_index
-   */
-   typedef generic_index<advertising_object, advertising_multi_index_type> advertising_index;
-
-
-   /**
-   * @brief This class custom vote
-   * @ingroup object
-   * @ingroup protocol
-   */
-   class custom_vote_object : public graphene::db::abstract_object<custom_vote_object>
-   {
-   public:
-      static const uint8_t space_id = implementation_ids;
-      static const uint8_t type_id = impl_advertising_object_type;
-
-      account_uid_type           account;
-
-      string                     title;
-      string                     description;
-      time_point_sec             vote_expired_time;
-
-      asset_aid_type             vote_asset_id;
-      share_type                 required_asset_amount;
-      uint8_t                    minimum_selected_items;
-      uint8_t                    maximum_selected_items;
-
-      std::vector<string>        options;
-      std::vector<uint64_t>      vote_result;
-      std::map<account_uid_type, vector<uint8_t>> votes;
-   };
 }}
 
 FC_REFLECT( graphene::chain::platform_object::Platform_Period_Profits,
@@ -720,18 +632,3 @@ FC_REFLECT_DERIVED(graphene::chain::score_object,
 FC_REFLECT_DERIVED(graphene::chain::license_object,
                     (graphene::db::object), (license_lid)(platform)(license_type)(hash_value)(extra_data)(title)(body)(create_time)
 					)
-
-FC_REFLECT(graphene::chain::advertising_object::Advertising_Order,
-                   (user)(released_balance)(start_time)(end_time)
-                   (buy_request_time)(memo)(extra_data)
-                   )
-
-FC_REFLECT_DERIVED( graphene::chain::advertising_object,
-                   (graphene::db::object), 
-                   (platform)(on_sell)(unit_time)(unit_price)(description)
-                   (publish_time)(last_update_time)(order_sequence)(effective_orders)(undetermined_orders))
-
-FC_REFLECT_DERIVED( graphene::chain::custom_vote_object,
-                   (graphene::db::object),
-                   (account)(title)(description)(vote_expired_time)(vote_asset_id)(required_asset_amount)
-                   (minimum_selected_items)(maximum_selected_items)(options)(vote_result)(votes))

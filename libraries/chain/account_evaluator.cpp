@@ -257,12 +257,7 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
 
    if (o.extensions.valid() && (d.head_block_time() > HARDFORK_0_4_TIME))
-   {
        ext = &o.extensions->value;
-       if (ext)
-           FC_ASSERT(ext->limit_for_platform.valid() || ext->permission_flags.valid() || ext->memo.valid(),
-                     "accont_auth_platform_operation must change some thing");
-   }
 
    acnt = &d.get_account_by_uid( o.uid );
 

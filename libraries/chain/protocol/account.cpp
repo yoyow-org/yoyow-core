@@ -227,24 +227,9 @@ void account_auth_platform_operation::validate()const
    validate_non_special_account( uid );
    validate_account_uid( platform, "platform " );
 
-   int extnum = 0;
    if (extensions.valid())
-   {
-	   bool isfound = false;
-	   for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
-	   {
-		   if (ext_iter->which() == account_auth_platform_operation::extension_parameter::tag<account_auth_platform_operation::ext>::value)
-		   {
-               extnum++;
-               FC_ASSERT(extnum <= 1, "account_auth_platform_operation::ext must be only one in account_auth_platform_operation::extension_parameter");
-			   isfound = true;
-			   const account_auth_platform_operation::ext& ext = ext_iter->get<account_auth_platform_operation::ext>();
-			   bool has_option = ext.limit_for_platform.valid() || ext.permission_flags.valid();
-			   FC_ASSERT(has_option, "Should update something");
-		   }
-	   }
-	   FC_ASSERT(isfound, "Should update something");
-   }
+       FC_ASSERT(extensions->value.limit_for_platform.valid() || extensions->value.permission_flags.valid() || extensions->value.memo.valid(),
+                 "accont_auth_platform_operation must change some thing");
 }
 
 void account_cancel_auth_platform_operation::validate()const
