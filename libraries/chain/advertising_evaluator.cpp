@@ -210,6 +210,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
          auto itr = idx.lower_bound(std::make_tuple(op.advertising_id, false));
          auto itr_end = idx.upper_bound(std::make_tuple(op.advertising_id, false));
 
+         std::deque<advertising_order_object> delete_deque;
          while (itr != itr_end)
          {
             if (itr->start_time >= advertising_order_obj->end_time || itr->end_time <= advertising_order_obj->start_time) {
@@ -219,11 +220,12 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
             {
                d.adjust_balance(itr->user, asset(itr->released_balance));
                result.emplace(itr->user, itr->released_balance);
-               auto del = itr;
+               delete_deque.emplace_back(*itr);
                itr++;
-               d.remove(*del);
             }           
-         }
+         } 
+         for (const auto& a : delete_deque)
+            d.remove(a);
       }
       else
       {
