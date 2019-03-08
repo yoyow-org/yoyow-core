@@ -3,6 +3,7 @@
  */
 #pragma once
 #include <graphene/chain/protocol/operations.hpp>
+#include <graphene/chain/protocol/advertising.hpp>
 #include <graphene/chain/evaluator.hpp>
 #include <graphene/chain/database.hpp>
 
@@ -48,7 +49,7 @@ namespace graphene { namespace chain {
        void_result do_evaluate(const operation_type& op);
        advertising_confirm_result do_apply(const operation_type& op);
 
-       const advertising_object* advertising_obj = nullptr;
+       const advertising_order_object* advertising_order_obj = nullptr;
    };
 
    class advertising_ransom_evaluator : public evaluator < advertising_ransom_evaluator >
@@ -59,7 +60,6 @@ namespace graphene { namespace chain {
        void_result do_evaluate(const operation_type& op);
        void_result do_apply(const operation_type& op);
 
-       const advertising_object* advertising_obj = nullptr;
-       const advertising_object::Advertising_Order*  ad_order = nullptr;
+       const advertising_order_object* advertising_order_obj = nullptr;
    };
 } } // graphene::chain

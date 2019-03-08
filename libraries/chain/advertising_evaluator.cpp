@@ -1,13 +1,15 @@
 /*
  * Copyright (c) 2018, YOYOW Foundation PTE. LTD. and contributors.
  */
-#include <graphene/chain/content_evaluator.hpp>
-#include <graphene/chain/content_object.hpp>
+#include <graphene/chain/advertising_evaluator.hpp>
+#include <graphene/chain/advertising_object.hpp>
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/is_authorized_asset.hpp>
 #include <graphene/chain/protocol/chain_parameters.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
+
+typedef boost::multiprecision::uint128_t uint128_t;
 
 namespace graphene { namespace chain {
 
@@ -91,9 +93,14 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(advertising_obj->on_sell, "advertising {id} on platform {platform} not on sell", ("id", op.advertising_id)("platform", op.platform));
       FC_ASSERT(op.start_time >= d.head_block_time(), "start time should be later");
 
+      
+      const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
+      auto itr = idx.lower_bound(std::make_tuple(advertising_obj->id, true));
+      auto itr_end = idx.upper_bound(std::make_tuple(advertising_obj->id, true));
+
       time_point_sec end_time = op.start_time + advertising_obj->unit_time * op.buy_number;
-      for (const auto &o : advertising_obj->effective_orders) {
-         if (op.start_time >= o.second.end_time || end_time <= o.second.start_time)
+      while (itr++ != itr_end) {
+         if (op.start_time >= itr->end_time || end_time <= itr->start_time)
             continue;
          FC_ASSERT(false, "purchasing date have a conflict, buy advertising failed");
       }
@@ -118,22 +125,21 @@ asset advertising_buy_evaluator::do_apply(const operation_type& op)
    try {
       database& d = db();
 
-      d.modify(*advertising_obj, [&](advertising_object& obj)
+      const auto& advertising_order_obj = d.create<advertising_order_object>([&](advertising_order_object& obj)
       {
-         advertising_object::Advertising_Order order;
-         order.user = op.from_account;
-         order.start_time = op.start_time;
-         order.end_time = op.start_time + obj.unit_time * op.buy_number;
-         order.buy_request_time = d.head_block_time();
-         order.released_balance = necessary_balance;
-         order.extra_data = op.extra_data;
-         if (op.memo.valid())
-            order.memo = op.memo;
+         obj.advertising_id = advertising_obj->id;
+         obj.user = op.from_account;
+         obj.start_time = op.start_time;
+         obj.end_time = op.start_time + advertising_obj->unit_time * op.buy_number;
+         obj.buy_request_time = d.head_block_time();
+         obj.confirmed_status = false;
+         obj.released_balance = necessary_balance;
+         obj.extra_data = op.extra_data;
 
-         obj.order_sequence++;
-         obj.undetermined_orders.emplace(obj.order_sequence, order);
-         obj.last_update_time = d.head_block_time();
+         if (op.memo.valid())
+            obj.memo = op.memo;
       });
+
       d.adjust_balance(op.from_account, -asset(necessary_balance));
 
       return asset(necessary_balance);
@@ -147,17 +153,21 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
 
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only advertising comfirm after HARDFORK_0_4_TIME");
-      advertising_obj = d.find_advertising(op.advertising_id);
+      const auto& advertising_obj = d.find_advertising(op.advertising_id);
       FC_ASSERT(advertising_obj != nullptr && advertising_obj->platform == op.platform,
          "advertising ${tid} on platform ${platform} is invalid.", ("tid", op.advertising_id)("platform", op.platform));
       
-      bool found = advertising_obj->undetermined_orders.find(op.order_sequence) != advertising_obj->undetermined_orders.end();
-      FC_ASSERT(found, "order {order} is not in undetermined queues", ("order", op.order_sequence));
+      const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_id>();
+      auto itr = idx.find(op.advertising_order_id);
+      FC_ASSERT(itr != idx.end(), "order {order} is not existent", ("order", op.advertising_order_id));  
+
+      advertising_order_obj = &(*itr);
+      FC_ASSERT(!advertising_order_obj->confirmed_status, 
+         "order {order} already effective, should not confirm effective order ", ("order", op.advertising_order_id));
 
       if (op.iscomfirm) {
-         share_type necessary_balance = advertising_obj->undetermined_orders.at(op.order_sequence).released_balance;
          const auto& params = d.get_global_properties().parameters.get_award_params();
-         FC_ASSERT(necessary_balance > params.advertising_confirmed_min_fee,
+         FC_ASSERT(advertising_order_obj->released_balance > params.advertising_confirmed_min_fee,
             "buy price is not enough to pay The lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
       }
 
@@ -171,26 +181,22 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
    try {
       database& d = db();
 
-      advertising_object::Advertising_Order confirm_order = advertising_obj->undetermined_orders.at(op.order_sequence);
       advertising_confirm_result result;
       if (op.iscomfirm)
       {
-         d.modify(*advertising_obj, [&](advertising_object& obj)
-         {      
-            obj.effective_orders.emplace(confirm_order.start_time, confirm_order);
-            obj.effective_orders.at(confirm_order.start_time).released_balance = 0;
-            obj.undetermined_orders.erase(op.order_sequence);
-
-            obj.last_update_time = d.head_block_time();
+         d.modify(*advertising_order_obj, [&](advertising_order_object& obj)
+         {
+            obj.confirmed_status = true;
+            obj.released_balance = 0;
          });
 
          const auto& params = d.get_global_properties().parameters.get_award_params();
-         share_type fee = ((uint128_t)confirm_order.released_balance.value * params.advertising_confirmed_fee_rate
+         share_type fee = ((uint128_t)(advertising_order_obj->released_balance.value) * params.advertising_confirmed_fee_rate
             / GRAPHENE_100_PERCENT).convert_to<int64_t>();
          if (fee < params.advertising_confirmed_min_fee)
             fee = params.advertising_confirmed_min_fee;
 
-         d.adjust_balance(op.platform, asset(confirm_order.released_balance - fee));
+         d.adjust_balance(op.platform, asset(advertising_order_obj->released_balance - fee));
          const auto& core_asset = d.get_core_asset();
          const auto& core_dyn_data = core_asset.dynamic_data(d);
          d.modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
@@ -198,40 +204,33 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
             dyn.current_supply -= fee;
          });
 
-         result.emplace(confirm_order.user, 0);
+         result.emplace(advertising_order_obj->user, 0);
 
-         auto undermined_order = advertising_obj->undetermined_orders;
-         auto itr = undermined_order.begin();
-         while (itr != undermined_order.end())
+         const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
+         auto itr = idx.lower_bound(std::make_tuple(op.advertising_id, false));
+         auto itr_end = idx.upper_bound(std::make_tuple(op.advertising_id, false));
+
+         while (itr != itr_end)
          {
-            if (itr->second.start_time >= confirm_order.end_time || itr->second.end_time <= confirm_order.start_time) {
+            if (itr->start_time >= advertising_order_obj->end_time || itr->end_time <= advertising_order_obj->start_time) {
                itr++;
             }
             else
             {
-               d.adjust_balance(itr->second.user, asset(itr->second.released_balance));
-               result.emplace(itr->second.user, itr->second.released_balance);
-               undermined_order.erase(itr++);
+               d.adjust_balance(itr->user, asset(itr->released_balance));
+               result.emplace(itr->user, itr->released_balance);
+               auto del = itr;
+               itr++;
+               d.remove(*del);
             }           
-         }
-
-         if (undermined_order.size() != advertising_obj->undetermined_orders.size())
-         {
-            d.modify(*advertising_obj, [&](advertising_object& obj)
-            {
-               obj.undetermined_orders = undermined_order;
-            });
          }
       }
       else
       {
-         d.adjust_balance(confirm_order.user, asset(confirm_order.released_balance));
-         d.modify(*advertising_obj, [&](advertising_object& obj)
-         {
-            obj.undetermined_orders.erase(op.order_sequence);
-            obj.last_update_time = d.head_block_time();
-         });
-         result.emplace(confirm_order.user, confirm_order.released_balance);
+         d.adjust_balance(advertising_order_obj->user, asset(advertising_order_obj->released_balance));
+         result.emplace(advertising_order_obj->user, advertising_order_obj->released_balance);
+         d.remove(*advertising_order_obj);
+         advertising_order_obj = nullptr;
       }
 
       return result;
@@ -246,17 +245,18 @@ void_result advertising_ransom_evaluator::do_evaluate(const operation_type& op)
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only ransom advertising after HARDFORK_0_4_TIME");
         d.get_platform_by_owner(op.platform); // make sure pid exists
         d.get_account_by_uid(op.from_account);
-        advertising_obj = d.find_advertising(op.advertising_id);
-        FC_ASSERT(advertising_obj != nullptr, "advertising_object doesn`t exsit");
-        bool isfound = false;
-        auto iter_ad = advertising_obj->undetermined_orders.find(op.order_sequence);
-        if (iter_ad != advertising_obj->undetermined_orders.end()){
-            isfound = true;
-            ad_order = &(iter_ad->second);
-            FC_ASSERT(ad_order->user == op.from_account, "your can only ransom your own order. ");
-            FC_ASSERT(ad_order->buy_request_time + GRAPHENE_ADVERTISING_COMFIRM_TIME < d.head_block_time(), "the buy advertising is undetermined. Can`t ransom now.");
-        }
-        FC_ASSERT(isfound, "Advertising order isn`t found in advertising_object`s undetermined_orders. ");
+        const auto& advertising_obj = d.find_advertising(op.advertising_id);
+        FC_ASSERT(advertising_obj != nullptr, "advertising object doesn`t exsit");
+
+        const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_id>();
+        auto itr = idx.find(op.advertising_order_id);
+        FC_ASSERT(itr != idx.end(), "order {order} is not existent", ("order", op.advertising_order_id));
+
+        advertising_order_obj = &(*itr);
+        FC_ASSERT(advertising_order_obj->user == op.from_account, "your can only ransom your own order. ");
+        FC_ASSERT(advertising_order_obj->buy_request_time + GRAPHENE_ADVERTISING_COMFIRM_TIME < d.head_block_time(), 
+           "the buy advertising is undetermined. Can`t ransom now.");
+
         return void_result();
 
     }FC_CAPTURE_AND_RETHROW((op))
@@ -266,13 +266,11 @@ void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
 {
     try {
         database& d = db();
-        share_type sell_price = ad_order->released_balance;
-        d.modify(*advertising_obj, [&](advertising_object& obj) {
-            auto iter_ad = obj.undetermined_orders.find(op.order_sequence);
-            obj.undetermined_orders.erase(iter_ad);
-            obj.last_update_time = d.head_block_time();
-        });
-        d.adjust_balance(op.from_account, asset(sell_price));
+
+        d.adjust_balance(op.from_account, asset(advertising_order_obj->released_balance));
+        d.remove(*advertising_order_obj);
+        advertising_order_obj = nullptr;
+
     } FC_CAPTURE_AND_RETHROW((op))
 }
 

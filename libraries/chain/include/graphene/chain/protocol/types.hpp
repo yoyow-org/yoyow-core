@@ -177,9 +177,10 @@ namespace graphene { namespace chain {
       impl_chain_property_object_type,
       impl_witness_schedule_object_type,
       impl_platform_vote_object_type,
-	  impl_score_object_type,
+	    impl_score_object_type,
       impl_license_object_type,
       impl_advertising_object_type,
+      impl_advertising_order_object_type,
       impl_custom_vote_object_type,
       impl_account_auth_platform_object_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
@@ -197,6 +198,7 @@ namespace graphene { namespace chain {
    class active_post_object;
    class license_object;
    class advertising_object;
+   class advertising_order_object;
    class custom_vote_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
@@ -251,6 +253,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_score_object_type,            score_object>                              score_id_type;
    typedef object_id< implementation_ids, impl_license_object_type,          license_object>                            license_id_type;
    typedef object_id< implementation_ids, impl_advertising_object_type,      advertising_object>                        advertising_id_type;
+   typedef object_id< implementation_ids, impl_advertising_order_object_type,advertising_order_object>                  advertising_order_id_type;
    typedef object_id< implementation_ids, impl_custom_vote_object_type,      custom_vote_object>                        custom_vote_id_type;
    typedef object_id< implementation_ids, impl_account_auth_platform_object_type, account_auth_platform_object>         account_auth_platform_id_type;
 
@@ -375,6 +378,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_custom_vote_object_type)
                  (impl_license_object_type)
                  (impl_advertising_object_type)
+                 (impl_advertising_order_object_type)
                  (impl_account_auth_platform_object_type)
                  (impl_committee_member_vote_object_type)
                  (impl_registrar_takeover_object_type)
@@ -411,6 +415,7 @@ FC_REFLECT_TYPENAME( graphene::chain::platform_vote_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::score_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::license_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::advertising_id_type)
+FC_REFLECT_TYPENAME( graphene::chain::advertising_order_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::custom_vote_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::account_auth_platform_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_vote_id_type )
