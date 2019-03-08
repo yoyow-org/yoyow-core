@@ -31,6 +31,8 @@
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/content_object.hpp>
+#include <graphene/chain/advertising_object.hpp>
+#include <graphene/chain/custom_vote_object.hpp>
 #include <graphene/chain/csaf_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
@@ -43,6 +45,7 @@
 #include <graphene/chain/asset_evaluator.hpp>
 #include <graphene/chain/committee_member_evaluator.hpp>
 #include <graphene/chain/content_evaluator.hpp>
+#include <graphene/chain/advertising_evaluator.hpp>
 #include <graphene/chain/csaf_evaluator.hpp>
 #include <graphene/chain/proposal_evaluator.hpp>
 #include <graphene/chain/transfer_evaluator.hpp>
@@ -136,6 +139,9 @@ const uint8_t license_object::type_id;
 const uint8_t advertising_object::space_id;
 const uint8_t advertising_object::type_id;
 
+const uint8_t advertising_order_object::space_id;
+const uint8_t advertising_order_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -224,6 +230,7 @@ void database::initialize_indexes()
    add_index< primary_index<score_index                                   > >();
    add_index< primary_index<license_index                                 > >();
    add_index< primary_index<advertising_index                             > >();
+   add_index< primary_index<advertising_order_index                       > >();
    add_index< primary_index<account_auth_platform_index                   > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
