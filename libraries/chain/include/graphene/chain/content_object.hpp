@@ -732,3 +732,8 @@ FC_REFLECT_DERIVED( graphene::chain::advertising_object,
                    (graphene::db::object), 
                    (platform)(on_sell)(unit_time)(unit_price)(description)
                    (publish_time)(last_update_time)(order_sequence)(effective_orders)(undetermined_orders))
+
+FC_REFLECT_DERIVED( graphene::chain::custom_vote_object,
+                   (graphene::db::object),
+                   (account)(title)(description)(vote_expired_time)(vote_asset_id)(required_asset_amount)
+                   (minimum_selected_items)(maximum_selected_items)(options)(vote_result)(votes))
