@@ -289,13 +289,10 @@ namespace graphene { namespace chain {
 
 	 content_parameter_extension_type chain_parameters::get_award_params()const
 	 {
-		 if (extensions.valid())
-		 {
-			 for (auto item = extensions->begin(); item != extensions->end(); item++)
-				 if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-					 return item->get< content_parameter_extension_type >();
-		 }
-		 return content_parameter_extension_type();
+     if (extensions.valid() && extensions->value.content_parameter.valid())
+        return *(extensions->value.content_parameter);
+     else
+        return content_parameter_extension_type();
 	 }
 
 } } // graphene::chain

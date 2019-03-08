@@ -61,7 +61,11 @@ namespace graphene { namespace chain {
      uint32_t   advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;
      share_type advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;
 	 };
-	 typedef static_variant<content_parameter_extension_type>  parameter_extension;
+
+   struct ext
+   {
+      optional<content_parameter_extension_type> content_parameter;
+   };
 
    struct chain_parameters
    {
@@ -131,7 +135,7 @@ namespace graphene { namespace chain {
       uint32_t                platform_pledge_release_delay           = GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY;
       uint16_t                platform_max_vote_per_account           = GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT;
 		
-			optional< flat_set<parameter_extension>  >  extensions;
+      optional< extension<ext>  >  extensions;
 
       /** defined in fee_schedule.cpp */
       void validate()const;

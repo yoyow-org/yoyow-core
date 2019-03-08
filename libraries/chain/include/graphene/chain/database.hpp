@@ -472,7 +472,7 @@ namespace graphene { namespace chain {
          void clear_expired_proposals();
 				 void clear_active_post();
          std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
-            get_effective_csaf(const vector<score_id_type>& scores, share_type amount);
+            get_effective_csaf(const active_post_object& active_post);
 		 void clear_expired_scores();
          void update_maintenance_flag( bool new_maintenance_flag );
          void clear_expired_csaf_leases();

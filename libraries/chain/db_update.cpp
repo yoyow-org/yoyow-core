@@ -253,16 +253,18 @@ void database::clear_active_post()
 }
 
 std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
-   database::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)
+database::get_effective_csaf(const active_post_object& active_post)
 {
    const global_property_object& gpo = get_global_properties();
    const auto& params = gpo.parameters.get_award_params();
 
+   uint128_t amount = (uint128_t)active_post.total_csaf.value;
+
    uint128_t  total_csaf = 0;
    uint128_t  last_total_csaf = 0;
    share_type total_effective_csaf = 0;
-   uint128_t  turn_point_first = (uint128_t)amount.value * params.approval_casf_first_rate / GRAPHENE_100_PERCENT;
-   uint128_t  turn_point_second = (uint128_t)amount.value * params.approval_casf_second_rate / GRAPHENE_100_PERCENT;
+   uint128_t  turn_point_first = amount * params.approval_casf_first_rate / GRAPHENE_100_PERCENT;
+   uint128_t  turn_point_second = amount * params.approval_casf_second_rate / GRAPHENE_100_PERCENT;
 
    auto get_part_effective_csaf = [=](uint128_t begin, uint128_t end) {
       uint128_t average_point = (begin + end) / 2;
@@ -272,14 +274,26 @@ std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
    };
    
    vector<std::tuple<score_id_type, share_type, bool>> effective_csaf_container;
-   for (const auto& score : scores)
-   {
-      const auto& score_obj = get_score(score);        
-      total_csaf = total_csaf + score_obj.csaf.value;
+
+   const auto& sce_idx = get_index_type<score_index>().indices().get<by_period_sequence>();
+   auto itr = sce_idx.lower_bound(std::make_tuple(
+                                  active_post.platform,  
+                                  active_post.poster, 
+                                  active_post.post_pid, 
+                                  active_post.period_sequence));
+   auto itr_end = sce_idx.upper_bound(std::make_tuple(
+                                  active_post.platform, 
+                                  active_post.poster, 
+                                  active_post.post_pid, 
+                                  active_post.period_sequence));
+   
+   while (itr != itr_end)
+   {        
+      total_csaf = total_csaf + itr->csaf.value;
       share_type effective_casf = 0;
       if (total_csaf <= turn_point_first)
       {
-         effective_casf = score_obj.csaf;
+         effective_casf = itr->csaf;
       }
       else if (total_csaf <= turn_point_second)
       {
@@ -306,15 +320,17 @@ std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
          }
          else
          {
-            effective_casf = score_obj.csaf * params.approval_casf_min_weight / GRAPHENE_100_PERCENT;
+            effective_casf = itr->csaf * params.approval_casf_min_weight / GRAPHENE_100_PERCENT;
          }        
       }
 
-      last_total_csaf = last_total_csaf + score_obj.csaf.value;
+      last_total_csaf = last_total_csaf + itr->csaf.value;
       total_effective_csaf = total_effective_csaf + effective_casf;
       
       //bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
-      effective_csaf_container.emplace_back(std::make_tuple(score, effective_casf, score_obj.score >= 0));
+      effective_csaf_container.emplace_back(std::make_tuple(itr->id, effective_casf, itr->score >= 0));
+
+      itr++;
    }
 
    return std::make_tuple(effective_csaf_container, total_effective_csaf);
@@ -909,66 +925,54 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 				const auto& pv = content_item->value;
 				modify(get_global_properties(), [&](global_property_object& _gpo)
 				{
-					auto& o = _gpo.parameters;
-					bool found = false;
-					if (o.extensions.valid())
+				  auto& o = _gpo.parameters;
+					if (o.extensions.valid() && o.extensions->value.content_parameter.valid())
 					{
-						for (auto item = o.extensions->begin(); item != o.extensions->end(); item++)
-						{
-							if (item->which() == parameter_extension::tag< content_parameter_extension_type >::value)
-							{
-								auto& v = item->get< content_parameter_extension_type >();
-								if (pv.content_award_interval.valid())
-									v.content_award_interval = *pv.content_award_interval;
-								if (pv.platform_award_interval.valid())
-									v.platform_award_interval = *pv.platform_award_interval;
-								if (pv.max_csaf_per_approval.valid())
-									v.max_csaf_per_approval = *pv.max_csaf_per_approval;
-								if (pv.approval_expiration.valid())
-									v.approval_expiration = *pv.approval_expiration;
-								if (pv.min_effective_csaf.valid())
-									v.min_effective_csaf = *pv.min_effective_csaf;
-								if (pv.total_content_award_amount.valid())
-									v.total_content_award_amount = *pv.total_content_award_amount;
-								if (pv.total_platform_content_award_amount.valid())
-									v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
-								if (pv.total_platform_voted_award_amount.valid())
-									v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
-								if (pv.platform_award_min_votes.valid())
-									v.platform_award_min_votes = *pv.platform_award_min_votes;
-								if (pv.platform_award_requested_rank.valid())
-									v.platform_award_requested_rank = *pv.platform_award_requested_rank;
+             auto& v = *(o.extensions->value.content_parameter);
+             if (pv.content_award_interval.valid())
+                v.content_award_interval = *pv.content_award_interval;
+             if (pv.platform_award_interval.valid())
+                v.platform_award_interval = *pv.platform_award_interval;
+             if (pv.max_csaf_per_approval.valid())
+                v.max_csaf_per_approval = *pv.max_csaf_per_approval;
+             if (pv.approval_expiration.valid())
+                v.approval_expiration = *pv.approval_expiration;
+             if (pv.min_effective_csaf.valid())
+                v.min_effective_csaf = *pv.min_effective_csaf;
+             if (pv.total_content_award_amount.valid())
+                v.total_content_award_amount = *pv.total_content_award_amount;
+             if (pv.total_platform_content_award_amount.valid())
+                v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
+             if (pv.total_platform_voted_award_amount.valid())
+                v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
+             if (pv.platform_award_min_votes.valid())
+                v.platform_award_min_votes = *pv.platform_award_min_votes;
+             if (pv.platform_award_requested_rank.valid())
+                v.platform_award_requested_rank = *pv.platform_award_requested_rank;
 
-                if (pv.platform_award_basic_rate.valid())
-                   v.platform_award_basic_rate = *pv.platform_award_basic_rate;
-                if (pv.casf_modulus.valid())
-                   v.casf_modulus = *pv.casf_modulus;
-                if (pv.post_award_expiration.valid())
-                   v.post_award_expiration = *pv.post_award_expiration;
-                if (pv.approval_casf_min_weight.valid())
-                   v.approval_casf_min_weight = *pv.approval_casf_min_weight;
-                if (pv.approval_casf_first_rate.valid())
-                   v.approval_casf_first_rate = *pv.approval_casf_first_rate;
-                if (pv.approval_casf_second_rate.valid())
-                   v.approval_casf_second_rate = *pv.approval_casf_second_rate;
-                if (pv.receiptor_award_modulus.valid())
-                   v.receiptor_award_modulus = *pv.receiptor_award_modulus;
-                if (pv.disapprove_award_modulus.valid())
-                   v.disapprove_award_modulus = *pv.disapprove_award_modulus;
+             if (pv.platform_award_basic_rate.valid())
+                v.platform_award_basic_rate = *pv.platform_award_basic_rate;
+             if (pv.casf_modulus.valid())
+                v.casf_modulus = *pv.casf_modulus;
+             if (pv.post_award_expiration.valid())
+                v.post_award_expiration = *pv.post_award_expiration;
+             if (pv.approval_casf_min_weight.valid())
+                v.approval_casf_min_weight = *pv.approval_casf_min_weight;
+             if (pv.approval_casf_first_rate.valid())
+                v.approval_casf_first_rate = *pv.approval_casf_first_rate;
+             if (pv.approval_casf_second_rate.valid())
+                v.approval_casf_second_rate = *pv.approval_casf_second_rate;
+             if (pv.receiptor_award_modulus.valid())
+                v.receiptor_award_modulus = *pv.receiptor_award_modulus;
+             if (pv.disapprove_award_modulus.valid())
+                v.disapprove_award_modulus = *pv.disapprove_award_modulus;
 
-                if (pv.advertising_confirmed_fee_rate.valid())
-                   v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
-                if (pv.advertising_confirmed_min_fee.valid())
-                   v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
-
-								found = true;
-								break;
-							}
-						}
+             if (pv.advertising_confirmed_fee_rate.valid())
+                v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
+             if (pv.advertising_confirmed_min_fee.valid())
+                v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
 					}
 					else
-						o.extensions = flat_set<parameter_extension>();			
-					if (!found)
 					{
 						content_parameter_extension_type cp;
 						if (pv.content_award_interval.valid())
@@ -1014,7 +1018,9 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
             if (pv.advertising_confirmed_min_fee.valid())
                cp.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
 
-						o.extensions->insert(cp);
+            graphene::chain::ext ex;
+            ex.content_parameter = cp;
+            o.extensions = ex;
 					}
 				});
 			}
@@ -1475,11 +1481,15 @@ void database::process_content_platform_awards()
 		{
 			if (apt_itr->total_csaf >= params.min_effective_csaf)
 			{		
+        const auto& sce_idx = get_index_type<score_index>().indices().get<by_period_sequence>();
+        auto itr = sce_idx.lower_bound(std::make_tuple(apt_itr->platform, apt_itr->poster, apt_itr->post_pid, apt_itr->period_sequence));
+        auto itr_end = sce_idx.upper_bound(std::make_tuple(apt_itr->platform, apt_itr->poster, apt_itr->post_pid, apt_itr->period_sequence));     
+        
         share_type approval_amount = 0;
-        for (const auto& s : apt_itr->scores)
+        while (itr != itr_end)
         {
-           const auto& score_obj = get_score(s);
-           approval_amount += score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT);
+           approval_amount += itr->csaf * itr->score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT);
+           ++itr;
         }
         share_type csaf = apt_itr->total_csaf + approval_amount;
         if (csaf > 0)
@@ -1549,7 +1559,7 @@ void database::process_content_platform_awards()
           if (post.score_settlement)
              break;
           //result <vector<score account id, effective csaf for the score, is or not approve>, total effective csaf to award>
-          auto result = get_effective_csaf(std::get<0>(*itr)->scores, std::get<0>(*itr)->total_csaf);
+          auto result = get_effective_csaf(*(std::get<0>(*itr)));
           uint128_t total_award_csaf = (uint128_t)std::get<1>(result).value;
           share_type actual_score_earned = 0;
           for (const auto& e : std::get<0>(result))
