@@ -42,30 +42,6 @@ namespace graphene { namespace chain {
    class account_statistics_object : public graphene::db::abstract_object<account_statistics_object>
    {
       public:
-          enum Platform_Auth_Permission
-          {
-              Platform_Permission_Forward  = 1,   //allow forward 
-              Platform_Permission_Liked    = 2,   //allow liked or scored
-              Platform_Permission_Buyout   = 4,   //allow buyout
-              Platform_Permission_Comment  = 8,   //allow comment
-              Platform_Permission_Reward   = 16,  //allow reward
-              Platform_Permission_Transfer = 32,  //allow transfer
-              Platform_Permission_Post     = 64,  //allow post
-          };
-
-		  struct Platform_Auth_Data
-		  {
-			  share_type    max_limit = 0;   //max limit prepaid for platform
-			  share_type    cur_used = 0;    //current prepaid used by platform 
-              uint32_t      permission_flags = account_statistics_object::Platform_Permission_Forward |
-                                               account_statistics_object::Platform_Permission_Liked |
-                                               account_statistics_object::Platform_Permission_Buyout |
-                                               account_statistics_object::Platform_Permission_Comment |
-                                               account_statistics_object::Platform_Permission_Reward |
-                                               account_statistics_object::Platform_Permission_Post;
-              optional<memo_data>    memo;
-		  };
-
          static const uint8_t space_id = implementation_ids;
          static const uint8_t type_id  = impl_account_statistics_object_type;
 
@@ -79,11 +55,6 @@ namespace graphene { namespace chain {
          uint32_t                            total_ops = 0;
          /** Total operations related to this account that has been removed from the database. */
          uint32_t                            removed_ops = 0;
-
-		 
-		 map<account_uid_type, Platform_Auth_Data> prepaids_for_platform; //prepaid fee limits for platforms
-
-         vector<vote_id> votes;
 
          /**
           * Prepaid fee.
@@ -738,6 +709,71 @@ namespace graphene { namespace chain {
     */
    typedef generic_index<account_statistics_object, account_statistics_object_multi_index_type> account_statistics_index;
 
+
+   class account_auth_platform_object : public graphene::db::abstract_object<account_auth_platform_object>
+   {
+   public:
+       enum Platform_Auth_Permission
+       {
+           Platform_Permission_Forward  = 1,   //allow forward 
+           Platform_Permission_Liked    = 2,   //allow liked or scored
+           Platform_Permission_Buyout   = 4,   //allow buyout
+           Platform_Permission_Comment  = 8,   //allow comment
+           Platform_Permission_Reward   = 16,  //allow reward
+           Platform_Permission_Transfer = 32,  //allow transfer
+           Platform_Permission_Post     = 64,  //allow post
+       };
+
+       static const uint8_t space_id = implementation_ids;
+       static const uint8_t type_id = impl_account_auth_platform_object_type;
+
+       account_uid_type  account;
+       account_uid_type  platform;
+
+       share_type    max_limit = 0;   //max limit prepaid for platform
+       share_type    cur_used = 0;    //current prepaid used by platform 
+       uint32_t      permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+                                        account_auth_platform_object::Platform_Permission_Liked |
+                                        account_auth_platform_object::Platform_Permission_Buyout |
+                                        account_auth_platform_object::Platform_Permission_Comment |
+                                        account_auth_platform_object::Platform_Permission_Reward |
+                                        account_auth_platform_object::Platform_Permission_Post;
+       optional<memo_data>    memo;
+   };
+
+   struct by_account_uid{};
+   struct by_platform{};
+   struct by_account_platform{};
+
+   typedef multi_index_container<
+       account_auth_platform_object,
+	   indexed_by<
+	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+          ordered_unique< tag<by_account_platform>,
+                                 composite_key< 
+                                 account_auth_platform_object,
+                                 member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >,
+                                 member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >>
+                                 >,
+          ordered_non_unique< tag<by_account_uid>, member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform> >,
+          ordered_non_unique< tag<by_account_uid>, member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account> >
+       >
+   > account_auth_platform_multi_index_type;
+
+   /**
+   * @ingroup object_index
+   */
+   typedef generic_index<account_auth_platform_object, account_auth_platform_multi_index_type> account_auth_platform_index;
+
+
+
+
+   class account_vote_object : public graphene::db::abstract_object<account_vote_object>
+   {
+   public:
+       account_uid_type account;
+   };
+
 }}
 
 FC_REFLECT_DERIVED( graphene::chain::account_object,
@@ -777,16 +813,12 @@ FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (graphene::db::object),
                     (owner)(asset_type)(balance) )
 
-FC_REFLECT(graphene::chain::account_statistics_object::Platform_Auth_Data,
-                    (max_limit)(cur_used)(permission_flags)(memo))
-
 FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (graphene::chain::object),
                     (owner)
                     //(most_recent_op)
                     (total_ops)
                     (removed_ops)
-					(prepaids_for_platform)
                     (prepaid)(csaf)
                     (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)
@@ -810,3 +842,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (last_license_sequence)
                   )
 
+FC_REFLECT_DERIVED(graphene::chain::account_auth_platform_object,
+                  (graphene::db::object),
+                  (account)(platform)
+                  (max_limit)(cur_used)(permission_flags)(memo))

@@ -236,8 +236,6 @@ namespace graphene { namespace chain {
            optional<memo_data>  memo;
 	   };
 
-	   typedef static_variant< ext > extension_parameter;
-
       struct fee_parameters_type
       {
          uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -250,8 +248,7 @@ namespace graphene { namespace chain {
       account_uid_type           uid;
       account_uid_type           platform;
 
-	  optional< flat_set<extension_parameter> > extensions;
-      //extensions_type   extensions;
+      optional< extension<ext> > extensions;
 
       account_uid_type  fee_payer_uid()const { return uid; }
       void              validate()const;

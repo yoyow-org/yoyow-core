@@ -258,15 +258,10 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 
    if (o.extensions.valid() && (d.head_block_time() > HARDFORK_0_4_TIME))
    {
-       for (auto ext_iter = o.extensions->begin(); ext_iter != o.extensions->end(); ext_iter++)
-       {
-           if (ext_iter->which() == account_auth_platform_operation::extension_parameter::tag<account_auth_platform_operation::ext>::value)
-           {
-               ext = &(ext_iter->get<account_auth_platform_operation::ext>());
-               FC_ASSERT(ext->limit_for_platform.valid() || ext->permission_flags.valid(),
-                         "accont_auth_platform_operation must change some thing");
-           }
-       }
+       ext = &o.extensions->value;
+       if (ext)
+           FC_ASSERT(ext->limit_for_platform.valid() || ext->permission_flags.valid() || ext->memo.valid(),
+                     "accont_auth_platform_operation must change some thing");
    }
 
    acnt = &d.get_account_by_uid( o.uid );
@@ -305,22 +300,17 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
        });
 
        if (d.head_block_time() >= HARDFORK_0_4_TIME){
-           const account_statistics_object* from_account_stats = &acnt->statistics(d);
-           if (from_account_stats)
-           {
-               d.modify(*from_account_stats, [&](account_statistics_object& s)
-               {
-                   account_statistics_object::Platform_Auth_Data plat_data;
-                   plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
-                   plat_data.permission_flags = account_statistics_object::Platform_Permission_Forward |
-                                                account_statistics_object::Platform_Permission_Liked |
-                                                account_statistics_object::Platform_Permission_Buyout |
-                                                account_statistics_object::Platform_Permission_Comment |
-                                                account_statistics_object::Platform_Permission_Reward |
-                                                account_statistics_object::Platform_Permission_Post;
-                   s.prepaids_for_platform.insert(std::make_pair(o.platform, plat_data));
-               });
-           }
+           d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
+               obj.account = o.uid;
+               obj.platform = o.platform;
+               obj.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+               obj.permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+                                      account_auth_platform_object::Platform_Permission_Liked |
+                                      account_auth_platform_object::Platform_Permission_Buyout |
+                                      account_auth_platform_object::Platform_Permission_Comment |
+                                      account_auth_platform_object::Platform_Permission_Reward |
+                                      account_auth_platform_object::Platform_Permission_Post;
+           });
        }
    }
    else
@@ -333,43 +323,37 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
                a.last_update_time = d.head_block_time();
            });
        }
-       const account_statistics_object* from_account_stats = &acnt->statistics(d);
-       if (from_account_stats)
-       {
-           d.modify(*from_account_stats, [&](account_statistics_object& s)
-           {
-               auto get_platform_auth_data = [&](const account_uid_type platform_uid)
-               {
-                   auto plat_iter = s.prepaids_for_platform.find(platform_uid);
-                   if (plat_iter != s.prepaids_for_platform.end())
-                   {
-                       return &(plat_iter->second);
-                   }
-                   else
-                   {
-                       account_statistics_object::Platform_Auth_Data plat_data;
-                       plat_data.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
-                       plat_data.permission_flags = account_statistics_object::Platform_Permission_Forward |
-                                                    account_statistics_object::Platform_Permission_Liked |
-                                                    account_statistics_object::Platform_Permission_Buyout |
-                                                    account_statistics_object::Platform_Permission_Comment |
-                                                    account_statistics_object::Platform_Permission_Reward |
-                                                    account_statistics_object::Platform_Permission_Post;
-                       s.prepaids_for_platform.insert(std::make_pair(platform_uid, plat_data));
-                       auto iter = s.prepaids_for_platform.find(platform_uid);
-                       return &(iter->second);
-                   }
-               };
 
-               account_statistics_object::Platform_Auth_Data* plat_data = get_platform_auth_data(o.platform);
-               if (ext->limit_for_platform.valid())
-                   plat_data->max_limit = *(ext->limit_for_platform);
-               if (ext->permission_flags.valid())
-                   plat_data->permission_flags = *(ext->permission_flags);
-               if (ext->memo.valid())
-                   plat_data->memo = *(ext->memo);
-           });
-       }
+       auto get_platform_auth_object = [&](const account_uid_type account_uid, const account_uid_type platform_uid)
+       {
+           if (d.find_account_auth_platform_object_by_account_platform(account_uid, platform_uid))
+           {
+               return d.get_account_auth_platform_object_by_account_platform(account_uid, platform_uid);
+           }
+           else
+           {
+               return d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
+                   obj.account = account_uid;
+                   obj.platform = platform_uid;
+                   obj.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+                   obj.permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+                                          account_auth_platform_object::Platform_Permission_Liked |
+                                          account_auth_platform_object::Platform_Permission_Buyout |
+                                          account_auth_platform_object::Platform_Permission_Comment |
+                                          account_auth_platform_object::Platform_Permission_Reward |
+                                          account_auth_platform_object::Platform_Permission_Post;
+               });
+           }
+       };
+
+       d.modify(get_platform_auth_object(o.uid, o.platform), [&](account_auth_platform_object& a){
+           if (ext->limit_for_platform.valid())
+               a.max_limit = *(ext->limit_for_platform);
+           if (ext->permission_flags.valid())
+               a.permission_flags = *(ext->permission_flags);
+           if (ext->memo.valid())
+               a.memo = *(ext->memo);
+       });
    }
 
    return void_result();
@@ -388,13 +372,7 @@ void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_c
    FC_ASSERT( found, "platform ${p} is not in secondary authority", ("p", o.platform) );
    
    if (d.head_block_time() >= HARDFORK_0_4_TIME)
-   {
-       const account_statistics_object* from_account_stats = &acnt->statistics(d);
-       auto auth_data = from_account_stats->prepaids_for_platform.find(o.platform);
-       FC_ASSERT(auth_data != from_account_stats->prepaids_for_platform.end(),
-           "platform ${p} is not in account ${a}`s prepaids_for_platform",
-           ("p", o.platform)("a", o.uid));
-   }
+       d.get_account_auth_platform_object_by_account_platform(o.uid, o.platform);
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -409,12 +387,8 @@ void_result account_cancel_auth_platform_evaluator::do_apply( const account_canc
       a.last_update_time = d.head_block_time();
    });
 
-   if (d.head_block_time() >= HARDFORK_0_4_TIME){
-       const account_statistics_object* from_account_stats = &acnt->statistics(d);
-       d.modify(*from_account_stats, [&](account_statistics_object& a){
-           a.prepaids_for_platform.erase(o.platform);
-       });
-   }
+   if (d.head_block_time() >= HARDFORK_0_4_TIME)
+       d.remove(d.get_account_auth_platform_object_by_account_platform(o.uid, o.platform));
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

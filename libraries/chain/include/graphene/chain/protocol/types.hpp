@@ -181,6 +181,7 @@ namespace graphene { namespace chain {
       impl_license_object_type,
       impl_advertising_object_type,
       impl_custom_vote_object_type,
+      impl_account_auth_platform_object_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
    };
 
@@ -251,6 +252,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_license_object_type,          license_object>                            license_id_type;
    typedef object_id< implementation_ids, impl_advertising_object_type,      advertising_object>                        advertising_id_type;
    typedef object_id< implementation_ids, impl_custom_vote_object_type,      custom_vote_object>                        custom_vote_id_type;
+   typedef object_id< implementation_ids, impl_account_auth_platform_object_type, account_auth_platform_object>         account_auth_platform_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -373,6 +375,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_custom_vote_object_type)
                  (impl_license_object_type)
                  (impl_advertising_object_type)
+                 (impl_account_auth_platform_object_type)
                  (impl_committee_member_vote_object_type)
                  (impl_registrar_takeover_object_type)
                  (impl_csaf_lease_object_type)
@@ -409,6 +412,7 @@ FC_REFLECT_TYPENAME( graphene::chain::score_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::license_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::advertising_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::custom_vote_id_type)
+FC_REFLECT_TYPENAME( graphene::chain::account_auth_platform_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::committee_member_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::registrar_takeover_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::csaf_lease_id_type )

@@ -151,6 +151,26 @@ const account_statistics_object& database::get_account_statistics_by_uid( accoun
    return *itr;
 }
 
+const account_auth_platform_object* database::find_account_auth_platform_object_by_account_platform(account_uid_type account,
+                                                                                                    account_uid_type platform)const
+{
+    const auto& idx = get_index_type<account_auth_platform_index>().indices().get<by_account_platform>();
+    auto itr = idx.find(std::make_tuple(account, platform));
+    if (itr != idx.end())
+        return &(*itr);
+    else
+        return nullptr;
+}
+
+const account_auth_platform_object& database::get_account_auth_platform_object_by_account_platform(account_uid_type account,
+                                                                                                   account_uid_type platform) const
+{
+    const auto& idx = get_index_type<account_auth_platform_index>().indices().get<by_account_platform>();
+    auto itr = idx.find(std::make_tuple(account, platform));
+    FC_ASSERT(itr != idx.end(), "account ${u} auth platform ${p} object not found.", ("u", account)("p", platform));
+    return *itr;
+}
+
 const voter_object* database::find_voter( account_uid_type uid, uint32_t sequence )const
 {
    const auto& idx = get_index_type<voter_index>().indices().get<by_uid_seq>();

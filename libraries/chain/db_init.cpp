@@ -70,6 +70,9 @@ namespace graphene { namespace chain {
 const uint8_t account_object::space_id;
 const uint8_t account_object::type_id;
 
+const uint8_t account_auth_platform_object::space_id;
+const uint8_t account_auth_platform_object::type_id;
+
 const uint8_t asset_object::space_id;
 const uint8_t asset_object::type_id;
 
@@ -221,6 +224,7 @@ void database::initialize_indexes()
    add_index< primary_index<score_index                                   > >();
    add_index< primary_index<license_index                                 > >();
    add_index< primary_index<advertising_index                             > >();
+   add_index< primary_index<account_auth_platform_index                   > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();
