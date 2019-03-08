@@ -280,17 +280,11 @@ namespace graphene { namespace chain {
 			  a.insert(poster);    // Requires authors to change the permissions
 		  if (extensions.valid())
 		  {
-			  for (auto ext_iter = extensions->begin(); ext_iter != extensions->end(); ext_iter++)
-			  {
-				  if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
-				  {
-					  const post_update_operation::ext& ext = ext_iter->get<post_update_operation::ext>();
-					  if ((ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()) && a.find(poster) == a.end())
-					      a.insert(poster);
-					  if (ext.receiptor.valid() && a.find(*(ext.receiptor)) == a.end())
-						  a.insert(*(ext.receiptor));
-				  }
-			  }
+              const post_update_operation::ext& ext = extensions->value;
+              if ((ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()) && a.find(poster) == a.end())
+                  a.insert(poster);
+              if (ext.receiptor.valid() && a.find(*(ext.receiptor)) == a.end())
+                  a.insert(*(ext.receiptor));
 		  }
       }
    };

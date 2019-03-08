@@ -237,8 +237,6 @@ namespace graphene { namespace chain {
           * coin_seconds_earned_last_update fields with new data
           */
          void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now);
-
-         share_type get_auth_platform_usable_prepaid(account_uid_type platform)const;
    };
 
    /**
@@ -739,6 +737,14 @@ namespace graphene { namespace chain {
                                         account_auth_platform_object::Platform_Permission_Reward |
                                         account_auth_platform_object::Platform_Permission_Post;
        optional<memo_data>    memo;
+
+       share_type get_auth_platform_usable_prepaid(share_type account_prepaid) const{
+           share_type usable_prepaid = 0;
+           FC_ASSERT(max_limit >= cur_used);
+           share_type amount = max_limit - cur_used;
+           usable_prepaid = account_prepaid >= amount ? amount : account_prepaid;
+           return usable_prepaid;
+       };
    };
 
    struct by_account_uid{};

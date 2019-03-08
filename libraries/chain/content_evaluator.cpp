@@ -481,18 +481,14 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
            d.get_platform_by_owner(*op.origin_platform); // make sure pid exists
            d.get_account_by_uid(*op.origin_poster); // make sure uid exists
            const post_object& origin_post = d.get_post_by_platform(*op.origin_platform, *op.origin_poster, *op.origin_post_pid); // make sure pid exists
-           FC_ASSERT((origin_post.permission_flags & account_auth_platform_object::Post_Permission_Comment) > 0,
+           FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Comment) > 0,
                "post_object ${p} not allowed to comment.",
                ("p", op.origin_post_pid));
            FC_ASSERT((poster_account->can_reply),
                "poster ${uid} is not allowed to reply.",
                ("uid", op.poster));
 
-           auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
-           FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(),
-               "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
-               ("p", op.platform)("a", op.poster));
-           FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Comment) > 0,
+           FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Comment) > 0,
                "the comment permission of platform ${p} authorized by account ${a} is invalid. ",
                ("p", op.platform)("a", op.poster));
        }
@@ -509,20 +505,16 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                "post ${p} is not allowed to forward",
                ("p", op.origin_post_pid));
 
-           auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
-           FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(),
-               "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
-               ("p", op.platform)("a", op.poster));
-           FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Forward) > 0,
+           FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
                "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
                ("p", op.platform)("a", op.poster));
            FC_ASSERT(account_stats->prepaid >= *origin_post.forward_price,
                "Insufficient balance: unable to forward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                ("c", (account_stats->prepaid))("a", op.poster)("n", origin_post.forward_price));
 
-           if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
+           if (auth_object.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
            {
-               share_type usable_prepaid = account_stats->get_auth_platform_usable_prepaid(*sign_platform_uid);
+               share_type usable_prepaid = auth_object.get_auth_platform_usable_prepaid(account_stats->prepaid);
                FC_ASSERT(usable_prepaid >= *origin_post.forward_price,
                    "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
                    ("c", (usable_prepaid))("p", *sign_platform_uid)("a", op.poster)("n", *origin_post.forward_price));
@@ -545,7 +537,6 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
    }
 
    return void_result();
-
 }  FC_CAPTURE_AND_RETHROW( (op) ) }
 
 typedef boost::multiprecision::uint128_t uint128_t;
@@ -565,13 +556,16 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
           {
               const post_object& origin_post = d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
               share_type forwardprice = *(origin_post.forward_price);
+              if (sign_platform_uid.valid()) // signed by platform , then add auth cur_used
+              {
+                  const account_auth_platform_object& auth_object = d.get_account_auth_platform_object_by_account_platform(o.poster, o.platform);
+                  d.modify(auth_object, [&](account_auth_platform_object& obj)
+                  {
+                      obj.cur_used += forwardprice;
+                  });
+              }
               d.modify(*account_stats, [&](account_statistics_object& obj)
               {
-                  if (sign_platform_uid.valid()) // signed by platform , then add auth cur_used
-                  {
-                      auto iter = obj.prepaids_for_platform.find(o.platform);
-                      iter->second.cur_used += forwardprice;
-                  }
                   obj.prepaid -= forwardprice;
               });
 
@@ -626,6 +620,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
               {
                   obj.prepaid += surplus.convert_to<int64_t>();
               });
+
               d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
               {
                   obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(), surplus.convert_to<int64_t>(), 0, 0);
@@ -676,7 +671,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                     {
                         obj.license_lid = *(ext->license_lid);
                     }
-                    obj.permission_flags = ext->permission_flags;
+                    obj.permission_flags = *(ext->permission_flags);
                 }
                 if (need_init_receiptors){
                     map<account_uid_type, Recerptor_Parameter> map_receiptors;
@@ -711,38 +706,30 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
 
    if (op.extensions.valid() && d.head_block_time() >= HARDFORK_0_4_TIME)
    {
-	   for (auto ext_iter = op.extensions->begin(); ext_iter != op.extensions->end(); ext_iter++)
-	   {
-		   if (ext_iter->which() == post_update_operation::extension_parameter::tag<post_update_operation::ext>::value)
-		   {
-			   ext = &(ext_iter->get<post_update_operation::ext>());
-			   if (ext->receiptor.valid())
-			   {
-				   post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
-				   FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
-				   auto iter = post->receiptors.find(*(ext->receiptor));
-				   FC_ASSERT(iter != post->receiptors.end(), 
-                             "receiptor:${r} not found.", 
-                             ("r", *(ext->receiptor)));
-                   if (ext->buyout_ratio.valid())
-                   {
-                       FC_ASSERT(iter->second.cur_ratio >= *(ext->buyout_ratio),
-                           "the ratio ${r} of receiptor ${p} is less then sell ${sp} .",
-                           ("r", iter->second.cur_ratio)("p", *(ext->receiptor))("sp", *(ext->buyout_ratio)));
-                       if (ext->receiptor == op.poster)
-                       {
-                           FC_ASSERT((iter->second.cur_ratio - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) >= *(ext->buyout_ratio),
-                               "the ratio ${r} of poster ${p} will less then min ratio.",
-                               ("r", (iter->second.cur_ratio - *(ext->buyout_ratio)))("p", *(ext->receiptor)));
-                       }
-                       if (post->receiptors.find(*(ext->receiptor)) == post->receiptors.end()) //add a new receiptor
-                       {
-                           FC_ASSERT(post->receiptors.size() < 5, "the num of post`s receiptors should be less than or equal to 5");
-                       }
-                   }
-			   }
-		   }
-	   }
+       ext = &op.extensions->value;
+       if (ext->receiptor.valid())
+       {
+           post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
+           FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
+           auto iter = post->receiptors.find(*(ext->receiptor));
+           FC_ASSERT(iter != post->receiptors.end(),"receiptor:${r} not found.",("r", *(ext->receiptor)));
+           if (ext->buyout_ratio.valid())
+           {
+               FC_ASSERT(iter->second.cur_ratio >= *(ext->buyout_ratio),
+                   "the ratio ${r} of receiptor ${p} is less then sell ${sp} .",
+                   ("r", iter->second.cur_ratio)("p", *(ext->receiptor))("sp", *(ext->buyout_ratio)));
+               if (ext->receiptor == op.poster)
+               {
+                   FC_ASSERT((iter->second.cur_ratio - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) >= *(ext->buyout_ratio),
+                       "the ratio ${r} of poster ${p} will less then min ratio.",
+                       ("r", (iter->second.cur_ratio - *(ext->buyout_ratio)))("p", *(ext->receiptor)));
+               }
+               if (post->receiptors.find(*(ext->receiptor)) == post->receiptors.end()) //add a new receiptor
+               {
+                   FC_ASSERT(post->receiptors.size() < 5, "the num of post`s receiptors should be less than or equal to 5");
+               }
+           }
+       }
    }
 
    return void_result();
@@ -814,11 +801,8 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
         if (sign_account != 0 && sign_account != op.from_account_uid){
-            auto auth_data = account_stats->prepaids_for_platform.find(sign_account);
-            FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(),
-                "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
-                ("p", sign_account)("a", op.from_account_uid));
-            FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Liked) > 0,
+            auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
+            FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Liked) > 0,
                 "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
                 ("p", sign_account)("a", op.from_account_uid));
         }
@@ -1040,28 +1024,20 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
+        auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
         if (sign_account == op.platform)
-        {
-            auto auth_data = account_stats->prepaids_for_platform.find(sign_account);
-            if (auth_data != account_stats->prepaids_for_platform.end())
-            {
-                sign_platform_uid = sign_account;
-            }
-        }
+            sign_platform_uid = sign_account;
 
-        auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
-        FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(), 
-                  "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
-                  ("p", op.platform)("a", op.poster));
-        FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Reward)>0, 
+        
+        FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Reward)>0,
                   "the reward permisson of platform ${p} authorized by account ${a} is invalid. ",
                   ("p", op.platform)("a", op.poster));
         FC_ASSERT(account_stats->prepaid >= op.amount, 
                   "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", op.amount));
-        if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
+        if (auth_object.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
         {
-            share_type usable_prepaid = account_stats->get_auth_platform_usable_prepaid(*sign_platform_uid);
+            share_type usable_prepaid = auth_object.get_auth_platform_usable_prepaid(account_stats->prepaid);
             FC_ASSERT(usable_prepaid >= op.amount,
                       "Insufficient balance: unable to reward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
                       ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.from_account_uid)("n", op.amount));
@@ -1088,14 +1064,18 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
 {
     try {
         database& d = db();
+        
+        if (sign_platform_uid.valid())
+        {
+            auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
+            d.modify(auth_object, [&](account_auth_platform_object& obj)
+            {
+                obj.cur_used += op.amount;
+            });
+        }
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         d.modify(*account_stats, [&](account_statistics_object& obj)
         {
-            if (sign_platform_uid.valid())
-            {
-                auto iter = obj.prepaids_for_platform.find(op.platform); // signed by platform , then add auth cur_used
-                iter->second.cur_used += op.amount;
-            }
             obj.prepaid -= op.amount;
         });
 
@@ -1203,33 +1183,23 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
 
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
+        auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
         if (sign_account == op.platform)
-        {
-            auto auth_data = account_stats->prepaids_for_platform.find(sign_account);
-            if (auth_data != account_stats->prepaids_for_platform.end())
-            {
-                sign_platform_uid = sign_account;
-            }
-        }
+            sign_platform_uid = sign_account;
 
-        auto auth_data = account_stats->prepaids_for_platform.find(op.platform);
-        FC_ASSERT(auth_data != account_stats->prepaids_for_platform.end(), 
-                  "platform ${p} not included in account ${a} `s prepaids_for_platform. ",
-                  ("p", op.platform)("a", op.from_account_uid));
-        FC_ASSERT((auth_data->second.permission_flags & account_statistics_object::Platform_Permission_Buyout) > 0, 
+        FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
                   "the buyout permisson of platform ${p} authorized by account ${a} is invalid. ",
                   ("p", op.platform)("a", op.from_account_uid));
         FC_ASSERT(account_stats->prepaid >= iter->second.buyout_price, 
                   "Insufficient balance: unable to buyout, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", iter->second.buyout_price));
-        if (auth_data->second.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
+        if (auth_object.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
         {
-            share_type usable_prepaid = account_stats->get_auth_platform_usable_prepaid(*sign_platform_uid);
+            share_type usable_prepaid = auth_object.get_auth_platform_usable_prepaid(account_stats->prepaid);
             FC_ASSERT(usable_prepaid >= iter->second.buyout_price,
                       "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
                       ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.from_account_uid)("n", iter->second.buyout_price));
         }
-            
 
 		return void_result();
 	}FC_CAPTURE_AND_RETHROW((op))
@@ -1242,13 +1212,16 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
 		const post_object& post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);
 		auto iter = post.receiptors.find(op.receiptor_account_uid);
 		Recerptor_Parameter para = iter->second;
+        if (sign_platform_uid.valid()) // signed by platform , then add auth cur_used
+        {
+            auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
+            d.modify(auth_object, [&](account_auth_platform_object& obj)
+            {
+                obj.cur_used += para.buyout_price;
+            });
+        }
         d.modify(d.get_account_statistics_by_uid(op.from_account_uid), [&](account_statistics_object& obj)
         {
-            if (sign_platform_uid.valid()) // signed by platform , then add auth cur_used
-            {
-                auto iter = obj.prepaids_for_platform.find(op.platform);
-                iter->second.cur_used += para.buyout_price;
-            }
             obj.prepaid -= para.buyout_price;
         });
         d.modify(d.get_account_statistics_by_uid(op.receiptor_account_uid), [&](account_statistics_object& obj)
