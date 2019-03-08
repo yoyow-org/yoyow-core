@@ -102,6 +102,13 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       map<string,account_uid_type> lookup_accounts_by_name(const string& lower_bound_name, uint32_t limit)const;
       uint64_t get_account_count()const;
 
+      vector<account_auth_platform_object> list_account_auth_platform_by_platform(const account_uid_type platform,
+                                                                                  const account_uid_type lower_bound_account,
+                                                                                  const uint32_t limit)const;
+      vector<account_auth_platform_object> list_account_auth_platform_by_account(const account_uid_type account,
+                                                                                 const account_uid_type lower_bound_platform,
+                                                                                 const uint32_t limit)const;
+
       // CSAF
       vector<csaf_lease_object> get_csaf_leases_by_from( const account_uid_type from,
                                                          const account_uid_type lower_bound_to,
@@ -899,6 +906,57 @@ map<string,account_uid_type> database_api_impl::lookup_accounts_by_name(const st
 
    return result;
 }
+
+vector<account_auth_platform_object> database_api::list_account_auth_platform_by_platform(const account_uid_type platform,
+                                                                                          const account_uid_type lower_bound_account,
+                                                                                          const uint32_t limit)const
+{
+    return my->list_account_auth_platform_by_platform(platform, lower_bound_account, limit);
+}
+
+vector<account_auth_platform_object> database_api_impl::list_account_auth_platform_by_platform(const account_uid_type platform,
+                                                                                               const account_uid_type lower_bound_account,
+                                                                                               const uint32_t limit)const
+{
+    FC_ASSERT(limit <= 1001);
+    vector<account_auth_platform_object> objs;
+    const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_platform_uid>();
+    auto itr = idx.lower_bound(lower_bound_account);
+    uint32_t count = 0;
+    while (itr != idx.end() && itr->platform == platform && count < limit)
+    {
+        objs.emplace_back(*itr);
+        ++itr;
+        ++count;
+    }
+    return objs;
+}
+
+vector<account_auth_platform_object> database_api::list_account_auth_platform_by_account(const account_uid_type account,
+                                                                                         const account_uid_type lower_bound_platform,
+                                                                                         const uint32_t limit)const
+{
+    return my->list_account_auth_platform_by_account(account, lower_bound_platform, limit);
+}
+
+vector<account_auth_platform_object> database_api_impl::list_account_auth_platform_by_account(const account_uid_type account,
+                                                                                              const account_uid_type lower_bound_platform,
+                                                                                              const uint32_t limit)const
+{
+    FC_ASSERT(limit <= 1001);
+    vector<account_auth_platform_object> objs;
+    const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_account_uid>();
+    auto itr = idx.lower_bound(lower_bound_platform);
+    uint32_t count = 0;
+    while (itr != idx.end() && itr->account == account && count < limit)
+    {
+        objs.emplace_back(*itr);
+        ++itr;
+        ++count;
+    }
+    return objs;
+}
+
 
 uint64_t database_api::get_account_count()const
 {

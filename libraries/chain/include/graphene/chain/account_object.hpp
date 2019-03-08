@@ -748,7 +748,7 @@ namespace graphene { namespace chain {
    };
 
    struct by_account_uid{};
-   struct by_platform{};
+   struct by_platform_uid{};
    struct by_account_platform{};
 
    typedef multi_index_container<
@@ -761,7 +761,7 @@ namespace graphene { namespace chain {
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >>
                                  >,
-          ordered_non_unique< tag<by_account_uid>, member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform> >,
+          ordered_non_unique< tag<by_platform_uid>,member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform> >,
           ordered_non_unique< tag<by_account_uid>, member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account> >
        >
    > account_auth_platform_multi_index_type;

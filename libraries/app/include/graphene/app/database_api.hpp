@@ -341,6 +341,13 @@ class database_api
        */
       map<string,account_uid_type> lookup_accounts_by_name(const string& lower_bound_name, uint32_t limit)const;
 
+      vector<account_auth_platform_object> list_account_auth_platform_by_platform(const account_uid_type platform, 
+                                                                                  const account_uid_type lower_bound_account, 
+                                                                                  const uint32_t limit)const;   //limit <= 1001
+      vector<account_auth_platform_object> list_account_auth_platform_by_account(const account_uid_type account, 
+                                                                                 const account_uid_type lower_bound_platform, 
+                                                                                 const uint32_t limit)const;    //limit <= 1001
+
       //////////////
       // Balances //
       //////////////
