@@ -363,8 +363,6 @@ namespace graphene { namespace chain {
 		 account_uid_type                       poster;
 		 /// The post's pid.
 		 post_pid_type                          post_pid;
-		 /// detail information of approvals, csaf.
-		 vector<score_id_type>                  scores;
 		 /// approvals of a post, csaf.
 		 share_type                             total_csaf;
 		 /// rewards of a post.

@@ -51,7 +51,9 @@ add_library( graphene_chain
              protocol/transaction.cpp
              protocol/block.cpp
              protocol/fee_schedule.cpp
-
+             protocol/advertising.cpp
+             protocol/custom_vote.cpp
+			 
              genesis_state.cpp
              get_config.cpp
 
@@ -64,6 +66,8 @@ add_library( graphene_chain
              asset_evaluator.cpp
              transfer_evaluator.cpp
              proposal_evaluator.cpp
+             advertising_evaluator.cpp
+             custom_vote_evaluator.cpp
 
              account_object.cpp
              asset_object.cpp

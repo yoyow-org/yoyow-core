@@ -83,6 +83,8 @@ namespace graphene { namespace chain {
 		 
 		 map<account_uid_type, Platform_Auth_Data> prepaids_for_platform; //prepaid fee limits for platforms
 
+         vector<vote_id> votes;
+
          /**
           * Prepaid fee.
           */
