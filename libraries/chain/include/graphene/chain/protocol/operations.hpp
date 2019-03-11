@@ -27,6 +27,8 @@
 #include <graphene/chain/protocol/asset_ops.hpp>
 #include <graphene/chain/protocol/committee_member.hpp>
 #include <graphene/chain/protocol/content.hpp>
+#include <graphene/chain/protocol/advertising.hpp>
+#include <graphene/chain/protocol/custom_vote.hpp>
 #include <graphene/chain/protocol/csaf.hpp>
 #include <graphene/chain/protocol/proposal.hpp>
 #include <graphene/chain/protocol/transfer.hpp>
@@ -78,16 +80,18 @@ namespace graphene { namespace chain {
             account_update_allowed_assets_operation,
             // the operations below are not supported
             account_whitelist_operation,
-			score_create_operation,
-			reward_operation,
+            score_create_operation,
+            reward_operation,
             reward_proxy_operation,
-			buyout_operation,
+            buyout_operation,
             license_create_operation,
             advertising_create_operation,
             advertising_update_operation,
             advertising_buy_operation,
             advertising_confirm_operation,
-            advertising_ransom_operation
+            advertising_ransom_operation,
+            custom_vote_create_operation,
+            custom_vote_cast_operation
          > operation;
 
    /// @} // operations group
