@@ -140,6 +140,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<score_object> list_scores(const account_uid_type platform,
                                        const account_uid_type poster_uid,
                                        const post_pid_type    post_pid,
+                                       const object_id_type   lower_bound_score,
                                        const uint32_t         limit,
                                        const bool             list_cur_period)const;
 
@@ -920,8 +921,8 @@ vector<account_auth_platform_object> database_api_impl::list_account_auth_platfo
 {
     FC_ASSERT(limit <= 1001);
     vector<account_auth_platform_object> objs;
-    const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_platform_uid>();
-    auto itr = idx.lower_bound(lower_bound_account);
+    const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_platform_account>();
+    auto itr = idx.lower_bound(std::make_tuple(platform, lower_bound_account));
     uint32_t count = 0;
     while (itr != idx.end() && itr->platform == platform && count < limit)
     {
@@ -945,8 +946,8 @@ vector<account_auth_platform_object> database_api_impl::list_account_auth_platfo
 {
     FC_ASSERT(limit <= 1001);
     vector<account_auth_platform_object> objs;
-    const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_account_uid>();
-    auto itr = idx.lower_bound(lower_bound_platform);
+    const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_account_platform>();
+    auto itr = idx.lower_bound(std::make_tuple(account, lower_bound_platform));
     uint32_t count = 0;
     while (itr != idx.end() && itr->account == account && count < limit)
     {
@@ -1190,15 +1191,17 @@ optional<score_object> database_api_impl::get_score(const account_uid_type platf
 vector<score_object> database_api::list_scores(const account_uid_type platform,
                                                const account_uid_type poster_uid,
                                                const post_pid_type    post_pid,
+                                               const object_id_type   lower_bound_score,
                                                const uint32_t         limit,
                                                const bool             list_cur_period)const
 {
-    return my->list_scores(platform, poster_uid, post_pid, limit, list_cur_period);
+    return my->list_scores(platform, poster_uid, post_pid, lower_bound_score, limit, list_cur_period);
 }
 
 vector<score_object> database_api_impl::list_scores(const account_uid_type platform,
                                                     const account_uid_type poster_uid,
                                                     const post_pid_type    post_pid,
+                                                    const object_id_type   lower_bound_score,
                                                     const uint32_t         limit,
                                                     const bool             list_cur_period)const
 {
@@ -1213,9 +1216,11 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
 
         while (itr_begin != itr_end && count < limit)
         {
-            result.push_back(*itr_begin);
-            ++itr_begin;
-            ++count;
+            if (itr_begin->id > lower_bound_score){
+                result.push_back(*itr_begin);
+                ++itr_begin;
+                ++count;
+            }
         }
     }
     else{
@@ -1225,9 +1230,11 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
 
         while (itr_begin != itr_end && count < limit)
         {
-            result.push_back(*itr_begin);
-            ++itr_begin;
-            ++count;
+            if (itr_begin->id > lower_bound_score){
+                result.push_back(*itr_begin);
+                ++itr_begin;
+                ++count;
+            }
         }
     }
     return result;

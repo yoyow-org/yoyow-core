@@ -257,14 +257,14 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
 
    if (o.extensions.valid() && (d.head_block_time() > HARDFORK_0_4_TIME))
-       ext = &o.extensions->value;
+       ext_para = &o.extensions->value;
 
    acnt = &d.get_account_by_uid( o.uid );
 
    auto& ka = acnt->secondary.account_uid_auths;
    auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
    found = ( itr != ka.end() );
-   if (((!ext) && d.head_block_time() >= HARDFORK_0_4_TIME) || (d.head_block_time() < HARDFORK_0_4_TIME))
+   if (((!ext_para) && d.head_block_time() >= HARDFORK_0_4_TIME) || (d.head_block_time() < HARDFORK_0_4_TIME))
        FC_ASSERT( !found, "platform ${p} is already in secondary authority", ("p", o.platform) );
 
    authority auth = acnt->secondary;
@@ -286,7 +286,7 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 void_result account_auth_platform_evaluator::do_apply( const account_auth_platform_operation& o )
 { try {
    database& d = db();
-   if (((!ext) && d.head_block_time() >= HARDFORK_0_4_TIME) || (d.head_block_time() < HARDFORK_0_4_TIME))
+   if (((!ext_para) && d.head_block_time() >= HARDFORK_0_4_TIME) || (d.head_block_time() < HARDFORK_0_4_TIME))
    {
        authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
        d.modify(*acnt, [&](account_object& a){
@@ -342,12 +342,12 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
        };
 
        d.modify(get_platform_auth_object(o.uid, o.platform), [&](account_auth_platform_object& a){
-           if (ext->limit_for_platform.valid())
-               a.max_limit = *(ext->limit_for_platform);
-           if (ext->permission_flags.valid())
-               a.permission_flags = *(ext->permission_flags);
-           if (ext->memo.valid())
-               a.memo = *(ext->memo);
+           if (ext_para->limit_for_platform.valid())
+               a.max_limit = *(ext_para->limit_for_platform);
+           if (ext_para->permission_flags.valid())
+               a.permission_flags = *(ext_para->permission_flags);
+           if (ext_para->memo.valid())
+               a.memo = *(ext_para->memo);
        });
    }
 

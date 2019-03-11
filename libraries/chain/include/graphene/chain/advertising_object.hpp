@@ -37,14 +37,17 @@ namespace graphene { namespace chain {
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
          ordered_non_unique< tag<by_advertising_id>, 
-            member< advertising_order_object, advertising_id_type, &advertising_order_object::advertising_id >, 
-            member< advertising_order_object, bool,                &advertising_order_object::confirmed_status >> ,
+                             composite_key<advertising_order_object,
+                             member< advertising_order_object, advertising_id_type, &advertising_order_object::advertising_id >, 
+                             member< advertising_order_object, bool,                &advertising_order_object::confirmed_status >>> ,
          ordered_non_unique< tag<by_advertising_user>,
-            member< advertising_order_object, account_uid_type,    &advertising_order_object::user>,
-            member< advertising_order_object, bool,                &advertising_order_object::confirmed_status> >> ,
+                             composite_key<advertising_order_object,
+                             member< advertising_order_object, account_uid_type,    &advertising_order_object::user>,
+                             member< advertising_order_object, bool,                &advertising_order_object::confirmed_status>>>,
          ordered_non_unique< tag<by_advertising_confirmed>,
-            member< advertising_order_object, bool,                &advertising_order_object::confirmed_status> >
-      > advertising_order_multi_index_type;
+                             member< advertising_order_object, bool,                &advertising_order_object::confirmed_status>>
+        >
+   > advertising_order_multi_index_type;
 
    /**
    * @ingroup object_index
@@ -102,6 +105,7 @@ namespace graphene { namespace chain {
 }}
 
 FC_REFLECT_DERIVED(graphene::chain::advertising_order_object,
+                   (graphene::db::object),
                    (advertising_id)(user)(released_balance)(start_time)(end_time)
                    (buy_request_time)(confirmed_status)(memo)(extra_data)
                    )

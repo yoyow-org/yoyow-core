@@ -82,7 +82,7 @@ public:
    void_result do_apply( const operation_type& o ) ;
 
    const account_object* acnt = nullptr;
-   const account_auth_platform_operation::ext* ext = nullptr;
+   const account_auth_platform_operation::extension_parameter* ext_para = nullptr;
    bool found = false;
 };
 

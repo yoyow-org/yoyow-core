@@ -31,6 +31,7 @@
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/transaction_object.hpp>
 #include <graphene/chain/witness_object.hpp>
+#include <graphene/chain/advertising_object.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -1018,9 +1019,9 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
             if (pv.advertising_confirmed_min_fee.valid())
                cp.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
 
-            graphene::chain::ext ex;
+            graphene::chain::ext_chain_parameter ex;
             ex.content_parameter = cp;
-            o.extensions = ex;
+            o.extensions->value = ex;
 					}
 				});
 			}
@@ -1122,13 +1123,13 @@ void database::check_invariants()
    FC_ASSERT( total_core_leased_in == total_core_leased_out );
 
    share_type total_advertising_released = 0;
-   const auto& adt_idx = get_index_type<advertising_index>().indices();
-   for (const auto& s : adt_idx)
+   const auto& adt_idx = get_index_type<advertising_order_index>().indices().get<by_advertising_confirmed>();
+   auto advertising_iter = adt_idx.lower_bound(false);
+   auto advertising_iter_end = adt_idx.upper_bound(false);
+   while (advertising_iter != advertising_iter_end)
    {
-       for (const auto& order_idx : s.undetermined_orders){
-           FC_ASSERT(order_idx.second.released_balance >= 0);
-           total_advertising_released += order_idx.second.released_balance;
-       }
+       total_advertising_released += advertising_iter->released_balance;
+       advertising_iter++;
    }
 
    share_type current_supply = get_core_asset().dynamic_data(*this).current_supply;

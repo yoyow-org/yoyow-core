@@ -229,7 +229,7 @@ namespace graphene { namespace chain {
     */
    struct account_auth_platform_operation : public base_operation
    {
-	   struct ext
+	   struct extension_parameter
 	   {
 		   optional<share_type> limit_for_platform;
            optional<uint32_t>   permission_flags;
@@ -248,7 +248,7 @@ namespace graphene { namespace chain {
       account_uid_type           uid;
       account_uid_type           platform;
 
-      optional< extension<ext> > extensions;
+      optional< extension<extension_parameter> > extensions;
 
       account_uid_type  fee_payer_uid()const { return uid; }
       void              validate()const;
@@ -473,6 +473,7 @@ FC_REFLECT( graphene::chain::account_update_auth_operation,
 
 FC_REFLECT( graphene::chain::account_update_proxy_operation, (fee)(voter)(proxy)(extensions) )
 
+FC_REFLECT(graphene::chain::account_auth_platform_operation::extension_parameter, (limit_for_platform)(permission_flags)(memo))
 FC_REFLECT( graphene::chain::account_auth_platform_operation, (fee)(uid)(platform)(extensions) )
 FC_REFLECT( graphene::chain::account_auth_platform_operation::fee_parameters_type,(fee)(min_real_fee)(min_rf_percent)(extensions) )
 
@@ -500,5 +501,3 @@ FC_REFLECT( graphene::chain::account_update_allowed_assets_operation::fee_parame
 
 FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )
-
-FC_REFLECT(graphene::chain::account_auth_platform_operation::ext, (limit_for_platform)(permission_flags)(memo))

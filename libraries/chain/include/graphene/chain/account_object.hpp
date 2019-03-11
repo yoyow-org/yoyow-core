@@ -750,6 +750,7 @@ namespace graphene { namespace chain {
    struct by_account_uid{};
    struct by_platform_uid{};
    struct by_account_platform{};
+   struct by_platform_account{};
 
    typedef multi_index_container<
        account_auth_platform_object,
@@ -761,6 +762,12 @@ namespace graphene { namespace chain {
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >>
                                  >,
+          ordered_unique< tag<by_platform_account>,
+                                 composite_key< 
+                                 account_auth_platform_object,
+                                 member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >,
+                                 member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >>
+                                 >,
           ordered_non_unique< tag<by_platform_uid>,member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform> >,
           ordered_non_unique< tag<by_account_uid>, member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account> >
        >
@@ -770,15 +777,6 @@ namespace graphene { namespace chain {
    * @ingroup object_index
    */
    typedef generic_index<account_auth_platform_object, account_auth_platform_multi_index_type> account_auth_platform_index;
-
-
-
-
-   class account_vote_object : public graphene::db::abstract_object<account_vote_object>
-   {
-   public:
-       account_uid_type account;
-   };
 
 }}
 

@@ -81,7 +81,6 @@ void advertising_ransom_operation::validate()const
     validate_op_fee(fee, "advertising_ransom ");
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account, "from_account");
-    FC_ASSERT(order_sequence > 0, "the order sequence must be more then 0. ");
 }
 
 share_type advertising_ransom_operation::calculate_fee(const fee_parameters_type& k)const

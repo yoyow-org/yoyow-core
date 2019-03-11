@@ -27,6 +27,7 @@
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
+#include <graphene/chain/advertising_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 

@@ -202,6 +202,7 @@ namespace graphene { namespace chain {
    class advertising_order_object;
    class custom_vote_object;
    class cast_custom_vote_object;
+   class account_auth_platform_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;

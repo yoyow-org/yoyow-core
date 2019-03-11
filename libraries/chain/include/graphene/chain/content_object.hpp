@@ -518,9 +518,10 @@ namespace graphene { namespace chain {
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::platform >,
                                   member< score_object, account_uid_type, &score_object::poster >,
-                                  member< score_object, post_pid_type,    &score_object::post_pid >
+                                  member< score_object, post_pid_type,    &score_object::post_pid >,
+                                  member< object,       object_id_type,   &object::id >
                               > >,
-          ordered_non_unique< tag<by_period_sequence>, 
+          ordered_unique< tag<by_period_sequence>, 
                               composite_key<
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::platform >,
@@ -528,7 +529,14 @@ namespace graphene { namespace chain {
                                   member< score_object, post_pid_type,    &score_object::post_pid >,
                                   member< score_object, uint64_t,         &score_object::period_sequence>,
                                   member< object,       object_id_type,   &object::id >
-                              > >,
+                              > ,
+          composite_key_compare< 
+                                  std::less<account_uid_type>,
+                                  std::less<account_uid_type>,
+                                  std::less<post_pid_type>,
+                                  std::less<uint64_t>,
+                                  std::less<object_id_type >>
+                                  >,
 		  ordered_non_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
        >
    > score_multi_index_type;

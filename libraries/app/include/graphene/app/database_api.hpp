@@ -37,6 +37,7 @@
 #include <graphene/chain/operation_history_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/witness_object.hpp>
+#include <graphene/chain/advertising_object.hpp>
 
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
@@ -447,6 +448,7 @@ class database_api
       vector<score_object> list_scores(const account_uid_type platform,
                                        const account_uid_type poster_uid,
                                        const post_pid_type    post_pid,
+                                       const object_id_type   lower_bound_score,
                                        const uint32_t         limit,
                                        const bool             list_cur_period = true)const;
 

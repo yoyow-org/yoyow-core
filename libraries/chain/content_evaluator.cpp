@@ -469,14 +469,14 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
        if (sign_account == op.platform) 
            sign_platform_uid = sign_account;
        
-       ext = &op.extensions->value;
+       ext_para = &op.extensions->value;
 
-       if (ext->post_type == post_operation::Post_Type::Post_Type_Post)
+       if (ext_para->post_type == post_operation::Post_Type::Post_Type_Post)
            FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
                "the post permission of platform ${p} authorized by account ${a} is invalid. ",
                ("p", op.platform)("a", op.poster));
 
-       if (ext->post_type == post_operation::Post_Type::Post_Type_Comment)
+       if (ext_para->post_type == post_operation::Post_Type::Post_Type_Comment)
        {
            d.get_platform_by_owner(*op.origin_platform); // make sure pid exists
            d.get_account_by_uid(*op.origin_poster); // make sure uid exists
@@ -492,8 +492,8 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                "the comment permission of platform ${p} authorized by account ${a} is invalid. ",
                ("p", op.platform)("a", op.poster));
        }
-       if (ext->post_type == post_operation::Post_Type::Post_Type_forward
-           || ext->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
+       if (ext_para->post_type == post_operation::Post_Type::Post_Type_forward
+           || ext_para->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
        {
            d.get_platform_by_owner(*op.origin_platform); // make sure pid exists
            d.get_account_by_uid(*op.origin_poster); // make sure uid exists
@@ -523,7 +523,7 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                    ("c", (usable_prepaid))("p", *sign_platform_uid)("a", op.poster)("n", *origin_post.forward_price));
            }
        }
-       d.get_license_by_platform(op.platform, *(ext->license_lid)); // make sure license exist
+       d.get_license_by_platform(op.platform, *(ext_para->license_lid)); // make sure license exist
 
        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
        if (dpo.content_award_enable)
@@ -552,10 +552,10 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
          s.last_post_sequence += 1;
       });
 
-      if (ext && d.head_block_time() >= HARDFORK_0_4_TIME)
+      if (ext_para && d.head_block_time() >= HARDFORK_0_4_TIME)
 	  {
-          if (ext->post_type == post_operation::Post_Type::Post_Type_forward
-              || ext->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
+          if (ext_para->post_type == post_operation::Post_Type::Post_Type_forward
+              || ext_para->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
           {
               const post_object& origin_post = d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
               share_type forwardprice = *(origin_post.forward_price);
@@ -657,24 +657,24 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             if (d.head_block_time() >= HARDFORK_0_4_TIME)
             {
                 bool need_init_receiptors = true;
-                if (ext)
+                if (ext_para)
                 {
-                    if (ext->forward_price.valid())
-                        obj.forward_price = *(ext->forward_price);
-                    if (ext->receiptors.valid())
+                    if (ext_para->forward_price.valid())
+                        obj.forward_price = *(ext_para->forward_price);
+                    if (ext_para->receiptors.valid())
                     {
-                        map<account_uid_type, Recerptor_Parameter> map_receiptor = *(ext->receiptors);
+                        map<account_uid_type, Recerptor_Parameter> map_receiptor = *(ext_para->receiptors);
                         if (map_receiptor.size() > 0)
                         {
                             need_init_receiptors = false;
                             obj.receiptors = map_receiptor;
                         }
                     }
-                    if (ext->license_lid.valid())
+                    if (ext_para->license_lid.valid())
                     {
-                        obj.license_lid = *(ext->license_lid);
+                        obj.license_lid = *(ext_para->license_lid);
                     }
-                    obj.permission_flags = *(ext->permission_flags);
+                    obj.permission_flags = *(ext_para->permission_flags);
                 }
                 if (need_init_receiptors){
                     map<account_uid_type, Recerptor_Parameter> map_receiptors;
@@ -709,25 +709,25 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
 
    if (op.extensions.valid() && d.head_block_time() >= HARDFORK_0_4_TIME)
    {
-       ext = &op.extensions->value;
-       if (ext->receiptor.valid())
+       ext_para = &op.extensions->value;
+       if (ext_para->receiptor.valid())
        {
            post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
            FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
-           auto iter = post->receiptors.find(*(ext->receiptor));
-           FC_ASSERT(iter != post->receiptors.end(),"receiptor:${r} not found.",("r", *(ext->receiptor)));
-           if (ext->buyout_ratio.valid())
+           auto iter = post->receiptors.find(*(ext_para->receiptor));
+           FC_ASSERT(iter != post->receiptors.end(), "receiptor:${r} not found.", ("r", *(ext_para->receiptor)));
+           if (ext_para->buyout_ratio.valid())
            {
-               FC_ASSERT(iter->second.cur_ratio >= *(ext->buyout_ratio),
+               FC_ASSERT(iter->second.cur_ratio >= *(ext_para->buyout_ratio),
                    "the ratio ${r} of receiptor ${p} is less then sell ${sp} .",
-                   ("r", iter->second.cur_ratio)("p", *(ext->receiptor))("sp", *(ext->buyout_ratio)));
-               if (ext->receiptor == op.poster)
+                   ("r", iter->second.cur_ratio)("p", *(ext_para->receiptor))("sp", *(ext_para->buyout_ratio)));
+               if (ext_para->receiptor == op.poster)
                {
-                   FC_ASSERT((iter->second.cur_ratio - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) >= *(ext->buyout_ratio),
+                   FC_ASSERT((iter->second.cur_ratio - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) >= *(ext_para->buyout_ratio),
                        "the ratio ${r} of poster ${p} will less then min ratio.",
-                       ("r", (iter->second.cur_ratio - *(ext->buyout_ratio)))("p", *(ext->receiptor)));
+                       ("r", (iter->second.cur_ratio - *(ext_para->buyout_ratio)))("p", *(ext_para->receiptor)));
                }
-               if (post->receiptors.find(*(ext->receiptor)) == post->receiptors.end()) //add a new receiptor
+               if (post->receiptors.find(*(ext_para->receiptor)) == post->receiptors.end()) //add a new receiptor
                {
                    FC_ASSERT(post->receiptors.size() < 5, "the num of post`s receiptors should be less than or equal to 5");
                }
@@ -754,31 +754,31 @@ object_id_type post_update_evaluator::do_apply( const operation_type& o )
          if( o.body.valid() )
             obj.body             = *o.body;
 
-         if (ext && d.head_block_time() >= HARDFORK_0_4_TIME)
+         if (ext_para && d.head_block_time() >= HARDFORK_0_4_TIME)
 		 {
-             if (ext->forward_price.valid())
+             if (ext_para->forward_price.valid())
              {
-                 obj.forward_price = *(ext->forward_price);
+                 obj.forward_price = *(ext_para->forward_price);
              }
-             if (ext->receiptor.valid())
+             if (ext_para->receiptor.valid())
              {
-                 auto iter = obj.receiptors.find(*(ext->receiptor));
-                 if (ext->to_buyout.valid())
-                     iter->second.to_buyout = *(ext->to_buyout);
-                 if (ext->buyout_ratio.valid())
-                     iter->second.buyout_ratio = *(ext->buyout_ratio);
-                 if (ext->buyout_price.valid())
-                     iter->second.buyout_price = *(ext->buyout_price);
-                 if (ext->buyout_expiration.valid())
-                     iter->second.buyout_expiration = *(ext->buyout_expiration);
+                 auto iter = obj.receiptors.find(*(ext_para->receiptor));
+                 if (ext_para->to_buyout.valid())
+                     iter->second.to_buyout = *(ext_para->to_buyout);
+                 if (ext_para->buyout_ratio.valid())
+                     iter->second.buyout_ratio = *(ext_para->buyout_ratio);
+                 if (ext_para->buyout_price.valid())
+                     iter->second.buyout_price = *(ext_para->buyout_price);
+                 if (ext_para->buyout_expiration.valid())
+                     iter->second.buyout_expiration = *(ext_para->buyout_expiration);
              }
-             if (ext->license_lid.valid())
+             if (ext_para->license_lid.valid())
              {
-                 obj.license_lid = *(ext->license_lid);
+                 obj.license_lid = *(ext_para->license_lid);
              }
-             if (ext->permission_flags.valid())
+             if (ext_para->permission_flags.valid())
              {
-                 obj.permission_flags = *(ext->permission_flags);
+                 obj.permission_flags = *(ext_para->permission_flags);
              }
 		 }
 
