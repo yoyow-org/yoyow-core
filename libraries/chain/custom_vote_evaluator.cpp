@@ -64,7 +64,7 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only cast custom vote after HARDFORK_0_4_TIME");
 
       custom_vote_obj = d.find_custom_vote_by_id(op.custom_vote_id);
-      FC_ASSERT(custom_vote_obj != nullptr, "custom vote {id} not found.", ("id", op.custom_vote_id));
+      FC_ASSERT(custom_vote_obj != nullptr, "custom vote ${id} not found.", ("id", op.custom_vote_id));
 
       const auto& account_obj = d.get_account_by_uid(op.voter);//check create account exist
       const auto& asset_obj = d.get_asset_by_aid(custom_vote_obj->vote_asset_id);
@@ -75,8 +75,10 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
       
       for (const auto& index : op.vote_result)
+      {
          FC_ASSERT(index < custom_vote_obj->options.size(), "option ${item} is not existent", ("item", index));
-
+      }
+         
       return void_result();
    }FC_CAPTURE_AND_RETHROW((op))
 }
@@ -92,13 +94,13 @@ object_id_type custom_vote_cast_evaluator::do_apply(const operation_type& op)
          obj.vote_result = op.vote_result;
       });
 
-      auto vote = op.vote_result;
-      std::sort(vote.begin(), vote.end());
-      vote.erase(unique(vote.begin(), vote.end()), vote.end());
+      auto vote_result = op.vote_result;
+      std::sort(vote_result.begin(), vote_result.end());
+      vote_result.erase(unique(vote_result.begin(), vote_result.end()), vote_result.end());
 
       d.modify(*custom_vote_obj, [&](custom_vote_object& obj) 
       {
-         for (const auto& v : op.vote_result)
+         for (const auto& v : vote_result)
             obj.vote_result.at(v) += votes.value;
       });
 

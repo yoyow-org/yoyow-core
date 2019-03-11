@@ -24,9 +24,8 @@ void custom_vote_create_operation::validate()const
 share_type custom_vote_create_operation::calculate_fee(const fee_parameters_type& k)const
 {
    share_type core_fee_required = k.fee;
-   auto hash_size = fc::raw::pack_size(description);
-   hash_size += fc::raw::pack_size(options);
-   core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
+   auto size = fc::raw::pack_size(*this);
+   core_fee_required += calculate_data_fee(size, k.price_per_kbyte);
    return core_fee_required;
 }
 

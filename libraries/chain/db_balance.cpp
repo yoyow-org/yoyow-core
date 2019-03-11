@@ -150,11 +150,14 @@ void database::adjust_balance(account_uid_type account, asset delta )
    {
       auto& custom_vote_itr = custom_vote_idx.find(cast_vote_itr->custom_vote_id);
       FC_ASSERT(custom_vote_itr != custom_vote_idx.end(), "custom vote {id} not found.",("id", cast_vote_itr->custom_vote_id));     
-      modify(*custom_vote_itr, [&](custom_vote_object& obj)
+      if (head_block_time() <= custom_vote_itr->vote_expired_time)
       {
-         for (auto& vote : obj.vote_result)
-            vote += delta.amount.value;
-      });
+         modify(*custom_vote_itr, [&](custom_vote_object& obj)
+         {
+            for (auto& vote : obj.vote_result)
+               vote += delta.amount.value;
+         });
+      }
       cast_vote_itr++;
    }
 

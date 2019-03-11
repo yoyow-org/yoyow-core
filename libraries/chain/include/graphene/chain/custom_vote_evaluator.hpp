@@ -6,6 +6,7 @@
 #include <graphene/chain/protocol/custom_vote.hpp>
 #include <graphene/chain/evaluator.hpp>
 #include <graphene/chain/database.hpp>
+#include <graphene/chain/protocol/types.hpp>
 
 namespace graphene { namespace chain {
 
