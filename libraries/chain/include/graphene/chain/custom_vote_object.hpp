@@ -96,7 +96,7 @@ namespace graphene { namespace chain {
 FC_REFLECT_DERIVED( graphene::chain::custom_vote_object,
                    (graphene::db::object),
                    (create_account)(title)(description)(vote_expired_time)(vote_asset_id)(required_asset_amount)
-                   (minimum_selected_items)(maximum_selected_items)(options)(vote_result)(votes))
+                   (minimum_selected_items)(maximum_selected_items)(options)(vote_result))
 
 FC_REFLECT_DERIVED( graphene::chain::cast_custom_vote_object,
                    (graphene::db::object),
