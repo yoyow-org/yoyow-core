@@ -1495,12 +1495,12 @@ signed_transaction account_auth_platform(string account,
                                          string platform_owner,
                                          string memo,
                                          string limit_for_platform = 0,
-                                         uint32_t permission_flags = account_statistics_object::Platform_Permission_Forward |
-                                                                     account_statistics_object::Platform_Permission_Liked |
-                                                                     account_statistics_object::Platform_Permission_Buyout |
-                                                                     account_statistics_object::Platform_Permission_Comment |
-                                                                     account_statistics_object::Platform_Permission_Reward |
-                                                                     account_statistics_object::Platform_Permission_Post,
+                                         uint32_t permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+                                                                     account_auth_platform_object::Platform_Permission_Liked |
+                                                                     account_auth_platform_object::Platform_Permission_Buyout |
+                                                                     account_auth_platform_object::Platform_Permission_Comment |
+                                                                     account_auth_platform_object::Platform_Permission_Reward |
+                                                                     account_auth_platform_object::Platform_Permission_Post,
                                          bool csaf_fee = true,
                                          bool broadcast = false)
 {
@@ -1516,7 +1516,7 @@ signed_transaction account_auth_platform(string account,
       op.uid = user.uid;
       op.platform = pa->owner;
 
-	  account_auth_platform_operation::ext ext;
+	  account_auth_platform_operation::extension_parameter ext;
       ext.limit_for_platform = asset_obj->amount_from_string(limit_for_platform).amount;
       ext.permission_flags = permission_flags;
       if (memo.size())
@@ -1526,9 +1526,7 @@ signed_transaction account_auth_platform(string account,
           ext.memo->to = platform_account.memo_key;
           ext.memo->set_message(get_private_key(user.memo_key),platform_account.memo_key, memo);
       }
-
-      op.extensions = flat_set<account_auth_platform_operation::extension_parameter>();
-	  op.extensions->insert(ext);
+	  op.extensions->value = ext;
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -2495,7 +2493,6 @@ signed_transaction account_cancel_auth_platform(string account,
            create_op.title = title;
            create_op.body = body;
 
-           create_op.extensions = flat_set<post_operation::extension_parameter>();
            post_operation::ext extension;
            if (exts.post_type)
                extension.post_type = exts.post_type;
@@ -2519,7 +2516,7 @@ signed_transaction account_cancel_auth_platform(string account,
                extension.license_lid = exts.license_lid;
            if (exts.permission_flags)
                extension.permission_flags = exts.permission_flags;
-           create_op.extensions->insert(extension);
+           create_op.extensions->value = extension;
 
            signed_transaction tx;
            tx.operations.push_back(create_op);
@@ -2560,7 +2557,6 @@ signed_transaction account_cancel_auth_platform(string account,
            if (!body.empty())
                update_op.body = body;
 
-           update_op.extensions = flat_set<post_update_operation::extension_parameter>();
            post_update_operation::ext extension;
            if (ext.forward_price.valid())
                extension.forward_price    = asset_obj->amount_from_string(*(ext.forward_price)).amount;
@@ -2578,7 +2574,7 @@ signed_transaction account_cancel_auth_platform(string account,
                extension.license_lid      = ext.license_lid;
            if (ext.permission_flags.valid())
                extension.permission_flags = ext.permission_flags;
-           update_op.extensions->insert(extension);
+           update_op.extensions->value = extension;
 
            signed_transaction tx;
            tx.operations.push_back(update_op);
@@ -2655,12 +2651,12 @@ signed_transaction account_cancel_auth_platform(string account,
       } FC_CAPTURE_AND_RETHROW((account)(platform)(advertising_id)(start_time)(buy_number)(extra_data)(memo)(csaf_fee)(broadcast))
    }
 
-   signed_transaction confirm_advertising(string         platform,
+   signed_transaction confirm_advertising(string              platform,
                                           advertising_id_type advertising_id,
-                                          uint32_t       order_sequence,
-                                          bool           comfirm,
-                                          bool           csaf_fee = true,
-                                          bool           broadcast = false
+                                          object_id_type      advertising_order_id,
+                                          bool                comfirm,
+                                          bool                csaf_fee = true,
+                                          bool                broadcast = false
                                          )
    {
       try {
@@ -2669,7 +2665,7 @@ signed_transaction account_cancel_auth_platform(string account,
          advertising_confirm_operation confirm_op;
          confirm_op.platform = get_account_uid(platform);
          confirm_op.advertising_id = advertising_id;
-         confirm_op.order_sequence = order_sequence;
+         confirm_op.advertising_order_id = advertising_order_id_type(advertising_order_id);
          confirm_op.iscomfirm = comfirm;
 
          signed_transaction tx;
@@ -2679,7 +2675,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          return sign_transaction(tx, broadcast);
 
-      } FC_CAPTURE_AND_RETHROW((platform)(advertising_id)(order_sequence)(comfirm)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((platform)(advertising_id)(advertising_order_id)(comfirm)(csaf_fee)(broadcast))
    }
 
    post_object get_post(string platform_owner,
@@ -2734,15 +2730,16 @@ signed_transaction account_cancel_auth_platform(string account,
    vector<score_object> list_scores(string   platform,
                                     string   poster_uid,
                                     string   post_pid,
-                                    uint32_t limit,
-                                    bool     list_cur_period)
+                                    object_id_type lower_bound_score,
+                                    uint32_t       limit,
+                                    bool           list_cur_period)
    {
        try {
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
            account_uid_type platform_uid = get_account_uid(platform);
            account_uid_type poster = get_account_uid(poster_uid);
-           return _remote_db->list_scores(platform_uid, poster, postid, limit, list_cur_period);
-       } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid))
+           return _remote_db->list_scores(platform_uid, poster, postid, lower_bound_score, limit, list_cur_period);
+       } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(lower_bound_score)(limit)(list_cur_period))
    }
 
    license_object get_license(string platform,
@@ -2910,7 +2907,7 @@ signed_transaction account_cancel_auth_platform(string account,
    signed_transaction ransom_advertising(string           platform,
                                          string           from_account,
                                          object_id_type   advertising_id,
-                                         uint32_t         order_sequence,
+                                         object_id_type   advertising_order_id,
                                          bool             csaf_fee,
                                          bool             broadcast)
    {
@@ -2923,7 +2920,7 @@ signed_transaction account_cancel_auth_platform(string account,
            ransom_op.platform = platform_uid;
            ransom_op.from_account = from_account_uid;
            ransom_op.advertising_id = advertising_id;
-           ransom_op.order_sequence = order_sequence;
+           ransom_op.advertising_order_id = object_id_type(advertising_order_id);
 
            signed_transaction tx;
            tx.operations.push_back(ransom_op);
@@ -2931,7 +2928,29 @@ signed_transaction account_cancel_auth_platform(string account,
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_id)(order_sequence)(csaf_fee)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_id)(advertising_order_id)(csaf_fee)(broadcast))
+   }
+
+   vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
+                                                                               string   lower_bound_account,
+                                                                               uint32_t limit)
+   {
+       try {
+           account_uid_type platform_uid = get_account_uid(platform);
+           account_uid_type lower_bound_account_uid = get_account_uid(lower_bound_account);
+           return _remote_db->list_account_auth_platform_by_platform(platform_uid, lower_bound_account_uid, limit);
+       } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_account)(limit))
+   }
+
+   vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
+                                                                              string   lower_bound_platform,
+                                                                              uint32_t limit)
+   {
+       try {
+           account_uid_type account_uid = get_account_uid(account);
+           account_uid_type lower_bound_platform_uid = get_account_uid(lower_bound_platform);
+           return _remote_db->list_account_auth_platform_by_account(account_uid, lower_bound_platform_uid, limit);
+       } FC_CAPTURE_AND_RETHROW((account)(lower_bound_platform)(limit))
    }
 
    signed_transaction approve_proposal(
@@ -4224,12 +4243,12 @@ signed_transaction wallet_api::buy_advertising(string               account,
 
 signed_transaction wallet_api::confirm_advertising(string         platform,
                                                    advertising_id_type advertising_id,
-                                                   uint32_t       order_sequence,
+                                                   object_id_type      advertising_order_id,
                                                    bool           comfirm,
                                                    bool           csaf_fee,
                                                    bool           broadcast)
 {
-    return my->confirm_advertising(platform, advertising_id, order_sequence, comfirm, csaf_fee, broadcast);
+    return my->confirm_advertising(platform, advertising_id, advertising_order_id, comfirm, csaf_fee, broadcast);
 }
 
 post_object wallet_api::get_post(string platform_owner,
@@ -4261,10 +4280,11 @@ score_object wallet_api::get_score(string platform,
 vector<score_object> wallet_api::list_scores(string platform,
                                              string poster_uid,
                                              string post_pid,
-                                             uint32_t limit,
-                                             bool list_cur_period)
+                                             object_id_type lower_bound_score,
+                                             uint32_t       limit,
+                                             bool           list_cur_period)
 {
-    return my->list_scores(platform, poster_uid, post_pid, limit, list_cur_period);
+    return my->list_scores(platform, poster_uid, post_pid, lower_bound_score, limit, list_cur_period);
 }
 
 license_object wallet_api::get_license(string platform,
@@ -4346,11 +4366,25 @@ signed_transaction wallet_api::update_advertising(string                     pla
 signed_transaction wallet_api::ransom_advertising(string           platform,
                                                   string           from_account,
                                                   object_id_type   advertising_id,
-                                                  uint32_t         order_sequence,
+                                                  object_id_type   advertising_order_id,
                                                   bool             csaf_fee,
                                                   bool             broadcast)
 {
-    return my->ransom_advertising(platform, from_account, advertising_id, order_sequence, csaf_fee, broadcast);
+    return my->ransom_advertising(platform, from_account, advertising_id, advertising_order_id, csaf_fee, broadcast);
+}
+
+vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_platform(string   platform,
+                                                                                        string   lower_bound_account,
+                                                                                        uint32_t limit)
+{
+    return my->list_account_auth_platform_by_platform(platform, lower_bound_account, limit);
+}
+
+vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_account(string   account,
+                                                                                       string   lower_bound_platform,
+                                                                                       uint32_t limit)
+{
+    return my->list_account_auth_platform_by_account(account, lower_bound_platform, limit);
 }
 
 signed_transaction wallet_api::approve_proposal(

@@ -748,6 +748,8 @@ FC_API( graphene::app::database_api,
    (get_account_references)
    //(lookup_account_names)
    (lookup_accounts_by_name)
+   (list_account_auth_platform_by_platform)
+   (list_account_auth_platform_by_account)
    (get_account_count)
 
    // CSAF

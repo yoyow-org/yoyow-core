@@ -1147,12 +1147,12 @@ class wallet_api
                                                string platform_owner,
                                                string memo,
                                                string limit_for_platform,
-                                               uint32_t permission_flags = account_statistics_object::Platform_Permission_Forward |
-                                                                           account_statistics_object::Platform_Permission_Liked |
-                                                                           account_statistics_object::Platform_Permission_Buyout |
-                                                                           account_statistics_object::Platform_Permission_Comment |
-                                                                           account_statistics_object::Platform_Permission_Reward |
-                                                                           account_statistics_object::Platform_Permission_Post,
+                                               uint32_t permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+                                                                           account_auth_platform_object::Platform_Permission_Liked |
+                                                                           account_auth_platform_object::Platform_Permission_Buyout |
+                                                                           account_auth_platform_object::Platform_Permission_Comment |
+                                                                           account_auth_platform_object::Platform_Permission_Reward |
+                                                                           account_auth_platform_object::Platform_Permission_Post,
                                                bool csaf_fee = true,
                                                bool broadcast = false);
 
@@ -1536,7 +1536,7 @@ class wallet_api
 
       signed_transaction confirm_advertising(string         platform,
                                              advertising_id_type advertising_id,
-                                             uint32_t       order_sequence,
+                                             object_id_type      advertising_order_id,
                                              bool           comfirm,
                                              bool           csaf_fee = true,
                                              bool           broadcast = false
@@ -1560,8 +1560,9 @@ class wallet_api
       vector<score_object> list_scores(string   platform,
                                        string   poster_uid,
                                        string   post_pid,
-                                       uint32_t limit,
-                                       bool     list_cur_period = true);
+                                       object_id_type lower_bound_score,
+                                       uint32_t       limit,
+                                       bool           list_cur_period = true);
 
       license_object get_license(string platform,
                                  string license_lid);
@@ -1609,9 +1610,17 @@ class wallet_api
       signed_transaction ransom_advertising(string           platform,
                                             string           from_account,
                                             object_id_type   advertising_id,
-                                            uint32_t         order_sequence,
+                                            object_id_type   advertising_order_id,
                                             bool csaf_fee = true,
                                             bool broadcast = false);
+
+      vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
+                                                                                  string   lower_bound_account,
+                                                                                  uint32_t limit = 100);
+
+      vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
+          string   lower_bound_platform,
+          uint32_t limit = 100);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -1830,5 +1839,7 @@ FC_API( graphene::wallet::wallet_api,
         (buy_advertising)
         (confirm_advertising)
         (ransom_advertising)
+        (list_account_auth_platform_by_platform)
+        (list_account_auth_platform_by_account)
         (get_global_properties_extensions)
       )
