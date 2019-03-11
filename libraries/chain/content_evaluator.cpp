@@ -504,6 +504,9 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
            FC_ASSERT(origin_post.forward_price.valid(),
                "post ${p} is not allowed to forward",
                ("p", op.origin_post_pid));
+           FC_ASSERT(origin_post.forward_price > 0,
+               "post ${p} is not allowed to forward, forward price is 0. ",
+               ("p", op.origin_post_pid));
 
            FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
                "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
@@ -1164,7 +1167,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
 		FC_ASSERT(iter != post.receiptors.end(), 
                   "account ${a} isn`t a receiptor of the post ${p}", 
                   ("a", op.receiptor_account_uid)("p", op.post_pid));
-        FC_ASSERT(iter->second.to_buyout && iter->second.buyout_ratio > 0 && iter->second.buyout_ratio <= iter->second.cur_ratio && iter->second.buyout_expiration >= d.head_block_time(),
+        FC_ASSERT(iter->second.to_buyout && iter->second.buyout_price > 0 && iter->second.buyout_ratio > 0 && iter->second.buyout_ratio <= iter->second.cur_ratio && iter->second.buyout_expiration >= d.head_block_time(),
 			      "post ${p} `s receiptor`s buyout parameter is invalid. ${b}",
                   ("p", op.post_pid)("b", iter->second));
         if (op.receiptor_account_uid == post.poster)

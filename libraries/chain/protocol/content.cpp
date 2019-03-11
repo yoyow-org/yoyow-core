@@ -178,6 +178,8 @@ void post_operation::validate()const
            FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
        }
        FC_ASSERT(ext.license_lid.valid(), "post operation`s license_lid is invalid.");
+       if (ext.forward_price.valid())
+           FC_ASSERT(*(ext.forward_price) > share_type(0), "buyout price should more then 0. ");
    }
 }
 
@@ -202,6 +204,8 @@ void post_update_operation::validate()const
        }
        if (ext.buyout_ratio.valid())
            FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "buyout_ratio is more then max. ");
+       if (ext.buyout_price.valid())
+           FC_ASSERT(*(ext.buyout_price) > share_type(0), "buyout price should more then 0. ");
    }
 }
 
