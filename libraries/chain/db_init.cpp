@@ -142,6 +142,12 @@ const uint8_t advertising_object::type_id;
 const uint8_t advertising_order_object::space_id;
 const uint8_t advertising_order_object::type_id;
 
+const uint8_t custom_vote_object::space_id;
+const uint8_t custom_vote_object::type_id;
+
+const uint8_t cast_custom_vote_object::space_id;
+const uint8_t cast_custom_vote_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -231,6 +237,8 @@ void database::initialize_indexes()
    add_index< primary_index<license_index                                 > >();
    add_index< primary_index<advertising_index                             > >();
    add_index< primary_index<advertising_order_index                       > >();
+   add_index< primary_index<custom_vote_index                             > >();
+   add_index< primary_index<cast_custom_vote_index                        > >();
    add_index< primary_index<account_auth_platform_index                   > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();

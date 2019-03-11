@@ -70,9 +70,6 @@ namespace graphene { namespace chain {
                                  
       time_point_sec             publish_time;
       time_point_sec             last_update_time;
-
-      //map<time_point_sec, Advertising_Order>  effective_orders;
-      //map<uint32_t, Advertising_Order>        undetermined_orders;
    };
 
    struct by_advertising_platform{};

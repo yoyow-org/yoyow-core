@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, YOYOW Foundation PTE. LTD. and contributors.
  */
-#include <graphene/chain/protocol/content.hpp>
+#include <graphene/chain/protocol/advertising.hpp>
 
 #include "../utf8/checked.h"
 
