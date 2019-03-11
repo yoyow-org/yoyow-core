@@ -139,6 +139,25 @@ void database::adjust_balance(account_uid_type account, asset delta )
       });
    }
 
+   //update custom vote
+   const auto& custom_vote_idx = get_index_type<custom_vote_index>().indices().get<by_id>();
+
+   auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
+   auto& cast_vote_itr = cast_vote_idx.lower_bound(account);
+   auto& cast_vote_itr_end = cast_vote_idx.upper_bound(account);
+
+   while (cast_vote_itr != cast_vote_itr_end)
+   {
+      auto& custom_vote_itr = custom_vote_idx.find(cast_vote_itr->custom_vote_id);
+      FC_ASSERT(custom_vote_itr != custom_vote_idx.end(), "custom vote {id} not found.",("id", cast_vote_itr->custom_vote_id));     
+      modify(*custom_vote_itr, [&](custom_vote_object& obj)
+      {
+         for (auto& vote : obj.vote_result)
+            vote += delta.amount.value;
+      });
+      cast_vote_itr++;
+   }
+
 } FC_CAPTURE_AND_RETHROW( (account)(delta) ) }
 
 void database::deposit_witness_pay(const witness_object& wit, share_type amount)

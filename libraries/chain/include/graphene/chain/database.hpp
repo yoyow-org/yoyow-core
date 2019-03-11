@@ -28,6 +28,7 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/content_object.hpp>
+#include <graphene/chain/custom_vote_object.hpp>
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/fork_database.hpp>
 #include <graphene/chain/block_database.hpp>
@@ -368,6 +369,9 @@ namespace graphene { namespace chain {
 
          const advertising_object& get_advertising(object_id_type id)const;
          const advertising_object* find_advertising(object_id_type id)const;
+
+         const custom_vote_object& get_custom_vote_by_id(object_id_type id)const;
+         const custom_vote_object* find_custom_vote_by_id(object_id_type id)const;
 
          //////////////////// db_init.cpp ////////////////////
 

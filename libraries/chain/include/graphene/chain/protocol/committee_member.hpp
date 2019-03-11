@@ -245,6 +245,7 @@ namespace graphene { namespace chain {
 
      optional< uint32_t     >     advertising_confirmed_fee_rate;
      optional< share_type		>			advertising_confirmed_min_fee;
+     optional< uint32_t     >     custom_vote_effective_time;
 
      void validate()const;
 	 };
@@ -427,7 +428,8 @@ FC_REFLECT(graphene::chain::committee_updatable_content_parameters,
             (receiptor_award_modulus)
             (disapprove_award_modulus)
             (advertising_confirmed_fee_rate)
-            (advertising_confirmed_min_fee))
+            (advertising_confirmed_min_fee)
+            (custom_vote_effective_time))
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )

@@ -60,6 +60,7 @@ namespace graphene { namespace chain {
                         
          uint32_t       advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;
          share_type     advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;
+         uint32_t   custom_vote_effective_time = GRAPHENE_DEFAULT_CUSTOM_VOTE_EFFECTIVE_TIME;
 	 };
 
    struct ext_chain_parameter
@@ -164,7 +165,8 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
             (receiptor_award_modulus)
             (disapprove_award_modulus)
             (advertising_confirmed_fee_rate)
-            (advertising_confirmed_min_fee))
+            (advertising_confirmed_min_fee)
+            (custom_vote_effective_time))
 
 FC_REFLECT(graphene::chain::ext_chain_parameter, (content_parameter))
 

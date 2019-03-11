@@ -25,5 +25,8 @@ public:
 
    void_result do_evaluate(const operation_type& op);
    object_id_type do_apply(const operation_type& op);
+
+   share_type votes = 0;
+   const custom_vote_object* custom_vote_obj = nullptr;
 };
 }} // graphene::chain

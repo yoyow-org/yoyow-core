@@ -397,4 +397,22 @@ const advertising_object* database::find_advertising(object_id_type id)const
       return nullptr;
 }
 
+const custom_vote_object& database::get_custom_vote_by_id(object_id_type id)const
+{
+   const auto& votes_by_id = get_index_type<custom_vote_index>().indices().get<by_id>();
+   auto itr = votes_by_id.find(id);
+   FC_ASSERT(itr != votes_by_id.end(), "custom vote {id} not found.", ("id", id));
+   return *itr;
+}
+
+const custom_vote_object* database::find_custom_vote_by_id(object_id_type id)const
+{
+   const auto& votes_by_id = get_index_type<custom_vote_index>().indices().get<by_id>();
+   auto itr = votes_by_id.find(id);
+   if (itr != votes_by_id.end())
+      return &(*itr);
+   else
+      return nullptr;
+}
+
 } }

@@ -972,6 +972,8 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                 v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
              if (pv.advertising_confirmed_min_fee.valid())
                 v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
+             if (pv.custom_vote_effective_time.valid())
+                v.custom_vote_effective_time = *pv.custom_vote_effective_time;
 					}
 					else
 					{
@@ -1018,6 +1020,8 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                cp.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
             if (pv.advertising_confirmed_min_fee.valid())
                cp.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
+            if (pv.custom_vote_effective_time.valid())
+               cp.custom_vote_effective_time = *pv.custom_vote_effective_time;
 
             graphene::chain::ext_chain_parameter ex;
             ex.content_parameter = cp;
