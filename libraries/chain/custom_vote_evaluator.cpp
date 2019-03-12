@@ -25,9 +25,9 @@ void_result custom_vote_create_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(asset_aid_itr != asset_indx.end(), "Asset '${aid}' is not existent", ("aid", op.vote_asset_id));
 
       const auto& params = d.get_global_properties().parameters.get_award_params();
-      auto range_time = op.vote_expired_time <= d.head_block_time() + params.custom_vote_effective_time;
-      FC_ASSERT(op.vote_expired_time > d.head_block_time() && range_time,
-         "vote expired time should in range ${start}--${end}", ("start", d.head_block_time())("end", range_time));
+      auto range_end_time = d.head_block_time() + params.custom_vote_effective_time;
+      FC_ASSERT(op.vote_expired_time > d.head_block_time() && op.vote_expired_time < range_end_time,
+         "vote expired time should in range ${start}--${end}", ("start", d.head_block_time())("end", range_end_time));
 
       return void_result();
 
@@ -74,9 +74,9 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(votes >= custom_vote_obj->required_asset_amount, "asset ${aid} balance less than required amount for vote ${amount}", 
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
       
-      const auto& index = d.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-      auto itr = index.lower_bound(std::make_tuple(op.voter, op.custom_vote_id));
-      FC_ASSERT(itr == index.end(), "account ${uid} already cast a vote for custom vote ${vid}", ("uid", op.voter)("vid", op.custom_vote_id));
+      const auto& idx = d.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
+      auto itr = idx.lower_bound(std::make_tuple(op.voter, op.custom_vote_id));
+      FC_ASSERT(itr == idx.end(), "account ${uid} already cast a vote for custom vote ${vid}", ("uid", op.voter)("vid", op.custom_vote_id));
 
       for (const auto& index : op.vote_result)
       {
