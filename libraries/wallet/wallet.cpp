@@ -2559,25 +2559,23 @@ signed_transaction account_cancel_auth_platform(string account,
            if (!body.empty())
                update_op.body = body;
 
-           post_update_operation::ext extension_;
-           if (ext.forward_price.valid())
-               extension_.forward_price = asset_obj->amount_from_string(*(ext.forward_price)).amount;
-           if (ext.receiptor.valid())
-               extension_.receiptor = get_account_uid(*(ext.receiptor));
-           if (ext.to_buyout.valid())
-               extension_.to_buyout = ext.to_buyout;
-           if (ext.buyout_ratio.valid())
-               extension_.buyout_ratio = uint16_t((*(ext.buyout_ratio))* GRAPHENE_1_PERCENT);
-           if (ext.buyout_price.valid())
-               extension_.buyout_price = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
-           if (ext.buyout_expiration.valid())
-               extension_.buyout_expiration = ext.buyout_expiration;
-           if (ext.license_lid.valid())
-               extension_.license_lid = ext.license_lid;
-           if (ext.permission_flags.valid())
-               extension_.permission_flags = ext.permission_flags;
            update_op.extensions = graphene::chain::extension<post_update_operation::ext>();
-           update_op.extensions->value = extension_;
+           if (ext.forward_price.valid())
+               update_op.extensions->value.forward_price = asset_obj->amount_from_string(*(ext.forward_price)).amount;
+           if (ext.receiptor.valid())
+               update_op.extensions->value.receiptor = get_account_uid(*(ext.receiptor));
+           if (ext.to_buyout.valid())
+               update_op.extensions->value.to_buyout = ext.to_buyout;
+           if (ext.buyout_ratio.valid())
+               update_op.extensions->value.buyout_ratio = uint16_t((*(ext.buyout_ratio))* GRAPHENE_1_PERCENT);
+           if (ext.buyout_price.valid())
+               update_op.extensions->value.buyout_price = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
+           if (ext.buyout_expiration.valid())
+               update_op.extensions->value.buyout_expiration = time_point_sec(*(ext.buyout_expiration));
+           if (ext.license_lid.valid())
+               update_op.extensions->value.license_lid = ext.license_lid;
+           if (ext.permission_flags.valid())
+               update_op.extensions->value.permission_flags = ext.permission_flags;
 
            signed_transaction tx;
            tx.operations.push_back(update_op);

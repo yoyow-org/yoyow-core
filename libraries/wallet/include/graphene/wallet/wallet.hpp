@@ -178,7 +178,7 @@ struct post_update_ext
     optional<bool>                      to_buyout;
     optional<uint16_t>                  buyout_ratio;
     optional<std::string>               buyout_price;
-    optional<time_point_sec>            buyout_expiration;
+    optional<uint32_t>                  buyout_expiration;
     optional<license_lid_type>          license_lid;
     optional<uint32_t>                  permission_flags;
 };
@@ -1709,6 +1709,7 @@ FC_REFLECT(graphene::wallet::post_update_ext,
           (to_buyout)
           (buyout_ratio)
           (buyout_price)
+          (buyout_expiration)
           (license_lid)
           (permission_flags)
           )
