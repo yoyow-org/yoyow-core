@@ -74,6 +74,10 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(votes >= custom_vote_obj->required_asset_amount, "asset ${aid} balance less than required amount for vote ${amount}", 
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
       
+      const auto& index = d.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
+      auto itr = index.lower_bound(std::make_tuple(op.voter, op.custom_vote_id));
+      FC_ASSERT(itr == index.end(), "account ${uid} already cast a vote for custom vote ${vid}", ("uid", op.voter)("vid", op.custom_vote_id));
+
       for (const auto& index : op.vote_result)
       {
          FC_ASSERT(index < custom_vote_obj->options.size(), "option ${item} is not existent", ("item", index));

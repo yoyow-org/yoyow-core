@@ -38,8 +38,9 @@ namespace graphene { namespace chain {
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
       ordered_non_unique< tag<by_custom_vote_id>,
          member< cast_custom_vote_object, custom_vote_id_type, &cast_custom_vote_object::custom_vote_id> >,
-      ordered_non_unique< tag<by_custom_voter>,
-         member< cast_custom_vote_object, account_uid_type,    &cast_custom_vote_object::voter> >
+      ordered_unique< tag<by_custom_voter>,
+         member< cast_custom_vote_object, account_uid_type,    &cast_custom_vote_object::voter>,
+         member< cast_custom_vote_object, custom_vote_id_type, &cast_custom_vote_object::custom_vote_id >>
       >
    > cast_custom_vote_multi_index_type;
 
