@@ -1526,6 +1526,7 @@ signed_transaction account_auth_platform(string account,
           ext.memo->to = platform_account.memo_key;
           ext.memo->set_message(get_private_key(user.memo_key),platform_account.memo_key, memo);
       }
+      op.extensions = extension<account_auth_platform_operation::extension_parameter>();
 	  op.extensions->value = ext;
 
       signed_transaction tx;
@@ -2516,6 +2517,7 @@ signed_transaction account_cancel_auth_platform(string account,
                extension.license_lid = exts.license_lid;
            if (exts.permission_flags)
                extension.permission_flags = exts.permission_flags;
+           create_op.extensions = extension<post_operation::ext>();
            create_op.extensions->value = extension;
 
            signed_transaction tx;
@@ -2574,6 +2576,7 @@ signed_transaction account_cancel_auth_platform(string account,
                extension.license_lid      = ext.license_lid;
            if (ext.permission_flags.valid())
                extension.permission_flags = ext.permission_flags;
+           update_op.extensions = extension<post_update_operation::ext>();
            update_op.extensions->value = extension;
 
            signed_transaction tx;

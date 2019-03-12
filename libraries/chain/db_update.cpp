@@ -1025,6 +1025,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 
             graphene::chain::ext_chain_parameter ex;
             ex.content_parameter = cp;
+            o.extensions = extension<graphene::chain::ext_chain_parameter>();
             o.extensions->value = ex;
 					}
 				});
