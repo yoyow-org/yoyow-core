@@ -461,6 +461,11 @@ class database_api
 
       vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
 
+      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, uint32_t limit)const;
+      vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
+
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)const;
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(account_uid_type voter, uint32_t limit)const;
 
       vector<active_post_object> get_post_profits_detail(const uint32_t         begin_period,
                                                          const uint32_t         end_period,
@@ -773,6 +778,11 @@ FC_API( graphene::app::database_api,
    (get_platform_profits_detail)
    (get_poster_profits_detail)
    (get_score_profit)
+
+   (lookup_custom_votes)
+   (list_custom_votes)
+   (list_cast_custom_votes_by_id)
+   (list_cast_custom_votes_by_voter)
 
    // Balances
    (get_account_balances)

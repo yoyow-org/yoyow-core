@@ -1632,6 +1632,13 @@ class wallet_api
                                           bool csaf_fee = true,
                                           bool broadcast = false);
 
+      vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit);
+      vector<custom_vote_object> lookup_custom_votes(string creater, uint32_t limit);
+
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit);
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(string voter, uint32_t limit);
+
+
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
                                                                                   string   lower_bound_account,
                                                                                   uint32_t limit = 100);
@@ -1860,6 +1867,10 @@ FC_API( graphene::wallet::wallet_api,
         (ransom_advertising)
         (create_custom_vote)
         (cast_custom_vote)
+        (list_custom_votes)
+        (lookup_custom_votes)
+        (list_cast_custom_votes_by_id)
+        (list_cast_custom_votes_by_voter)
         (list_account_auth_platform_by_platform)
         (list_account_auth_platform_by_account)
         (get_global_properties_extensions)

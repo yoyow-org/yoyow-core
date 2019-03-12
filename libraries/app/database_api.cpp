@@ -152,6 +152,12 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
 
+      vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
+      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, uint32_t limit)const;
+
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)const;
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(account_uid_type voter, uint32_t limit)const;
+
       vector<active_post_object> get_post_profits_detail(const uint32_t         begin_period,
                                                          const uint32_t         end_period,
                                                          const account_uid_type platform,
@@ -1309,6 +1315,87 @@ vector<advertising_object> database_api_impl::list_advertisings(const account_ui
        ++count;
     }
     return result;
+}
+
+vector<custom_vote_object> database_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const
+{
+   return my->list_custom_votes(lowerbound, limit);
+}
+
+vector<custom_vote_object> database_api_impl::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const
+{
+   vector<custom_vote_object> result;
+
+   const auto& idx = _db.get_index_type<custom_vote_index>().indices().get<by_creater>();
+   auto itr = idx.lower_bound(lowerbound);
+
+   while (itr != idx.end() && limit--)
+   {
+      result.push_back(*itr);
+      ++itr;
+   }
+   return result;
+}
+
+vector<custom_vote_object> database_api::lookup_custom_votes(const account_uid_type creater, uint32_t limit)const
+{
+   return my->lookup_custom_votes(creater, limit);
+}
+
+vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_uid_type creater, uint32_t limit)const
+{
+   vector<custom_vote_object> result;
+   const auto& idx = _db.get_index_type<custom_vote_index>().indices().get<by_creater>();
+   auto itr = idx.lower_bound(creater);
+   auto itr_end = idx.upper_bound(creater);
+   while (itr != itr_end && limit--)
+   {
+      result.push_back(*itr);
+      ++itr;
+   }
+   return result;
+}
+
+vector<cast_custom_vote_object> database_api::list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)const
+{
+   return my->list_cast_custom_votes_by_id(vote_id, limit);
+}
+
+vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)const
+{
+   vector<cast_custom_vote_object> result;
+
+   const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_id>();
+   auto itr = idx.lower_bound(vote_id);
+   auto itr_end = idx.upper_bound(vote_id);
+
+   while (itr != itr_end && limit--)
+   {
+      result.push_back(*itr);
+      ++itr;
+   }
+   return result;
+}
+
+vector<cast_custom_vote_object> database_api::list_cast_custom_votes_by_voter(account_uid_type voter, uint32_t limit)const
+{
+   return my->list_cast_custom_votes_by_voter(voter, limit);
+}
+
+vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_voter(account_uid_type voter, uint32_t limit)const
+{
+   vector<cast_custom_vote_object> result;
+
+   const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
+   auto itr = idx.lower_bound(voter);
+   auto itr_end = idx.upper_bound(voter);
+
+   while (itr != itr_end && limit--)
+   {
+      result.push_back(*itr);
+      ++itr;
+   }
+   return result;
 }
 
 vector<active_post_object> database_api::get_post_profits_detail(const uint32_t         begin_period,
