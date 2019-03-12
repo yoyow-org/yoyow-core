@@ -30,6 +30,7 @@ namespace graphene { namespace chain {
 
    struct by_advertising_id{};
    struct by_advertising_user{};
+   struct by_end_time{};
    struct by_advertising_confirmed{};
 
    typedef multi_index_container<
@@ -45,7 +46,9 @@ namespace graphene { namespace chain {
                              member< advertising_order_object, account_uid_type,    &advertising_order_object::user>,
                              member< advertising_order_object, bool,                &advertising_order_object::confirmed_status>>>,
          ordered_non_unique< tag<by_advertising_confirmed>,
-                             member< advertising_order_object, bool,                &advertising_order_object::confirmed_status>>
+                             member< advertising_order_object, bool,                &advertising_order_object::confirmed_status>>,
+         ordered_non_unique< tag<by_end_time>,
+                             member< advertising_order_object, time_point_sec,      &advertising_order_object::end_time >>
         >
    > advertising_order_multi_index_type;
 

@@ -435,6 +435,8 @@ namespace graphene { namespace chain {
          vector< unique_ptr<op_evaluator> >     _operation_evaluators;
 
          bool                                   _enable_check_invariants = false;
+         uint32_t                               _advertising_order_remaining_time = 86400*365;
+         uint32_t                               _custom_vote_remaining_time = 86400*365;
 
          template<class Index>
          vector<std::reference_wrapper<const typename Index::object_type>> sort_votable_objects(size_t count)const;
@@ -446,6 +448,8 @@ namespace graphene { namespace chain {
          operation_result      apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs = signed_information());
 
          void set_check_invariants(bool check){ _enable_check_invariants = check; }
+         void set_advertising_remain_time(uint32_t time){ _advertising_order_remaining_time = time; }
+         void set_custom_vote_remain_time(uint32_t time){ _custom_vote_remaining_time = time; }
          /**
           *  This method validates transactions without adding it to the pending state.
           *  @return true if the transaction would validate
@@ -479,6 +483,7 @@ namespace graphene { namespace chain {
          void clear_expired_transactions();
          void clear_expired_proposals();
 				 void clear_active_post();
+         void clear_unnecessary_objects();//advertisng order, custom vote and cast custom vote
          std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
             get_effective_csaf(const active_post_object& active_post);
 		 void clear_expired_scores();

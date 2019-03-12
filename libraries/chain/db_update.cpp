@@ -253,6 +253,50 @@ void database::clear_active_post()
 	}
 }
 
+void database::clear_unnecessary_objects()
+{
+   switch (head_block_num() % 10) {
+   case 0: 
+   {
+      if (head_block_time() < _advertising_order_remaining_time)
+         break;
+      const auto& ado_idx = get_index_type<advertising_order_index>().indices().get<by_end_time>();
+      const auto& ado_end = ado_idx.lower_bound(head_block_time() - _advertising_order_remaining_time);
+      auto ado_itr = ado_idx.begin();
+      while (ado_itr != ado_end) {
+         remove(*ado_itr);
+         ado_itr = ado_idx.begin();
+      }
+      break;
+   }
+   case 3:
+   {
+      if (head_block_time() < _custom_vote_remaining_time)
+         break;
+      const auto& cve_idx = get_index_type<custom_vote_index>().indices().get<by_expired_time>();
+      const auto& cve_end = cve_idx.lower_bound(head_block_time() - _custom_vote_remaining_time);
+      auto cve_itr = cve_idx.begin();
+      while (cve_itr != cve_end) {
+         const auto& ccv_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_id>();
+         auto& ccv_itr = ccv_idx.lower_bound(cve_itr->id);
+         auto& ccv_end = ccv_idx.upper_bound(cve_itr->id); 
+         while (ccv_itr != ccv_end) {
+            auto del = ccv_itr;
+            ++ccv_itr;
+            remove(*del);    
+         }
+
+         remove(*cve_itr);
+         cve_itr = cve_idx.begin();
+      }
+      break;
+   }
+   default:
+      break;
+   }
+
+}
+
 std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
 database::get_effective_csaf(const active_post_object& active_post)
 {

@@ -80,6 +80,7 @@ namespace graphene { namespace chain {
    };
 
    struct by_creater{};
+   struct by_expired_time{};
 
    /**
    * @ingroup object_index
@@ -89,7 +90,9 @@ namespace graphene { namespace chain {
       indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
       ordered_non_unique< tag<by_creater>,
-      member< custom_vote_object, account_uid_type, &custom_vote_object::create_account> >
+         member< custom_vote_object, account_uid_type, &custom_vote_object::create_account> >,
+      ordered_non_unique< tag<by_expired_time>,
+         member< custom_vote_object, time_point_sec,   &custom_vote_object::vote_expired_time> >
       >
    > custom_vote_multi_index_type;
 

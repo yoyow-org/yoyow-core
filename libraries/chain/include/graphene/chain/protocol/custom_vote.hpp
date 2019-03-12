@@ -3,7 +3,6 @@
 */
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
-#include <graphene/chain/protocol/memo.hpp>
 
 namespace graphene { namespace chain {
 
