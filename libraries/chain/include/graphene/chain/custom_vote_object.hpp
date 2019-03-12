@@ -19,7 +19,7 @@ namespace graphene { namespace chain {
    {
    public:
       static const uint8_t space_id = implementation_ids;
-      static const uint8_t type_id = impl_custom_vote_object_type;
+      static const uint8_t type_id = impl_cast_custom_vote_object_type;
 
       account_uid_type           voter;
       custom_vote_id_type        custom_vote_id;
