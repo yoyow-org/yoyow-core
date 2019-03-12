@@ -1614,6 +1614,24 @@ class wallet_api
                                             bool csaf_fee = true,
                                             bool broadcast = false);
 
+      signed_transaction create_custom_vote(string           create_account,
+                                            string           title,
+                                            string           description,
+                                            uint32_t         expired_time,
+                                            asset_aid_type   asset_id,
+                                            share_type       required_amount,
+                                            uint8_t          minimum_selected_items,
+                                            uint8_t          maximum_selected_items,
+                                            vector<string>   options,
+                                            bool csaf_fee = true,
+                                            bool broadcast = false);
+
+      signed_transaction cast_custom_vote(string                voter,
+                                          custom_vote_id_type   custom_vote_id,
+                                          vector<uint8_t>       vote_result,
+                                          bool csaf_fee = true,
+                                          bool broadcast = false);
+
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
                                                                                   string   lower_bound_account,
                                                                                   uint32_t limit = 100);
@@ -1839,6 +1857,8 @@ FC_API( graphene::wallet::wallet_api,
         (buy_advertising)
         (confirm_advertising)
         (ransom_advertising)
+        (create_custom_vote)
+        (cast_custom_vote)
         (list_account_auth_platform_by_platform)
         (list_account_auth_platform_by_account)
         (get_global_properties_extensions)

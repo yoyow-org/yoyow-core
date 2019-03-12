@@ -38,29 +38,29 @@ namespace graphene { namespace chain {
 
 	 struct content_parameter_extension_type
 	 {
-		 uint32_t		content_award_interval				= GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
-		 uint32_t		platform_award_interval				= GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;
-         share_type	    max_csaf_per_approval               = GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
-		 uint32_t		approval_expiration					= GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
-		 share_type     min_effective_csaf					= GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;
-		 share_type	    total_content_award_amount			= GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;
-		 share_type     total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;
-		 share_type	    total_platform_voted_award_amount	= GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
-         share_type	    platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
-		 uint32_t		platform_award_requested_rank		= GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;
-
-         uint32_t       platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;
-         uint32_t       casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;
-         uint32_t       post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;
-         uint32_t       approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;
-         uint32_t       approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;
-         uint32_t       approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;
-         uint32_t       receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;
-         uint32_t       disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;
-                        
-         uint32_t       advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;
-         share_type     advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;
-         uint32_t   custom_vote_effective_time = GRAPHENE_DEFAULT_CUSTOM_VOTE_EFFECTIVE_TIME;
+      uint32_t    content_award_interval              = GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
+      uint32_t    platform_award_interval             = GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;
+      share_type  max_csaf_per_approval               = GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
+      uint32_t    approval_expiration                 = GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
+      share_type  min_effective_csaf                  = GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;
+      share_type  total_content_award_amount          = GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;
+      share_type  total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;
+      share_type  total_platform_voted_award_amount	  = GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
+      share_type  platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
+      uint32_t    platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;
+      
+      uint32_t    platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;
+      uint32_t    casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;
+      uint32_t    post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;
+      uint32_t    approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;
+      uint32_t    approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;
+      uint32_t    approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;
+      uint32_t    receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;
+      uint32_t    disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;
+               
+      uint32_t    advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;
+      share_type  advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;
+      uint32_t    custom_vote_effective_time          = GRAPHENE_DEFAULT_CUSTOM_VOTE_EFFECTIVE_TIME;
 	 };
 
    struct ext_chain_parameter

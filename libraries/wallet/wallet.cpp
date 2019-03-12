@@ -2934,6 +2934,67 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_id)(advertising_order_id)(csaf_fee)(broadcast))
    }
 
+   signed_transaction create_custom_vote(string           create_account,
+                                         string           title,
+                                         string           description,
+                                         time_point_sec   expired_time,
+                                         asset_aid_type   asset_id,
+                                         share_type       required_amount,
+                                         uint8_t          minimum_selected_items,
+                                         uint8_t          maximum_selected_items,
+                                         vector<string>   options,
+                                         bool csaf_fee,
+                                         bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         account_uid_type creater = get_account_uid(create_account);
+         custom_vote_create_operation create_op;
+         create_op.create_account = creater;
+         create_op.title = title;
+         create_op.description = description;
+         create_op.vote_expired_time = expired_time;
+         create_op.vote_asset_id = asset_id;
+         create_op.required_asset_amount = required_amount;
+         create_op.minimum_selected_items = minimum_selected_items;
+         create_op.maximum_selected_items = maximum_selected_items;
+         create_op.options = options;
+
+         signed_transaction tx;
+         tx.operations.push_back(create_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((create_account)(title)(description)(expired_time)(asset_id)
+         (required_amount)(minimum_selected_items)(maximum_selected_items)(options)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction cast_custom_vote(string      voter,
+                                       custom_vote_id_type   custom_vote_id,
+                                       vector<uint8_t>       vote_result,
+                                       bool csaf_fee,
+                                       bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         account_uid_type cast_voter = get_account_uid(voter);
+         custom_vote_cast_operation vote_op;
+         vote_op.voter = cast_voter;
+         vote_op.custom_vote_id = custom_vote_id;
+         vote_op.vote_result = vote_result;
+
+         signed_transaction tx;
+         tx.operations.push_back(vote_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_id)(vote_result)(csaf_fee)(broadcast))
+   }
+
    vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
                                                                                string   lower_bound_account,
                                                                                uint32_t limit)
@@ -4374,6 +4435,32 @@ signed_transaction wallet_api::ransom_advertising(string           platform,
                                                   bool             broadcast)
 {
     return my->ransom_advertising(platform, from_account, advertising_id, advertising_order_id, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::create_custom_vote(string           create_account,
+                                                  string           title,
+                                                  string           description,
+                                                  uint32_t         expired_time,
+                                                  asset_aid_type   asset_id,
+                                                  share_type       required_amount,
+                                                  uint8_t          minimum_selected_items,
+                                                  uint8_t          maximum_selected_items,
+                                                  vector<string>   options,
+                                                  bool csaf_fee,
+                                                  bool broadcast)
+{
+   time_point_sec time = time_point_sec(expired_time);
+   return my->create_custom_vote(create_account, title, description, time, asset_id,
+      required_amount, minimum_selected_items, maximum_selected_items, options, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::cast_custom_vote(string      voter,
+                                                custom_vote_id_type   custom_vote_id,
+                                                vector<uint8_t>       vote_result,
+                                                bool csaf_fee,
+                                                bool broadcast)
+{
+   return my->cast_custom_vote(voter, custom_vote_id, vote_result, csaf_fee, broadcast);
 }
 
 vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_platform(string   platform,
