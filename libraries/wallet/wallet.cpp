@@ -2494,11 +2494,11 @@ signed_transaction account_cancel_auth_platform(string account,
            create_op.title = title;
            create_op.body = body;
 
-           post_operation::ext extension;
+           post_operation::ext extension_;
            if (exts.post_type)
-               extension.post_type = exts.post_type;
+               extension_.post_type = exts.post_type;
            if (exts.forward_price.valid())
-               extension.forward_price = asset_obj->amount_from_string(*(exts.forward_price)).amount;
+               extension_.forward_price = asset_obj->amount_from_string(*(exts.forward_price)).amount;
            if (exts.receiptors.valid())
            {
                map<account_uid_type, Recerptor_Parameter> maps_receiptors;
@@ -2511,14 +2511,14 @@ signed_transaction account_cancel_auth_platform(string account,
                    para.buyout_price = asset_obj->amount_from_string(itor->second.buyout_price).amount;
                    maps_receiptors.insert(std::make_pair(itor->first, para));
                }
-               extension.receiptors = maps_receiptors;
+               extension_.receiptors = maps_receiptors;
            }  
            if (exts.license_lid.valid())
-               extension.license_lid = exts.license_lid;
+               extension_.license_lid = exts.license_lid;
            if (exts.permission_flags)
-               extension.permission_flags = exts.permission_flags;
-           create_op.extensions = extension<post_operation::ext>();
-           create_op.extensions->value = extension;
+               extension_.permission_flags = exts.permission_flags;
+           create_op.extensions = graphene::chain::extension<post_operation::ext>();
+           create_op.extensions->value = extension_;
 
            signed_transaction tx;
            tx.operations.push_back(create_op);
@@ -2559,25 +2559,25 @@ signed_transaction account_cancel_auth_platform(string account,
            if (!body.empty())
                update_op.body = body;
 
-           post_update_operation::ext extension;
+           post_update_operation::ext extension_;
            if (ext.forward_price.valid())
-               extension.forward_price    = asset_obj->amount_from_string(*(ext.forward_price)).amount;
+               extension_.forward_price = asset_obj->amount_from_string(*(ext.forward_price)).amount;
            if (ext.receiptor.valid())
-               extension.receiptor        = get_account_uid(*(ext.receiptor));
+               extension_.receiptor = get_account_uid(*(ext.receiptor));
            if (ext.to_buyout.valid())
-               extension.to_buyout        = ext.to_buyout;
+               extension_.to_buyout = ext.to_buyout;
            if (ext.buyout_ratio.valid())
-               extension.buyout_ratio     = uint16_t((*(ext.buyout_ratio) )* GRAPHENE_1_PERCENT);
+               extension_.buyout_ratio = uint16_t((*(ext.buyout_ratio))* GRAPHENE_1_PERCENT);
            if (ext.buyout_price.valid())
-               extension.buyout_price     = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
+               extension_.buyout_price = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
            if (ext.buyout_expiration.valid())
-               extension.buyout_expiration = ext.buyout_expiration;
+               extension_.buyout_expiration = ext.buyout_expiration;
            if (ext.license_lid.valid())
-               extension.license_lid      = ext.license_lid;
+               extension_.license_lid = ext.license_lid;
            if (ext.permission_flags.valid())
-               extension.permission_flags = ext.permission_flags;
-           update_op.extensions = extension<post_update_operation::ext>();
-           update_op.extensions->value = extension;
+               extension_.permission_flags = ext.permission_flags;
+           update_op.extensions = graphene::chain::extension<post_update_operation::ext>();
+           update_op.extensions->value = extension_;
 
            signed_transaction tx;
            tx.operations.push_back(update_op);

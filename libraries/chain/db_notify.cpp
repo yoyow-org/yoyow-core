@@ -455,6 +455,21 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
 			} case impl_score_object_type:{
 				// TODO review
 				break;
+            } case impl_license_object_type:{
+                // TODO review
+                break;
+            } case impl_advertising_object_type:{
+                // TODO review
+                break;
+            } case impl_advertising_order_object_type:{
+                // TODO review
+                break;
+            } case impl_custom_vote_object_type:{
+                // TODO review
+                break;
+            } case impl_cast_custom_vote_object_type:{
+                // TODO review
+                break;
             } case impl_committee_member_vote_object_type:{
                // TODO review
               break;
@@ -479,6 +494,8 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
              case impl_chain_property_object_type:
               break;
              case impl_witness_schedule_object_type:
+              break;
+             case impl_account_auth_platform_object_type:
               break;
       }
    }

@@ -319,36 +319,42 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
            });
        }
 
-       auto get_platform_auth_object = [&](const account_uid_type account_uid, const account_uid_type platform_uid)
+       const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(o.uid, o.platform);
+       if (auth_object)
        {
-           if (d.find_account_auth_platform_object_by_account_platform(account_uid, platform_uid))
-           {
-               return d.get_account_auth_platform_object_by_account_platform(account_uid, platform_uid);
-           }
-           else
-           {
-               return d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
-                   obj.account = account_uid;
-                   obj.platform = platform_uid;
+           d.modify(*auth_object, [&](account_auth_platform_object& a){
+               if (ext_para->limit_for_platform.valid())
+                   a.max_limit = *(ext_para->limit_for_platform);
+               if (ext_para->permission_flags.valid())
+                   a.permission_flags = *(ext_para->permission_flags);
+               if (ext_para->memo.valid())
+                   a.memo = *(ext_para->memo);
+           });
+       }
+       else
+       {
+           d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
+               obj.account = o.uid;
+               obj.platform = o.platform;
+               if (ext_para->limit_for_platform.valid())
+                   obj.max_limit = *(ext_para->limit_for_platform);
+               else
                    obj.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+
+               if (ext_para->permission_flags.valid())
+                   obj.permission_flags = *(ext_para->permission_flags);
+               else
                    obj.permission_flags = account_auth_platform_object::Platform_Permission_Forward |
                                           account_auth_platform_object::Platform_Permission_Liked |
                                           account_auth_platform_object::Platform_Permission_Buyout |
                                           account_auth_platform_object::Platform_Permission_Comment |
                                           account_auth_platform_object::Platform_Permission_Reward |
                                           account_auth_platform_object::Platform_Permission_Post;
-               });
-           }
-       };
 
-       d.modify(get_platform_auth_object(o.uid, o.platform), [&](account_auth_platform_object& a){
-           if (ext_para->limit_for_platform.valid())
-               a.max_limit = *(ext_para->limit_for_platform);
-           if (ext_para->permission_flags.valid())
-               a.permission_flags = *(ext_para->permission_flags);
-           if (ext_para->memo.valid())
-               a.memo = *(ext_para->memo);
-       });
+               if (ext_para->memo.valid())
+                   obj.memo = *(ext_para->memo);
+           });
+       }
    }
 
    return void_result();

@@ -1211,30 +1211,28 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
     if (list_cur_period){
         const dynamic_global_property_object& dpo = _db.get_dynamic_global_properties();
         const auto& idx = _db.get_index_type<score_index>().indices().get<by_period_sequence>();
-        auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence));
-        auto itr_end = idx.upper_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence));
+        auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence, lower_bound_score));
 
-        while (itr_begin != itr_end && count < limit)
+        while (itr_begin != idx.end() && count < limit)
         {
             if (itr_begin->id > lower_bound_score){
                 result.push_back(*itr_begin);
-                ++itr_begin;
-                ++count;
             }
+            ++itr_begin;
+            ++count;
         }
     }
     else{
         const auto& idx = _db.get_index_type<score_index>().indices().get<by_posts_pids>();
-        auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid));
-        auto itr_end = idx.upper_bound(std::make_tuple(platform, poster_uid, post_pid));
+        auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, lower_bound_score));
 
-        while (itr_begin != itr_end && count < limit)
+        while (itr_begin != idx.end() && count < limit)
         {
             if (itr_begin->id > lower_bound_score){
                 result.push_back(*itr_begin);
-                ++itr_begin;
-                ++count;
             }
+            ++itr_begin;
+            ++count;
         }
     }
     return result;

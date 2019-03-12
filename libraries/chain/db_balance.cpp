@@ -143,8 +143,8 @@ void database::adjust_balance(account_uid_type account, asset delta )
    const auto& custom_vote_idx = get_index_type<custom_vote_index>().indices().get<by_id>();
 
    auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-   auto& cast_vote_itr = cast_vote_idx.lower_bound(account);
-   auto& cast_vote_itr_end = cast_vote_idx.upper_bound(account);
+   auto& cast_vote_itr = cast_vote_idx.lower_bound(std::make_tuple(account));
+   auto& cast_vote_itr_end = cast_vote_idx.upper_bound(std::make_tuple(account));
 
    while (cast_vote_itr != cast_vote_itr_end)
    {
