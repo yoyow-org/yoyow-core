@@ -258,7 +258,7 @@ void database::clear_unnecessary_objects()
    switch (head_block_num() % 10) {
    case 0: 
    {
-      if (head_block_time() < _advertising_order_remaining_time)
+      if (head_block_time() < time_point_sec(_advertising_order_remaining_time))
          break;
       const auto& ado_idx = get_index_type<advertising_order_index>().indices().get<by_end_time>();
       const auto& ado_end = ado_idx.lower_bound(head_block_time() - _advertising_order_remaining_time);
@@ -271,7 +271,7 @@ void database::clear_unnecessary_objects()
    }
    case 3:
    {
-      if (head_block_time() < _custom_vote_remaining_time)
+      if (head_block_time() < time_point_sec(_custom_vote_remaining_time))
          break;
       const auto& cve_idx = get_index_type<custom_vote_index>().indices().get<by_expired_time>();
       const auto& cve_end = cve_idx.lower_bound(head_block_time() - _custom_vote_remaining_time);
