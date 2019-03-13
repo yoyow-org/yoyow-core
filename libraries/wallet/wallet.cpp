@@ -4435,6 +4435,17 @@ signed_transaction wallet_api::ransom_advertising(string           platform,
     return my->ransom_advertising(platform, from_account, advertising_id, advertising_order_id, csaf_fee, broadcast);
 }
 
+vector<advertising_order_object> wallet_api::list_advertising_orders_by_purchaser(string purchaser, uint32_t limit)
+{
+   account_uid_type account = my->get_account_uid(purchaser);
+   return my->_remote_db->list_advertising_orders_by_purchaser(account, limit);
+}
+
+vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)
+{
+   return my->_remote_db->list_advertising_orders_by_ads_id(id, limit);
+}
+
 signed_transaction wallet_api::create_custom_vote(string           create_account,
                                                   string           title,
                                                   string           description,

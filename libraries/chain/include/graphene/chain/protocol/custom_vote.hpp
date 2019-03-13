@@ -53,7 +53,7 @@ struct custom_vote_cast_operation : public base_operation
 
    account_uid_type             voter;
    custom_vote_id_type          custom_vote_id;
-   vector<uint8_t>              vote_result;
+   std::set<uint8_t>            vote_result;
 
    extensions_type              extensions;
 

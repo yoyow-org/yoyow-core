@@ -263,6 +263,7 @@ void database::clear_unnecessary_objects()
       const auto& ado_idx = get_index_type<advertising_order_index>().indices().get<by_end_time>();
       const auto& ado_end = ado_idx.lower_bound(head_block_time() - _advertising_order_remaining_time);
       auto ado_itr = ado_idx.begin();
+
       while (ado_itr != ado_end) {
          remove(*ado_itr);
          ado_itr = ado_idx.begin();

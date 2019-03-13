@@ -1571,7 +1571,9 @@ class wallet_api
 
       advertising_object get_advertising(object_id_type advertising_id);
                       
-      vector<advertising_object> list_advertisings(string platform, uint32_t limit = 100);
+      vector<advertising_object> list_advertisings(string platform, uint32_t limit);
+      vector<advertising_order_object> list_advertising_orders_by_purchaser(string purchaser, uint32_t limit);
+      vector<advertising_order_object> list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit);
 
       vector<active_post_object> get_post_profits_detail(uint32_t         begin_period,
                                                          uint32_t         end_period,
@@ -1865,6 +1867,8 @@ FC_API( graphene::wallet::wallet_api,
         (buy_advertising)
         (confirm_advertising)
         (ransom_advertising)
+        (list_advertising_orders_by_purchaser)
+        (list_advertising_orders_by_ads_id)
         (create_custom_vote)
         (cast_custom_vote)
         (list_custom_votes)

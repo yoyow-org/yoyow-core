@@ -152,6 +152,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
 
+      vector<advertising_order_object> list_advertising_orders_by_purchaser(account_uid_type purchaser, uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)const;
+
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
       vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, uint32_t limit)const;
 
@@ -1315,6 +1318,46 @@ vector<advertising_object> database_api_impl::list_advertisings(const account_ui
        ++count;
     }
     return result;
+}
+
+vector<advertising_order_object> database_api::list_advertising_orders_by_purchaser(account_uid_type purchaser, uint32_t limit)const
+{
+   return my->list_advertising_orders_by_purchaser(purchaser, limit);
+}
+
+vector<advertising_order_object> database_api_impl::list_advertising_orders_by_purchaser(account_uid_type purchaser, uint32_t limit)const
+{
+   vector<advertising_order_object> result;
+
+   const auto& idx = _db.get_index_type<advertising_order_index>().indices().get<by_advertising_user>();
+   auto itr = idx.lower_bound(purchaser);
+
+   while (itr != idx.end() && itr->user == purchaser && limit--)
+   {
+      result.push_back(*itr);
+      ++itr;
+   }
+   return result;
+}
+
+vector<advertising_order_object> database_api::list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)const
+{
+   return my->list_advertising_orders_by_ads_id(id, limit);
+}
+
+vector<advertising_order_object> database_api_impl::list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)const
+{
+   vector<advertising_order_object> result;
+
+   const auto& idx = _db.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
+   auto itr = idx.lower_bound(id);
+
+   while (itr != idx.end() && itr->advertising_id == id && limit--)
+   {
+      result.push_back(*itr);
+      ++itr;
+   }
+   return result;
 }
 
 vector<custom_vote_object> database_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const

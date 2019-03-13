@@ -23,7 +23,7 @@ namespace graphene { namespace chain {
 
       account_uid_type           voter;
       custom_vote_id_type        custom_vote_id;
-      vector<uint8_t>            vote_result;
+      std::set<uint8_t>          vote_result;
    };
 
    struct by_custom_vote_id{};

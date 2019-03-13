@@ -67,8 +67,6 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(custom_vote_obj != nullptr, "custom vote ${id} not found.", ("id", op.custom_vote_id));
 
       const auto& account_obj = d.get_account_by_uid(op.voter);//check create account exist
-      const auto& asset_obj = d.get_asset_by_aid(custom_vote_obj->vote_asset_id);
-      validate_authorized_asset(d, account_obj, asset_obj);
 
       auto votes = d.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
       FC_ASSERT(votes >= custom_vote_obj->required_asset_amount, "asset ${aid} balance less than required amount for vote ${amount}", 
@@ -98,13 +96,9 @@ object_id_type custom_vote_cast_evaluator::do_apply(const operation_type& op)
          obj.vote_result = op.vote_result;
       });
 
-      auto vote_result = op.vote_result;
-      std::sort(vote_result.begin(), vote_result.end());
-      vote_result.erase(unique(vote_result.begin(), vote_result.end()), vote_result.end());
-
       d.modify(*custom_vote_obj, [&](custom_vote_object& obj) 
       {
-         for (const auto& v : vote_result)
+         for (const auto& v : op.vote_result)
             obj.vote_result.at(v) += votes.value;
       });
 
