@@ -1630,7 +1630,7 @@ class wallet_api
 
       signed_transaction cast_custom_vote(string                voter,
                                           custom_vote_id_type   custom_vote_id,
-                                          vector<uint8_t>       vote_result,
+                                          set<uint8_t>          vote_result,
                                           bool csaf_fee = true,
                                           bool broadcast = false);
 
