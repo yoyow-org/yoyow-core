@@ -273,21 +273,22 @@ void database::clear_unnecessary_objects()
    {
       if (head_block_time() < time_point_sec(_custom_vote_remaining_time))
          break;
-      const auto& cve_idx = get_index_type<custom_vote_index>().indices().get<by_expired_time>();
-      const auto& cve_end = cve_idx.lower_bound(head_block_time() - _custom_vote_remaining_time);
-      auto cve_itr = cve_idx.begin();
-      while (cve_itr != cve_end) {
-         const auto& ccv_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_id>();
-         auto& ccv_itr = ccv_idx.lower_bound(cve_itr->id);
-         auto& ccv_end = ccv_idx.upper_bound(cve_itr->id); 
-         while (ccv_itr != ccv_end) {
-            auto del = ccv_itr;
-            ++ccv_itr;
+      const auto& custom_vote_idx = get_index_type<custom_vote_index>().indices().get<by_expired_time>();
+      const auto& custom_vote_end = custom_vote_idx.lower_bound(head_block_time() - _custom_vote_remaining_time);
+      auto custom_vote_itr = custom_vote_idx.begin();
+
+      while (custom_vote_itr != custom_vote_end) {
+         const auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_id>();
+         auto& cast_vote_itr = cast_vote_idx.lower_bound(custom_vote_itr->id);
+
+         while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->custom_vote_id == custom_vote_itr->id) {
+            auto del = cast_vote_itr;
+            ++cast_vote_itr;
             remove(*del);    
          }
 
-         remove(*cve_itr);
-         cve_itr = cve_idx.begin();
+         remove(*custom_vote_itr);
+         custom_vote_itr = custom_vote_idx.begin();
       }
       break;
    }
@@ -320,19 +321,15 @@ database::get_effective_csaf(const active_post_object& active_post)
    
    vector<std::tuple<score_id_type, share_type, bool>> effective_csaf_container;
 
-   const auto& sce_idx = get_index_type<score_index>().indices().get<by_period_sequence>();
-   auto itr = sce_idx.lower_bound(std::make_tuple(
+   const auto& index = get_index_type<score_index>().indices().get<by_period_sequence>();
+   auto itr = index.lower_bound(std::make_tuple(
                                   active_post.platform,  
                                   active_post.poster, 
                                   active_post.post_pid, 
                                   active_post.period_sequence));
-   auto itr_end = sce_idx.upper_bound(std::make_tuple(
-                                  active_post.platform, 
-                                  active_post.poster, 
-                                  active_post.post_pid, 
-                                  active_post.period_sequence));
    
-   while (itr != itr_end)
+   while (itr != index.end() && itr->platform == active_post.platform && itr->poster == active_post.poster && 
+      itr->post_pid == active_post.post_pid && itr->period_sequence == active_post.period_sequence)
    {        
       total_csaf = total_csaf + itr->csaf.value;
       share_type effective_casf = 0;
@@ -1174,8 +1171,7 @@ void database::check_invariants()
    share_type total_advertising_released = 0;
    const auto& adt_idx = get_index_type<advertising_order_index>().indices().get<by_advertising_confirmed>();
    auto advertising_iter = adt_idx.lower_bound(false);
-   auto advertising_iter_end = adt_idx.upper_bound(false);
-   while (advertising_iter != advertising_iter_end)
+   while (advertising_iter != adt_idx.end() && !advertising_iter->confirmed_status)
    {
        total_advertising_released += advertising_iter->released_balance;
        advertising_iter++;
@@ -1531,12 +1527,12 @@ void database::process_content_platform_awards()
 		{
 			if (apt_itr->total_csaf >= params.min_effective_csaf)
 			{		
-        const auto& sce_idx = get_index_type<score_index>().indices().get<by_period_sequence>();
-        auto itr = sce_idx.lower_bound(std::make_tuple(apt_itr->platform, apt_itr->poster, apt_itr->post_pid, apt_itr->period_sequence));
-        auto itr_end = sce_idx.upper_bound(std::make_tuple(apt_itr->platform, apt_itr->poster, apt_itr->post_pid, apt_itr->period_sequence));     
+        const auto& idx = get_index_type<score_index>().indices().get<by_period_sequence>();
+        auto itr = idx.lower_bound(std::make_tuple(apt_itr->platform, apt_itr->poster, apt_itr->post_pid, apt_itr->period_sequence));
         
         share_type approval_amount = 0;
-        while (itr != itr_end)
+        while (itr != idx.end() && itr->platform == apt_itr->platform && itr->poster == apt_itr->poster &&
+           itr->post_pid == apt_itr->post_pid && itr->period_sequence == apt_itr->period_sequence)
         {
            approval_amount += itr->csaf * itr->score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT);
            ++itr;

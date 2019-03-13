@@ -96,12 +96,13 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
       
       const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
       auto itr = idx.lower_bound(std::make_tuple(advertising_obj->id, true));
-      auto itr_end = idx.upper_bound(std::make_tuple(advertising_obj->id, true));
 
       time_point_sec end_time = op.start_time + advertising_obj->unit_time * op.buy_number;
-      while (itr++ != itr_end) {
-         if (op.start_time >= itr->end_time || end_time <= itr->start_time)
+      while (itr != idx.end() && itr->advertising_id == advertising_obj->id && itr->confirmed_status) {
+         if (op.start_time >= itr->end_time || end_time <= itr->start_time) {
+            itr++;
             continue;
+         }       
          FC_ASSERT(false, "purchasing date have a conflict, buy advertising failed");
       }
 
@@ -208,10 +209,9 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
 
          const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
          auto itr = idx.lower_bound(std::make_tuple(op.advertising_id, false));
-         auto itr_end = idx.upper_bound(std::make_tuple(op.advertising_id, false));
 
          std::deque<advertising_order_object> delete_deque;
-         while (itr != itr_end)
+         while (itr != idx.end() && itr->advertising_id == op.advertising_id && !(itr->confirmed_status))
          {
             if (itr->start_time >= advertising_order_obj->end_time || itr->end_time <= advertising_order_obj->start_time) {
                itr++;
