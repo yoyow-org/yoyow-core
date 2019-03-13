@@ -1219,11 +1219,10 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
         const auto& idx = _db.get_index_type<score_index>().indices().get<by_period_sequence>();
         auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence, lower_bound_score));
 
-        while (itr_begin != idx.end() && count < limit)
+        while (itr_begin != idx.end() && count < limit 
+            && itr_begin->platform == platform && itr_begin->poster == poster_uid 
+            && itr_begin->post_pid == post_pid &&itr_begin->period_sequence == dpo.current_active_post_sequence)
         {
-            if (itr_begin->platform != platform || itr_begin->poster != poster_uid
-                || itr_begin->post_pid != post_pid || itr_begin->period_sequence != dpo.current_active_post_sequence)
-                break;
             if (itr_begin->id > lower_bound_score){
                 result.push_back(*itr_begin);
             }
@@ -1234,10 +1233,9 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
     else{
         const auto& idx = _db.get_index_type<score_index>().indices().get<by_posts_pids>();
         auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, lower_bound_score));
-        while (itr_begin != idx.end() && count < limit)
+        while (itr_begin != idx.end() && count < limit
+               && itr_begin->platform == platform && itr_begin->poster == poster_uid && itr_begin->post_pid == post_pid)
         {
-            if (itr_begin->platform != platform || itr_begin->poster != poster_uid || itr_begin->post_pid != post_pid)
-                break;
             if (itr_begin->id > lower_bound_score){
                 result.push_back(*itr_begin);
             }
@@ -1274,9 +1272,8 @@ vector<license_object> database_api_impl::list_licenses(const account_uid_type p
     uint32_t count = 0;
     const auto& idx = _db.get_index_type<license_index>().indices().get<by_platform>();
     auto itr_begin = idx.lower_bound(platform);
-    auto itr_end = idx.upper_bound(platform);
 
-    while (itr_begin != itr_end && count < limit)
+    while (itr_begin != idx.end() && count < limit && itr_begin->platform == platform)
     {
         result.push_back(*itr_begin);
         ++itr_begin;
@@ -1310,9 +1307,8 @@ vector<advertising_object> database_api_impl::list_advertisings(const account_ui
     uint32_t count = 0;
     const auto& idx = _db.get_index_type<advertising_index>().indices().get<by_advertising_platform>();
     auto itr_begin = idx.lower_bound(platform);
-    auto itr_end = idx.upper_bound(platform);
 
-    while (itr_begin != itr_end && count < limit)
+    while (itr_begin != idx.end() && count < limit && itr_begin->platform == platform)
     {
        result.push_back(*itr_begin);
        ++itr_begin;
@@ -1351,8 +1347,7 @@ vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_
    vector<custom_vote_object> result;
    const auto& idx = _db.get_index_type<custom_vote_index>().indices().get<by_creater>();
    auto itr = idx.lower_bound(creater);
-   auto itr_end = idx.upper_bound(creater);
-   while (itr != itr_end && limit--)
+   while (itr != idx.end() && limit-- && itr->create_account == creater)
    {
       result.push_back(*itr);
       ++itr;
@@ -1371,9 +1366,8 @@ vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_id(
 
    const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_id>();
    auto itr = idx.lower_bound(vote_id);
-   auto itr_end = idx.upper_bound(vote_id);
 
-   while (itr != itr_end && limit--)
+   while (itr != idx.end() && limit-- && itr->custom_vote_id == vote_id)
    {
       result.push_back(*itr);
       ++itr;
@@ -1392,9 +1386,8 @@ vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_vot
 
    const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
    auto itr = idx.lower_bound(voter);
-   auto itr_end = idx.upper_bound(voter);
 
-   while (itr != itr_end && limit--)
+   while (itr != idx.end() && limit-- && itr->voter == voter)
    {
       result.push_back(*itr);
       ++itr;
@@ -1422,9 +1415,10 @@ vector<active_post_object> database_api_impl::get_post_profits_detail(const uint
    vector<active_post_object> vtr_active_objects;
    const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_post>();
    auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster, post_pid, begin_period));
-   auto itr_end = idx.upper_bound(std::make_tuple(platform, poster, post_pid, end_period));
 
-   while (itr_begin != itr_end)
+   while (itr_begin != idx.end() && itr_begin->platform == platform 
+          && itr_begin->poster == poster && itr_begin->post_pid == post_pid 
+          && (itr_begin->period_sequence >= begin_period && itr_begin->period_sequence <= end_period))
    {
       vtr_active_objects.push_back(*itr_begin);
       ++itr_begin;
@@ -1463,8 +1457,7 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
 
             const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_platforms>();
             auto itr_begin = idx.lower_bound(std::make_tuple(platform, i));
-            auto itr_end = idx.upper_bound(std::make_tuple(platform, i));
-            while (itr_begin != itr_end)
+            while (itr_begin != idx.end() && itr_begin->platform == platform && itr_begin->period_sequence == i)
             {
                 detail.active_post_pids.push_back({ platform, (*itr_begin).poster, (*itr_begin).post_pid });
                 ++itr_begin;
@@ -1499,10 +1492,10 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
        ppd.poster_account = poster;
 
        auto itr = apt_idx.lower_bound(std::make_tuple(poster, start));
-       auto itr_end = apt_idx.upper_bound(std::make_tuple(poster, start));
        bool exist = false;
 
-       while (itr != itr_end && itr->receiptor_details.count(poster))
+       while (itr != apt_idx.end() && itr->receiptor_details.count(poster) 
+              && itr->period_sequence == start && itr->poster == poster)
        {
           ppd.total_forward += itr->receiptor_details.at(poster).forward;
           ppd.total_post_award += itr->receiptor_details.at(poster).post_award;
@@ -1537,10 +1530,9 @@ share_type database_api_impl::get_score_profit(account_uid_type account, uint32_
 {
    const auto& sce_idx = _db.get_index_type<score_index>().indices().get<by_from_account_uid>();
    auto itr = sce_idx.lower_bound(std::make_tuple(account, period));
-   auto itr_end = sce_idx.upper_bound(std::make_tuple(account, period));
 
    share_type amount = 0;
-   while (itr != itr_end)
+   while (itr != sce_idx.end() && itr->from_account_uid == account && itr->period_sequence == period)
    {
       amount += itr->profits;
       itr++;
