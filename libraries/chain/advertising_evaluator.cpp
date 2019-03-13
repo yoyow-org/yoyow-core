@@ -185,6 +185,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
       advertising_confirm_result result;
       if (op.iscomfirm)
       {
+          share_type released_balance = advertising_order_obj->released_balance;
          d.modify(*advertising_order_obj, [&](advertising_order_object& obj)
          {
             obj.confirmed_status = true;
@@ -192,12 +193,12 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
          });
 
          const auto& params = d.get_global_properties().parameters.get_award_params();
-         share_type fee = ((uint128_t)(advertising_order_obj->released_balance.value) * params.advertising_confirmed_fee_rate
+         share_type fee = ((uint128_t)(released_balance.value)* params.advertising_confirmed_fee_rate
             / GRAPHENE_100_PERCENT).convert_to<int64_t>();
          if (fee < params.advertising_confirmed_min_fee)
             fee = params.advertising_confirmed_min_fee;
 
-         d.adjust_balance(op.platform, asset(advertising_order_obj->released_balance - fee));
+         d.adjust_balance(op.platform, asset(released_balance - fee));
          const auto& core_asset = d.get_core_asset();
          const auto& core_dyn_data = core_asset.dynamic_data(d);
          d.modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)

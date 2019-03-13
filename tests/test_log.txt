@@ -188,6 +188,6 @@
 	   
 	   buy_advertising test1 platform_account1 2.18.0 1551974400 30 notes null true true
 	   
-	   confirm_advertising platform_account1 2.18.0 1 true true true
+	   confirm_advertising platform_account1 2.18.0 2.19.0 true true true
 	   
-	   ransom_advertising platform_account1 test2 2.18.0 1 true true
+	   ransom_advertising platform_account1 test2 2.18.0 2.19.0 true true
