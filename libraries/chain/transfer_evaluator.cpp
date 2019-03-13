@@ -47,18 +47,18 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
        if (sign_account != op.from)
        {
            const auto& account_stats = d.get_account_statistics_by_uid(op.from);
-           auto auth_obj = d.find_account_auth_platform_object_by_account_platform(op.from, sign_account);
-           if (auth_obj){   //transfer by platform,
+           auth_object = d.find_account_auth_platform_object_by_account_platform(op.from, sign_account);
+           if (auth_object){   //transfer by platform,
                sign_platform_uid = sign_account;
-               FC_ASSERT((auth_obj->permission_flags & account_auth_platform_object::Platform_Permission_Transfer) > 0,
+               FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Transfer) > 0,
                    "the transfer permisson of platform ${p} authorized by account ${a} is invalid. ",
                    ("a", (op.from))("p", sign_account));
                FC_ASSERT(account_stats.prepaid >= op.amount.amount,
                    "Insufficient balance: unable to transfer, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                    ("c", (account_stats.prepaid))("a", op.from)("n", op.amount.amount));
-               if (auth_obj->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
+               if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
                {
-                   share_type usable_prepaid = auth_obj->get_auth_platform_usable_prepaid(account_stats.prepaid);
+                   share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats.prepaid);
                    FC_ASSERT(usable_prepaid >= op.amount.amount,
                        "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
                        ("c", usable_prepaid)("p", sign_account)("a", op.from)("n", op.amount.amount));
@@ -131,19 +131,20 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
    database& d = db();
    if( asset_from_balance.amount > 0 )
       d.adjust_balance( *from_account, -asset_from_balance );
-   if( asset_from_prepaid.amount > 0 )
-      d.modify( *from_account_stats, [&](account_statistics_object& s)
-      {
-         s.prepaid -= asset_from_prepaid.amount;
-         if (sign_platform_uid.valid() && d.head_block_time() >= HARDFORK_0_4_TIME)
-         {
-             auto auth_object = d.get_account_auth_platform_object_by_account_platform(o.from, *sign_platform_uid);
-             d.modify(auth_object, [&](account_auth_platform_object& obj)
-             {
-                 obj.cur_used += asset_from_prepaid.amount;
-             });
-         }
-      });
+   if (asset_from_prepaid.amount > 0){
+       d.modify(*from_account_stats, [&](account_statistics_object& s)
+       {
+           s.prepaid -= asset_from_prepaid.amount;
+       });
+
+       if (sign_platform_uid.valid() && d.head_block_time() >= HARDFORK_0_4_TIME && auth_object)
+       {
+           d.modify(*auth_object, [&](account_auth_platform_object& obj)
+           {
+               obj.cur_used += asset_from_prepaid.amount;
+           });
+       }
+   }
    if( asset_to_balance.amount > 0 )
       d.adjust_balance( *to_account, asset_to_balance );
    if( asset_to_prepaid.amount > 0 )

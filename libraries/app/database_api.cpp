@@ -1611,10 +1611,10 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const accou
       const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_poster_create_time>();
 
       // index is latest first, query range is ( earliest, latest ]
-      auto itr = post_idx.lower_bound( std::make_tuple( platform_owner, *poster, max_time ) );
-      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_owner, *poster, min_time ) );
+      auto itr = post_idx.lower_bound( std::make_tuple( platform_owner, *poster ) );
 
-      while( itr != itr_end && count < limit )
+      while (itr != post_idx.end() && count < limit && itr->platform == platform_owner && itr->poster == *poster
+          && (itr->create_time >= min_time && itr->create_time <= max_time))
       {
          result.push_back(*itr);
          ++itr;
@@ -1626,10 +1626,10 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const accou
       const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_create_time>();
 
       // index is latest first, query range is ( earliest, latest ]
-      auto itr = post_idx.lower_bound( std::make_tuple( platform_owner, max_time ) );
-      auto itr_end = post_idx.lower_bound( std::make_tuple( platform_owner, min_time ) );
+      auto itr = post_idx.lower_bound( platform_owner );
 
-      while( itr != itr_end && count < limit )
+      while (itr != post_idx.end() && count < limit && itr->platform == platform_owner 
+          && (itr->create_time >= min_time && itr->create_time <= max_time))
       {
          result.push_back(*itr);
          ++itr;

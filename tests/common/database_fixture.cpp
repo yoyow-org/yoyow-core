@@ -1220,11 +1220,11 @@ void database_fixture::account_auth_platform(flat_set<fc::ecc::private_key> sign
         op.uid = account;
         op.platform = platform_owner;
 
-        account_auth_platform_operation::ext ext;
+        account_auth_platform_operation::extension_parameter ext;
         ext.limit_for_platform = limit_for_platform;
         ext.permission_flags = permission_flags;
-        op.extensions = flat_set<account_auth_platform_operation::extension_parameter>();
-        op.extensions->insert(ext);
+        op.extensions = extension<account_auth_platform_operation::extension_parameter>();
+        op.extensions->value = ext;
 
         signed_transaction tx;
         tx.operations.push_back(op);
@@ -1269,8 +1269,8 @@ void database_fixture::create_post(flat_set<fc::ecc::private_key> sign_keys,
         create_op.title = title;
         create_op.body = body;
 
-        create_op.extensions = flat_set<post_operation::extension_parameter>();
-        create_op.extensions->insert(exts);
+        create_op.extensions = graphene::chain::extension<post_operation::ext>();
+        create_op.extensions->value = exts;
 
         signed_transaction tx;
         tx.operations.push_back(create_op);
@@ -1310,8 +1310,8 @@ void database_fixture::update_post(flat_set<fc::ecc::private_key> sign_keys,
         if (body.valid())
             update_op.body = *body;
 
-        update_op.extensions = flat_set<post_update_operation::extension_parameter>();
-        update_op.extensions->insert(*ext);
+        update_op.extensions = graphene::chain::extension<post_update_operation::ext>();
+        update_op.extensions->value = *ext;
 
         signed_transaction tx;
         tx.operations.push_back(update_op);
@@ -1389,16 +1389,16 @@ void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
 }
 
 void database_fixture::confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
-   account_uid_type  platform,
+   account_uid_type    platform,
    advertising_id_type advertising_id,
-   uint32_t         order_sequence,
-   bool             comfirm)
+   object_id_type      advertising_order_id,
+   bool                comfirm)
 {
    try {
       advertising_confirm_operation confirm_op;
       confirm_op.platform = platform;
       confirm_op.advertising_id = advertising_id;
-      confirm_op.order_sequence = order_sequence;
+      confirm_op.advertising_order_id = advertising_order_id;
       confirm_op.iscomfirm = comfirm;
 
       signed_transaction tx;
@@ -1412,7 +1412,7 @@ void database_fixture::confirm_advertising(flat_set<fc::ecc::private_key> sign_k
 
       db.push_transaction(tx);
 
-   } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_id)(order_sequence)(comfirm))
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_id)(advertising_order_id)(comfirm))
 }
 
 void database_fixture::account_manage(account_uid_type account, account_manage_operation::opt options)
@@ -1574,14 +1574,14 @@ void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_ke
                                           account_uid_type               platform,
                                           account_uid_type               from_account,
                                           object_id_type                 advertising_id,
-                                          uint32_t                       order_sequence)
+                                          object_id_type                 advertising_order_id)
 {
     try {
         advertising_ransom_operation ransom_op;
         ransom_op.platform = platform;
         ransom_op.from_account = from_account;
         ransom_op.advertising_id = advertising_id;
-        ransom_op.order_sequence = order_sequence;
+        ransom_op.advertising_order_id = advertising_order_id;
 
         signed_transaction tx;
         tx.operations.push_back(ransom_op);
@@ -1593,7 +1593,7 @@ void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_ke
             sign(tx, key);
 
         db.push_transaction(tx);
-    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_id)(order_sequence))
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_id)(advertising_order_id))
 }
 
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>

@@ -211,7 +211,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
          const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
          auto itr = idx.lower_bound(std::make_tuple(op.advertising_id, false));
 
-         std::deque<advertising_order_object> delete_deque;
+         //std::deque<advertising_order_object> delete_deque;
          while (itr != idx.end() && itr->advertising_id == op.advertising_id && !(itr->confirmed_status))
          {
             if (itr->start_time >= advertising_order_obj->end_time || itr->end_time <= advertising_order_obj->start_time) {
@@ -221,12 +221,13 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
             {
                d.adjust_balance(itr->user, asset(itr->released_balance));
                result.emplace(itr->user, itr->released_balance);
-               delete_deque.emplace_back(*itr);
-               itr++;
+               //delete_deque.emplace_back(*itr);
+               d.remove(*itr);
+               itr = idx.lower_bound(std::make_tuple(op.advertising_id, false));
             }           
          } 
-         for (const auto& a : delete_deque)
-            d.remove(a);
+         //for (const auto& a : delete_deque)
+         //   d.remove(a);
       }
       else
       {

@@ -1186,19 +1186,19 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
 
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
-        auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
         if (sign_account == op.platform)
             sign_platform_uid = sign_account;
-
-        FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
+        auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
+        FC_ASSERT(auth_object != nullptr, "account ${u} auth platform ${p} object not found.", ("u", op.from_account_uid)("p", op.platform));
+        FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
                   "the buyout permisson of platform ${p} authorized by account ${a} is invalid. ",
                   ("p", op.platform)("a", op.from_account_uid));
         FC_ASSERT(account_stats->prepaid >= iter->second.buyout_price, 
                   "Insufficient balance: unable to buyout, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", iter->second.buyout_price));
-        if (auth_object.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
+        if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
         {
-            share_type usable_prepaid = auth_object.get_auth_platform_usable_prepaid(account_stats->prepaid);
+            share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats->prepaid);
             FC_ASSERT(usable_prepaid >= iter->second.buyout_price,
                       "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
                       ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.from_account_uid)("n", iter->second.buyout_price));
@@ -1215,10 +1215,9 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
 		const post_object& post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);
 		auto iter = post.receiptors.find(op.receiptor_account_uid);
 		Recerptor_Parameter para = iter->second;
-        if (sign_platform_uid.valid()) // signed by platform , then add auth cur_used
+        if (sign_platform_uid.valid() && auth_object) // signed by platform , then add auth cur_used
         {
-            auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
-            d.modify(auth_object, [&](account_auth_platform_object& obj)
+            d.modify(*auth_object, [&](account_auth_platform_object& obj)
             {
                 obj.cur_used += para.buyout_price;
             });

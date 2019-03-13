@@ -398,10 +398,10 @@ struct database_fixture {
                         string               memo);
 
    void confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
-                            account_uid_type   platform,
+                            account_uid_type    platform,
                             advertising_id_type advertising_id,
-                            uint32_t       order_sequence,
-                            bool           comfirm);
+                            object_id_type      advertising_order_id,
+                            bool                comfirm);
 
 
    void account_manage(account_uid_type account, account_manage_operation::opt options);
@@ -447,7 +447,7 @@ struct database_fixture {
                            account_uid_type               platform,
                            account_uid_type               from_account,
                            object_id_type                 advertising_id,
-                           uint32_t                       order_sequence);
+                           object_id_type                 advertising_order_id);
 
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);
