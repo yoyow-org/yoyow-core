@@ -142,19 +142,19 @@ void database::adjust_balance(account_uid_type account, asset delta )
    //update custom vote
    const auto& custom_vote_idx = get_index_type<custom_vote_index>().indices().get<by_id>();
 
-   auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-   auto& cast_vote_itr = cast_vote_idx.lower_bound(account);
+   const auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
+   auto cast_vote_itr = cast_vote_idx.lower_bound(account);
 
    while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->voter == account)
    {
-      auto& custom_vote_itr = custom_vote_idx.find(cast_vote_itr->custom_vote_id);
+      auto custom_vote_itr = custom_vote_idx.find(cast_vote_itr->custom_vote_id);
       FC_ASSERT(custom_vote_itr != custom_vote_idx.end(), "custom vote {id} not found.",("id", cast_vote_itr->custom_vote_id));     
       if (head_block_time() <= custom_vote_itr->vote_expired_time)
       {
          modify(*custom_vote_itr, [&](custom_vote_object& obj)
          {
-            for (auto& vote : obj.vote_result)
-               vote += delta.amount.value;
+            for (const auto& v : cast_vote_itr->vote_result)
+               obj.vote_result.at(v) += delta.amount.value;
          });
       }
       cast_vote_itr++;
