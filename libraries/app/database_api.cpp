@@ -1221,6 +1221,9 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
 
         while (itr_begin != idx.end() && count < limit)
         {
+            if (itr_begin->platform != platform || itr_begin->poster != poster_uid
+                || itr_begin->post_pid != post_pid || itr_begin->period_sequence != dpo.current_active_post_sequence)
+                break;
             if (itr_begin->id > lower_bound_score){
                 result.push_back(*itr_begin);
             }
@@ -1231,9 +1234,10 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
     else{
         const auto& idx = _db.get_index_type<score_index>().indices().get<by_posts_pids>();
         auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, lower_bound_score));
-
         while (itr_begin != idx.end() && count < limit)
         {
+            if (itr_begin->platform != platform || itr_begin->poster != poster_uid || itr_begin->post_pid != post_pid)
+                break;
             if (itr_begin->id > lower_bound_score){
                 result.push_back(*itr_begin);
             }
