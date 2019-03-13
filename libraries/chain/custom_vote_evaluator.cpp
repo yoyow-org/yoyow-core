@@ -49,7 +49,7 @@ object_id_type custom_vote_create_evaluator::do_apply(const operation_type& op)
          obj.minimum_selected_items = op.minimum_selected_items;
          obj.maximum_selected_items = op.maximum_selected_items;
 
-         obj.options.resize(op.options.size());
+         obj.vote_result.resize(op.options.size());
          obj.options = op.options;
       });
 
@@ -65,10 +65,13 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
 
       custom_vote_obj = d.find_custom_vote_by_id(op.custom_vote_id);
       FC_ASSERT(custom_vote_obj != nullptr, "custom vote ${id} not found.", ("id", op.custom_vote_id));
+      FC_ASSERT(d.head_block_time() <= custom_vote_obj->vote_expired_time, "custom vote already overdue");
+      FC_ASSERT(op.vote_result.size() >= custom_vote_obj->minimum_selected_items && op.vote_result.size() <= custom_vote_obj->maximum_selected_items, 
+         "vote options is not in range ${min} - ${max}.", ("min", custom_vote_obj->minimum_selected_items)("max", custom_vote_obj->maximum_selected_items));
 
       const auto& account_obj = d.get_account_by_uid(op.voter);//check create account exist
 
-      auto votes = d.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
+      votes = d.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
       FC_ASSERT(votes >= custom_vote_obj->required_asset_amount, "asset ${aid} balance less than required amount for vote ${amount}", 
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
       

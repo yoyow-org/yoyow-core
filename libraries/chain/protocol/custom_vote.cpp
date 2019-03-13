@@ -31,6 +31,7 @@ share_type custom_vote_create_operation::calculate_fee(const fee_parameters_type
 
 void custom_vote_cast_operation::validate()const
 {
+   FC_ASSERT(vote_result.size() > 0, "options size should more than 0");
    validate_op_fee(fee, "custom_vote_cast ");
    validate_account_uid(voter, "voter");
 }
