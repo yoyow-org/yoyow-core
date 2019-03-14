@@ -1568,8 +1568,6 @@ class wallet_api
                                  string license_lid);
 
       vector<license_object> list_licenses(string platform, uint32_t limit);
-
-      advertising_object get_advertising(object_id_type advertising_id);
                       
       vector<advertising_object> list_advertisings(string platform, uint32_t limit);
       vector<advertising_order_object> list_advertising_orders_by_purchaser(string purchaser, uint32_t limit);
@@ -1855,7 +1853,6 @@ FC_API( graphene::wallet::wallet_api,
         (list_scores)
         (get_license)
         (list_licenses)
-        (get_advertising)
         (list_advertisings)
         (get_post_profits_detail)
         (get_platform_profits_detail)

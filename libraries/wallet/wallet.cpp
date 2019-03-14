@@ -2765,17 +2765,6 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform))
    }
 
-   advertising_object get_advertising(object_id_type advertising_id)
-   {
-       try {
-           fc::optional<advertising_object> ad = _remote_db->get_advertising(advertising_id);
-           if (ad)
-               return *ad;
-           else
-               FC_THROW("advertising: ${ad} not found .", ("ad", advertising_id));
-       } FC_CAPTURE_AND_RETHROW((advertising_id))
-   }
-
    vector<advertising_object> list_advertisings(string platform, uint32_t limit)
    {
        try {
@@ -4358,11 +4347,6 @@ license_object wallet_api::get_license(string platform,
 vector<license_object> wallet_api::list_licenses(string platform, uint32_t limit)
 {
     return my->list_licenses(platform, limit);
-}
-
-advertising_object wallet_api::get_advertising(object_id_type advertising_id)
-{
-    return my->get_advertising(advertising_id);
 }
 
 vector<advertising_object> wallet_api::list_advertisings(string platform, uint32_t limit)
