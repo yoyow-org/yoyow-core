@@ -37,7 +37,10 @@ namespace graphene { namespace chain {
       indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
       ordered_non_unique< tag<by_custom_vote_id>,
-            member< cast_custom_vote_object, custom_vote_id_type, &cast_custom_vote_object::custom_vote_id> >,
+      composite_key<cast_custom_vote_object,
+            member< cast_custom_vote_object, custom_vote_id_type, &cast_custom_vote_object::custom_vote_id>,
+            member < object, object_id_type, &object::id > 
+      >> ,
       ordered_unique< tag<by_custom_voter>,
          composite_key<
             cast_custom_vote_object,
@@ -89,8 +92,11 @@ namespace graphene { namespace chain {
       custom_vote_object,
       indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-      ordered_non_unique< tag<by_creater>,
-         member< custom_vote_object, account_uid_type, &custom_vote_object::create_account> >,
+      ordered_unique< tag<by_creater>,
+         composite_key<
+            custom_vote_object,
+            member< custom_vote_object, account_uid_type, &custom_vote_object::create_account>,
+            member< object,             object_id_type,   &object::id > > >,
       ordered_non_unique< tag<by_expired_time>,
          member< custom_vote_object, time_point_sec,   &custom_vote_object::vote_expired_time> >
       >

@@ -131,6 +131,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const object_id_type lower_bound_post,
                                       const uint32_t limit )const;
       optional<score_object> get_score(const account_uid_type platform,
                                        const account_uid_type poster_uid,
@@ -146,18 +147,18 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       optional<license_object> get_license(const account_uid_type platform,
                                            const license_lid_type license_lid)const;
-      vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
+      vector<license_object> list_licenses(const account_uid_type platform, const object_id_type lower_bound_license, const uint32_t limit)const;
 
-      vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
+      vector<advertising_object> list_advertisings(const account_uid_type platform, const object_id_type lower_bound_advertising, const uint32_t limit)const;
 
-      vector<advertising_order_object> list_advertising_orders_by_purchaser(account_uid_type purchaser, uint32_t limit)const;
-      vector<advertising_order_object> list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_purchaser(const account_uid_type purchaser, const object_id_type lower_bound_advertising_order, uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_ads_id(const object_id_type id, const object_id_type lower_bound_advertising_order, uint32_t limit)const;
 
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
-      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, uint32_t limit)const;
+      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, const object_id_type lower_bound_custom_vote, uint32_t limit)const;
 
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)const;
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(account_uid_type voter, uint32_t limit)const;
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const object_id_type vote_id, const object_id_type lower_bound_cast_custom_vote, uint32_t limit)const;
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(const account_uid_type voter, const object_id_type lower_bound_cast_custom_vote, uint32_t limit)const;
 
       vector<active_post_object> get_post_profits_detail(const uint32_t         begin_period,
                                                          const uint32_t         end_period,
@@ -1212,6 +1213,7 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
                                                     const uint32_t         limit,
                                                     const bool             list_cur_period)const
 {
+    FC_ASSERT(limit <= 100);
     vector<score_object> result;
     uint32_t count = 0;
 
@@ -1224,9 +1226,7 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
             && itr_begin->platform == platform && itr_begin->poster == poster_uid 
             && itr_begin->post_pid == post_pid &&itr_begin->period_sequence == dpo.current_active_post_sequence)
         {
-            if (itr_begin->id > lower_bound_score){
-                result.push_back(*itr_begin);
-            }
+            result.push_back(*itr_begin);
             ++itr_begin;
             ++count;
         }
@@ -1237,9 +1237,7 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
         while (itr_begin != idx.end() && count < limit
                && itr_begin->platform == platform && itr_begin->poster == poster_uid && itr_begin->post_pid == post_pid)
         {
-            if (itr_begin->id > lower_bound_score){
-                result.push_back(*itr_begin);
-            }
+            result.push_back(*itr_begin);
             ++itr_begin;
             ++count;
         }
@@ -1262,17 +1260,18 @@ optional<license_object> database_api_impl::get_license(const account_uid_type p
     return{};
 }
 
-vector<license_object> database_api::list_licenses(const account_uid_type platform, const uint32_t limit)const
+vector<license_object> database_api::list_licenses(const account_uid_type platform, const object_id_type lower_bound_license, const uint32_t limit)const
 {
-    return my->list_licenses(platform, limit);
+    return my->list_licenses(platform, lower_bound_license, limit);
 }
 
-vector<license_object> database_api_impl::list_licenses(const account_uid_type platform, const uint32_t limit)const
+vector<license_object> database_api_impl::list_licenses(const account_uid_type platform, const object_id_type lower_bound_license, const uint32_t limit)const
 {
+    FC_ASSERT(limit <= 100);
     vector<license_object> result;
     uint32_t count = 0;
     const auto& idx = _db.get_index_type<license_index>().indices().get<by_platform>();
-    auto itr_begin = idx.lower_bound(platform);
+    auto itr_begin = idx.lower_bound(std::make_tuple(platform, lower_bound_license));
 
     while (itr_begin != idx.end() && count < limit && itr_begin->platform == platform)
     {
@@ -1283,17 +1282,18 @@ vector<license_object> database_api_impl::list_licenses(const account_uid_type p
     return result;
 }
 
-vector<advertising_object> database_api::list_advertisings(const account_uid_type platform, const uint32_t limit)const
+vector<advertising_object> database_api::list_advertisings(const account_uid_type platform, const object_id_type lower_bound_advertising, const uint32_t limit)const
 {
-    return my->list_advertisings(platform, limit);
+    return my->list_advertisings(platform, lower_bound_advertising, limit);
 }
 
-vector<advertising_object> database_api_impl::list_advertisings(const account_uid_type platform, const uint32_t limit)const
+vector<advertising_object> database_api_impl::list_advertisings(const account_uid_type platform, const object_id_type lower_bound_advertising, const uint32_t limit)const
 {
+    FC_ASSERT(limit <= 100);
     vector<advertising_object> result;
     uint32_t count = 0;
     const auto& idx = _db.get_index_type<advertising_index>().indices().get<by_advertising_platform>();
-    auto itr_begin = idx.lower_bound(platform);
+    auto itr_begin = idx.lower_bound(std::make_tuple(platform, lower_bound_advertising));
 
     while (itr_begin != idx.end() && count < limit && itr_begin->platform == platform)
     {
@@ -1304,17 +1304,18 @@ vector<advertising_object> database_api_impl::list_advertisings(const account_ui
     return result;
 }
 
-vector<advertising_order_object> database_api::list_advertising_orders_by_purchaser(account_uid_type purchaser, uint32_t limit)const
+vector<advertising_order_object> database_api::list_advertising_orders_by_purchaser(const account_uid_type purchaser, const object_id_type lower_bound_advertising_order, uint32_t limit)const
 {
-   return my->list_advertising_orders_by_purchaser(purchaser, limit);
+    return my->list_advertising_orders_by_purchaser(purchaser, lower_bound_advertising_order, limit);
 }
 
-vector<advertising_order_object> database_api_impl::list_advertising_orders_by_purchaser(account_uid_type purchaser, uint32_t limit)const
+vector<advertising_order_object> database_api_impl::list_advertising_orders_by_purchaser(const account_uid_type purchaser, const object_id_type lower_bound_advertising_order, uint32_t limit)const
 {
+    FC_ASSERT(limit <= 100);
    vector<advertising_order_object> result;
 
-   const auto& idx = _db.get_index_type<advertising_order_index>().indices().get<by_advertising_user>();
-   auto itr = idx.lower_bound(purchaser);
+   const auto& idx = _db.get_index_type<advertising_order_index>().indices().get<by_advertising_user_id>();
+   auto itr = idx.lower_bound(std::make_tuple(purchaser,lower_bound_advertising_order));
 
    while (itr != idx.end() && itr->user == purchaser && limit--)
    {
@@ -1324,13 +1325,14 @@ vector<advertising_order_object> database_api_impl::list_advertising_orders_by_p
    return result;
 }
 
-vector<advertising_order_object> database_api::list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)const
+vector<advertising_order_object> database_api::list_advertising_orders_by_ads_id(const object_id_type id, const object_id_type lower_bound_advertising_order, uint32_t limit)const
 {
-   return my->list_advertising_orders_by_ads_id(id, limit);
+    return my->list_advertising_orders_by_ads_id(id, lower_bound_advertising_order, limit);
 }
 
-vector<advertising_order_object> database_api_impl::list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)const
+vector<advertising_order_object> database_api_impl::list_advertising_orders_by_ads_id(const object_id_type id, const object_id_type lower_bound_advertising_order, uint32_t limit)const
 {
+    FC_ASSERT(limit <= 100);
    vector<advertising_order_object> result;
 
    const auto& idx = _db.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
@@ -1351,6 +1353,7 @@ vector<custom_vote_object> database_api::list_custom_votes(const account_uid_typ
 
 vector<custom_vote_object> database_api_impl::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const
 {
+    FC_ASSERT(limit <= 100);
    vector<custom_vote_object> result;
 
    const auto& idx = _db.get_index_type<custom_vote_index>().indices().get<by_creater>();
@@ -1364,16 +1367,17 @@ vector<custom_vote_object> database_api_impl::list_custom_votes(const account_ui
    return result;
 }
 
-vector<custom_vote_object> database_api::lookup_custom_votes(const account_uid_type creater, uint32_t limit)const
+vector<custom_vote_object> database_api::lookup_custom_votes(const account_uid_type creater, const object_id_type lower_bound_custom_vote, uint32_t limit)const
 {
-   return my->lookup_custom_votes(creater, limit);
+    return my->lookup_custom_votes(creater, lower_bound_custom_vote, limit);
 }
 
-vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_uid_type creater, uint32_t limit)const
+vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_uid_type creater, const object_id_type lower_bound_custom_vote, uint32_t limit)const
 {
+    FC_ASSERT(limit <= 100);
    vector<custom_vote_object> result;
    const auto& idx = _db.get_index_type<custom_vote_index>().indices().get<by_creater>();
-   auto itr = idx.lower_bound(creater);
+   auto itr = idx.lower_bound(std::make_tuple(creater,lower_bound_custom_vote));
    while (itr != idx.end() && limit-- && itr->create_account == creater)
    {
       result.push_back(*itr);
@@ -1382,17 +1386,18 @@ vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_
    return result;
 }
 
-vector<cast_custom_vote_object> database_api::list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)const
+vector<cast_custom_vote_object> database_api::list_cast_custom_votes_by_id(const object_id_type vote_id, const object_id_type lower_bound_cast_custom_vote, uint32_t limit)const
 {
-   return my->list_cast_custom_votes_by_id(vote_id, limit);
+    return my->list_cast_custom_votes_by_id(vote_id, lower_bound_cast_custom_vote, limit);
 }
 
-vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)const
+vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_id(const object_id_type vote_id, const object_id_type lower_bound_cast_custom_vote, uint32_t limit)const
 {
+    FC_ASSERT(limit <= 100);
    vector<cast_custom_vote_object> result;
 
    const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_id>();
-   auto itr = idx.lower_bound(vote_id);
+   auto itr = idx.lower_bound(std::make_tuple(vote_id, lower_bound_cast_custom_vote));
 
    while (itr != idx.end() && limit-- && itr->custom_vote_id == vote_id)
    {
@@ -1402,17 +1407,18 @@ vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_id(
    return result;
 }
 
-vector<cast_custom_vote_object> database_api::list_cast_custom_votes_by_voter(account_uid_type voter, uint32_t limit)const
+vector<cast_custom_vote_object> database_api::list_cast_custom_votes_by_voter(const account_uid_type voter, const object_id_type lower_bound_cast_custom_vote, uint32_t limit)const
 {
-   return my->list_cast_custom_votes_by_voter(voter, limit);
+    return my->list_cast_custom_votes_by_voter(voter, lower_bound_cast_custom_vote, limit);
 }
 
-vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_voter(account_uid_type voter, uint32_t limit)const
+vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_voter(const account_uid_type voter, const object_id_type lower_bound_cast_custom_vote, uint32_t limit)const
 {
+    FC_ASSERT(limit <= 100);
    vector<cast_custom_vote_object> result;
 
    const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-   auto itr = idx.lower_bound(voter);
+   auto itr = idx.lower_bound(std::make_tuple(voter, lower_bound_cast_custom_vote));
 
    while (itr != idx.end() && limit-- && itr->voter == voter)
    {
@@ -1571,14 +1577,16 @@ share_type database_api_impl::get_score_profit(account_uid_type account, uint32_
 vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const object_id_type lower_bound_post,
                                       const uint32_t limit )const
 {
-   return my->get_posts_by_platform_poster( platform_owner, poster, create_time_range, limit );
+    return my->get_posts_by_platform_poster(platform_owner, poster, create_time_range, lower_bound_post, limit);
 }
 
 vector<post_object> database_api_impl::get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const object_id_type lower_bound_post,
                                       const uint32_t limit )const
 {
    FC_ASSERT( limit <= 100 );
@@ -1593,9 +1601,7 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const accou
    if( poster.valid() )
    {
       const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_poster_create_time>();
-
-      // index is latest first, query range is ( earliest, latest ]
-      auto itr = post_idx.lower_bound( std::make_tuple( platform_owner, *poster ) );
+      auto itr = post_idx.lower_bound( std::make_tuple( platform_owner, *poster , min_time, lower_bound_post) );
 
       while (itr != post_idx.end() && count < limit && itr->platform == platform_owner && itr->poster == *poster
           && (itr->create_time >= min_time && itr->create_time <= max_time))
@@ -1608,9 +1614,7 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const accou
    else
    {
       const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_create_time>();
-
-      // index is latest first, query range is ( earliest, latest ]
-      auto itr = post_idx.lower_bound( platform_owner );
+      auto itr = post_idx.lower_bound(std::make_tuple(platform_owner, min_time, lower_bound_post));
 
       while (itr != post_idx.end() && count < limit && itr->platform == platform_owner 
           && (itr->create_time >= min_time && itr->create_time <= max_time))

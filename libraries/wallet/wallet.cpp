@@ -2696,17 +2696,18 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(post_pid))
    }
 
-   vector<post_object> get_posts_by_platform_poster(string                                    platform_owner,
-                                                    string                                    poster_uid,
-                                                    time_point_sec                            begin_time_range,
-                                                    time_point_sec                            end_time_range,
-                                                    uint32_t                                  limit)
+   vector<post_object> get_posts_by_platform_poster(string           platform_owner,
+                                                    string           poster_uid,
+                                                    time_point_sec   begin_time_range,
+                                                    time_point_sec   end_time_range,
+                                                    object_id_type   lower_bound_post,
+                                                    uint32_t         limit)
    {
        try {
            account_uid_type platform = get_account_uid(platform_owner);
            account_uid_type poster = get_account_uid(poster_uid);
-           return _remote_db->get_posts_by_platform_poster(platform, poster, std::make_pair(begin_time_range, end_time_range), limit);
-       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(begin_time_range)(end_time_range)(limit))
+           return _remote_db->get_posts_by_platform_poster(platform, poster, std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(begin_time_range)(end_time_range)(lower_bound_post)(limit))
    }
 
    score_object get_score(string platform,
@@ -2757,27 +2758,29 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform)(license_lid))
    }
 
-   vector<license_object> list_licenses(string platform, uint32_t limit)
+   vector<license_object> list_licenses(string platform, object_id_type lower_bound_license, uint32_t limit)
    {
        try {
            account_uid_type platform_uid = get_account_uid(platform);
-           return _remote_db->list_licenses(platform_uid, limit);
-       } FC_CAPTURE_AND_RETHROW((platform))
+           return _remote_db->list_licenses(platform_uid, lower_bound_license, limit);
+       } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_license)(limit))
    }
 
-   vector<advertising_object> list_advertisings(string platform, uint32_t limit)
+   vector<advertising_object> list_advertisings(string platform, object_id_type lower_bound_advertising, uint32_t limit)
    {
        try {
            account_uid_type platform_uid = get_account_uid(platform);
-           return _remote_db->list_advertisings(platform_uid, limit);
-       } FC_CAPTURE_AND_RETHROW((platform)(limit))
+           return _remote_db->list_advertisings(platform_uid, lower_bound_advertising, limit);
+       } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_advertising)(limit))
    }
 
    vector<active_post_object> get_post_profits_detail(uint32_t         begin_period,
                                                       uint32_t         end_period,
                                                       string           platform,
                                                       string           poster,
-                                                      string           post_pid)
+                                                      string           post_pid,
+                                                      object_id_type   lower_bound_active, 
+                                                      uint32_t         limit)
    {
        try {
            FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
@@ -2785,7 +2788,7 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type poster_uid = get_account_uid(poster);
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
            return _remote_db->get_post_profits_detail(begin_period, end_period, platform_uid, poster_uid, postid);
-       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(poster)(post_pid))
+       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(poster)(post_pid)(lower_bound_active)(limit))
    }
 
    vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
@@ -4309,15 +4312,16 @@ post_object wallet_api::get_post(string platform_owner,
     return my->get_post(platform_owner, poster_uid, post_pid);
 }
 
-vector<post_object> wallet_api::get_posts_by_platform_poster(string                                    platform_owner,
-                                                             string                                    poster,
-                                                             uint32_t                                  begin_time_range,
-                                                             uint32_t                                  end_time_range,
-                                                             uint32_t                                  limit)
+vector<post_object> wallet_api::get_posts_by_platform_poster(string           platform_owner,
+                                                             string           poster,
+                                                             uint32_t         begin_time_range,
+                                                             uint32_t         end_time_range,
+                                                             object_id_type   lower_bound_post,
+                                                             uint32_t         limit)
 {
     time_point_sec  begin_time(begin_time_range);
     time_point_sec  end_time(end_time_range);
-    return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, limit);
+    return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, lower_bound_post, limit);
 }
 
 score_object wallet_api::get_score(string platform,
@@ -4344,23 +4348,25 @@ license_object wallet_api::get_license(string platform,
     return my->get_license(platform, license_lid);
 }
 
-vector<license_object> wallet_api::list_licenses(string platform, uint32_t limit)
+vector<license_object> wallet_api::list_licenses(string platform, object_id_type lower_bound_license, uint32_t limit)
 {
-    return my->list_licenses(platform, limit);
+    return my->list_licenses(platform, lower_bound_license, limit);
 }
 
-vector<advertising_object> wallet_api::list_advertisings(string platform, uint32_t limit)
+vector<advertising_object> wallet_api::list_advertisings(string platform, object_id_type lower_bound_advertising, uint32_t limit)
 {
-    return my->list_advertisings(platform, limit);
+    return my->list_advertisings(platform, lower_bound_advertising, limit);
 }
 
 vector<active_post_object> wallet_api::get_post_profits_detail(uint32_t         begin_period,
                                                                uint32_t         end_period,
                                                                string           platform,
                                                                string           poster,
-                                                               string           post_pid)
+                                                               string           post_pid,
+                                                               object_id_type   lower_bound_active,
+                                                               uint32_t         limit)
 {
-    return my->get_post_profits_detail(begin_period, end_period, platform, poster, post_pid);
+    return my->get_post_profits_detail(begin_period, end_period, platform, poster, post_pid, lower_bound_active, limit);
 }
 
 vector<Platform_Period_Profit_Detail> wallet_api::get_platform_profits_detail(uint32_t         begin_period,
@@ -4419,15 +4425,15 @@ signed_transaction wallet_api::ransom_advertising(string           platform,
     return my->ransom_advertising(platform, from_account, advertising_id, advertising_order_id, csaf_fee, broadcast);
 }
 
-vector<advertising_order_object> wallet_api::list_advertising_orders_by_purchaser(string purchaser, uint32_t limit)
+vector<advertising_order_object> wallet_api::list_advertising_orders_by_purchaser(string purchaser, object_id_type lower_bound_advertising_order, uint32_t limit)
 {
    account_uid_type account = my->get_account_uid(purchaser);
-   return my->_remote_db->list_advertising_orders_by_purchaser(account, limit);
+   return my->_remote_db->list_advertising_orders_by_purchaser(account, lower_bound_advertising_order, limit);
 }
 
-vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)
+vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_id(object_id_type id, object_id_type lower_bound_advertising_order, uint32_t limit)
 {
-   return my->_remote_db->list_advertising_orders_by_ads_id(id, limit);
+    return my->_remote_db->list_advertising_orders_by_ads_id(id, lower_bound_advertising_order, limit);
 }
 
 signed_transaction wallet_api::create_custom_vote(string           create_account,
@@ -4458,24 +4464,24 @@ signed_transaction wallet_api::cast_custom_vote(string      voter,
 
 vector<custom_vote_object> wallet_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)
 {
-   return my->_remote_db->list_custom_votes(lowerbound, limit);
+    return my->_remote_db->list_custom_votes(lowerbound, limit);
 }
 
-vector<custom_vote_object> wallet_api::lookup_custom_votes(string creater, uint32_t limit)
+vector<custom_vote_object> wallet_api::lookup_custom_votes(string creater, object_id_type lower_bound_custom_vote, uint32_t limit)
 {
    account_uid_type account = my->get_account_uid(creater);
-   return my->_remote_db->lookup_custom_votes(account, limit);
+   return my->_remote_db->lookup_custom_votes(account, lower_bound_custom_vote, limit);
 }
 
-vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)
+vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(object_id_type vote_id, object_id_type lower_bound_cast_custom_vote, uint32_t limit)
 {
-   return my->_remote_db->list_cast_custom_votes_by_id(vote_id, limit);
+    return my->_remote_db->list_cast_custom_votes_by_id(vote_id, lower_bound_cast_custom_vote, limit);
 }
 
-vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_voter(string voter, uint32_t limit)
+vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_voter(string voter, object_id_type lower_bound_cast_custom_vote, uint32_t limit)
 {
    account_uid_type account = my->get_account_uid(voter);
-   return my->_remote_db->list_cast_custom_votes_by_voter(account, limit);
+   return my->_remote_db->list_cast_custom_votes_by_voter(account, lower_bound_cast_custom_vote, limit);
 }
 
 vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_platform(string   platform,

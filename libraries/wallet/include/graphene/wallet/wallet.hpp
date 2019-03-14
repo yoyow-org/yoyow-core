@@ -1546,11 +1546,12 @@ class wallet_api
                             string poster_uid,
                             string post_pid );
 
-      vector<post_object> get_posts_by_platform_poster(string                                    platform_owner,
-                                                       string                                    poster,
-                                                       uint32_t                                  begin_time_range,
-                                                       uint32_t                                  end_time_range,
-                                                       uint32_t                                  limit);
+      vector<post_object> get_posts_by_platform_poster(string           platform_owner,
+                                                       string           poster,
+                                                       uint32_t         begin_time_range,
+                                                       uint32_t         end_time_range,
+                                                       object_id_type   lower_bound_post,
+                                                       uint32_t         limit);
 
       score_object get_score(string platform,
                              string poster_uid,
@@ -1567,17 +1568,19 @@ class wallet_api
       license_object get_license(string platform,
                                  string license_lid);
 
-      vector<license_object> list_licenses(string platform, uint32_t limit);
+      vector<license_object> list_licenses(string platform, object_id_type lower_bound_license, uint32_t limit);
                       
-      vector<advertising_object> list_advertisings(string platform, uint32_t limit);
-      vector<advertising_order_object> list_advertising_orders_by_purchaser(string purchaser, uint32_t limit);
-      vector<advertising_order_object> list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit);
+      vector<advertising_object> list_advertisings(string platform, object_id_type lower_bound_advertising, uint32_t limit);
+      vector<advertising_order_object> list_advertising_orders_by_purchaser(string purchaser, object_id_type lower_bound_advertising_order, uint32_t limit);
+      vector<advertising_order_object> list_advertising_orders_by_ads_id(object_id_type id, object_id_type lower_bound_advertising_order ,uint32_t limit);
 
       vector<active_post_object> get_post_profits_detail(uint32_t         begin_period,
                                                          uint32_t         end_period,
                                                          string           platform,
                                                          string           poster,
-                                                         string           post_pid);
+                                                         string           post_pid,
+                                                         object_id_type   lower_bound_active,
+                                                         uint32_t         limit);
 
       vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
                                                                         uint32_t         end_period,
@@ -1633,10 +1636,10 @@ class wallet_api
                                           bool broadcast = false);
 
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit);
-      vector<custom_vote_object> lookup_custom_votes(string creater, uint32_t limit);
+      vector<custom_vote_object> lookup_custom_votes(string creater, object_id_type lower_bound_custom_vote, uint32_t limit);
 
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit);
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(string voter, uint32_t limit);
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, object_id_type lower_bound_cast_custom_vote, uint32_t limit);
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(string voter, object_id_type lower_bound_cast_custom_vote, uint32_t limit);
 
 
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
@@ -1644,8 +1647,8 @@ class wallet_api
                                                                                   uint32_t limit = 100);
 
       vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
-          string   lower_bound_platform,
-          uint32_t limit = 100);
+                                                                                 string   lower_bound_platform,
+                                                                                 uint32_t limit = 100);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );

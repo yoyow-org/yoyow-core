@@ -378,41 +378,4 @@ const score_object* database::find_score(account_uid_type platform,
     else
         return nullptr;
 }
-
-const advertising_object& database::get_advertising(object_id_type id)const
-{
-   const auto& ads_by_id = get_index_type<advertising_index>().indices().get<by_id>();
-   auto itr = ads_by_id.find(id);
-   FC_ASSERT(itr != ads_by_id.end(), "advertising {advertising_id} not found.",("advertising_id", id));
-   return *itr;
-}
-
-const advertising_object* database::find_advertising(object_id_type id)const
-{
-   const auto& ads_by_id = get_index_type<advertising_index>().indices().get<by_id>();
-   auto itr = ads_by_id.find(id);
-   if (itr != ads_by_id.end())
-      return &(*itr);
-   else
-      return nullptr;
-}
-
-const custom_vote_object& database::get_custom_vote_by_id(object_id_type id)const
-{
-   const auto& votes_by_id = get_index_type<custom_vote_index>().indices().get<by_id>();
-   auto itr = votes_by_id.find(id);
-   FC_ASSERT(itr != votes_by_id.end(), "custom vote {id} not found.", ("id", id));
-   return *itr;
-}
-
-const custom_vote_object* database::find_custom_vote_by_id(object_id_type id)const
-{
-   const auto& votes_by_id = get_index_type<custom_vote_index>().indices().get<by_id>();
-   auto itr = votes_by_id.find(id);
-   if (itr != votes_by_id.end())
-      return &(*itr);
-   else
-      return nullptr;
-}
-
 } }

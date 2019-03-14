@@ -48,7 +48,7 @@ void_result advertising_update_evaluator::do_evaluate(const operation_type& op)
         const database& d = db();
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only update advertising after HARDFORK_0_4_TIME");
         d.get_platform_by_owner(op.platform); // make sure pid exists
-        advertising_obj = d.find_advertising(op.advertising_id);
+        advertising_obj = d.find(op.advertising_id);
         FC_ASSERT(advertising_obj != nullptr, "advertising_object doesn`t exsit");
         FC_ASSERT(advertising_obj->platform == op.platform, "Can`t update other`s advetising. ");
 
@@ -87,7 +87,7 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
 
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buy advertising after HARDFORK_0_4_TIME");
-      advertising_obj = d.find_advertising(op.advertising_id);
+      advertising_obj = d.find(op.advertising_id);
       FC_ASSERT(advertising_obj != nullptr && advertising_obj->platform == op.platform, 
          "advertising ${tid} on platform ${platform} is invalid.",("tid", op.advertising_id)("platform", op.platform));
       FC_ASSERT(advertising_obj->on_sell, "advertising {id} on platform {platform} not on sell", ("id", op.advertising_id)("platform", op.platform));
@@ -154,7 +154,7 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
 
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only advertising comfirm after HARDFORK_0_4_TIME");
-      const auto& advertising_obj = d.find_advertising(op.advertising_id);
+      const auto& advertising_obj = d.find(op.advertising_id);
       FC_ASSERT(advertising_obj != nullptr && advertising_obj->platform == op.platform,
          "advertising ${tid} on platform ${platform} is invalid.", ("tid", op.advertising_id)("platform", op.platform));
       
@@ -249,7 +249,7 @@ void_result advertising_ransom_evaluator::do_evaluate(const operation_type& op)
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only ransom advertising after HARDFORK_0_4_TIME");
         d.get_platform_by_owner(op.platform); // make sure pid exists
         d.get_account_by_uid(op.from_account);
-        const auto& advertising_obj = d.find_advertising(op.advertising_id);
+        const auto& advertising_obj = d.find(op.advertising_id);
         FC_ASSERT(advertising_obj != nullptr, "advertising object doesn`t exsit");
 
         const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_id>();

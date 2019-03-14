@@ -584,7 +584,11 @@ namespace graphene { namespace chain {
                                    member< license_object, account_uid_type, &license_object::platform >,
                                    member< license_object, license_lid_type, &license_object::license_lid >
 								   >> ,
-       ordered_non_unique< tag<by_platform>, member< license_object, account_uid_type, &license_object::platform> >,
+       ordered_unique< tag<by_platform>, 
+                       composite_key<license_object,
+                                   member< license_object, account_uid_type, &license_object::platform>,
+                                   member< object,         object_id_type,   &object::id >
+                                   >>,
        ordered_non_unique< tag<by_license_type>, member< license_object, uint8_t, &license_object::license_type> >
 	   >
     > license_multi_index_type;

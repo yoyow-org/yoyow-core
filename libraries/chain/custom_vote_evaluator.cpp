@@ -63,7 +63,7 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only cast custom vote after HARDFORK_0_4_TIME");
 
-      custom_vote_obj = d.find_custom_vote_by_id(op.custom_vote_id);
+      custom_vote_obj = d.find(op.custom_vote_id);
       FC_ASSERT(custom_vote_obj != nullptr, "custom vote ${id} not found.", ("id", op.custom_vote_id));
       FC_ASSERT(d.head_block_time() <= custom_vote_obj->vote_expired_time, "custom vote already overdue");
       FC_ASSERT(op.vote_result.size() >= custom_vote_obj->minimum_selected_items && op.vote_result.size() <= custom_vote_obj->maximum_selected_items, 

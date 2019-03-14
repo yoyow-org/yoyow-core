@@ -455,18 +455,18 @@ class database_api
       optional<license_object> get_license(const account_uid_type platform,
                                            const license_lid_type license_lid)const;
 
-      vector<license_object> list_licenses(const account_uid_type platform, const uint32_t limit)const;
+      vector<license_object> list_licenses(const account_uid_type platform, const object_id_type lower_bound_license, const uint32_t limit)const;
 
-      vector<advertising_object> list_advertisings(const account_uid_type platform, const uint32_t limit)const;
+      vector<advertising_object> list_advertisings(const account_uid_type platform, const object_id_type lower_bound_advertising, const uint32_t limit)const;
 
-      vector<advertising_order_object> list_advertising_orders_by_purchaser(account_uid_type purchaser, uint32_t limit)const;
-      vector<advertising_order_object> list_advertising_orders_by_ads_id(object_id_type id, uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_purchaser(const account_uid_type purchaser, const object_id_type lower_bound_advertising_order, uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_ads_id(const object_id_type id, const object_id_type lower_bound_advertising_order, uint32_t limit)const;
 
-      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, uint32_t limit)const;
+      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, const object_id_type lower_bound_custom_vote, uint32_t limit)const;
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
 
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, uint32_t limit)const;
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(account_uid_type voter, uint32_t limit)const;
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, const object_id_type lower_bound_cast_custom_vote, uint32_t limit)const;
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(account_uid_type voter, const object_id_type lower_bound_cast_custom_vote, uint32_t limit)const;
 
       vector<active_post_object> get_post_profits_detail(const uint32_t         begin_period,
                                                          const uint32_t         end_period,
@@ -497,6 +497,7 @@ class database_api
       vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       const optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                      const object_id_type lower_bound_post,
                                       const uint32_t limit )const;
 
       ////////////
