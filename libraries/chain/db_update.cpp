@@ -1524,7 +1524,7 @@ void database::process_content_platform_awards()
 
 		const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
 		auto apt_itr = apt_idx.lower_bound(dpo.current_active_post_sequence);
-		while (apt_itr != apt_idx.end())
+    while (apt_itr != apt_idx.end() && apt_itr->period_sequence == dpo.current_active_post_sequence)
 		{
 			if (apt_itr->total_csaf >= params.min_effective_csaf)
 			{		
