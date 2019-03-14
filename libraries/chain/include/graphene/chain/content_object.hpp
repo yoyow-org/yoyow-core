@@ -363,8 +363,6 @@ namespace graphene { namespace chain {
 		 account_uid_type                       poster;
 		 /// The post's pid.
 		 post_pid_type                          post_pid;
-		 /// detail information of approvals, csaf.
-		 vector<score_id_type>                  scores;
 		 /// approvals of a post, csaf.
 		 share_type                             total_csaf;
 		 /// rewards of a post.
@@ -628,7 +626,7 @@ FC_REFLECT( graphene::chain::active_post_object::receiptor_detail,
 
 FC_REFLECT_DERIVED( graphene::chain::active_post_object,
 										(graphene::db::object),
-                                        (platform)(poster)(post_pid)(scores)(total_csaf)(total_rewards)(period_sequence)
+                    (platform)(poster)(post_pid)(total_csaf)(total_rewards)(period_sequence)
                     (positive_win)(post_award)(forward_award)(receiptor_details)
 									)
 

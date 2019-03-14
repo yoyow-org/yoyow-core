@@ -860,7 +860,6 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
             {
                 d.modify(*active_post, [&](active_post_object& s) {
                     s.total_csaf += op.csaf;
-                    s.scores.push_back(new_score_object.id);
                 });
             }
             else
@@ -877,7 +876,6 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
                         obj.post_pid = op.post_pid;
                         obj.total_csaf = op.csaf;
                         obj.period_sequence = dpo.current_active_post_sequence;
-                        obj.scores.push_back(new_score_object.id);
                     });
                 }
             }

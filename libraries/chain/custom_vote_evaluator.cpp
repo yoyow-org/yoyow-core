@@ -76,7 +76,7 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
       
       const auto& idx = d.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-      auto itr = idx.lower_bound(std::make_tuple(op.voter, op.custom_vote_id));
+      auto itr = idx.find(std::make_tuple(op.voter, op.custom_vote_id));
       FC_ASSERT(itr == idx.end(), "account ${uid} already cast a vote for custom vote ${vid}", ("uid", op.voter)("vid", op.custom_vote_id));
 
       for (const auto& index : op.vote_result)
