@@ -1523,25 +1523,6 @@ class wallet_api
                                         bool broadcast = false
                                         );
 
-      signed_transaction buy_advertising(string               account,
-                                         string               platform,
-                                         advertising_id_type  advertising_id,
-                                         uint32_t             start_time,
-                                         uint32_t             buy_number,
-                                         string               extra_data,
-                                         string               memo,
-                                         bool                 csaf_fee = true,
-                                         bool                 broadcast = false
-                                        );
-
-      signed_transaction confirm_advertising(string         platform,
-                                             advertising_id_type advertising_id,
-                                             object_id_type      advertising_order_id,
-                                             bool           comfirm,
-                                             bool           csaf_fee = true,
-                                             bool           broadcast = false
-                                             );
-
       post_object get_post( string platform_owner,
                             string poster_uid,
                             string post_pid );
@@ -1609,6 +1590,25 @@ class wallet_api
                                             optional<bool>             on_sell,
                                             bool csaf_fee = true,
                                             bool broadcast = false);
+
+      signed_transaction buy_advertising(string               account,
+                                         string               platform,
+                                         advertising_id_type  advertising_id,
+                                         uint32_t             start_time,
+                                         uint32_t             buy_number,
+                                         string               extra_data,
+                                         string               memo,
+                                         bool                 csaf_fee = true,
+                                         bool                 broadcast = false
+                                         );
+
+      signed_transaction confirm_advertising(string         platform,
+                                             advertising_id_type advertising_id,
+                                             object_id_type      advertising_order_id,
+                                             bool           comfirm,
+                                             bool           csaf_fee = true,
+                                             bool           broadcast = false
+                                             );
 
       signed_transaction ransom_advertising(string           platform,
                                             string           from_account,
