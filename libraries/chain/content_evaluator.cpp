@@ -504,7 +504,7 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
            FC_ASSERT(origin_post.forward_price.valid(),
                "post ${p} is not allowed to forward",
                ("p", op.origin_post_pid));
-           FC_ASSERT(origin_post.forward_price > 0,
+           FC_ASSERT(*(origin_post.forward_price) > 0,
                "post ${p} is not allowed to forward, forward price is 0. ",
                ("p", op.origin_post_pid));
 

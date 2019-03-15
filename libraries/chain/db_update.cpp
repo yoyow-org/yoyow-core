@@ -280,7 +280,7 @@ void database::clear_unnecessary_objects()
 
       while (custom_vote_itr != custom_vote_end) {
          const auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_id>();
-         auto& cast_vote_itr = cast_vote_idx.lower_bound(custom_vote_itr->id);
+         auto cast_vote_itr = cast_vote_idx.lower_bound(custom_vote_itr->id);
 
          while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->custom_vote_id == custom_vote_itr->id) {
             auto del = cast_vote_itr;
