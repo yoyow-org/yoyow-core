@@ -1230,13 +1230,13 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       const auto& user4 = db.get_account_statistics_by_uid(u_4000_id);
       BOOST_CHECK(user4.core_balance == 8000 * prec);
 
-      confirm_advertising({ u_9000_private_key }, u_9000_id, advertising_id_type(obj.id), object_id_type(2, 19, 1), true);
+      confirm_advertising({ u_9000_private_key }, u_9000_id, advertising_id_type(obj.id), object_id_type(2, 19, 0), true);
 
       const auto& idx_ordered = db.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
       auto itr6 = idx_ordered.lower_bound(std::make_tuple(advertising_id_type(obj.id), true));
       const advertising_order_object adobj1 = *itr6;
       BOOST_CHECK(itr6 != idx_ordered.end());
-      BOOST_CHECK(itr6->user == u_2000_id);
+      BOOST_CHECK(itr6->user == u_1000_id);
       BOOST_CHECK(itr6->released_balance == 0);
       BOOST_CHECK(itr6->start_time == time_point_sec(1551752731));
 
