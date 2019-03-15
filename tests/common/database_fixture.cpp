@@ -1596,6 +1596,69 @@ void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_ke
     } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_id)(advertising_order_id))
 }
 
+
+void database_fixture::create_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type create_account,
+   string           title,
+   string           description,
+   time_point_sec   expired_time,
+   asset_aid_type   asset_id,
+   share_type       required_amount,
+   uint8_t          minimum_selected_items,
+   uint8_t          maximum_selected_items,
+   vector<string>   options)
+{
+   try {
+      custom_vote_create_operation create_op;
+      create_op.create_account = create_account;
+      create_op.title = title;
+      create_op.description = description;
+      create_op.vote_expired_time = expired_time;
+      create_op.vote_asset_id = asset_id;
+      create_op.required_asset_amount = required_amount;
+      create_op.minimum_selected_items = minimum_selected_items;
+      create_op.maximum_selected_items = maximum_selected_items;
+      create_op.options = options;
+
+      signed_transaction tx;
+      tx.operations.push_back(create_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((create_account)(title)(description)(expired_time)(asset_id)
+      (required_amount)(minimum_selected_items)(maximum_selected_items)(options))
+}
+
+void database_fixture::cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type      voter,
+   custom_vote_id_type   custom_vote_id,
+   set<uint8_t>          vote_result)
+{
+   try {
+      custom_vote_cast_operation vote_op;
+      vote_op.voter = voter;
+      vote_op.custom_vote_id = custom_vote_id;
+      vote_op.vote_result = vote_result;
+
+      signed_transaction tx;
+      tx.operations.push_back(vote_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_id)(vote_result))
+}
+
+
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
    database_fixture::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)
 {

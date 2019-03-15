@@ -449,6 +449,22 @@ struct database_fixture {
                            object_id_type                 advertising_id,
                            object_id_type                 advertising_order_id);
 
+   void database_fixture::create_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type create_account,
+      string           title,
+      string           description,
+      time_point_sec   expired_time,
+      asset_aid_type   asset_id,
+      share_type       required_amount,
+      uint8_t          minimum_selected_items,
+      uint8_t          maximum_selected_items,
+      vector<string>   options);
+
+   void database_fixture::cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type      voter,
+      custom_vote_id_type   custom_vote_id,
+      set<uint8_t>          vote_result);
+
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);
 };

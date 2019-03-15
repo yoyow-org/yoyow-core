@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
 
       committee_update_global_content_parameter_item_type item;
       item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1, 100,
-      3000, 30000, 62000000, 4000, 2000, 8000, 9000, 11000};
+      3000, 30000, 62000000, 4000, 2000, 8000, 9000, 11000, 20, 2000000, 3640000};
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
       for (int i = 1; i < 5; ++i)
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
@@ -96,6 +96,10 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
       BOOST_REQUIRE_EQUAL(gap.approval_casf_second_rate, 8000);
       BOOST_REQUIRE_EQUAL(gap.receiptor_award_modulus,   9000);
       BOOST_REQUIRE_EQUAL(gap.disapprove_award_modulus,  11000);
+
+      BOOST_REQUIRE_EQUAL(gap.advertising_confirmed_fee_rate, 20);
+      BOOST_REQUIRE_EQUAL(gap.advertising_confirmed_min_fee,  2000000);
+      BOOST_REQUIRE_EQUAL(gap.custom_vote_effective_time,     3640000);
 
    }
    catch (const fc::exception& e)
@@ -230,14 +234,6 @@ BOOST_AUTO_TEST_CASE(score_test)
          auto score_obj = db.get_score(u_9000_id, u_1001_id, 1, a.first);
          BOOST_CHECK(score_obj.score == 5);
          BOOST_CHECK(score_obj.csaf == 10);
-         bool found = false;
-         for (auto score : active_post.scores)
-            if (score == score_obj.id)
-            {
-               found = true;
-               break;
-            }
-         BOOST_CHECK(found == true);
       }        
    }
    catch (fc::exception& e) {
