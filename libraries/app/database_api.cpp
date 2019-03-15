@@ -927,7 +927,7 @@ vector<account_auth_platform_object> database_api_impl::list_account_auth_platfo
                                                                                                const account_uid_type lower_bound_account,
                                                                                                const uint32_t limit)const
 {
-    FC_ASSERT(limit <= 1001);
+    FC_ASSERT(limit <= 100);
     vector<account_auth_platform_object> objs;
     const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_platform_account>();
     auto itr = idx.lower_bound(std::make_tuple(platform, lower_bound_account));
@@ -952,7 +952,7 @@ vector<account_auth_platform_object> database_api_impl::list_account_auth_platfo
                                                                                               const account_uid_type lower_bound_platform,
                                                                                               const uint32_t limit)const
 {
-    FC_ASSERT(limit <= 1001);
+    FC_ASSERT(limit <= 100);
     vector<account_auth_platform_object> objs;
     const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_account_platform>();
     auto itr = idx.lower_bound(std::make_tuple(account, lower_bound_platform));
