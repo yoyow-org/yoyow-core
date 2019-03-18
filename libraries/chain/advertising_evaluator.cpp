@@ -138,6 +138,7 @@ asset advertising_buy_evaluator::do_apply(const operation_type& op)
       {
           obj.advertising_order_oid = op.advertising_order_oid;
          obj.advertising_aid = advertising_obj->advertising_aid;
+         obj.platform = op.platform;
          obj.user = op.from_account;
          obj.start_time = op.start_time;
          obj.end_time = op.start_time + advertising_obj->unit_time * op.buy_number;
