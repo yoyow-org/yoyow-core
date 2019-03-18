@@ -98,7 +98,7 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
          "advertising ${tid} on platform ${platform} is invalid.",("tid", op.advertising_aid)("platform", op.platform));
       FC_ASSERT(advertising_obj->on_sell, "advertising ${id} on platform ${platform} not on sell", ("id", op.advertising_aid)("platform", op.platform));
       FC_ASSERT(op.start_time >= d.head_block_time(), "start time should be later");
-
+      FC_ASSERT((advertising_obj->last_order_sequence + 1) == op.advertising_order_oid, "advertising_order_oid ${pid} is invalid.", ("pid", op.advertising_order_oid));
       
       const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_confirmed>();
       auto itr = idx.lower_bound(std::make_tuple(op.platform, op.advertising_aid, true));
@@ -131,9 +131,12 @@ asset advertising_buy_evaluator::do_apply(const operation_type& op)
 {
    try {
       database& d = db();
-
+      d.modify(*advertising_obj, [&](advertising_object& s) {
+          s.last_order_sequence += 1;
+      });
       const auto& advertising_order_obj = d.create<advertising_order_object>([&](advertising_order_object& obj)
       {
+          obj.advertising_order_oid = op.advertising_order_oid;
          obj.advertising_aid = advertising_obj->advertising_aid;
          obj.user = op.from_account;
          obj.start_time = op.start_time;

@@ -2623,11 +2623,17 @@ signed_transaction account_cancel_auth_platform(string account,
    {
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
+         account_uid_type platform_uid = get_account_uid(platform);
+         account_uid_type account_uid = get_account_uid(account);
+         advertising_aid_type ad_aid = fc::to_uint64(fc::string(advertising_aid));
 
+         optional<advertising_object> ad_obj = _remote_db->get_advertising(platform_uid, ad_aid);
+         FC_ASSERT(ad_obj.valid(), "advertising_object doesn`t exsit. ");
          advertising_buy_operation buy_op;
-         buy_op.from_account = get_account_uid(account);
-         buy_op.platform = get_account_uid(platform);
-         buy_op.advertising_aid = fc::to_uint64(fc::string(advertising_aid));
+         buy_op.from_account = account_uid;
+         buy_op.platform = platform_uid;
+         buy_op.advertising_aid = ad_obj->last_order_sequence + 1;
+         buy_op.advertising_order_oid = ad_aid;
          buy_op.start_time = time_point_sec(start_time);
          buy_op.buy_number = buy_number;
          buy_op.extra_data = extra_data;

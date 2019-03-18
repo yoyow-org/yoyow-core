@@ -150,6 +150,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<license_object> list_licenses(const account_uid_type platform, const object_id_type lower_bound_license, const uint32_t limit)const;
 
       vector<advertising_object> list_advertisings(const account_uid_type platform, const advertising_aid_type lower_bound_advertising, const uint32_t limit)const;
+      optional<advertising_object> get_advertising(const account_uid_type platform, const advertising_aid_type advertising_aid)const;
 
       vector<advertising_order_object> list_advertising_orders_by_purchaser(const account_uid_type purchaser,
                                                                             const object_id_type lower_bound_advertising_order,
@@ -1310,6 +1311,20 @@ vector<advertising_object> database_api_impl::list_advertisings(const account_ui
        ++count;
     }
     return result;
+}
+
+optional<advertising_object> database_api::get_advertising(const account_uid_type platform, const advertising_aid_type advertising_aid)const
+{
+    return my->get_advertising(platform, advertising_aid);
+}
+
+optional<advertising_object> database_api_impl::get_advertising(const account_uid_type platform, const advertising_aid_type advertising_aid)const
+{
+    if (auto o = _db.find_advertising(platform, advertising_aid))
+    {
+        return *o;
+    }
+    return{};
 }
 
 vector<advertising_order_object> database_api::list_advertising_orders_by_purchaser(const account_uid_type purchaser, const object_id_type lower_bound_advertising_order, uint32_t limit)const
