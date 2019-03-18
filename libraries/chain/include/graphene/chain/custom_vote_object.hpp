@@ -29,6 +29,7 @@ namespace graphene { namespace chain {
      
    struct by_custom_vote_vid{};
    struct by_custom_voter{};
+   struct by_cast_custom_vote_id{};
 
    /**
    * @ingroup object_index
@@ -49,6 +50,12 @@ namespace graphene { namespace chain {
             member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::voter>,
             member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::custom_vote_creater>,
             member< cast_custom_vote_object, custom_vote_vid_type, &cast_custom_vote_object::custom_vote_vid >>
+         >,
+      ordered_unique< tag<by_cast_custom_vote_id>,
+         composite_key<
+            cast_custom_vote_object,
+            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::voter>,
+            member< object, object_id_type,  &object::id >>
          >
       >
    > cast_custom_vote_multi_index_type;

@@ -1638,8 +1638,14 @@ class wallet_api
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit);
       vector<custom_vote_object> lookup_custom_votes(string creater, object_id_type lower_bound_custom_vote, uint32_t limit);
 
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(object_id_type vote_id, object_id_type lower_bound_cast_custom_vote, uint32_t limit);
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(string voter, object_id_type lower_bound_cast_custom_vote, uint32_t limit);
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const string creater,
+                                                                   const custom_vote_vid_type vote_vid,
+                                                                   const object_id_type lower_bound_cast_custom_vote,
+                                                                   uint32_t limit);
+
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_voter(string voter, 
+                                                                      object_id_type lower_bound_cast_custom_vote, 
+                                                                      uint32_t limit);
 
 
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,

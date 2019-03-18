@@ -1439,14 +1439,14 @@ vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_vot
     FC_ASSERT(limit <= 100);
    vector<cast_custom_vote_object> result;
 
-  /* const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
+   const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_cast_custom_vote_id>();
    auto itr = idx.lower_bound(std::make_tuple(voter, lower_bound_cast_custom_vote));
 
    while (itr != idx.end() && limit-- && itr->voter == voter)
    {
       result.push_back(*itr);
       ++itr;
-   }*/
+   }
    return result;
 }
 

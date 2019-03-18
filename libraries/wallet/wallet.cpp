@@ -4480,9 +4480,13 @@ vector<custom_vote_object> wallet_api::lookup_custom_votes(string creater, objec
    return my->_remote_db->lookup_custom_votes(account, lower_bound_custom_vote, limit);
 }
 
-vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(object_id_type vote_id, object_id_type lower_bound_cast_custom_vote, uint32_t limit)
+vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(const string creater,
+                                                                         const custom_vote_vid_type vote_vid,
+                                                                         const object_id_type lower_bound_cast_custom_vote,
+                                                                         uint32_t limit)
 {
-    return my->_remote_db->list_cast_custom_votes_by_id(vote_id, lower_bound_cast_custom_vote, limit);
+   account_uid_type creater_account = my->get_account_uid(creater);
+   return my->_remote_db->list_cast_custom_votes_by_id(creater_account, vote_id, lower_bound_cast_custom_vote, limit);
 }
 
 vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_voter(string voter, object_id_type lower_bound_cast_custom_vote, uint32_t limit)
