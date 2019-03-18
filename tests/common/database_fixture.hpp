@@ -389,19 +389,19 @@ struct database_fixture {
                      share_type       csaf);
 
    void buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
-                        account_uid_type   account,
-                        account_uid_type   platform,
-                        advertising_id_type  advertising_id,
-                        time_point_sec       start_time,
-                        uint32_t             buy_number,
-                        string               extra_data,
-                        string               memo);
+                        account_uid_type      account,
+                        account_uid_type      platform,
+                        advertising_aid_type  advertising_aid,
+                        time_point_sec        start_time,
+                        uint32_t              buy_number,
+                        string                extra_data,
+                        string                memo);
 
    void confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
-                            account_uid_type    platform,
-                            advertising_id_type advertising_id,
-                            object_id_type      advertising_order_id,
-                            bool                comfirm);
+                            account_uid_type               platform,
+                            advertising_aid_type           advertising_aid,
+                            advertising_order_oid_type     advertising_order_oid,
+                            bool                           comfirm);
 
 
    void account_manage(account_uid_type account, account_manage_operation::opt options);
@@ -437,7 +437,7 @@ struct database_fixture {
 
    void update_advertising(flat_set<fc::ecc::private_key> sign_keys,
                            account_uid_type               platform,
-                           object_id_type                 advertising_tid,
+                           advertising_aid_type           advertising_aid,
                            optional<string>               description,
                            optional<share_type>           unit_price,
                            optional<uint32_t>             unit_time,
@@ -446,8 +446,8 @@ struct database_fixture {
    void ransom_advertising(flat_set<fc::ecc::private_key> sign_keys,
                            account_uid_type               platform,
                            account_uid_type               from_account,
-                           object_id_type                 advertising_id,
-                           object_id_type                 advertising_order_id);
+                           advertising_aid_type           advertising_aoid,
+                           advertising_order_oid_type     advertising_order_oid);
 
    void database_fixture::create_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type create_account,

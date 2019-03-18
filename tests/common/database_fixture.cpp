@@ -1359,7 +1359,7 @@ void database_fixture::score_a_post(flat_set<fc::ecc::private_key> sign_keys,
 void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
    account_uid_type     account,
    account_uid_type     platform,
-   advertising_id_type  advertising_id,
+   advertising_aid_type advertising_aid,
    time_point_sec       start_time,
    uint32_t             buy_number,
    string               extra_data,
@@ -1369,7 +1369,7 @@ void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
       advertising_buy_operation buy_op;
       buy_op.from_account = account;
       buy_op.platform = platform;
-      buy_op.advertising_id = advertising_id;
+      buy_op.advertising_aid = advertising_aid;
       buy_op.buy_number = buy_number;
       buy_op.extra_data = extra_data;
       buy_op.start_time = start_time;
@@ -1385,20 +1385,20 @@ void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
 
       db.push_transaction(tx);
 
-   } FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform)(advertising_id)(start_time)(buy_number)(extra_data)(memo))
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform)(advertising_aid)(start_time)(buy_number)(extra_data)(memo))
 }
 
 void database_fixture::confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
-   account_uid_type    platform,
-   advertising_id_type advertising_id,
-   object_id_type      advertising_order_id,
-   bool                comfirm)
+   account_uid_type            platform,
+   advertising_aid_type        advertising_aid,
+   advertising_order_oid_type  advertising_order_oid,
+   bool                        comfirm)
 {
    try {
       advertising_confirm_operation confirm_op;
       confirm_op.platform = platform;
-      confirm_op.advertising_id = advertising_id;
-      confirm_op.advertising_order_id = advertising_order_id;
+      confirm_op.advertising_aid = advertising_aid;
+      confirm_op.advertising_order_oid = advertising_order_oid;
       confirm_op.iscomfirm = comfirm;
 
       signed_transaction tx;
@@ -1412,7 +1412,7 @@ void database_fixture::confirm_advertising(flat_set<fc::ecc::private_key> sign_k
 
       db.push_transaction(tx);
 
-   } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_id)(advertising_order_id)(comfirm))
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_aid)(advertising_order_oid)(comfirm))
 }
 
 void database_fixture::account_manage(account_uid_type account, account_manage_operation::opt options)
@@ -1517,8 +1517,11 @@ void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_ke
                                           uint32_t                       unit_time)                                      
 {
     try {
+        const platform_object& platform_obj = db.get_platform_by_owner(platform);
+
         advertising_create_operation create_op;
         create_op.platform = platform;
+        create_op.advertising_aid = platform_obj.last_advertising_sequence + 1;
         create_op.description = description;
         create_op.unit_price = unit_price;
         create_op.unit_time = unit_time;
@@ -1538,7 +1541,7 @@ void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_ke
 
 void database_fixture::update_advertising(flat_set<fc::ecc::private_key> sign_keys,
                                           account_uid_type               platform,
-                                          object_id_type                 advertising_id,
+                                          advertising_aid_type           advertising_aid,
                                           optional<string>               description,
                                           optional<share_type>           unit_price,
                                           optional<uint32_t>             unit_time,
@@ -1547,7 +1550,7 @@ void database_fixture::update_advertising(flat_set<fc::ecc::private_key> sign_ke
     try {
         advertising_update_operation update_op;
         update_op.platform = platform;
-        update_op.advertising_id = advertising_id;
+        update_op.advertising_aid = advertising_aid;
         if (description.valid())
             update_op.description = *description;
         if (unit_price.valid())
@@ -1567,21 +1570,21 @@ void database_fixture::update_advertising(flat_set<fc::ecc::private_key> sign_ke
             sign(tx, key);
 
         db.push_transaction(tx);
-    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_id)(description)(unit_price)(unit_time)(on_sell))
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_aid)(description)(unit_price)(unit_time)(on_sell))
 }
 
 void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_keys,
                                           account_uid_type               platform,
                                           account_uid_type               from_account,
-                                          object_id_type                 advertising_id,
-                                          object_id_type                 advertising_order_id)
+                                          advertising_aid_type           advertising_aid,
+                                          advertising_order_oid_type     advertising_order_oid)
 {
     try {
         advertising_ransom_operation ransom_op;
         ransom_op.platform = platform;
         ransom_op.from_account = from_account;
-        ransom_op.advertising_id = advertising_id;
-        ransom_op.advertising_order_id = advertising_order_id;
+        ransom_op.advertising_aid = advertising_aid;
+        ransom_op.advertising_order_oid = advertising_order_oid;
 
         signed_transaction tx;
         tx.operations.push_back(ransom_op);
@@ -1593,7 +1596,7 @@ void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_ke
             sign(tx, key);
 
         db.push_transaction(tx);
-    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_id)(advertising_order_id))
+    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_aid)(advertising_order_oid))
 }
 
 

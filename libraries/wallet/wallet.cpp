@@ -2612,7 +2612,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
    signed_transaction buy_advertising(string               account,
                                       string               platform,
-                                      advertising_id_type  advertising_id,
+                                      string               advertising_aid,
                                       uint32_t             start_time,
                                       uint32_t             buy_number,
                                       string               extra_data,
@@ -2627,7 +2627,7 @@ signed_transaction account_cancel_auth_platform(string account,
          advertising_buy_operation buy_op;
          buy_op.from_account = get_account_uid(account);
          buy_op.platform = get_account_uid(platform);
-         buy_op.advertising_id = advertising_id;
+         buy_op.advertising_aid = fc::to_uint64(fc::string(advertising_aid));
          buy_op.start_time = time_point_sec(start_time);
          buy_op.buy_number = buy_number;
          buy_op.extra_data = extra_data;
@@ -2649,12 +2649,12 @@ signed_transaction account_cancel_auth_platform(string account,
 
          return sign_transaction(tx, broadcast);
 
-      } FC_CAPTURE_AND_RETHROW((account)(platform)(advertising_id)(start_time)(buy_number)(extra_data)(memo)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((account)(platform)(advertising_aid)(start_time)(buy_number)(extra_data)(memo)(csaf_fee)(broadcast))
    }
 
    signed_transaction confirm_advertising(string              platform,
-                                          advertising_id_type advertising_id,
-                                          object_id_type      advertising_order_id,
+                                          string              advertising_aid,
+                                          string              advertising_order_oid,
                                           bool                comfirm,
                                           bool                csaf_fee = true,
                                           bool                broadcast = false
@@ -2665,8 +2665,8 @@ signed_transaction account_cancel_auth_platform(string account,
 
          advertising_confirm_operation confirm_op;
          confirm_op.platform = get_account_uid(platform);
-         confirm_op.advertising_id = advertising_id;
-         confirm_op.advertising_order_id = advertising_order_id_type(advertising_order_id);
+         confirm_op.advertising_aid = fc::to_uint64(fc::string(advertising_aid));
+         confirm_op.advertising_order_oid = fc::to_uint64(fc::string(advertising_order_oid));
          confirm_op.iscomfirm = comfirm;
 
          signed_transaction tx;
@@ -2676,7 +2676,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          return sign_transaction(tx, broadcast);
 
-      } FC_CAPTURE_AND_RETHROW((platform)(advertising_id)(advertising_order_id)(comfirm)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((platform)(advertising_aid)(advertising_order_oid)(comfirm)(csaf_fee)(broadcast))
    }
 
    post_object get_post(string platform_owner,
@@ -2846,9 +2846,12 @@ signed_transaction account_cancel_auth_platform(string account,
            FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
            account_uid_type platform_uid = get_account_uid(platform);
+           fc::optional<platform_object> platform_obj = _remote_db->get_platform_by_account(platform_uid);
+           FC_ASSERT(platform_obj.valid(), "platform doesn`t exsit. ");
            const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
            advertising_create_operation create_op;
            create_op.platform = platform_uid;
+           create_op.advertising_aid = platform_obj->last_advertising_sequence + 1;
            create_op.description = description;
            create_op.unit_price = asset_obj->amount_from_string(unit_price).amount;
            create_op.unit_time = unit_time;
@@ -2863,7 +2866,7 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction update_advertising(string                     platform,
-                                         object_id_type             advertising_id,
+                                         string                     advertising_aid,
                                          optional<string>           description,
                                          optional<string>           unit_price,
                                          optional<uint32_t>         unit_time,
@@ -2879,7 +2882,7 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type platform_uid = get_account_uid(platform);
            advertising_update_operation update_op;
            update_op.platform = platform_uid;
-           update_op.advertising_id = advertising_id;
+           update_op.advertising_aid = fc::to_uint64(fc::string(advertising_aid));
            if (description.valid())
                update_op.description = *description;
            if (unit_price.valid())
@@ -2895,13 +2898,13 @@ signed_transaction account_cancel_auth_platform(string account,
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(advertising_id)(description)(unit_price)(unit_time)(on_sell)(csaf_fee)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(advertising_aid)(description)(unit_price)(unit_time)(on_sell)(csaf_fee)(broadcast))
    }
 
    signed_transaction ransom_advertising(string           platform,
                                          string           from_account,
-                                         object_id_type   advertising_id,
-                                         object_id_type   advertising_order_id,
+                                         string           advertising_aid,
+                                         string           advertising_order_oid,
                                          bool             csaf_fee,
                                          bool             broadcast)
    {
@@ -2913,8 +2916,8 @@ signed_transaction account_cancel_auth_platform(string account,
            advertising_ransom_operation ransom_op;
            ransom_op.platform = platform_uid;
            ransom_op.from_account = from_account_uid;
-           ransom_op.advertising_id = advertising_id;
-           ransom_op.advertising_order_id = object_id_type(advertising_order_id);
+           ransom_op.advertising_aid = fc::to_uint64(fc::string(advertising_aid));
+           ransom_op.advertising_order_oid = fc::to_uint64(fc::string(advertising_order_oid));
 
            signed_transaction tx;
            tx.operations.push_back(ransom_op);
@@ -2922,7 +2925,7 @@ signed_transaction account_cancel_auth_platform(string account,
            tx.validate();
 
            return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_id)(advertising_order_id)(csaf_fee)(broadcast))
+       } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_aid)(advertising_order_oid)(csaf_fee)(broadcast))
    }
 
    signed_transaction create_custom_vote(string           create_account,
@@ -4285,7 +4288,7 @@ signed_transaction wallet_api::account_manage(string executor,
 
 signed_transaction wallet_api::buy_advertising(string               account,
                                                string               platform,
-                                               advertising_id_type  advertising_id,
+                                               string               advertising_aid,
                                                uint32_t             start_time,
                                                uint32_t             buy_number,
                                                string               extra_data,
@@ -4293,17 +4296,17 @@ signed_transaction wallet_api::buy_advertising(string               account,
                                                bool                 csaf_fee,
                                                bool                 broadcast)
 {
-    return my->buy_advertising(account, platform, advertising_id, start_time, buy_number, extra_data, memo, csaf_fee, broadcast);
+    return my->buy_advertising(account, platform, advertising_aid, start_time, buy_number, extra_data, memo, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::confirm_advertising(string         platform,
-                                                   advertising_id_type advertising_id,
-                                                   object_id_type      advertising_order_id,
+                                                   string         advertising_aid,
+                                                   string         advertising_order_oid,
                                                    bool           comfirm,
                                                    bool           csaf_fee,
                                                    bool           broadcast)
 {
-    return my->confirm_advertising(platform, advertising_id, advertising_order_id, comfirm, csaf_fee, broadcast);
+    return my->confirm_advertising(platform, advertising_aid, advertising_order_oid, comfirm, csaf_fee, broadcast);
 }
 
 post_object wallet_api::get_post(string platform_owner,
@@ -4405,7 +4408,7 @@ signed_transaction wallet_api::create_advertising(string           platform,
 }
 
 signed_transaction wallet_api::update_advertising(string                     platform,
-                                                  object_id_type             advertising_id,
+                                                  string                     advertising_aid,
                                                   optional<string>           description,
                                                   optional<string>           unit_price,
                                                   optional<uint32_t>         unit_time,
@@ -4413,17 +4416,17 @@ signed_transaction wallet_api::update_advertising(string                     pla
                                                   bool                       csaf_fee,
                                                   bool                       broadcast)
 {
-    return my->update_advertising(platform, advertising_id, description, unit_price, unit_time, on_sell, csaf_fee, broadcast);
+    return my->update_advertising(platform, advertising_aid, description, unit_price, unit_time, on_sell, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::ransom_advertising(string           platform,
                                                   string           from_account,
-                                                  object_id_type   advertising_id,
-                                                  object_id_type   advertising_order_id,
+                                                  string           advertising_aid,
+                                                  string           advertising_order_oid,
                                                   bool             csaf_fee,
                                                   bool             broadcast)
 {
-    return my->ransom_advertising(platform, from_account, advertising_id, advertising_order_id, csaf_fee, broadcast);
+    return my->ransom_advertising(platform, from_account, advertising_aid, advertising_order_oid, csaf_fee, broadcast);
 }
 
 vector<advertising_order_object> wallet_api::list_advertising_orders_by_purchaser(string purchaser, object_id_type lower_bound_advertising_order, uint32_t limit)
@@ -4437,7 +4440,7 @@ vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_aid(
     account_uid_type platform_uid = my->get_account_uid(platform);
     advertising_aid_type ad_aid = fc::to_uint64(fc::string(advertising_aid));
     advertising_order_oid_type lower_order_oid = fc::to_uint64(fc::string(lower_bound_advertising_order));
-    return my->_remote_db->list_advertising_orders_by_ads_aid(platform, ad_aid, lower_order_oid, limit);
+    return my->_remote_db->list_advertising_orders_by_ads_aid(platform_uid, ad_aid, lower_order_oid, limit);
 }
 
 signed_transaction wallet_api::create_custom_vote(string           create_account,

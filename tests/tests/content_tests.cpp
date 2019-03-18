@@ -1177,10 +1177,10 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       BOOST_CHECK(obj.unit_time == 100000);
       BOOST_CHECK(obj.unit_price.value == 100000000);
 
-      buy_advertising({ u_1000_private_key }, u_1000_id, u_9000_id, advertising_id_type(obj.id), time_point_sec(1551752731), 2, "u_1000", "");
-      buy_advertising({ u_2000_private_key }, u_2000_id, u_9000_id, advertising_id_type(obj.id), time_point_sec(1551752731), 2, "u_2000", "");
-      buy_advertising({ u_3000_private_key }, u_3000_id, u_9000_id, advertising_id_type(obj.id), time_point_sec(1551752731), 2, "u_3000", "");
-      buy_advertising({ u_4000_private_key }, u_4000_id, u_9000_id, advertising_id_type(obj.id), time_point_sec(1677911410), 2, "u_4000", "");
+      buy_advertising({ u_1000_private_key }, u_1000_id, u_9000_id, 1, time_point_sec(1551752731), 2, "u_1000", "");
+      buy_advertising({ u_2000_private_key }, u_2000_id, u_9000_id, 1, time_point_sec(1551752731), 2, "u_2000", "");
+      buy_advertising({ u_3000_private_key }, u_3000_id, u_9000_id, 1, time_point_sec(1551752731), 2, "u_3000", "");
+      buy_advertising({ u_4000_private_key }, u_4000_id, u_9000_id, 1, time_point_sec(1677911410), 2, "u_4000", "");
       
       const auto& idx_order = db.get_index_type<advertising_order_index>().indices().get<by_advertising_user>();
       auto itr1 = idx_order.lower_bound(u_1000_id);
@@ -1230,10 +1230,10 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       const auto& user4 = db.get_account_statistics_by_uid(u_4000_id);
       BOOST_CHECK(user4.core_balance == 8000 * prec);
 
-      confirm_advertising({ u_9000_private_key }, u_9000_id, advertising_id_type(obj.id), object_id_type(2, 19, 0), true);
+      confirm_advertising({ u_9000_private_key }, u_9000_id, obj.advertising_aid, 1, true);
 
-      const auto& idx_ordered = db.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
-      auto itr6 = idx_ordered.lower_bound(std::make_tuple(advertising_id_type(obj.id), true));
+      const auto& idx_ordered = db.get_index_type<advertising_order_index>().indices().get<by_advertising_confirmed>();
+      auto itr6 = idx_ordered.lower_bound(std::make_tuple(u_9000_id, obj.advertising_aid, true));
       const advertising_order_object adobj1 = *itr6;
       BOOST_CHECK(itr6 != idx_ordered.end());
       BOOST_CHECK(itr6->user == u_1000_id);
@@ -1244,11 +1244,11 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       //BOOST_CHECK(obj.effective_orders.at(time_point_sec(1551752731)).user == u_1000_id);
       //BOOST_CHECK(obj.effective_orders.at(time_point_sec(1551752731)).released_balance == 0);
 
-      auto itr7 = idx_ordered.lower_bound(std::make_tuple(advertising_id_type(obj.id), false));
+      auto itr7 = idx_ordered.lower_bound(std::make_tuple(u_9000_id, obj.advertising_aid, false));
       BOOST_CHECK(itr7 != idx_ordered.end());
       BOOST_CHECK(itr7->user == u_4000_id);
 
-      confirm_advertising({ u_9000_private_key }, u_9000_id, advertising_id_type(obj.id), object_id_type(2, 19, 3), false);
+      confirm_advertising({ u_9000_private_key }, u_9000_id, obj.advertising_aid, 4, false);
 
       const auto& idx_ordered2 = db.get_index_type<advertising_order_index>().indices().get<by_advertising_user>();
       auto itr8 = idx_ordered2.lower_bound(std::make_tuple(u_4000_id, true));
@@ -1262,7 +1262,7 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       const auto& platform = db.get_account_statistics_by_uid(u_9000_id);
       BOOST_CHECK(platform.core_balance == (12000 - 20) * prec);
 
-      update_advertising({ u_9000_private_key }, u_9000_id, advertising_id_type(obj.id), "this is advertising test", share_type(200000000), 100000, optional<bool>());
+      update_advertising({ u_9000_private_key }, u_9000_id, obj.advertising_aid, "this is advertising test", share_type(200000000), 100000, optional<bool>());
 
 
       BOOST_CHECK(obj.description == "this is advertising test");

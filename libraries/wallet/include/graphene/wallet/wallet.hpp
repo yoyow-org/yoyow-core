@@ -1583,7 +1583,7 @@ class wallet_api
                                             bool broadcast = false);
 
       signed_transaction update_advertising(string                     platform,
-                                            object_id_type             advertising_id,
+                                            string                     advertising_aid,
                                             optional<string>           description,
                                             optional<string>           unit_price,
                                             optional<uint32_t>         unit_time,
@@ -1593,7 +1593,7 @@ class wallet_api
 
       signed_transaction buy_advertising(string               account,
                                          string               platform,
-                                         advertising_id_type  advertising_id,
+                                         string               advertising_aid,
                                          uint32_t             start_time,
                                          uint32_t             buy_number,
                                          string               extra_data,
@@ -1603,8 +1603,8 @@ class wallet_api
                                          );
 
       signed_transaction confirm_advertising(string         platform,
-                                             advertising_id_type advertising_id,
-                                             object_id_type      advertising_order_id,
+                                             string         advertising_aid,
+                                             string         advertising_order_oid,
                                              bool           comfirm,
                                              bool           csaf_fee = true,
                                              bool           broadcast = false
@@ -1612,8 +1612,8 @@ class wallet_api
 
       signed_transaction ransom_advertising(string           platform,
                                             string           from_account,
-                                            object_id_type   advertising_id,
-                                            object_id_type   advertising_order_id,
+                                            string           advertising_aid,
+                                            string           advertising_order_oid,
                                             bool csaf_fee = true,
                                             bool broadcast = false);
 
@@ -1868,7 +1868,7 @@ FC_API( graphene::wallet::wallet_api,
         (confirm_advertising)
         (ransom_advertising)
         (list_advertising_orders_by_purchaser)
-        (list_advertising_orders_by_ads_id)
+        (list_advertising_orders_by_ads_aid)
         (create_custom_vote)
         (cast_custom_vote)
         (list_custom_votes)

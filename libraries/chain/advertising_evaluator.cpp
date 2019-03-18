@@ -18,8 +18,9 @@ void_result advertising_create_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create advertising after HARDFORK_0_4_TIME");
-        auto platform_obj = d.get_platform_by_owner(op.platform); // make sure pid exists
-        FC_ASSERT((platform_obj.last_advertising_sequence + 1) == op.advertising_aid,"advertising_aid ${pid} is invalid.",("pid", op.advertising_aid));
+        platform_obj = d.find_platform_by_owner(op.platform); // make sure pid exists
+        FC_ASSERT(platform_obj != nullptr, "platform doesn`t exsit. ");
+        FC_ASSERT((platform_obj->last_advertising_sequence + 1) == op.advertising_aid,"advertising_aid ${pid} is invalid.",("pid", op.advertising_aid));
         return void_result();
     }FC_CAPTURE_AND_RETHROW((op))
 }
@@ -28,6 +29,9 @@ object_id_type advertising_create_evaluator::do_apply(const operation_type& op)
 {
     try {
         database& d = db();
+        d.modify(*platform_obj, [&](platform_object& s) {
+            s.last_advertising_sequence += 1;
+        });
         const auto& advertising_obj = d.create<advertising_object>([&](advertising_object& obj)
         {
             obj.advertising_aid = op.advertising_aid;
