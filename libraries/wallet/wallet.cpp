@@ -2929,6 +2929,7 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction create_custom_vote(string           create_account,
+                                         custom_vote_vid_type  custom_vote_vid,
                                          string           title,
                                          string           description,
                                          time_point_sec   expired_time,
@@ -2945,7 +2946,8 @@ signed_transaction account_cancel_auth_platform(string account,
 
          account_uid_type creater = get_account_uid(create_account);
          custom_vote_create_operation create_op;
-         create_op.create_account = creater;
+         create_op.custom_vote_creater = creater;
+         create_op.vote_vid = custom_vote_vid;
          create_op.title = title;
          create_op.description = description;
          create_op.vote_expired_time = expired_time;
@@ -2965,9 +2967,10 @@ signed_transaction account_cancel_auth_platform(string account,
          (required_amount)(minimum_selected_items)(maximum_selected_items)(options)(csaf_fee)(broadcast))
    }
 
-   signed_transaction cast_custom_vote(string      voter,
-                                       custom_vote_id_type   custom_vote_id,
-                                       set<uint8_t>       vote_result,
+   signed_transaction cast_custom_vote(string                voter,
+                                       string                custom_vote_creater,
+                                       custom_vote_vid_type  custom_vote_vid,
+                                       set<uint8_t>          vote_result,
                                        bool csaf_fee,
                                        bool broadcast)
    {
@@ -2975,9 +2978,11 @@ signed_transaction account_cancel_auth_platform(string account,
          FC_ASSERT(!self.is_locked(), "Should unlock first");
 
          account_uid_type cast_voter = get_account_uid(voter);
+         account_uid_type creater = get_account_uid(custom_vote_creater);
          custom_vote_cast_operation vote_op;
          vote_op.voter = cast_voter;
-         vote_op.custom_vote_id = custom_vote_id;
+         vote_op.custom_vote_creater = creater;
+         vote_op.custom_vote_vid = custom_vote_vid;
          vote_op.vote_result = vote_result;
 
          signed_transaction tx;
@@ -2986,7 +2991,7 @@ signed_transaction account_cancel_auth_platform(string account,
          tx.validate();
 
          return sign_transaction(tx, broadcast);
-      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_id)(vote_result)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
    }
 
    vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
@@ -4444,6 +4449,7 @@ vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_aid(
 }
 
 signed_transaction wallet_api::create_custom_vote(string           create_account,
+                                                  custom_vote_vid_type  custom_vote_vid,
                                                   string           title,
                                                   string           description,
                                                   uint32_t         expired_time,
@@ -4456,17 +4462,18 @@ signed_transaction wallet_api::create_custom_vote(string           create_accoun
                                                   bool broadcast)
 {
    time_point_sec time = time_point_sec(expired_time);
-   return my->create_custom_vote(create_account, title, description, time, asset_id,
+   return my->create_custom_vote(create_account, custom_vote_vid, title, description, time, asset_id,
       required_amount, minimum_selected_items, maximum_selected_items, options, csaf_fee, broadcast);
 }
 
-signed_transaction wallet_api::cast_custom_vote(string      voter,
-                                                custom_vote_id_type   custom_vote_id,
+signed_transaction wallet_api::cast_custom_vote(string                voter,
+                                                string                custom_vote_creater,
+                                                custom_vote_vid_type  custom_vote_vid,
                                                 set<uint8_t>          vote_result,
                                                 bool csaf_fee,
                                                 bool broadcast)
 {
-   return my->cast_custom_vote(voter, custom_vote_id, vote_result, csaf_fee, broadcast);
+   return my->cast_custom_vote(voter, custom_vote_creater, custom_vote_vid, vote_result, csaf_fee, broadcast);
 }
 
 vector<custom_vote_object> wallet_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)
@@ -4474,7 +4481,7 @@ vector<custom_vote_object> wallet_api::list_custom_votes(const account_uid_type 
     return my->_remote_db->list_custom_votes(lowerbound, limit);
 }
 
-vector<custom_vote_object> wallet_api::lookup_custom_votes(string creater, object_id_type lower_bound_custom_vote, uint32_t limit)
+vector<custom_vote_object> wallet_api::lookup_custom_votes(string creater, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)
 {
    account_uid_type account = my->get_account_uid(creater);
    return my->_remote_db->lookup_custom_votes(account, lower_bound_custom_vote, limit);
@@ -4486,7 +4493,7 @@ vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(const s
                                                                          uint32_t limit)
 {
    account_uid_type creater_account = my->get_account_uid(creater);
-   return my->_remote_db->list_cast_custom_votes_by_id(creater_account, vote_id, lower_bound_cast_custom_vote, limit);
+   return my->_remote_db->list_cast_custom_votes_by_id(creater_account, vote_vid, lower_bound_cast_custom_vote, limit);
 }
 
 vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_voter(string voter, object_id_type lower_bound_cast_custom_vote, uint32_t limit)

@@ -1618,6 +1618,7 @@ class wallet_api
                                             bool broadcast = false);
 
       signed_transaction create_custom_vote(string           create_account,
+                                            custom_vote_vid_type  custom_vote_vid,
                                             string           title,
                                             string           description,
                                             uint32_t         expired_time,
@@ -1630,13 +1631,14 @@ class wallet_api
                                             bool broadcast = false);
 
       signed_transaction cast_custom_vote(string                voter,
-                                          custom_vote_id_type   custom_vote_id,
+                                          string                custom_vote_creater,
+                                          custom_vote_vid_type  custom_vote_vid,
                                           set<uint8_t>          vote_result,
                                           bool csaf_fee = true,
                                           bool broadcast = false);
 
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit);
-      vector<custom_vote_object> lookup_custom_votes(string creater, object_id_type lower_bound_custom_vote, uint32_t limit);
+      vector<custom_vote_object> lookup_custom_votes(string creater, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit);
 
       vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const string creater,
                                                                    const custom_vote_vid_type vote_vid,
