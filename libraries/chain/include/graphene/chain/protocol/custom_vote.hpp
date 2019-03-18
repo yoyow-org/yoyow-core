@@ -18,9 +18,10 @@ struct custom_vote_create_operation : public base_operation
 
    fee_type                   fee;
 
-   account_uid_type           create_account;
+   account_uid_type           custom_vote_creater;
+   custom_vote_vid_type       vote_vid;
    string                     title;
-   string                     description;
+   string                     description;  
    time_point_sec             vote_expired_time;
    asset_aid_type             vote_asset_id;
    share_type                 required_asset_amount;
@@ -30,12 +31,12 @@ struct custom_vote_create_operation : public base_operation
    std::vector<string>        options;
    extensions_type            extensions;
 
-   account_uid_type fee_payer_uid()const { return create_account; }
+   account_uid_type fee_payer_uid()const { return custom_vote_creater; }
    void             validate()const;
    share_type       calculate_fee(const fee_parameters_type& k)const;
    void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
    {
-      a.insert(create_account);   
+      a.insert(custom_vote_creater);
    }
 };
 
@@ -52,7 +53,8 @@ struct custom_vote_cast_operation : public base_operation
    fee_type                     fee;
 
    account_uid_type             voter;
-   custom_vote_id_type          custom_vote_id;
+   account_uid_type             custom_vote_creater; 
+   custom_vote_vid_type         custom_vote_vid;
    std::set<uint8_t>            vote_result;
 
    extensions_type              extensions;
@@ -70,8 +72,8 @@ struct custom_vote_cast_operation : public base_operation
 
 
 FC_REFLECT( graphene::chain::custom_vote_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT( graphene::chain::custom_vote_create_operation, (fee)(create_account)(title)(description)(vote_expired_time)(vote_asset_id)
+FC_REFLECT( graphene::chain::custom_vote_create_operation, (fee)(custom_vote_creater)(vote_vid)(title)(description)(vote_expired_time)(vote_asset_id)
            (required_asset_amount)(minimum_selected_items)(maximum_selected_items)(options)(extensions))
 
 FC_REFLECT( graphene::chain::custom_vote_cast_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT( graphene::chain::custom_vote_cast_operation, (fee)(voter)(custom_vote_id)(vote_result)(extensions))
+FC_REFLECT( graphene::chain::custom_vote_cast_operation, (fee)(voter)(custom_vote_creater)(custom_vote_vid)(vote_result)(extensions))

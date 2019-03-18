@@ -22,11 +22,12 @@ namespace graphene { namespace chain {
       static const uint8_t type_id = impl_cast_custom_vote_object_type;
 
       account_uid_type           voter;
-      custom_vote_id_type        custom_vote_id;
+      account_uid_type           custom_vote_creater;
+      custom_vote_vid_type       custom_vote_vid;
       std::set<uint8_t>          vote_result;
    };
-
-   struct by_custom_vote_id{};
+     
+   struct by_custom_vote_vid{};
    struct by_custom_voter{};
 
    /**
@@ -35,17 +36,19 @@ namespace graphene { namespace chain {
    typedef multi_index_container<
       cast_custom_vote_object,
       indexed_by<
-      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-      ordered_non_unique< tag<by_custom_vote_id>,
+      ordered_unique< tag<by_id>, member< object, object_id_type,  &object::id > >,
+      ordered_non_unique< tag<by_custom_vote_vid>,
       composite_key<cast_custom_vote_object,
-            member< cast_custom_vote_object, custom_vote_id_type, &cast_custom_vote_object::custom_vote_id>,
-            member < object, object_id_type, &object::id > 
+            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::custom_vote_creater>,
+            member< cast_custom_vote_object, custom_vote_vid_type, &cast_custom_vote_object::custom_vote_vid >,
+            member< object, object_id_type,  &object::id > 
       >> ,
       ordered_unique< tag<by_custom_voter>,
          composite_key<
             cast_custom_vote_object,
-            member< cast_custom_vote_object, account_uid_type,    &cast_custom_vote_object::voter>,
-            member< cast_custom_vote_object, custom_vote_id_type, &cast_custom_vote_object::custom_vote_id >>
+            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::voter>,
+            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::custom_vote_creater>,
+            member< cast_custom_vote_object, custom_vote_vid_type, &cast_custom_vote_object::custom_vote_vid >>
          >
       >
    > cast_custom_vote_multi_index_type;
@@ -67,7 +70,8 @@ namespace graphene { namespace chain {
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id = impl_custom_vote_object_type;
 
-      account_uid_type           create_account;
+      account_uid_type           custom_vote_creater;
+      custom_vote_vid_type       vote_vid;
 
       string                     title;
       string                     description;
@@ -95,10 +99,10 @@ namespace graphene { namespace chain {
       ordered_unique< tag<by_creater>,
          composite_key<
             custom_vote_object,
-            member< custom_vote_object, account_uid_type, &custom_vote_object::create_account>,
-            member< object,             object_id_type,   &object::id > > >,
+            member< custom_vote_object, account_uid_type,     &custom_vote_object::custom_vote_creater>,
+            member< custom_vote_object, custom_vote_vid_type, &custom_vote_object::vote_vid > > >,
       ordered_non_unique< tag<by_expired_time>,
-         member< custom_vote_object, time_point_sec,   &custom_vote_object::vote_expired_time> >
+            member< custom_vote_object, time_point_sec,       &custom_vote_object::vote_expired_time> >
       >
    > custom_vote_multi_index_type;
 
@@ -110,9 +114,9 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::custom_vote_object,
                    (graphene::db::object),
-                   (create_account)(title)(description)(vote_expired_time)(vote_asset_id)(required_asset_amount)
+                   (custom_vote_creater)(title)(description)(vote_expired_time)(vote_asset_id)(required_asset_amount)
                    (minimum_selected_items)(maximum_selected_items)(options)(vote_result))
 
 FC_REFLECT_DERIVED( graphene::chain::cast_custom_vote_object,
                    (graphene::db::object),
-                   (voter)(custom_vote_id)(vote_result))
+                   (voter)(custom_vote_creater)(custom_vote_vid)(vote_result))

@@ -94,6 +94,7 @@ namespace graphene { namespace chain {
    typedef uint64_t                    committee_proposal_number_type;
    typedef uint64_t                    advertising_aid_type;
    typedef uint64_t                    advertising_order_oid_type;
+   typedef uint64_t                    custom_vote_vid_type;
 
    account_uid_type                    calc_account_uid( uint64_t id_without_checksum );
    bool                                is_valid_account_uid( const account_uid_type uid );

@@ -373,10 +373,13 @@ namespace graphene { namespace chain {
          const advertising_order_object*  find_advertising_order(account_uid_type platform, advertising_aid_type advertising_aid, advertising_order_oid_type order_oid)const;
          const advertising_order_object&  get_advertising_order(account_uid_type platform, advertising_aid_type advertising_aid, advertising_order_oid_type order_oid)const;
 
+         const custom_vote_object& get_custom_vote_by_vid(account_uid_type creater, custom_vote_vid_type vote_vid)const;
+         const custom_vote_object* find_custom_vote_by_vid(account_uid_type creater, custom_vote_vid_type vote_vid)const;
+
          //////////////////// db_init.cpp ////////////////////
 
          void initialize_evaluators();
-         /// Reset the object graph in-memory
+         /// Reset the object graph in-memory 
          void initialize_indexes();
          void init_genesis(const genesis_state_type& genesis_state = genesis_state_type());
 

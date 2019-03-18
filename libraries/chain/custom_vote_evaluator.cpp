@@ -18,7 +18,9 @@ void_result custom_vote_create_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create custom vote after HARDFORK_0_4_TIME");
 
-      d.get_account_by_uid(op.create_account);//check create account exist
+      d.get_account_by_uid(op.custom_vote_creater);//check create account exist
+      account_stats = &d.get_account_statistics_by_uid(op.custom_vote_creater);
+      FC_ASSERT((account_stats->last_custom_vote_sequence + 1) == op.vote_vid,"vote_vid ${vid} is invalid.",("vid", op.vote_vid)); 
 
       const auto& asset_indx = d.get_index_type<asset_index>().indices().get<by_aid>();
       auto asset_aid_itr = asset_indx.find(op.vote_asset_id);
@@ -40,7 +42,8 @@ object_id_type custom_vote_create_evaluator::do_apply(const operation_type& op)
       database& d = db();
       const auto& custom_vote_obj = d.create<custom_vote_object>([&](custom_vote_object& obj)
       {
-         obj.create_account = op.create_account;
+         obj.custom_vote_creater = op.custom_vote_creater;
+         obj.vote_vid = op.vote_vid;
          obj.title = op.title;
          obj.description = op.description;
          obj.vote_expired_time = op.vote_expired_time;
@@ -53,6 +56,10 @@ object_id_type custom_vote_create_evaluator::do_apply(const operation_type& op)
          obj.options = op.options;
       });
 
+      d.modify(*account_stats, [&](account_statistics_object& s) {
+         s.last_custom_vote_sequence += 1;
+      });
+
       return custom_vote_obj.id;
    } FC_CAPTURE_AND_RETHROW((op))
 }
@@ -63,21 +70,21 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only cast custom vote after HARDFORK_0_4_TIME");
 
-      custom_vote_obj = d.find(op.custom_vote_id);
-      FC_ASSERT(custom_vote_obj != nullptr, "custom vote ${id} not found.", ("id", op.custom_vote_id));
+      d.get_account_by_uid(op.voter);//check custom voter account exist
+       
+      custom_vote_obj = d.find_custom_vote_by_vid(op.custom_vote_creater, op.custom_vote_vid);
+      FC_ASSERT(custom_vote_obj != nullptr, "custom vote ${vid} not found.", ("id", op.custom_vote_vid));
       FC_ASSERT(d.head_block_time() <= custom_vote_obj->vote_expired_time, "custom vote already overdue");
       FC_ASSERT(op.vote_result.size() >= custom_vote_obj->minimum_selected_items && op.vote_result.size() <= custom_vote_obj->maximum_selected_items, 
          "vote options num is not in range ${min} - ${max}.", ("min", custom_vote_obj->minimum_selected_items)("max", custom_vote_obj->maximum_selected_items));
-
-      const auto& account_obj = d.get_account_by_uid(op.voter);//check create account exist
 
       votes = d.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
       FC_ASSERT(votes >= custom_vote_obj->required_asset_amount, "asset ${aid} balance less than required amount for vote ${amount}", 
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
       
       const auto& idx = d.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-      auto itr = idx.find(std::make_tuple(op.voter, op.custom_vote_id));
-      FC_ASSERT(itr == idx.end(), "account ${uid} already cast a vote for custom vote ${vid}", ("uid", op.voter)("vid", op.custom_vote_id));
+      auto itr = idx.find(std::make_tuple(op.voter, op.custom_vote_creater, op.custom_vote_vid));
+      FC_ASSERT(itr == idx.end(), "account ${uid} already cast a vote for custom vote ${vid}", ("uid", op.voter)("vid", op.custom_vote_vid));
 
       for (const auto& index : op.vote_result)
       {
@@ -95,7 +102,8 @@ object_id_type custom_vote_cast_evaluator::do_apply(const operation_type& op)
       const auto& cast_vote_obj = d.create<cast_custom_vote_object>([&](cast_custom_vote_object& obj)
       {
          obj.voter = op.voter;
-         obj.custom_vote_id = op.custom_vote_id;
+         obj.custom_vote_creater = op.custom_vote_creater;
+         obj.custom_vote_vid = op.custom_vote_vid;
          obj.vote_result = op.vote_result;
       });
 

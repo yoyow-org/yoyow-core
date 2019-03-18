@@ -411,12 +411,29 @@ const advertising_order_object*  database::find_advertising_order(account_uid_ty
 
 const advertising_order_object&  database::get_advertising_order(account_uid_type platform, advertising_aid_type advertising_aid, advertising_order_oid_type order_oid)const
 {
-    const auto& advertising_order_by_oid = get_index_type<advertising_order_index>().indices().get<by_advertising_order_oid>();
-    auto itr = advertising_order_by_oid.find(std::make_tuple(platform, advertising_aid, order_oid));
-    FC_ASSERT(itr != advertising_order_by_oid.end(),
-        "advertising_order_object ${platform}_${uid}_${order} not found.",
-        ("platform", platform)("uid", advertising_aid)("order", order_oid));
-    return *itr;
+   const auto& advertising_order_by_oid = get_index_type<advertising_order_index>().indices().get<by_advertising_order_oid>();
+   auto itr = advertising_order_by_oid.find(std::make_tuple(platform, advertising_aid, order_oid));
+   FC_ASSERT(itr != advertising_order_by_oid.end(),
+      "advertising_order_object ${platform}_${uid}_${order} not found.",
+      ("platform", platform)("uid", advertising_aid)("order", order_oid));
+   return *itr;
+}
+const custom_vote_object& database::get_custom_vote_by_vid(account_uid_type creater, custom_vote_vid_type vote_vid)const
+{
+   const auto& custom_votes_by_vid = get_index_type<custom_vote_index>().indices().get<by_creater>();
+   auto itr = custom_votes_by_vid.find(std::make_tuple(creater, vote_vid));
+   FC_ASSERT(itr != custom_votes_by_vid.end(), "custom vote ${vid} not found.", ("vid", vote_vid));
+   return *(itr);
+}
+
+const custom_vote_object* database::find_custom_vote_by_vid(account_uid_type creater, custom_vote_vid_type vote_vid)const
+{
+   const auto& custom_votes_by_vid = get_index_type<custom_vote_index>().indices().get<by_creater>();
+   auto itr = custom_votes_by_vid.find(std::make_tuple(creater, vote_vid));
+   if (itr != custom_votes_by_vid.end())
+      return &(*itr);
+   else 
+      return nullptr;
 }
 
 } }
