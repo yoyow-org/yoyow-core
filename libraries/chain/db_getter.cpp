@@ -378,4 +378,45 @@ const score_object* database::find_score(account_uid_type platform,
     else
         return nullptr;
 }
+
+const advertising_object*  database::find_advertising(account_uid_type platform, advertising_aid_type advertising_aid)const
+{
+    const auto& advertising_by_aid = get_index_type<advertising_index>().indices().get<by_advertising_platform>();
+    auto itr = advertising_by_aid.find(std::make_tuple(platform, advertising_aid));
+    if (itr != advertising_by_aid.end())
+        return &(*itr);
+    else
+        return nullptr;
+}
+
+const advertising_object&  database::get_advertising(account_uid_type platform, advertising_aid_type advertising_aid)const
+{
+    const auto& advertising_by_aid = get_index_type<advertising_index>().indices().get<by_advertising_platform>();
+    auto itr = advertising_by_aid.find(std::make_tuple(platform, advertising_aid));
+    FC_ASSERT(itr != advertising_by_aid.end(),
+        "advertising_object ${platform}_${uid} not found.",
+        ("platform", platform)("uid", advertising_aid));
+    return *itr;
+}
+
+const advertising_order_object*  database::find_advertising_order(account_uid_type platform, advertising_aid_type advertising_aid, advertising_order_oid_type order_oid)const
+{
+    const auto& advertising_order_by_oid = get_index_type<advertising_order_index>().indices().get<by_advertising_order_oid>();
+    auto itr = advertising_order_by_oid.find(std::make_tuple(platform, advertising_aid, order_oid));
+    if (itr != advertising_order_by_oid.end())
+        return &(*itr);
+    else
+        return nullptr;
+}
+
+const advertising_order_object&  database::get_advertising_order(account_uid_type platform, advertising_aid_type advertising_aid, advertising_order_oid_type order_oid)const
+{
+    const auto& advertising_order_by_oid = get_index_type<advertising_order_index>().indices().get<by_advertising_order_oid>();
+    auto itr = advertising_order_by_oid.find(std::make_tuple(platform, advertising_aid, order_oid));
+    FC_ASSERT(itr != advertising_order_by_oid.end(),
+        "advertising_order_object ${platform}_${uid}_${order} not found.",
+        ("platform", platform)("uid", advertising_aid)("order", order_oid));
+    return *itr;
+}
+
 } }

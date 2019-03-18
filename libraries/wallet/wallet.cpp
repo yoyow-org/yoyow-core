@@ -2766,11 +2766,12 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_license)(limit))
    }
 
-   vector<advertising_object> list_advertisings(string platform, object_id_type lower_bound_advertising, uint32_t limit)
+   vector<advertising_object> list_advertisings(string platform, string lower_bound_advertising, uint32_t limit)
    {
        try {
            account_uid_type platform_uid = get_account_uid(platform);
-           return _remote_db->list_advertisings(platform_uid, lower_bound_advertising, limit);
+           advertising_aid_type lower_advertising_aid = fc::to_uint64(fc::string(lower_bound_advertising));
+           return _remote_db->list_advertisings(platform_uid, lower_advertising_aid, limit);
        } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_advertising)(limit))
    }
 
@@ -4353,7 +4354,7 @@ vector<license_object> wallet_api::list_licenses(string platform, object_id_type
     return my->list_licenses(platform, lower_bound_license, limit);
 }
 
-vector<advertising_object> wallet_api::list_advertisings(string platform, object_id_type lower_bound_advertising, uint32_t limit)
+vector<advertising_object> wallet_api::list_advertisings(string platform, string lower_bound_advertising, uint32_t limit)
 {
     return my->list_advertisings(platform, lower_bound_advertising, limit);
 }
@@ -4431,9 +4432,12 @@ vector<advertising_order_object> wallet_api::list_advertising_orders_by_purchase
    return my->_remote_db->list_advertising_orders_by_purchaser(account, lower_bound_advertising_order, limit);
 }
 
-vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_id(object_id_type id, object_id_type lower_bound_advertising_order, uint32_t limit)
+vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_aid(string platform, string advertising_aid, string lower_bound_advertising_order, uint32_t limit)
 {
-    return my->_remote_db->list_advertising_orders_by_ads_id(id, lower_bound_advertising_order, limit);
+    account_uid_type platform_uid = my->get_account_uid(platform);
+    advertising_aid_type ad_aid = fc::to_uint64(fc::string(advertising_aid));
+    advertising_order_oid_type lower_order_oid = fc::to_uint64(fc::string(lower_bound_advertising_order));
+    return my->_remote_db->list_advertising_orders_by_ads_aid(platform, ad_aid, lower_order_oid, limit);
 }
 
 signed_transaction wallet_api::create_custom_vote(string           create_account,

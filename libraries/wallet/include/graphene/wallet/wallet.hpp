@@ -1551,9 +1551,9 @@ class wallet_api
 
       vector<license_object> list_licenses(string platform, object_id_type lower_bound_license, uint32_t limit);
                       
-      vector<advertising_object> list_advertisings(string platform, object_id_type lower_bound_advertising, uint32_t limit);
+      vector<advertising_object> list_advertisings(string platform, string lower_bound_advertising, uint32_t limit);
       vector<advertising_order_object> list_advertising_orders_by_purchaser(string purchaser, object_id_type lower_bound_advertising_order, uint32_t limit);
-      vector<advertising_order_object> list_advertising_orders_by_ads_id(object_id_type id, object_id_type lower_bound_advertising_order ,uint32_t limit);
+      vector<advertising_order_object> list_advertising_orders_by_ads_aid(string platform, string advertising_aid, string lower_bound_advertising_order, uint32_t limit);
 
       vector<active_post_object> get_post_profits_detail(uint32_t         begin_period,
                                                          uint32_t         end_period,

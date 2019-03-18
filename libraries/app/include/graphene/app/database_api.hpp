@@ -457,10 +457,15 @@ class database_api
 
       vector<license_object> list_licenses(const account_uid_type platform, const object_id_type lower_bound_license, const uint32_t limit)const;
 
-      vector<advertising_object> list_advertisings(const account_uid_type platform, const object_id_type lower_bound_advertising, const uint32_t limit)const;
+      vector<advertising_object> list_advertisings(const account_uid_type platform, const advertising_aid_type lower_bound_advertising, const uint32_t limit)const;
 
-      vector<advertising_order_object> list_advertising_orders_by_purchaser(const account_uid_type purchaser, const object_id_type lower_bound_advertising_order, uint32_t limit)const;
-      vector<advertising_order_object> list_advertising_orders_by_ads_id(const object_id_type id, const object_id_type lower_bound_advertising_order, uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_purchaser(const account_uid_type purchaser, 
+                                                                            const object_id_type lower_bound_advertising_order,
+                                                                            uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_ads_aid(const account_uid_type platform, 
+                                                                          const advertising_aid_type id, 
+                                                                          const advertising_order_oid_type lower_bound_advertising_order, 
+                                                                          uint32_t limit)const;
 
       vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, const object_id_type lower_bound_custom_vote, uint32_t limit)const;
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
@@ -781,7 +786,7 @@ FC_API( graphene::app::database_api,
    (get_score_profit)
 
    (list_advertising_orders_by_purchaser)
-   (list_advertising_orders_by_ads_id)
+   (list_advertising_orders_by_ads_aid)
    (lookup_custom_votes)
    (list_custom_votes)
    (list_cast_custom_votes_by_id)

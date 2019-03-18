@@ -29,6 +29,7 @@ void advertising_update_operation::validate()const
     validate_op_fee(fee, "advertising_update ");
     validate_account_uid(platform, "platform");
     FC_ASSERT(description.valid() || unit_price.valid() || unit_time.valid() || on_sell.valid(), "must update some parameter");
+    FC_ASSERT(advertising_aid > 0, "advertising_aid should more then 0. ");
     if (unit_price.valid()){
         FC_ASSERT(*unit_price > 0, "unit price must be greater then 0");
     }
@@ -56,6 +57,7 @@ void advertising_buy_operation::validate()const
     validate_account_uid(from_account, "from_account");
     FC_ASSERT(platform != from_account, "platform can`t buy own advertising. ");
     FC_ASSERT(buy_number > 0, "buy number must greater then 0. ");
+    FC_ASSERT(advertising_aid > 0, "advertising_aid should more then 0. ");
 }
 
 share_type advertising_buy_operation::calculate_fee(const fee_parameters_type& k)const
@@ -68,6 +70,7 @@ void advertising_confirm_operation::validate()const
 {
     validate_op_fee(fee, "advertising_comfirm ");
     validate_account_uid(platform, "platform");
+    FC_ASSERT(advertising_aid > 0, "advertising_aid should more then 0. ");
 }
 
 share_type advertising_confirm_operation::calculate_fee(const fee_parameters_type& k)const
@@ -81,6 +84,7 @@ void advertising_ransom_operation::validate()const
     validate_op_fee(fee, "advertising_ransom ");
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account, "from_account");
+    FC_ASSERT(advertising_aid > 0, "advertising_aid should more then 0. ");
 }
 
 share_type advertising_ransom_operation::calculate_fee(const fee_parameters_type& k)const

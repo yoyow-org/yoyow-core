@@ -149,10 +149,15 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                            const license_lid_type license_lid)const;
       vector<license_object> list_licenses(const account_uid_type platform, const object_id_type lower_bound_license, const uint32_t limit)const;
 
-      vector<advertising_object> list_advertisings(const account_uid_type platform, const object_id_type lower_bound_advertising, const uint32_t limit)const;
+      vector<advertising_object> list_advertisings(const account_uid_type platform, const advertising_aid_type lower_bound_advertising, const uint32_t limit)const;
 
-      vector<advertising_order_object> list_advertising_orders_by_purchaser(const account_uid_type purchaser, const object_id_type lower_bound_advertising_order, uint32_t limit)const;
-      vector<advertising_order_object> list_advertising_orders_by_ads_id(const object_id_type id, const object_id_type lower_bound_advertising_order, uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_purchaser(const account_uid_type purchaser,
+                                                                            const object_id_type lower_bound_advertising_order,
+                                                                            uint32_t limit)const;
+      vector<advertising_order_object> list_advertising_orders_by_ads_aid(const account_uid_type platform,
+                                                                          const advertising_aid_type id,
+                                                                          const advertising_order_oid_type lower_bound_advertising_order,
+                                                                          uint32_t limit)const;
 
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
       vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, const object_id_type lower_bound_custom_vote, uint32_t limit)const;
@@ -1282,12 +1287,12 @@ vector<license_object> database_api_impl::list_licenses(const account_uid_type p
     return result;
 }
 
-vector<advertising_object> database_api::list_advertisings(const account_uid_type platform, const object_id_type lower_bound_advertising, const uint32_t limit)const
+vector<advertising_object> database_api::list_advertisings(const account_uid_type platform, const advertising_aid_type lower_bound_advertising, const uint32_t limit)const
 {
     return my->list_advertisings(platform, lower_bound_advertising, limit);
 }
 
-vector<advertising_object> database_api_impl::list_advertisings(const account_uid_type platform, const object_id_type lower_bound_advertising, const uint32_t limit)const
+vector<advertising_object> database_api_impl::list_advertisings(const account_uid_type platform, const advertising_aid_type lower_bound_advertising, const uint32_t limit)const
 {
     FC_ASSERT(limit <= 100);
     vector<advertising_object> result;
@@ -1325,21 +1330,27 @@ vector<advertising_order_object> database_api_impl::list_advertising_orders_by_p
    return result;
 }
 
-vector<advertising_order_object> database_api::list_advertising_orders_by_ads_id(const object_id_type id, const object_id_type lower_bound_advertising_order, uint32_t limit)const
+vector<advertising_order_object> database_api::list_advertising_orders_by_ads_aid(const account_uid_type platform,
+                                                                                  const advertising_aid_type id,
+                                                                                  const advertising_order_oid_type lower_bound_advertising_order,
+                                                                                  uint32_t limit)const
 {
-    return my->list_advertising_orders_by_ads_id(id, lower_bound_advertising_order, limit);
+    return my->list_advertising_orders_by_ads_aid(platform, id, lower_bound_advertising_order, limit);
 }
 
-vector<advertising_order_object> database_api_impl::list_advertising_orders_by_ads_id(const object_id_type id, const object_id_type lower_bound_advertising_order, uint32_t limit)const
+vector<advertising_order_object> database_api_impl::list_advertising_orders_by_ads_aid(const account_uid_type platform,
+                                                                                       const advertising_aid_type id,
+                                                                                       const advertising_order_oid_type lower_bound_advertising_order,
+                                                                                       uint32_t limit)const
 {
     FC_ASSERT(limit <= 100);
    vector<advertising_order_object> result;
 
-   const auto& idx = _db.get_index_type<advertising_order_index>().indices().get<by_advertising_id>();
-   auto itr = idx.lower_bound(id);
-   while (itr != idx.end() && itr->advertising_id == id && limit--)
+   const auto& idx = _db.get_index_type<advertising_order_index>().indices().get<by_advertising_order_oid>();
+   auto itr = idx.lower_bound(std::make_tuple(platform, id, lower_bound_advertising_order));
+   while (itr != idx.end() && itr->advertising_aid == id && itr->platform == platform && limit--)
    {
-       if (!(itr->id < lower_bound_advertising_order))
+       if (!(itr->advertising_order_oid < lower_bound_advertising_order))
            result.push_back(*itr);
       ++itr;
    }

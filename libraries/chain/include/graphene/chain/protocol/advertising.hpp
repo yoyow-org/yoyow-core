@@ -19,6 +19,7 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
+       advertising_aid_type         advertising_aid;
        account_uid_type             platform;
        uint32_t                     unit_time;
        share_type                   unit_price;
@@ -48,7 +49,7 @@ namespace graphene { namespace chain {
        fee_type                     fee;
 
        account_uid_type             platform;
-       advertising_id_type          advertising_id;
+       advertising_aid_type         advertising_aid;
 
        optional<string>             description;
        optional<share_type>         unit_price;
@@ -79,7 +80,7 @@ namespace graphene { namespace chain {
 
        account_uid_type             from_account;
        account_uid_type             platform;
-       advertising_id_type          advertising_id;
+       advertising_aid_type         advertising_aid;
        time_point_sec               start_time;
        uint32_t                     buy_number;
 
@@ -109,8 +110,8 @@ namespace graphene { namespace chain {
        fee_type                     fee;
 
        account_uid_type             platform;
-       advertising_id_type          advertising_id;
-       advertising_order_id_type    advertising_order_id;
+       advertising_aid_type         advertising_aid;
+       advertising_order_oid_type   advertising_order_oid;
        bool                         iscomfirm;
 
        extensions_type              extensions;
@@ -137,8 +138,8 @@ namespace graphene { namespace chain {
 
        account_uid_type             from_account;
        account_uid_type             platform;
-       advertising_id_type          advertising_id;
-       advertising_order_id_type    advertising_order_id;
+       advertising_aid_type         advertising_aid;
+       advertising_order_oid_type   advertising_order_oid;
 
        extensions_type              extensions;
 
@@ -153,16 +154,16 @@ namespace graphene { namespace chain {
 }} // graphene::chain
 
 FC_REFLECT(graphene::chain::advertising_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_create_operation, (fee)(platform)(unit_time)(unit_price)(description)(extensions))
+FC_REFLECT(graphene::chain::advertising_create_operation, (fee)(advertising_aid)(platform)(unit_time)(unit_price)(description)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_update_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_update_operation, (fee)(platform)(advertising_id)(description)(unit_price)(unit_time)(on_sell)(extensions))
+FC_REFLECT(graphene::chain::advertising_update_operation, (fee)(platform)(advertising_aid)(description)(unit_price)(unit_time)(on_sell)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_buy_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(from_account)(platform)(advertising_id)(start_time)(buy_number)(extra_data)(memo)(extensions))
+FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(from_account)(platform)(advertising_aid)(start_time)(buy_number)(extra_data)(memo)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_confirm_operation::fee_parameters_type, (fee)(extensions))
-FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_id)(advertising_order_id)(iscomfirm)(extensions))
+FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_aid)(advertising_order_oid)(iscomfirm)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_ransom_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_ransom_operation, (fee)(from_account)(platform)(advertising_id)(advertising_order_id)(extensions))
+FC_REFLECT(graphene::chain::advertising_ransom_operation, (fee)(from_account)(platform)(advertising_aid)(advertising_order_oid)(extensions))
