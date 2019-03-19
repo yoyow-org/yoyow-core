@@ -552,91 +552,88 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
          s.last_post_sequence += 1;
       });
 
-      if (ext_para && d.head_block_time() >= HARDFORK_0_4_TIME)
-	  {
-          if (ext_para->post_type == post_operation::Post_Type::Post_Type_forward
-              || ext_para->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
-          {
-              const post_object& origin_post = d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
-              share_type forwardprice = *(origin_post.forward_price);
-              if (sign_platform_uid.valid()) // signed by platform , then add auth cur_used
-              {
-                  const account_auth_platform_object& auth_object = d.get_account_auth_platform_object_by_account_platform(o.poster, o.platform);
-                  d.modify(auth_object, [&](account_auth_platform_object& obj)
-                  {
-                      obj.cur_used += forwardprice;
-                  });
-              }
-              d.modify(*account_stats, [&](account_statistics_object& obj)
-              {
-                  obj.prepaid -= forwardprice;
-              });
+      if (ext_para && (ext_para->post_type == post_operation::Post_Type::Post_Type_forward
+         || ext_para->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify))
+      {
+         const post_object& origin_post = d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
+         share_type forwardprice = *(origin_post.forward_price);
+         if (sign_platform_uid.valid()) // signed by platform , then add auth cur_used
+         {
+            const account_auth_platform_object& auth_object = d.get_account_auth_platform_object_by_account_platform(o.poster, o.platform);
+            d.modify(auth_object, [&](account_auth_platform_object& obj)
+            {
+               obj.cur_used += forwardprice;
+            });
+         }
+         d.modify(*account_stats, [&](account_statistics_object& obj)
+         {
+            obj.prepaid -= forwardprice;
+         });
 
 
-              const post_object* post = &d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
-              const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-              if (dpo.content_award_enable)
-              {
-                  if (!active_post)
+         const post_object* post = &d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
+         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+         if (dpo.content_award_enable)
+         {
+            if (!active_post)
+            {
+               time_point_sec expiration_time = post->create_time;
+               if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+               {
+                  active_post = &d.create<active_post_object>([&](active_post_object& obj)
                   {
-                      time_point_sec expiration_time = post->create_time;
-                      if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
-                      {
-                          active_post = &d.create<active_post_object>([&](active_post_object& obj)
-                          {
-                              obj.platform = *o.origin_platform;
-                              obj.poster = *o.origin_poster;
-                              obj.post_pid = *o.origin_post_pid;
-                              obj.period_sequence = dpo.current_active_post_sequence;
-                          });
-                      }
-                  }
-                  if (active_post){
-                      d.modify(*active_post, [&](active_post_object& obj)
-                      {
-                          obj.forward_award += forwardprice.value;
-                      });
-                  }
-              }
-              
-              uint128_t amount(forwardprice.value);
-              uint128_t surplus = amount;
-              for (auto iter : post->receiptors)
-              {
-                  if (iter.first == post->platform)
-                      continue;
-                  uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
-                  surplus -= temp;
-                  d.modify(d.get_account_statistics_by_uid(iter.first), [&](account_statistics_object& obj)
-                  {
-                      obj.prepaid += temp.convert_to<int64_t>();
+                     obj.platform = *o.origin_platform;
+                     obj.poster = *o.origin_poster;
+                     obj.post_pid = *o.origin_post_pid;
+                     obj.period_sequence = dpo.current_active_post_sequence;
                   });
-                  if (active_post && dpo.content_award_enable)
-                  {
-                      d.modify(*active_post, [&](active_post_object& obj)
-                      {
-                          obj.insert_receiptor(iter.first, 0, temp.convert_to<int64_t>());
-                      });
-                  }
-              }
-              d.modify(d.get_account_statistics_by_uid(post->platform), [&](account_statistics_object& obj)
-              {
-                  obj.prepaid += surplus.convert_to<int64_t>();
-              });
+               }
+            }
+            if (active_post){
+               d.modify(*active_post, [&](active_post_object& obj)
+               {
+                  obj.forward_award += forwardprice.value;
+               });
+            }
+         }
 
-              d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
-              {
-                  obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(), surplus.convert_to<int64_t>(), 0, 0);
-              });
-              if (active_post && dpo.content_award_enable)
-              {
-                  d.modify(*active_post, [&](active_post_object& obj)
-                  {
-                      obj.insert_receiptor(post->platform, 0, surplus.convert_to<int64_t>());
-                  });
-              }
-          }
-	  }
+         uint128_t amount(forwardprice.value);
+         uint128_t surplus = amount;
+         for (auto iter : post->receiptors)
+         {
+            if (iter.first == post->platform)
+               continue;
+            uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
+            surplus -= temp;
+            d.modify(d.get_account_statistics_by_uid(iter.first), [&](account_statistics_object& obj)
+            {
+               obj.prepaid += temp.convert_to<int64_t>();
+            });
+            if (active_post && dpo.content_award_enable)
+            {
+               d.modify(*active_post, [&](active_post_object& obj)
+               {
+                  obj.insert_receiptor(iter.first, 0, temp.convert_to<int64_t>());
+               });
+            }
+         }
+         d.modify(d.get_account_statistics_by_uid(post->platform), [&](account_statistics_object& obj)
+         {
+            obj.prepaid += surplus.convert_to<int64_t>();
+         });
+
+         d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
+         {
+            obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(), surplus.convert_to<int64_t>(), 0, 0);
+         });
+         if (active_post && dpo.content_award_enable)
+         {
+            d.modify(*active_post, [&](active_post_object& obj)
+            {
+               obj.insert_receiptor(post->platform, 0, surplus.convert_to<int64_t>());
+            });
+         }
+      }
 
       const auto& new_post_object = d.create<post_object>( [&]( post_object& obj )
       {
@@ -654,34 +651,26 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             obj.last_update_time = d.head_block_time();
             obj.score_settlement = false;
 
-            if (d.head_block_time() >= HARDFORK_0_4_TIME)
+            if (ext_para)
             {
-                bool need_init_receiptors = true;
-                if (ext_para)
-                {
-                    if (ext_para->forward_price.valid())
-                        obj.forward_price = *(ext_para->forward_price);
-                    if (ext_para->receiptors.valid())
-                    {
-                        map<account_uid_type, Recerptor_Parameter> map_receiptor = *(ext_para->receiptors);
-                        if (map_receiptor.size() > 0)
-                        {
-                            need_init_receiptors = false;
-                            obj.receiptors = map_receiptor;
-                        }
-                    }
-                    if (ext_para->license_lid.valid())
-                    {
-                        obj.license_lid = *(ext_para->license_lid);
-                    }
-                    obj.permission_flags = *(ext_para->permission_flags);
-                }
-                if (need_init_receiptors){
-                    map<account_uid_type, Recerptor_Parameter> map_receiptors;
-                    map_receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-                    map_receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-                    obj.receiptors = map_receiptors;
-                }
+               if (ext_para->forward_price.valid())
+                  obj.forward_price = *(ext_para->forward_price);
+               if (ext_para->license_lid.valid())
+                  obj.license_lid = *(ext_para->license_lid);
+               obj.permission_flags = *(ext_para->permission_flags);
+
+               if (ext_para->receiptors.valid()) {
+                  obj.receiptors = *(ext_para->receiptors);
+               } 
+               else {
+                  obj.receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                  obj.receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+               }      
+            }
+            else
+            {
+               obj.receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+               obj.receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
             }
       } );
       return new_post_object.id;

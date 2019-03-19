@@ -451,6 +451,7 @@ struct database_fixture {
 
    void database_fixture::create_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type create_account,
+      custom_vote_vid_type  custom_vote_vid,
       string           title,
       string           description,
       time_point_sec   expired_time,
@@ -462,7 +463,8 @@ struct database_fixture {
 
    void database_fixture::cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type      voter,
-      custom_vote_id_type   custom_vote_id,
+      account_uid_type      custom_vote_creater,
+      custom_vote_vid_type  custom_vote_vid,
       set<uint8_t>          vote_result);
 
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>

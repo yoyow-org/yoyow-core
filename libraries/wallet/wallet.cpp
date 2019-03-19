@@ -2969,7 +2969,7 @@ signed_transaction account_cancel_auth_platform(string account,
          tx.validate();
 
          return sign_transaction(tx, broadcast);
-      } FC_CAPTURE_AND_RETHROW((create_account)(title)(description)(expired_time)(asset_id)
+      } FC_CAPTURE_AND_RETHROW((create_account)(custom_vote_vid)(title)(description)(expired_time)(asset_id)
          (required_amount)(minimum_selected_items)(maximum_selected_items)(options)(csaf_fee)(broadcast))
    }
 
@@ -2997,7 +2997,7 @@ signed_transaction account_cancel_auth_platform(string account,
          tx.validate();
 
          return sign_transaction(tx, broadcast);
-      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creater)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
    }
 
    vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
