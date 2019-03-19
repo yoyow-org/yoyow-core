@@ -260,7 +260,7 @@ void database::clear_unnecessary_objects()
    {
       if (head_block_time() < time_point_sec(_advertising_order_remaining_time))
          break;
-      const auto& ado_idx = get_index_type<advertising_order_index>().indices().get<by_end_time>();
+      const auto& ado_idx = get_index_type<advertising_order_index>().indices().get<by_clear_time>();
       const auto& ado_end = ado_idx.lower_bound(head_block_time() - _advertising_order_remaining_time);
       auto ado_itr = ado_idx.begin();
 
@@ -1171,9 +1171,9 @@ void database::check_invariants()
    FC_ASSERT( total_core_leased_in == total_core_leased_out );
 
    share_type total_advertising_released = 0;
-   const auto& adt_idx = get_index_type<advertising_order_index>().indices().get<by_advertising_confirmed>();
-   auto advertising_iter = adt_idx.lower_bound(false);
-   while (advertising_iter != adt_idx.end() && !advertising_iter->confirmed_status)
+   const auto& adt_idx = get_index_type<advertising_order_index>().indices().get<by_advertising_order_state>();
+   auto advertising_iter = adt_idx.lower_bound(advertising_undetermined);
+   while (advertising_iter != adt_idx.end() && advertising_iter->status == advertising_undetermined)
    {
        total_advertising_released += advertising_iter->released_balance;
        advertising_iter++;

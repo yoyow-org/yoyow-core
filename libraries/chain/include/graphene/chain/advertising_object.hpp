@@ -9,6 +9,14 @@
 namespace graphene { namespace chain {
    class database;
 
+   enum advertising_state
+   {
+      advertising_undetermined = 0,
+      advertising_accepted     = 1,
+      advertising_refused      = 2,
+      advertising_ransom       = 3
+   };
+
    class advertising_order_object : public graphene::db::abstract_object < advertising_order_object >
    {
    public:
@@ -24,16 +32,25 @@ namespace graphene { namespace chain {
       time_point_sec              start_time;
       time_point_sec              end_time;
       time_point_sec              buy_request_time;
-      bool                        confirmed_status;
+      advertising_state           status;
+      time_point_sec              handle_time;
                                   
       optional<memo_data>         memo;
       string                      extra_data;
+
+      time_point_sec get_clear_time()const {
+         if (status == advertising_accepted)
+            return end_time;
+         else if (status == advertising_undetermined)
+            return time_point_sec::maximum();
+         else
+            return handle_time;
+      }
    };
 
    struct by_advertising_order_oid{};
-   struct by_advertising_user{};
-   struct by_end_time{};
-   struct by_advertising_confirmed{};
+   struct by_clear_time{};
+   struct by_advertising_order_state{};
    struct by_advertising_user_id{};
 
    typedef multi_index_container<
@@ -45,17 +62,13 @@ namespace graphene { namespace chain {
                              member< advertising_order_object, account_uid_type,           &advertising_order_object::platform >,
                              member< advertising_order_object, advertising_aid_type,       &advertising_order_object::advertising_aid >,
                              member< advertising_order_object, advertising_order_oid_type, &advertising_order_object::advertising_order_oid >> >,
-         ordered_unique< tag<by_advertising_user>,
+         ordered_non_unique< tag<by_advertising_order_state>,
                              composite_key<advertising_order_object,
-                             member< advertising_order_object, account_uid_type,    &advertising_order_object::user>,
-                             member< advertising_order_object, bool,                &advertising_order_object::confirmed_status>> >,
-         ordered_non_unique< tag<by_advertising_confirmed>,
-                             composite_key<advertising_order_object,
+                             member< advertising_order_object, advertising_state,          &advertising_order_object::status >,
                              member< advertising_order_object, account_uid_type,           &advertising_order_object::platform >,
-                             member< advertising_order_object, advertising_aid_type,       &advertising_order_object::advertising_aid >,
-                             member< advertising_order_object, bool,                       &advertising_order_object::confirmed_status>>>,
-         ordered_non_unique< tag<by_end_time>,
-                             member< advertising_order_object, time_point_sec,      &advertising_order_object::end_time >>,
+                             member< advertising_order_object, advertising_aid_type,       &advertising_order_object::advertising_aid >> >,
+         
+         ordered_non_unique< tag<by_clear_time>, const_mem_fun<advertising_order_object, time_point_sec, &advertising_order_object::get_clear_time  >>,
          ordered_unique< tag<by_advertising_user_id>,
                              composite_key<advertising_order_object,
                              member< advertising_order_object, account_uid_type,    &advertising_order_object::user>,
@@ -101,7 +114,7 @@ namespace graphene { namespace chain {
       advertising_object,
       indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-      ordered_non_unique< tag<by_advertising_platform>,
+      ordered_unique< tag<by_advertising_platform>,
          composite_key<
             advertising_object,
             member< advertising_object, account_uid_type, &advertising_object::platform>,
@@ -124,10 +137,16 @@ namespace graphene { namespace chain {
 
 }}
 
-FC_REFLECT_DERIVED(graphene::chain::advertising_order_object,
+FC_REFLECT_ENUM( graphene::chain::advertising_state,
+                   (advertising_undetermined)
+                   (advertising_accepted)
+                   (advertising_refused)
+                   (advertising_ransom))
+
+FC_REFLECT_DERIVED( graphene::chain::advertising_order_object,
                    (graphene::db::object), (advertising_order_oid)(platform)
                    (advertising_aid)(user)(released_balance)(start_time)(end_time)
-                   (buy_request_time)(confirmed_status)(memo)(extra_data)
+                   (buy_request_time)(status)(handle_time)(memo)(extra_data)
                    )
 
 FC_REFLECT_DERIVED( graphene::chain::advertising_object,
