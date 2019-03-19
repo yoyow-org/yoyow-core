@@ -504,7 +504,7 @@ class database_api
       // TODO may need a flag to fetch root posts only, or non-root posts only, or both
       // FIXME if limit is 100, will be buggy when too many posts in same second
       vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
-                                      const account_uid_type poster,
+                                      optional<account_uid_type> poster,
                                       const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const object_id_type lower_bound_post,
                                       const uint32_t limit )const;

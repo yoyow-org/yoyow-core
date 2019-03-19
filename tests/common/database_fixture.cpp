@@ -1137,9 +1137,9 @@ void database_fixture::create_license(account_uid_type platform,
     flat_set<fc::ecc::private_key> sign_keys)
 {
     try {
-        const account_statistics_object& plat_account_statistics = db.get_account_statistics_by_uid(platform);
+        const platform_object& platform_obj = db.get_platform_by_owner(platform);
         license_create_operation create_op;
-        create_op.license_lid = plat_account_statistics.last_license_sequence + 1;
+        create_op.license_lid = platform_obj.last_license_sequence + 1;
         create_op.platform = platform;
         create_op.type = license_type;
         create_op.hash_value = hash_value;

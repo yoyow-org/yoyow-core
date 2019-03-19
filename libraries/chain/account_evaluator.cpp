@@ -256,16 +256,30 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
 
-   if (o.extensions.valid() && (d.head_block_time() > HARDFORK_0_4_TIME))
+   if (o.extensions.valid())
+   {
+       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME);
        ext_para = &o.extensions->value;
-
+   }
    acnt = &d.get_account_by_uid( o.uid );
 
    auto& ka = acnt->secondary.account_uid_auths;
    auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
    found = ( itr != ka.end() );
-   if (((!ext_para) && d.head_block_time() >= HARDFORK_0_4_TIME) || (d.head_block_time() < HARDFORK_0_4_TIME))
-       FC_ASSERT( !found, "platform ${p} is already in secondary authority", ("p", o.platform) );
+   auth_object = d.find_account_auth_platform_object_by_account_platform(o.uid, o.platform);
+   if (d.head_block_time() < HARDFORK_0_4_TIME){
+       FC_ASSERT(!found, "platform ${p} is already in secondary authority", ("p", o.platform));
+   }
+   else{
+       if (!ext_para){
+           FC_ASSERT(!found, "platform ${p} is already in secondary authority", ("p", o.platform));
+           FC_ASSERT(auth_object == nullptr, "account_auth_platform_object ${o} is already exsit. ", ("o", *auth_object));
+       }
+       else{
+           if (found)
+               FC_ASSERT(auth_object != nullptr, "account_auth_platform_object ${o} should exsit. ", ("o", *auth_object));
+       }
+   }
 
    authority auth = acnt->secondary;
    authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
@@ -286,31 +300,28 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 void_result account_auth_platform_evaluator::do_apply( const account_auth_platform_operation& o )
 { try {
    database& d = db();
-   if (((!ext_para) && d.head_block_time() >= HARDFORK_0_4_TIME) || (d.head_block_time() < HARDFORK_0_4_TIME))
-   {
+   if (d.head_block_time() < HARDFORK_0_4_TIME){
        authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
        d.modify(*acnt, [&](account_object& a){
            a.secondary.add_authority(auat, acnt->secondary.weight_threshold);
            a.last_update_time = d.head_block_time();
        });
 
-       if (d.head_block_time() >= HARDFORK_0_4_TIME){
-           d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
-               obj.account = o.uid;
-               obj.platform = o.platform;
-               obj.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
-               obj.permission_flags = account_auth_platform_object::Platform_Permission_Forward |
-                                      account_auth_platform_object::Platform_Permission_Liked |
-                                      account_auth_platform_object::Platform_Permission_Buyout |
-                                      account_auth_platform_object::Platform_Permission_Comment |
-                                      account_auth_platform_object::Platform_Permission_Reward |
-                                      account_auth_platform_object::Platform_Permission_Post;
-           });
-       }
+       d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
+           obj.account = o.uid;
+           obj.platform = o.platform;
+           obj.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+           obj.permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+               account_auth_platform_object::Platform_Permission_Liked |
+               account_auth_platform_object::Platform_Permission_Buyout |
+               account_auth_platform_object::Platform_Permission_Comment |
+               account_auth_platform_object::Platform_Permission_Reward |
+               account_auth_platform_object::Platform_Permission_Transfer |
+               account_auth_platform_object::Platform_Permission_Post;
+       });
    }
-   else
-   {
-       if (!found)
+   else{
+       if (!found) //create a new oject
        {
            authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
            d.modify(*acnt, [&](account_object& a){
@@ -319,7 +330,6 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
            });
        }
 
-       const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(o.uid, o.platform);
        if (auth_object)
        {
            d.modify(*auth_object, [&](account_auth_platform_object& a){
@@ -349,6 +359,7 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
                                           account_auth_platform_object::Platform_Permission_Buyout |
                                           account_auth_platform_object::Platform_Permission_Comment |
                                           account_auth_platform_object::Platform_Permission_Reward |
+                                          account_auth_platform_object::Platform_Permission_Transfer |
                                           account_auth_platform_object::Platform_Permission_Post;
 
                if (ext_para->memo.valid())
@@ -372,8 +383,7 @@ void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_c
    bool found = ( itr != ka.end() );
    FC_ASSERT( found, "platform ${p} is not in secondary authority", ("p", o.platform) );
    
-   if (d.head_block_time() >= HARDFORK_0_4_TIME)
-       d.get_account_auth_platform_object_by_account_platform(o.uid, o.platform);
+   d.get_account_auth_platform_object_by_account_platform(o.uid, o.platform);
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -388,8 +398,7 @@ void_result account_cancel_auth_platform_evaluator::do_apply( const account_canc
       a.last_update_time = d.head_block_time();
    });
 
-   if (d.head_block_time() >= HARDFORK_0_4_TIME)
-       d.remove(d.get_account_auth_platform_object_by_account_platform(o.uid, o.platform));
+   d.remove(d.get_account_auth_platform_object_by_account_platform(o.uid, o.platform));
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

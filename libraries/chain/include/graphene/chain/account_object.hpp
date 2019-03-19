@@ -215,7 +215,6 @@ namespace graphene { namespace chain {
           * Record the last published article number
           */
          post_pid_type last_post_sequence = 0;
-         license_lid_type last_license_sequence = 0;
 
          /**
          * Record the last create custom vote number
@@ -786,7 +785,9 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
-                    //(membership_expiration_date)(register_by_platform)(registrar)(referrer)(lifetime_referrer)
+                    //(membership_expiration_date)
+                    (register_by_platform)
+                    //(registrar)(referrer)(lifetime_referrer)
                     //(network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
                     (uid)(name)(owner)(active)(secondary)(memo_key)(reg_info)
                     (can_post)(can_reply)(can_rate)
@@ -847,7 +848,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (releasing_platform_pledge)
                     (platform_pledge_release_block_number)
                     (last_post_sequence)
-                    (last_license_sequence)
                     (last_custom_vote_sequence)
                   )
 

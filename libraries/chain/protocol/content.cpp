@@ -239,8 +239,8 @@ void score_create_operation::validate()const
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
 	FC_ASSERT((score >= -5) && (score <= 5), "The score_create_operation`s score over range");
-  FC_ASSERT(csaf > 0, "The score_create_operation`s member points must more then 0.");
-  FC_ASSERT(!extensions.valid() > 0, "extension is currently not allowed");
+    FC_ASSERT(csaf > 0, "The score_create_operation`s member points must more then 0.");
+    FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 share_type score_create_operation::calculate_fee(const fee_parameters_type& k)const
@@ -257,7 +257,7 @@ void reward_operation::validate()const
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
 	FC_ASSERT(amount.amount > share_type(0), "amount must be greater than 0 ");
-  FC_ASSERT(!extensions.valid() > 0, "extension is currently not allowed");
+    FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 share_type reward_operation::calculate_fee(const fee_parameters_type& k)const
@@ -274,7 +274,7 @@ void reward_proxy_operation::validate()const
     validate_account_uid(from_account_uid, "from account ");
     FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
     FC_ASSERT(amount > share_type(0), "amount must be greater than 0 ");
-    FC_ASSERT(!extensions.valid() > 0, "extension is currently not allowed");
+    FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 share_type reward_proxy_operation::calculate_fee(const fee_parameters_type& k)const
@@ -293,7 +293,7 @@ void buyout_operation::validate()const
 	FC_ASSERT(from_account_uid != platform, "from_account shouldn`t be platform");
 	FC_ASSERT(receiptor_account_uid != platform, "platform shouldn`t sell out its receipt ratio");
 	validate_account_uid(receiptor_account_uid, "from account ");
-  FC_ASSERT(!extensions.valid() > 0, "extension is currently not allowed");
+    FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 share_type buyout_operation::calculate_fee(const fee_parameters_type& k)const
@@ -307,7 +307,7 @@ void license_create_operation::validate()const
     validate_op_fee(fee, "license_create ");
     validate_account_uid(platform, "platform");
     FC_ASSERT(license_lid > uint64_t(0), "license_lid must be greater than 0 ");
-    FC_ASSERT(!extensions.valid() > 0, "extension is currently not allowed");
+    FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 share_type license_create_operation::calculate_fee(const fee_parameters_type& k)const

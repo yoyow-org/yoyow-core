@@ -130,6 +130,6 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
        void_result do_evaluate(const operation_type& op);
        object_id_type do_apply(const operation_type& op);
 
-       const account_statistics_object* account_stats = nullptr;
+       const platform_object* platform_obj = nullptr;
    };
 } } // graphene::chain

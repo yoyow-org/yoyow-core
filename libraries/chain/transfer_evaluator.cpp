@@ -41,7 +41,7 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
    validate_authorized_asset( d, *from_account, transfer_asset_object, "'from' " );
    validate_authorized_asset( d, *to_account,   transfer_asset_object, "'to' " );
 
-   if (!op.some_from_balance() && d.head_block_time() >= HARDFORK_0_4_TIME)
+   if (!op.some_from_balance())
    {
        account_uid_type sign_account = sigs.real_secondary_uid(op.from, 1);
        if (sign_account != op.from)
@@ -137,7 +137,7 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
            s.prepaid -= asset_from_prepaid.amount;
        });
 
-       if (sign_platform_uid.valid() && d.head_block_time() >= HARDFORK_0_4_TIME && auth_object)
+       if (sign_platform_uid.valid() && auth_object)
        {
            d.modify(*auth_object, [&](account_auth_platform_object& obj)
            {

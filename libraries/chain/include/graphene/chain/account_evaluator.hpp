@@ -83,6 +83,7 @@ public:
 
    const account_object* acnt = nullptr;
    const account_auth_platform_operation::extension_parameter* ext_para = nullptr;
+   const account_auth_platform_object* auth_object = nullptr;
    bool found = false;
 };
 

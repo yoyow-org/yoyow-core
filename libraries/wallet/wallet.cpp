@@ -2439,9 +2439,11 @@ signed_transaction account_cancel_auth_platform(string account,
            FC_ASSERT(!self.is_locked(), "Should unlock first");
 
            account_uid_type platform_uid = get_account_uid(platform);
-           const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
+           fc::optional<platform_object> platform_obj = _remote_db->get_platform_by_account(platform_uid);
+           FC_ASSERT(platform_obj.valid(), "platform doesn`t exsit. ");
+
            license_create_operation create_op;
-           create_op.license_lid = plat_account_statistics.last_license_sequence + 1;
+           create_op.license_lid = platform_obj->last_license_sequence + 1;
            create_op.platform = platform_uid;
            create_op.type = license_type;
            create_op.hash_value = hash_value;
@@ -2703,7 +2705,7 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    vector<post_object> get_posts_by_platform_poster(string           platform_owner,
-                                                    string           poster_uid,
+                                                    optional<string> poster,
                                                     time_point_sec   begin_time_range,
                                                     time_point_sec   end_time_range,
                                                     object_id_type   lower_bound_post,
@@ -2711,9 +2713,15 @@ signed_transaction account_cancel_auth_platform(string account,
    {
        try {
            account_uid_type platform = get_account_uid(platform_owner);
-           account_uid_type poster = get_account_uid(poster_uid);
-           return _remote_db->get_posts_by_platform_poster(platform, poster, std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
-       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(begin_time_range)(end_time_range)(lower_bound_post)(limit))
+           if (poster.valid()){
+               account_uid_type poster_uid = get_account_uid(*poster);
+               return _remote_db->get_posts_by_platform_poster(platform, poster_uid, std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+           }
+           else{
+               return _remote_db->get_posts_by_platform_poster(platform, optional<account_uid_type>(), std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+           }
+           
+       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(begin_time_range)(end_time_range)(lower_bound_post)(limit))
    }
 
    score_object get_score(string platform,
@@ -4328,7 +4336,7 @@ post_object wallet_api::get_post(string platform_owner,
 }
 
 vector<post_object> wallet_api::get_posts_by_platform_poster(string           platform_owner,
-                                                             string           poster,
+                                                             optional<string> poster,
                                                              uint32_t         begin_time_range,
                                                              uint32_t         end_time_range,
                                                              object_id_type   lower_bound_post,
