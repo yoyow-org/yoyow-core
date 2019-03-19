@@ -738,6 +738,7 @@ namespace graphene { namespace chain {
                                         account_auth_platform_object::Platform_Permission_Buyout |
                                         account_auth_platform_object::Platform_Permission_Comment |
                                         account_auth_platform_object::Platform_Permission_Reward |
+                                        account_auth_platform_object::Platform_Permission_Transfer |
                                         account_auth_platform_object::Platform_Permission_Post;
        optional<memo_data>    memo;
 

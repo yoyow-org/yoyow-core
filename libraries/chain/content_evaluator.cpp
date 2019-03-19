@@ -463,16 +463,14 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
    
 
    if (d.head_block_time() >= HARDFORK_0_4_TIME){
-       FC_ASSERT(op.extensions.valid(), "post_operation must include extension from HARDFORK_0_4_TIME.");
-       auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.poster, op.platform);
-       account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
-       if (sign_account == op.platform) 
-           sign_platform_uid = sign_account;
-       
+       FC_ASSERT(op.extensions.valid(), "post_operation must include extension from HARDFORK_0_4_TIME.");       
        ext_para = &op.extensions->value;
+       account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
+       if (sign_account != op.poster)
+           auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
 
-       if (ext_para->post_type == post_operation::Post_Type::Post_Type_Post)
-           FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
+       if (auth_object && ext_para->post_type == post_operation::Post_Type::Post_Type_Post)
+           FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
                "the post permission of platform ${p} authorized by account ${a} is invalid. ",
                ("p", op.platform)("a", op.poster));
 
@@ -487,10 +485,10 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
            FC_ASSERT((poster_account->can_reply),
                "poster ${uid} is not allowed to reply.",
                ("uid", op.poster));
-
-           FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Comment) > 0,
-               "the comment permission of platform ${p} authorized by account ${a} is invalid. ",
-               ("p", op.platform)("a", op.poster));
+           if (auth_object)
+               FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Comment) > 0,
+                   "the comment permission of platform ${p} authorized by account ${a} is invalid. ",
+                   ("p", op.platform)("a", op.poster));
        }
        if (ext_para->post_type == post_operation::Post_Type::Post_Type_forward
            || ext_para->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
@@ -508,19 +506,20 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                "post ${p} is not allowed to forward, forward price is 0. ",
                ("p", op.origin_post_pid));
 
-           FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
-               "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
-               ("p", op.platform)("a", op.poster));
+           if (auth_object)
+               FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
+                   "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
+                   ("p", op.platform)("a", op.poster));
            FC_ASSERT(account_stats->prepaid >= *origin_post.forward_price,
                "Insufficient balance: unable to forward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                ("c", (account_stats->prepaid))("a", op.poster)("n", origin_post.forward_price));
 
-           if (auth_object.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
+           if (auth_object && auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
            {
-               share_type usable_prepaid = auth_object.get_auth_platform_usable_prepaid(account_stats->prepaid);
+               share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats->prepaid);
                FC_ASSERT(usable_prepaid >= *origin_post.forward_price,
                    "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
-                   ("c", (usable_prepaid))("p", *sign_platform_uid)("a", op.poster)("n", *origin_post.forward_price));
+                   ("c", (usable_prepaid))("p", sign_account)("a", op.poster)("n", *origin_post.forward_price));
            }
        }
        d.get_license_by_platform(op.platform, *(ext_para->license_lid)); // make sure license exist
@@ -557,10 +556,9 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
       {
          const post_object& origin_post = d.get_post_by_platform(*o.origin_platform, *o.origin_poster, *o.origin_post_pid);
          share_type forwardprice = *(origin_post.forward_price);
-         if (sign_platform_uid.valid()) // signed by platform , then add auth cur_used
+         if (auth_object) // signed by platform , then add auth cur_used
          {
-            const account_auth_platform_object& auth_object = d.get_account_auth_platform_object_by_account_platform(o.poster, o.platform);
-            d.modify(auth_object, [&](account_auth_platform_object& obj)
+            d.modify(*auth_object, [&](account_auth_platform_object& obj)
             {
                obj.cur_used += forwardprice;
             });
@@ -793,10 +791,12 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
         if (sign_account != 0 && sign_account != op.from_account_uid){
-            auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
-            FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Liked) > 0,
-                "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
-                ("p", sign_account)("a", op.from_account_uid));
+            auto auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
+            if (auth_object){
+                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Liked) > 0,
+                    "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
+                    ("p", sign_account)("a", op.from_account_uid));
+            }
         }
 		FC_ASSERT(account_stats->csaf >= op.csaf,
                   "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
@@ -1014,23 +1014,21 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
-        auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
-        if (sign_account == op.platform)
-            sign_platform_uid = sign_account;
+        FC_ASSERT(op.platform == sign_account, "reward_proxy must signed by platform. ");
+        auth_object = &d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
 
-        
-        FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Reward)>0,
-                  "the reward permisson of platform ${p} authorized by account ${a} is invalid. ",
-                  ("p", op.platform)("a", op.poster));
+        FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Reward) > 0,
+            "the reward permisson of platform ${p} authorized by account ${a} is invalid. ",
+            ("p", op.platform)("a", op.poster));  
         FC_ASSERT(account_stats->prepaid >= op.amount, 
                   "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", op.amount));
-        if (auth_object.max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
+        if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
         {
-            share_type usable_prepaid = auth_object.get_auth_platform_usable_prepaid(account_stats->prepaid);
+            share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats->prepaid);
             FC_ASSERT(usable_prepaid >= op.amount,
                       "Insufficient balance: unable to reward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
-                      ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.from_account_uid)("n", op.amount));
+                      ("c", usable_prepaid)("p", sign_account)("a", op.from_account_uid)("n", op.amount));
         }   
 
         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
@@ -1054,15 +1052,10 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
 {
     try {
         database& d = db();
-        
-        if (sign_platform_uid.valid())
+        d.modify(*auth_object, [&](account_auth_platform_object& obj)
         {
-            auto auth_object = d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
-            d.modify(auth_object, [&](account_auth_platform_object& obj)
-            {
-                obj.cur_used += op.amount;
-            });
-        }
+            obj.cur_used += op.amount;
+        });
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         d.modify(*account_stats, [&](account_statistics_object& obj)
         {
@@ -1173,24 +1166,26 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
 
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
-        if (sign_account == op.platform)
-            sign_platform_uid = sign_account;
-        auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
-        FC_ASSERT(auth_object != nullptr, "account ${u} auth platform ${p} object not found.", ("u", op.from_account_uid)("p", op.platform));
-        FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
-                  "the buyout permisson of platform ${p} authorized by account ${a} is invalid. ",
-                  ("p", op.platform)("a", op.from_account_uid));
+        if (sign_account != op.platform)
+            auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
+        
+        if (auth_object){
+            FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
+                "the buyout permisson of platform ${p} authorized by account ${a} is invalid. ",
+                ("p", op.platform)("a", op.from_account_uid));
+
+            if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
+            {
+                share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats->prepaid);
+                FC_ASSERT(usable_prepaid >= iter->second.buyout_price,
+                    "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
+                    ("c", usable_prepaid)("p", sign_account)("a", op.from_account_uid)("n", iter->second.buyout_price));
+            }
+        }
+        
         FC_ASSERT(account_stats->prepaid >= iter->second.buyout_price, 
                   "Insufficient balance: unable to buyout, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", iter->second.buyout_price));
-        if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID && sign_platform_uid.valid())
-        {
-            share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats->prepaid);
-            FC_ASSERT(usable_prepaid >= iter->second.buyout_price,
-                      "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
-                      ("c", usable_prepaid)("p", *sign_platform_uid)("a", op.from_account_uid)("n", iter->second.buyout_price));
-        }
-
 		return void_result();
 	}FC_CAPTURE_AND_RETHROW((op))
 }
@@ -1202,7 +1197,7 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
 		const post_object& post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);
 		auto iter = post.receiptors.find(op.receiptor_account_uid);
 		Recerptor_Parameter para = iter->second;
-        if (sign_platform_uid.valid() && auth_object) // signed by platform , then add auth cur_used
+        if (auth_object) // signed by platform , then add auth cur_used
         {
             d.modify(*auth_object, [&](account_auth_platform_object& obj)
             {

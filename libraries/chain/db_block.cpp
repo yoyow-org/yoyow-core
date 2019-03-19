@@ -597,7 +597,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
 
    signed_information sigs;
 
-   if( !(skip & (skip_transaction_signatures | skip_authority_check) ) )
+   //if( !(skip & (skip_transaction_signatures | skip_authority_check) ) )
    {
       //auto get_active = [&]( account_id_type id ) { return &id(*this).active; };
       //auto get_owner  = [&]( account_id_type id ) { return &id(*this).owner;  };

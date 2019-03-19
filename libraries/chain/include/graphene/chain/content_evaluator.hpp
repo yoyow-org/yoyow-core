@@ -61,7 +61,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
          const active_post_object* active_post = nullptr;
          const account_statistics_object* account_stats = nullptr;
          const post_operation::ext* ext_para = nullptr;
-         optional<account_uid_type> sign_platform_uid;
+         const account_auth_platform_object* auth_object = nullptr;
    };
 
    class post_update_evaluator : public evaluator<post_update_evaluator>
@@ -108,7 +108,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
        void_result do_apply(const operation_type& o);
 
        const active_post_object* active_post = nullptr;
-       optional<account_uid_type> sign_platform_uid;
+       const account_auth_platform_object* auth_object = nullptr;
    };
 
    class buyout_evaluator : public evaluator<buyout_evaluator>
@@ -118,7 +118,6 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
 	   void_result do_evaluate(const operation_type& o);
 	   void_result do_apply(const operation_type& o);
-       optional<account_uid_type> sign_platform_uid;
        const account_auth_platform_object* auth_object = nullptr;
    };
 
