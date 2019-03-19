@@ -22,9 +22,7 @@ void_result custom_vote_create_evaluator::do_evaluate(const operation_type& op)
       account_stats = &d.get_account_statistics_by_uid(op.custom_vote_creater);
       FC_ASSERT((account_stats->last_custom_vote_sequence + 1) == op.vote_vid,"vote_vid ${vid} is invalid.",("vid", op.vote_vid)); 
 
-      const auto& asset_indx = d.get_index_type<asset_index>().indices().get<by_aid>();
-      auto asset_aid_itr = asset_indx.find(op.vote_asset_id);
-      FC_ASSERT(asset_aid_itr != asset_indx.end(), "Asset '${aid}' is not existent", ("aid", op.vote_asset_id));
+      d.get_asset_by_aid(op.vote_asset_id); //check asset exist
 
       const auto& params = d.get_global_properties().parameters.get_award_params();
       auto range_end_time = d.head_block_time() + params.custom_vote_effective_time;

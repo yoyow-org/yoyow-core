@@ -18,7 +18,7 @@ void_result advertising_create_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create advertising after HARDFORK_0_4_TIME");
-        platform_obj = d.find_platform_by_owner(op.platform); // make sure pid exists
+        platform_obj = d.find_platform_by_owner(op.platform); // make sure platform exists
         FC_ASSERT(platform_obj != nullptr, "platform doesn`t exsit. ");
         FC_ASSERT((platform_obj->last_advertising_sequence + 1) == op.advertising_aid,"advertising_aid ${pid} is invalid.",("pid", op.advertising_aid));
         return void_result();
@@ -56,7 +56,6 @@ void_result advertising_update_evaluator::do_evaluate(const operation_type& op)
         d.get_platform_by_owner(op.platform); // make sure pid exists
         advertising_obj = d.find_advertising(op.platform, op.advertising_aid);
         FC_ASSERT(advertising_obj != nullptr, "advertising_object doesn`t exsit");
-        FC_ASSERT(advertising_obj->platform == op.platform, "Can`t update other`s advetising. ");
 
         if (op.on_sell.valid())
             FC_ASSERT(*(op.on_sell) != advertising_obj->on_sell, "advertising state needn`t update. ");
@@ -102,6 +101,8 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
       
       const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_confirmed>();
       auto itr = idx.lower_bound(std::make_tuple(op.platform, op.advertising_aid, true));
+
+      FC_ASSERT(advertising_obj->unit_time <= 10*365*24*60*60 / op.buy_number, "advertising purchasing time should not more than ten years ");
 
       time_point_sec end_time = op.start_time + advertising_obj->unit_time * op.buy_number;
       while (itr != idx.end() && itr->advertising_aid == op.advertising_aid && itr->platform == op.platform && itr->confirmed_status) {
@@ -176,7 +177,7 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
       if (op.iscomfirm) {
          const auto& params = d.get_global_properties().parameters.get_award_params();
          FC_ASSERT(advertising_order_obj->released_balance > params.advertising_confirmed_min_fee,
-            "buy price is not enough to pay The lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
+            "buy price is not enough to pay the lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
       }
 
       return void_result();
@@ -251,7 +252,7 @@ void_result advertising_ransom_evaluator::do_evaluate(const operation_type& op)
     try {
         const database& d = db();
         FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only ransom advertising after HARDFORK_0_4_TIME");
-        d.get_platform_by_owner(op.platform); // make sure pid exists
+        d.get_platform_by_owner(op.platform); // make sure platorm exists
         d.get_account_by_uid(op.from_account);
         const auto& advertising_obj = d.find_advertising(op.platform, op.advertising_aid);
         FC_ASSERT(advertising_obj != nullptr, "advertising object doesn`t exsit");

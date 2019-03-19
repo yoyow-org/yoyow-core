@@ -223,6 +223,13 @@ void committee_updatable_content_parameters::validate()const
    }
    else
       FC_ASSERT(false, "receiptor award modulus and disapprove award modulus should be updated together");
+   
+   if (platform_award_basic_rate.valid())
+      FC_ASSERT(*platform_award_basic_rate > 0 && *platform_award_basic_rate < GRAPHENE_100_PERCENT,
+               "platform award basic rate should be in range 0-100%");
+   if (advertising_confirmed_fee_rate.valid())
+      FC_ASSERT(*advertising_confirmed_fee_rate > 0 && *advertising_confirmed_fee_rate < GRAPHENE_100_PERCENT, 
+               "advertising confirmed fee rate should be in range 0-100%");
 }
 
 void committee_proposal_create_operation::validate()const

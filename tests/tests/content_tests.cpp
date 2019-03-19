@@ -1296,13 +1296,14 @@ BOOST_AUTO_TEST_CASE(custom_vote_test)
       add_csaf_for_account(u_9000_id, 10000);
 
 
-      create_custom_vote({ u_9000_private_key }, u_9000_id, "title", "description", time_point_sec(1560096000),
+      create_custom_vote({ u_9000_private_key }, u_9000_id, 1, "title", "description", time_point_sec(1560096000),
          0, share_type(1000000), 1, 3, { "aa", "bb", "cc", "dd" });
       
       
       const auto& idx = db.get_index_type<custom_vote_index>().indices().get<by_id>();
       const auto& obj = *(idx.begin());
-      BOOST_CHECK(obj.create_account == u_9000_id);
+      BOOST_CHECK(obj.custom_vote_creater == u_9000_id);
+      BOOST_CHECK(obj.vote_vid == 1);
       BOOST_CHECK(obj.title == "title");
       BOOST_CHECK(obj.description == "description");
       BOOST_CHECK(obj.vote_expired_time == time_point_sec(1560096000));
@@ -1316,25 +1317,25 @@ BOOST_AUTO_TEST_CASE(custom_vote_test)
       BOOST_CHECK(obj.options.at(2) == "cc");
       BOOST_CHECK(obj.options.at(3) == "dd");
 
-      cast_custom_vote({ u_1000_private_key }, u_1000_id, obj.id, { 0, 1 });
+      cast_custom_vote({ u_1000_private_key }, u_1000_id, u_9000_id, 1, { 0, 1 });
       BOOST_CHECK(obj.vote_result.at(0) == 10000 * prec);
       BOOST_CHECK(obj.vote_result.at(1) == 10000 * prec);
       BOOST_CHECK(obj.vote_result.at(2) == 0);
       BOOST_CHECK(obj.vote_result.at(3) == 0);
 
-      cast_custom_vote({ u_2000_private_key }, u_2000_id, obj.id, { 0, 1, 2 });
+      cast_custom_vote({ u_2000_private_key }, u_2000_id, u_9000_id, 1, { 0, 1, 2 });
       BOOST_CHECK(obj.vote_result.at(0) == 20000 * prec);
       BOOST_CHECK(obj.vote_result.at(1) == 20000 * prec);
       BOOST_CHECK(obj.vote_result.at(2) == 10000 * prec);
       BOOST_CHECK(obj.vote_result.at(3) == 0);
 
-      cast_custom_vote({ u_3000_private_key }, u_3000_id, obj.id, { 2, 3 });
+      cast_custom_vote({ u_3000_private_key }, u_3000_id, u_9000_id, 1, { 2, 3 });
       BOOST_CHECK(obj.vote_result.at(0) == 20000 * prec);
       BOOST_CHECK(obj.vote_result.at(1) == 20000 * prec);
       BOOST_CHECK(obj.vote_result.at(2) == 20000 * prec);
       BOOST_CHECK(obj.vote_result.at(3) == 10000 * prec);
 
-      cast_custom_vote({ u_4000_private_key }, u_4000_id, obj.id, { 1, 3 });
+      cast_custom_vote({ u_4000_private_key }, u_4000_id, u_9000_id, 1, { 1, 3 });
       BOOST_CHECK(obj.vote_result.at(0) == 20000 * prec);
       BOOST_CHECK(obj.vote_result.at(1) == 30000 * prec);
       BOOST_CHECK(obj.vote_result.at(2) == 20000 * prec);
