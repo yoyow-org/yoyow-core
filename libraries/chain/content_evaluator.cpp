@@ -532,8 +532,6 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
            if (apt_itr != apt_idx.end())
            {
                active_post = &(*apt_itr);
-               FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
-               FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
            }
        }
    }
@@ -812,8 +810,6 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
             if (apt_itr != apt_idx.end())
             {
                 active_post = &(*apt_itr);
-                FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
-                FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
             }
         }
 
@@ -916,8 +912,6 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
             if (apt_itr != apt_idx.end())
             {
                 active_post = &(*apt_itr);
-                FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
-                FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
             }
         }	
 
@@ -1039,8 +1033,6 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
             if (apt_itr != apt_idx.end())
             {
                 active_post = &(*apt_itr);
-                FC_ASSERT(active_post->platform == op.platform, "platform should be the same.");
-                FC_ASSERT(active_post->poster == op.poster, "poster should be the same.");
             }
         }
         

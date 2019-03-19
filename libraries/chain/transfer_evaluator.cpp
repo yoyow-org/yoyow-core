@@ -49,7 +49,6 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
            const auto& account_stats = d.get_account_statistics_by_uid(op.from);
            auth_object = d.find_account_auth_platform_object_by_account_platform(op.from, sign_account);
            if (auth_object){   //transfer by platform,
-               sign_platform_uid = sign_account;
                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Transfer) > 0,
                    "the transfer permisson of platform ${p} authorized by account ${a} is invalid. ",
                    ("a", (op.from))("p", sign_account));
@@ -137,7 +136,7 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
            s.prepaid -= asset_from_prepaid.amount;
        });
 
-       if (sign_platform_uid.valid() && auth_object)
+       if (auth_object)
        {
            d.modify(*auth_object, [&](account_auth_platform_object& obj)
            {
