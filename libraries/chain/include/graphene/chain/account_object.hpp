@@ -733,6 +733,7 @@ namespace graphene { namespace chain {
 
        share_type    max_limit = 0;   //max limit prepaid for platform
        share_type    cur_used = 0;    //current prepaid used by platform 
+       bool          is_active = true;
        uint32_t      permission_flags = account_auth_platform_object::Platform_Permission_Forward |
                                         account_auth_platform_object::Platform_Permission_Liked |
                                         account_auth_platform_object::Platform_Permission_Buyout |
@@ -852,4 +853,4 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
 FC_REFLECT_DERIVED(graphene::chain::account_auth_platform_object,
                   (graphene::db::object),
                   (account)(platform)
-                  (max_limit)(cur_used)(permission_flags)(memo))
+                  (max_limit)(cur_used)(is_active)(permission_flags)(memo))

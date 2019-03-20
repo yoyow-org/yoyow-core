@@ -454,6 +454,8 @@ void database::update_average_witness_pledges()
 void database::release_witness_pledges()
 {
    const auto head_num = head_block_num();
+   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+   auto block_time = head_block_time();
    const auto& idx = get_index_type<account_statistics_index>().indices().get<by_witness_pledge_release>();
    auto itr = idx.begin();
    while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
@@ -462,6 +464,8 @@ void database::release_witness_pledges()
          s.total_witness_pledge -= s.releasing_witness_pledge;
          s.releasing_witness_pledge = 0;
          s.witness_pledge_release_block_number = -1;
+         if (head_num >= HARDFORK_0_4_BLOCKNUM)
+             s.update_coin_seconds_earned(csaf_window, head_block_time(), true);
       });
       itr = idx.begin();
    }

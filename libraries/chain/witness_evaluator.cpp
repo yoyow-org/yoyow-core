@@ -25,6 +25,7 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/database.hpp>
+#include <graphene/chain/hardfork.hpp>
 
 namespace graphene { namespace chain {
 
@@ -84,6 +85,10 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
    });
 
+   const uint64_t csaf_window = global_params.csaf_accumulate_window;
+   auto block_time = d.head_block_time();
+   bool reduce_witness = d.head_block_num() >= HARDFORK_0_4_BLOCKNUM;
+
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.last_witness_sequence += 1;
       if( s.releasing_witness_pledge > op.pledge.amount )
@@ -96,6 +101,8 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
             s.releasing_witness_pledge = 0;
             s.witness_pledge_release_block_number = -1;
          }
+         if (reduce_witness)
+             s.update_coin_seconds_earned(csaf_window, block_time, true);
       }
    });
 
@@ -188,6 +195,9 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       share_type delta = op.new_pledge->amount - witness_obj->pledge;
       if( delta > 0 ) // more pledge
       {
+          const uint64_t csaf_window = global_params.csaf_accumulate_window;
+          auto block_time = d.head_block_time();
+          bool reduce_witness = d.head_block_num() >= HARDFORK_0_4_BLOCKNUM;
          d.modify( *account_stats, [&](account_statistics_object& s) {
             if( s.releasing_witness_pledge > delta )
                s.releasing_witness_pledge -= delta;
@@ -199,6 +209,8 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
                   s.releasing_witness_pledge = 0;
                   s.witness_pledge_release_block_number = -1;
                }
+               if (reduce_witness)
+                   s.update_coin_seconds_earned(csaf_window, block_time, true);
             }
          });
       }
@@ -524,6 +536,9 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       share_type from_releasing = std::min( account_stats->releasing_witness_pledge, total );
       share_type from_pledge = total - from_releasing;
       // update account stats object
+      const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
+      auto block_time = d.head_block_time();
+      bool reduce_witness = d.head_block_num() >= HARDFORK_0_4_BLOCKNUM;
       d.modify( *account_stats, [&]( account_statistics_object& s ) {
          if( from_releasing > 0 )
          {
@@ -534,7 +549,10 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          s.total_witness_pledge -= total;
          s.witness_last_reported_block_num = reporting_block_num;
          s.witness_total_reported += 1;
+         if (reduce_witness)
+             s.update_coin_seconds_earned(csaf_window, block_time, true);
       });
+      
       // update witness object
       if( from_pledge > 0 && witness_obj != nullptr )
       {
