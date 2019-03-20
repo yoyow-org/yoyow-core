@@ -35,6 +35,7 @@
 //#include <graphene/chain/market_object.hpp>
 //#include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/witness_object.hpp>
+#include <graphene/chain/advertising_object.hpp>
 
 #include <graphene/utilities/tempdir.hpp>
 
@@ -1366,10 +1367,13 @@ void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
    string               memo)
 {
    try {
+      const advertising_object& ad_obj = db.get_advertising(platform, advertising_aid);
+
       advertising_buy_operation buy_op;
       buy_op.from_account = account;
       buy_op.platform = platform;
       buy_op.advertising_aid = advertising_aid;
+      buy_op.advertising_order_oid = ad_obj.last_order_sequence + 1;
       buy_op.buy_number = buy_number;
       buy_op.extra_data = extra_data;
       buy_op.start_time = start_time;
