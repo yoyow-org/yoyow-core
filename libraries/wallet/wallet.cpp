@@ -2614,7 +2614,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
    signed_transaction buy_advertising(string               account,
                                       string               platform,
-                                      string               advertising_aid,
+                                      advertising_aid_type advertising_aid,
                                       uint32_t             start_time,
                                       uint32_t             buy_number,
                                       string               extra_data,
@@ -2627,14 +2627,13 @@ signed_transaction account_cancel_auth_platform(string account,
          FC_ASSERT(!self.is_locked(), "Should unlock first");
          account_uid_type platform_uid = get_account_uid(platform);
          account_uid_type account_uid = get_account_uid(account);
-         advertising_aid_type ad_aid = fc::to_uint64(fc::string(advertising_aid));
 
-         optional<advertising_object> ad_obj = _remote_db->get_advertising(platform_uid, ad_aid);
+         optional<advertising_object> ad_obj = _remote_db->get_advertising(platform_uid, advertising_aid);
          FC_ASSERT(ad_obj.valid(), "advertising_object doesn`t exsit. ");
          advertising_buy_operation buy_op;
          buy_op.from_account = account_uid;
          buy_op.platform = platform_uid;
-         buy_op.advertising_aid = ad_aid;
+         buy_op.advertising_aid = advertising_aid;
          buy_op.advertising_order_oid = ad_obj->last_order_sequence + 1;
          buy_op.start_time = time_point_sec(start_time);
          buy_op.buy_number = buy_number;
@@ -2661,8 +2660,8 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction confirm_advertising(string              platform,
-                                          string              advertising_aid,
-                                          string              advertising_order_oid,
+                                          advertising_aid_type        advertising_aid,
+                                          advertising_order_oid_type  advertising_order_oid,
                                           bool                comfirm,
                                           bool                csaf_fee = true,
                                           bool                broadcast = false
@@ -2673,8 +2672,8 @@ signed_transaction account_cancel_auth_platform(string account,
 
          advertising_confirm_operation confirm_op;
          confirm_op.platform = get_account_uid(platform);
-         confirm_op.advertising_aid = fc::to_uint64(fc::string(advertising_aid));
-         confirm_op.advertising_order_oid = fc::to_uint64(fc::string(advertising_order_oid));
+         confirm_op.advertising_aid = advertising_aid;
+         confirm_op.advertising_order_oid = advertising_order_oid;
          confirm_op.iscomfirm = comfirm;
 
          signed_transaction tx;
@@ -2880,7 +2879,7 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction update_advertising(string                     platform,
-                                         string                     advertising_aid,
+                                         advertising_aid_type       advertising_aid,
                                          optional<string>           description,
                                          optional<string>           unit_price,
                                          optional<uint32_t>         unit_time,
@@ -2896,7 +2895,7 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type platform_uid = get_account_uid(platform);
            advertising_update_operation update_op;
            update_op.platform = platform_uid;
-           update_op.advertising_aid = fc::to_uint64(fc::string(advertising_aid));
+           update_op.advertising_aid = advertising_aid;
            if (description.valid())
                update_op.description = *description;
            if (unit_price.valid())
@@ -2917,8 +2916,8 @@ signed_transaction account_cancel_auth_platform(string account,
 
    signed_transaction ransom_advertising(string           platform,
                                          string           from_account,
-                                         string           advertising_aid,
-                                         string           advertising_order_oid,
+                                         advertising_aid_type        advertising_aid,
+                                         advertising_order_oid_type  advertising_order_oid,
                                          bool             csaf_fee,
                                          bool             broadcast)
    {
@@ -2930,8 +2929,8 @@ signed_transaction account_cancel_auth_platform(string account,
            advertising_ransom_operation ransom_op;
            ransom_op.platform = platform_uid;
            ransom_op.from_account = from_account_uid;
-           ransom_op.advertising_aid = fc::to_uint64(fc::string(advertising_aid));
-           ransom_op.advertising_order_oid = fc::to_uint64(fc::string(advertising_order_oid));
+           ransom_op.advertising_aid = advertising_aid;
+           ransom_op.advertising_order_oid = advertising_order_oid;
 
            signed_transaction tx;
            tx.operations.push_back(ransom_op);
@@ -4309,7 +4308,7 @@ signed_transaction wallet_api::account_manage(string executor,
 
 signed_transaction wallet_api::buy_advertising(string               account,
                                                string               platform,
-                                               string               advertising_aid,
+                                               advertising_aid_type advertising_aid,
                                                uint32_t             start_time,
                                                uint32_t             buy_number,
                                                string               extra_data,
@@ -4321,8 +4320,8 @@ signed_transaction wallet_api::buy_advertising(string               account,
 }
 
 signed_transaction wallet_api::confirm_advertising(string         platform,
-                                                   string         advertising_aid,
-                                                   string         advertising_order_oid,
+                                                   advertising_aid_type         advertising_aid,
+                                                   advertising_order_oid_type   advertising_order_oid,
                                                    bool           comfirm,
                                                    bool           csaf_fee,
                                                    bool           broadcast)
@@ -4429,7 +4428,7 @@ signed_transaction wallet_api::create_advertising(string           platform,
 }
 
 signed_transaction wallet_api::update_advertising(string                     platform,
-                                                  string                     advertising_aid,
+                                                  advertising_aid_type       advertising_aid,
                                                   optional<string>           description,
                                                   optional<string>           unit_price,
                                                   optional<uint32_t>         unit_time,
@@ -4442,8 +4441,8 @@ signed_transaction wallet_api::update_advertising(string                     pla
 
 signed_transaction wallet_api::ransom_advertising(string           platform,
                                                   string           from_account,
-                                                  string           advertising_aid,
-                                                  string           advertising_order_oid,
+                                                  advertising_aid_type        advertising_aid,
+                                                  advertising_order_oid_type  advertising_order_oid,
                                                   bool             csaf_fee,
                                                   bool             broadcast)
 {

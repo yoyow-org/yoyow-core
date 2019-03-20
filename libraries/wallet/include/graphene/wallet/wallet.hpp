@@ -1583,7 +1583,7 @@ class wallet_api
                                             bool broadcast = false);
 
       signed_transaction update_advertising(string                     platform,
-                                            string                     advertising_aid,
+                                            advertising_aid_type       advertising_aid,
                                             optional<string>           description,
                                             optional<string>           unit_price,
                                             optional<uint32_t>         unit_time,
@@ -1593,7 +1593,7 @@ class wallet_api
 
       signed_transaction buy_advertising(string               account,
                                          string               platform,
-                                         string               advertising_aid,
+                                         advertising_aid_type advertising_aid,
                                          uint32_t             start_time,
                                          uint32_t             buy_number,
                                          string               extra_data,
@@ -1603,17 +1603,17 @@ class wallet_api
                                          );
 
       signed_transaction confirm_advertising(string         platform,
-                                             string         advertising_aid,
-                                             string         advertising_order_oid,
+                                             advertising_aid_type         advertising_aid,
+                                             advertising_order_oid_type   advertising_order_oid,
                                              bool           comfirm,
                                              bool           csaf_fee = true,
                                              bool           broadcast = false
                                              );
 
-      signed_transaction ransom_advertising(string           platform,
-                                            string           from_account,
-                                            string           advertising_aid,
-                                            string           advertising_order_oid,
+      signed_transaction ransom_advertising(string                       platform,
+                                            string                       from_account,
+                                            advertising_aid_type         advertising_aid,
+                                            advertising_order_oid_type   advertising_order_oid,
                                             bool csaf_fee = true,
                                             bool broadcast = false);
 
