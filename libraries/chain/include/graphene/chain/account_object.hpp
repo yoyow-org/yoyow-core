@@ -770,10 +770,7 @@ namespace graphene { namespace chain {
                                  composite_key< 
                                  account_auth_platform_object,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >,
-                                 member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >>
-                                 >,
-          ordered_non_unique< tag<by_platform_uid>,member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform> >,
-          ordered_non_unique< tag<by_account_uid>, member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account> >
+                                 member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >>>
        >
    > account_auth_platform_multi_index_type;
 
