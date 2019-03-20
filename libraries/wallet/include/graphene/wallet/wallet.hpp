@@ -1618,7 +1618,6 @@ class wallet_api
                                             bool broadcast = false);
 
       signed_transaction create_custom_vote(string           create_account,
-                                            custom_vote_vid_type  custom_vote_vid,
                                             string           title,
                                             string           description,
                                             uint32_t         expired_time,

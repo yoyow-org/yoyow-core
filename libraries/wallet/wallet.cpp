@@ -2943,7 +2943,6 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction create_custom_vote(string           create_account,
-                                         custom_vote_vid_type  custom_vote_vid,
                                          string           title,
                                          string           description,
                                          time_point_sec   expired_time,
@@ -2958,10 +2957,13 @@ signed_transaction account_cancel_auth_platform(string account,
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
 
+        
          account_uid_type creater = get_account_uid(create_account);
+         const account_statistics_object& creater_statistics = _remote_db->get_account_statistics_by_uid(creater);
+
          custom_vote_create_operation create_op;
          create_op.custom_vote_creater = creater;
-         create_op.vote_vid = custom_vote_vid;
+         create_op.vote_vid = creater_statistics.last_custom_vote_sequence + 1;
          create_op.title = title;
          create_op.description = description;
          create_op.vote_expired_time = expired_time;
@@ -2977,7 +2979,7 @@ signed_transaction account_cancel_auth_platform(string account,
          tx.validate();
 
          return sign_transaction(tx, broadcast);
-      } FC_CAPTURE_AND_RETHROW((create_account)(custom_vote_vid)(title)(description)(expired_time)(asset_id)
+      } FC_CAPTURE_AND_RETHROW((create_account)(title)(description)(expired_time)(asset_id)
          (required_amount)(minimum_selected_items)(maximum_selected_items)(options)(csaf_fee)(broadcast))
    }
 
@@ -4463,7 +4465,6 @@ vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_aid(
 }
 
 signed_transaction wallet_api::create_custom_vote(string           create_account,
-                                                  custom_vote_vid_type  custom_vote_vid,
                                                   string           title,
                                                   string           description,
                                                   uint32_t         expired_time,
@@ -4476,7 +4477,7 @@ signed_transaction wallet_api::create_custom_vote(string           create_accoun
                                                   bool broadcast)
 {
    time_point_sec time = time_point_sec(expired_time);
-   return my->create_custom_vote(create_account, custom_vote_vid, title, description, time, asset_id,
+   return my->create_custom_vote(create_account, title, description, time, asset_id,
       required_amount, minimum_selected_items, maximum_selected_items, options, csaf_fee, broadcast);
 }
 
