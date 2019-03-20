@@ -41,7 +41,7 @@ namespace graphene { namespace chain {
          const account_statistics_object* from_account_stats;
          const account_statistics_object* to_account_stats;
          asset asset_from_balance, asset_from_prepaid, asset_to_balance, asset_to_prepaid;
-         const account_auth_platform_object* auth_object;
+         const account_auth_platform_object* auth_object=nullptr;
    };
 
    class override_transfer_evaluator : public evaluator<override_transfer_evaluator>
