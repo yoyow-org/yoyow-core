@@ -2634,8 +2634,8 @@ signed_transaction account_cancel_auth_platform(string account,
          advertising_buy_operation buy_op;
          buy_op.from_account = account_uid;
          buy_op.platform = platform_uid;
-         buy_op.advertising_aid = ad_obj->last_order_sequence + 1;
-         buy_op.advertising_order_oid = ad_aid;
+         buy_op.advertising_aid = ad_aid;
+         buy_op.advertising_order_oid = ad_obj->last_order_sequence + 1;
          buy_op.start_time = time_point_sec(start_time);
          buy_op.buy_number = buy_number;
          buy_op.extra_data = extra_data;

@@ -197,7 +197,6 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
          d.modify(*advertising_order_obj, [&](advertising_order_object& obj)
          {
             obj.status = advertising_accepted;
-            obj.released_balance = 0;
             obj.handle_time = d.head_block_time();
          });
 
@@ -220,6 +219,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
          const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_order_state>();
          auto itr = idx.lower_bound(std::make_tuple(advertising_undetermined, op.platform, op.advertising_aid));
 
+         vector<object_id_type> update_orders;
          while (itr != idx.end() && itr->platform == op.platform && itr->advertising_aid == op.advertising_aid && itr->status == advertising_undetermined)
          {
             if (itr->start_time >= advertising_order_obj->end_time || itr->end_time <= advertising_order_obj->start_time) {
@@ -228,26 +228,33 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
             else
             {
                d.adjust_balance(itr->user, asset(itr->released_balance));
-               result.emplace(itr->user, itr->released_balance);              
-               d.modify(*itr, [&](advertising_order_object& obj)
-               {
-                  obj.status = advertising_refused;
-                  obj.released_balance = 0;
-                  obj.handle_time = d.head_block_time();
-               });
+               result.emplace(itr->user, itr->released_balance);  
+               update_orders.push_back(itr->id);              
                itr++;
             }           
          } 
+        
+         const auto& idx_by_id = d.get_index_type<advertising_order_index>().indices().get<by_id>();
+         for (const auto& id : update_orders)
+         {
+            auto update_itr = idx_by_id.find(id);
+            if (update_itr != idx_by_id.end())
+            {
+               d.modify(*update_itr, [&](advertising_order_object& obj)
+               {
+                  obj.status = advertising_refused;
+                  obj.handle_time = d.head_block_time();
+               });
+            }    
+         }
       }
       else
       {
          d.adjust_balance(advertising_order_obj->user, asset(advertising_order_obj->released_balance));
          result.emplace(advertising_order_obj->user, advertising_order_obj->released_balance);
-
          d.modify(*advertising_order_obj, [&](advertising_order_object& obj)
          {
             obj.status = advertising_refused;
-            obj.released_balance = 0;
             obj.handle_time = d.head_block_time();
          });
       }
@@ -288,7 +295,6 @@ void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
         d.modify(*advertising_order_obj, [&](advertising_order_object& obj)
         {
            obj.status = advertising_ransom;
-           obj.released_balance = 0;
            obj.handle_time = d.head_block_time();
         });
 
