@@ -546,6 +546,9 @@ void database::_apply_block( const signed_block& next_block )
 
    clear_unnecessary_objects();
 
+   if (head_block_num() == HARDFORK_0_4_BLOCKNUM)
+       update_reduce_witness_csaf();
+
    //dlog("before update_witness_schedule");
    update_witness_schedule();
    if( !_node_property_object.debug_updates.empty() )

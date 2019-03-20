@@ -300,6 +300,19 @@ void database::clear_unnecessary_objects()
 
 }
 
+void database::update_reduce_witness_csaf()
+{
+    const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+    const auto& witness_idx = get_index_type<witness_index>().indices();
+    for (auto itr = witness_idx.begin(); itr != witness_idx.end(); itr++)
+    {
+        const account_statistics_object& statistics_obj = get_account_statistics_by_uid(itr->account);
+        modify(statistics_obj, [&](account_statistics_object& s) {
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), true);
+        });
+    }
+}
+
 std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
 database::get_effective_csaf(const active_post_object& active_post)
 {
@@ -410,14 +423,15 @@ void database::clear_expired_csaf_leases()
    const auto head_time = head_block_time();
    const auto& idx = get_index_type<csaf_lease_index>().indices().get<by_expiration>();
    auto itr = idx.begin();
+   bool reduce_witness = head_block_num() >= HARDFORK_0_4_BLOCKNUM;
    while( itr != idx.end() && itr->expiration <= head_time )
    {
       modify( get_account_statistics_by_uid( itr->from ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned( csaf_window, head_time );
+         s.update_coin_seconds_earned(csaf_window, head_time, reduce_witness);
          s.core_leased_out -= itr->amount;
       });
       modify( get_account_statistics_by_uid( itr->to ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned( csaf_window, head_time );
+         s.update_coin_seconds_earned(csaf_window, head_time, reduce_witness);
          s.core_leased_in -= itr->amount;
       });
       remove( *itr );

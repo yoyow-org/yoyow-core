@@ -226,14 +226,14 @@ namespace graphene { namespace chain {
           * are available.
           */
          // TODO use a public funtion to do this job as well as same job in vesting_balance_object
-         std::pair<fc::uint128_t,share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now)const;
+         std::pair<fc::uint128_t,share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const bool reduce_witness = false)const;
 
          /**
           * Update coin_seconds_earned and
           * coin_seconds_earned_last_update fields due to passing of time
           */
          // TODO use a public funtion to do this job and same job in vesting_balance_object
-         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now);
+         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const bool reduce_witness = false);
 
          /**
           * Update coin_seconds_earned and

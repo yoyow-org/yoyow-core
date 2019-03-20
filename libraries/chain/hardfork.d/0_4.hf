@@ -2,3 +2,7 @@
 #ifndef HARDFORK_0_4_TIME
 #define HARDFORK_0_4_TIME (fc::time_point_sec( 0 ))  //1577808000  2020-01-01 00:00:00 UTC
 #endif
+
+#ifndef HARDFORK_0_4_BLOCKNUM
+#define HARDFORK_0_4_BLOCKNUM (uint64_t( 0 ))
+#endif

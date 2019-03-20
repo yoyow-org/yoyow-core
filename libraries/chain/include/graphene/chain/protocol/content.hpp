@@ -186,7 +186,10 @@ namespace graphene { namespace chain {
            optional<uint8_t>                                      post_type = Post_Type_Post;
 		   optional<share_type>                                   forward_price;
            optional<license_lid_type>                             license_lid;
-           optional<uint32_t>                                     permission_flags = 0xFFFFFFFF;
+           optional<uint32_t>                                     permission_flags = Post_Type_Post | 
+                                                                                     Post_Type_Comment | 
+                                                                                     Post_Type_forward | 
+                                                                                     Post_Type_forward_And_Modify;
            optional<map<account_uid_type, Recerptor_Parameter> >  receiptors;
 	   };
 

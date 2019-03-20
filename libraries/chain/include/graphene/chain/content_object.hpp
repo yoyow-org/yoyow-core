@@ -50,7 +50,7 @@ namespace graphene { namespace chain {
          fc::time_point_sec  average_pledge_last_update;
          uint32_t            average_pledge_next_update_block;
 
-         uint64_t                               last_advertising_sequence = 0;
+         advertising_aid_type                   last_advertising_sequence = 0;
          license_lid_type                       last_license_sequence = 0;
          map<time_point_sec, share_type>        vote_profits;
          map<uint32_t, Platform_Period_Profits> period_profits;
