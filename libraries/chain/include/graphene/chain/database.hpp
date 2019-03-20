@@ -556,6 +556,10 @@ namespace graphene { namespace chain {
          node_property_object              _node_property_object;
 
          uint32_t                          _latest_active_post_periods = 10;
+      
+#ifdef HARD_FORK_TEST
+         void                              for_hard_fork_test();
+#endif HARD_FORK_TEST
    };
 
    namespace detail

@@ -180,6 +180,9 @@ namespace detail {
          else
          {
             vector<string> seeds = {
+#ifdef HARD_FORK_TEST
+               "39.98.69.186:2019"  // yoyow harfork test seed node
+#endif HARD_FORK_TEST
                "seed01.yoyow.org:2018"  // yoyow mainnet
             };
 
@@ -955,6 +958,7 @@ void application::set_program_options(boost::program_options::options_descriptio
          ("dbg-init-key", bpo::value<string>(), "Block signing key to use for init witnesses, overrides genesis file")
          ("api-access", bpo::value<boost::filesystem::path>(), "JSON file specifying API permissions")
          ("plugins", bpo::value<string>(), "Space-separated list of plugins to activate")
+         ("HF-T", "Hard fork test version")
          ;
    command_line_options.add(configuration_file_options);
    command_line_options.add_options()
@@ -977,6 +981,14 @@ void application::set_program_options(boost::program_options::options_descriptio
 
 void application::initialize(const fc::path& data_dir, const boost::program_options::variables_map& options)
 {
+#ifdef HARD_FORK_TEST
+   if( !options.count("HF-T") )
+   {
+      std::cout<<"\nThis is a hard fork test version ,Do not use it for public node ,if you want join in testing ,Please run with flag --HF-T\n"<<std::endl;
+      throw;
+   }else
+      std::cout<<"\nWelcome jion in hard fork testing\n"<<std::endl;
+#endif HARD_FORK_TEST
    my->_data_dir = data_dir;
    my->_options = &options;
 

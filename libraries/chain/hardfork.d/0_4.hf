@@ -1,4 +1,4 @@
 // add content ops
 #ifndef HARDFORK_0_4_TIME
-#define HARDFORK_0_4_TIME (fc::time_point_sec( 0 ))  //1577808000  2020-01-01 00:00:00 UTC
+#define HARDFORK_0_4_TIME (fc::time_point_sec( 1550713707 ))  //1550713707  2019-02-21T09:48:27 UTC
 #endif

@@ -54,6 +54,12 @@ LIST(APPEND BOOST_COMPONENTS thread
                              locale)
 SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 
+OPTION(HARD_FORK_TEST "Build Hard fork test" OFF)
+if(HARD_FORK_TEST)
+   message("HARD_FORK_TEST set")
+   add_definitions("-DHARD_FORK_TEST")
+endif(HARD_FORK_TEST)
+
 IF( WIN32 )
   SET(BOOST_ROOT $ENV{BOOST_ROOT})
   set(Boost_USE_MULTITHREADED ON)
