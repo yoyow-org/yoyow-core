@@ -1182,7 +1182,7 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       buy_advertising({ u_3000_private_key }, u_3000_id, u_9000_id, 1, time_point_sec(1551752731), 2, "u_3000", "");
       buy_advertising({ u_4000_private_key }, u_4000_id, u_9000_id, 1, time_point_sec(1677911410), 2, "u_4000", "");
       
-      const auto& idx_order = db.get_index_type<advertising_order_index>().indices().get<by_advertising_user>();
+      const auto& idx_order = db.get_index_type<advertising_order_index>().indices().get<by_advertising_user_id>();
       auto itr1 = idx_order.lower_bound(u_1000_id);
       BOOST_CHECK(itr1 != idx_order.end());
       BOOST_CHECK(itr1->user == u_1000_id);
@@ -1207,20 +1207,6 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       BOOST_CHECK(itr4->released_balance == 100000000 * 2);
       BOOST_CHECK(itr4->start_time == time_point_sec(1677911410));
 
-
-      //BOOST_CHECK(obj.undetermined_orders.at(1).user == u_1000_id);
-      //BOOST_CHECK(obj.undetermined_orders.at(2).user == u_2000_id);
-      //BOOST_CHECK(obj.undetermined_orders.at(3).user == u_3000_id);
-      //BOOST_CHECK(obj.undetermined_orders.at(4).user == u_4000_id);
-      //BOOST_CHECK(obj.undetermined_orders.at(1).released_balance == 100000000 * 2);
-      //BOOST_CHECK(obj.undetermined_orders.at(2).released_balance == 100000000 * 2);
-      //BOOST_CHECK(obj.undetermined_orders.at(3).released_balance == 100000000 * 2);
-      //BOOST_CHECK(obj.undetermined_orders.at(4).released_balance == 100000000 * 2);
-      //BOOST_CHECK(obj.undetermined_orders.at(1).start_time == time_point_sec(1551752731));
-      //BOOST_CHECK(obj.undetermined_orders.at(2).start_time == time_point_sec(1551752731));
-      //BOOST_CHECK(obj.undetermined_orders.at(3).start_time == time_point_sec(1551752731));
-      //BOOST_CHECK(obj.undetermined_orders.at(4).start_time == time_point_sec(1677911410));
-
       const auto& user1 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(user1.core_balance == 8000 * prec);
       const auto& user2 = db.get_account_statistics_by_uid(u_2000_id);
@@ -1232,27 +1218,15 @@ BOOST_AUTO_TEST_CASE(advertising_test)
 
       confirm_advertising({ u_9000_private_key }, u_9000_id, obj.advertising_aid, 1, true);
 
-      const auto& idx_ordered = db.get_index_type<advertising_order_index>().indices().get<by_advertising_confirmed>();
-      auto itr6 = idx_ordered.lower_bound(std::make_tuple(u_9000_id, obj.advertising_aid, true));
+      const auto& idx_ordered = db.get_index_type<advertising_order_index>().indices().get<by_advertising_order_state>();
+      auto itr6 = idx_ordered.lower_bound(advertising_accepted);
       const advertising_order_object adobj1 = *itr6;
       BOOST_CHECK(itr6 != idx_ordered.end());
       BOOST_CHECK(itr6->user == u_1000_id);
-      BOOST_CHECK(itr6->released_balance == 0);
+      BOOST_CHECK(itr6->released_balance == 2000*prec);
       BOOST_CHECK(itr6->start_time == time_point_sec(1551752731));
 
-      //BOOST_CHECK(obj.effective_orders.size() == 1);
-      //BOOST_CHECK(obj.effective_orders.at(time_point_sec(1551752731)).user == u_1000_id);
-      //BOOST_CHECK(obj.effective_orders.at(time_point_sec(1551752731)).released_balance == 0);
-
-      auto itr7 = idx_ordered.lower_bound(std::make_tuple(u_9000_id, obj.advertising_aid, false));
-      BOOST_CHECK(itr7 != idx_ordered.end());
-      BOOST_CHECK(itr7->user == u_4000_id);
-
       confirm_advertising({ u_9000_private_key }, u_9000_id, obj.advertising_aid, 4, false);
-
-      const auto& idx_ordered2 = db.get_index_type<advertising_order_index>().indices().get<by_advertising_user>();
-      auto itr8 = idx_ordered2.lower_bound(std::make_tuple(u_4000_id, true));
-      BOOST_CHECK(itr8 == idx_ordered2.end());
 
       BOOST_CHECK(user1.core_balance == 8000 * prec);
       BOOST_CHECK(user2.core_balance == 10000 * prec);
@@ -1269,6 +1243,8 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       BOOST_CHECK(obj.unit_time == 100000);
       BOOST_CHECK(obj.unit_price.value == 200000000);
  
+      const auto& idx_by_clear_time = db.get_index_type<advertising_order_index>().indices().get<by_clear_time>();
+      //auto itr_by_clear_time = 
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));

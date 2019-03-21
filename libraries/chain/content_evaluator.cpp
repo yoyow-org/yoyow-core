@@ -653,7 +653,8 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                   obj.forward_price = *(ext_para->forward_price);
                if (ext_para->license_lid.valid())
                   obj.license_lid = *(ext_para->license_lid);
-               obj.permission_flags = *(ext_para->permission_flags);
+               if (ext_para->permission_flags.valid())
+                  obj.permission_flags = *(ext_para->permission_flags);
 
                if (ext_para->receiptors.valid()) {
                   obj.receiptors = *(ext_para->receiptors);

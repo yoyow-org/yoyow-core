@@ -132,12 +132,13 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
    {
       const auto head_time = d.head_block_time();
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
+      bool reduce_witness = d.head_block_num() > HARDFORK_0_4_BLOCKNUM;
       d.modify( *from_stats, [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned( csaf_window, head_time );
+         s.update_coin_seconds_earned(csaf_window, head_time, reduce_witness);
          s.core_leased_out += delta;
       });
       d.modify( *to_stats, [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned( csaf_window, head_time );
+         s.update_coin_seconds_earned(csaf_window, head_time, reduce_witness);
          s.core_leased_in += delta;
       });
    }

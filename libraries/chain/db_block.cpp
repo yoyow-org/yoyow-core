@@ -547,6 +547,9 @@ void database::_apply_block( const signed_block& next_block )
 
    clear_unnecessary_objects();
 
+   if (head_block_num() == HARDFORK_0_4_BLOCKNUM)
+       update_reduce_witness_csaf();
+
    //dlog("before update_witness_schedule");
    update_witness_schedule();
    if( !_node_property_object.debug_updates.empty() )
@@ -602,7 +605,20 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
 
    signed_information sigs;
 
-   //if( !(skip & (skip_transaction_signatures | skip_authority_check) ) )
+   auto to_check_transaction = [&](){
+       for (const auto& op : trx.operations)
+       {
+           if (op.which() == operation::tag< transfer_operation >::value ||
+               op.which() == operation::tag< post_operation >::value || 
+               op.which() == operation::tag< reward_proxy_operation >::value || 
+               op.which() == operation::tag< buyout_operation >::value )
+           {
+               return true;
+           }
+       }
+       return false;
+   };
+   if (!(skip & (skip_transaction_signatures | skip_authority_check)) || to_check_transaction())
    {
       //auto get_active = [&]( account_id_type id ) { return &id(*this).active; };
       //auto get_owner  = [&]( account_id_type id ) { return &id(*this).owner;  };

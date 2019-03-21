@@ -70,6 +70,7 @@ public:
    void_result do_evaluate( const operation_type& o );
    void_result do_apply( const operation_type& o ) ;
 
+   void do_update_auth_platform_object(const operation_type& o);
    const account_object* acnt = nullptr;
 };
 
@@ -96,6 +97,8 @@ public:
    void_result do_apply( const operation_type& o ) ;
 
    const account_object* acnt = nullptr;
+   const account_auth_platform_object* auth_obj = nullptr;
+   bool found = false;
 };
 
 class account_update_proxy_evaluator : public evaluator<account_update_proxy_evaluator>

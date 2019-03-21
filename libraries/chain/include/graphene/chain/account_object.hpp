@@ -226,14 +226,14 @@ namespace graphene { namespace chain {
           * are available.
           */
          // TODO use a public funtion to do this job as well as same job in vesting_balance_object
-         std::pair<fc::uint128_t,share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now)const;
+         std::pair<fc::uint128_t,share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const bool reduce_witness = false)const;
 
          /**
           * Update coin_seconds_earned and
           * coin_seconds_earned_last_update fields due to passing of time
           */
          // TODO use a public funtion to do this job and same job in vesting_balance_object
-         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now);
+         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const bool reduce_witness = false);
 
          /**
           * Update coin_seconds_earned and
@@ -733,6 +733,7 @@ namespace graphene { namespace chain {
 
        share_type    max_limit = 0;   //max limit prepaid for platform
        share_type    cur_used = 0;    //current prepaid used by platform 
+       bool          is_active = true;
        uint32_t      permission_flags = account_auth_platform_object::Platform_Permission_Forward |
                                         account_auth_platform_object::Platform_Permission_Liked |
                                         account_auth_platform_object::Platform_Permission_Buyout |
@@ -770,10 +771,7 @@ namespace graphene { namespace chain {
                                  composite_key< 
                                  account_auth_platform_object,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >,
-                                 member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >>
-                                 >,
-          ordered_non_unique< tag<by_platform_uid>,member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform> >,
-          ordered_non_unique< tag<by_account_uid>, member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account> >
+                                 member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >>>
        >
    > account_auth_platform_multi_index_type;
 
@@ -855,4 +853,4 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
 FC_REFLECT_DERIVED(graphene::chain::account_auth_platform_object,
                   (graphene::db::object),
                   (account)(platform)
-                  (max_limit)(cur_used)(permission_flags)(memo))
+                  (max_limit)(cur_used)(is_active)(permission_flags)(memo))
