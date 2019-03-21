@@ -134,7 +134,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
          update_voter_effective_votes( *voter );
       }
       const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-      bool reduce_witness = head_block_num() >= HARDFORK_0_4_BLOCKNUM;
+      bool reduce_witness = head_block_num() > HARDFORK_0_4_BLOCKNUM;
       modify( account_stats, [&](account_statistics_object& s) {
          s.update_coin_seconds_earned(csaf_window, head_block_time(), reduce_witness);
          s.core_balance += delta.amount;
