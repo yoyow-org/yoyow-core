@@ -216,44 +216,37 @@ void_result account_update_key_evaluator::do_apply( const account_update_key_ope
 
 void account_update_auth_evaluator::do_update_auth_platform_object(const operation_type& o)
 {
-    database& d = db();
-    vector<account_uid_type> add_platforms;
-    vector<account_uid_type> remove_platforms;
+   database& d = db();
+   vector<account_uid_type> add_platforms;
+   vector<account_uid_type> remove_platforms;
 
-    if (o.secondary){
-        for (auto itr = o.secondary->account_uid_auths.begin(); itr != o.secondary->account_uid_auths.end(); itr++){
-            const account_uid_type uid = itr->first.uid;
-            auto found_itr = acnt->secondary.account_uid_auths.find(uid);
-            if (found_itr == acnt->secondary.account_uid_auths.end()){
-                if (d.find_platform_by_owner(uid))
-                    add_platforms.emplace_back(uid);
-            }
-        }
-        for (auto itr = acnt->secondary.account_uid_auths.begin(); itr != acnt->secondary.account_uid_auths.end(); itr++){
-            const account_uid_type uid = itr->first.uid;
-            auto found_itr = o.secondary->account_uid_auths.find(uid);
-            if (found_itr == o.secondary->account_uid_auths.end()){
-                if (d.find_platform_by_owner(uid))
-                    remove_platforms.emplace_back(uid);
-            }
-        }
-    }
-    for (auto itr : add_platforms){
-        const account_auth_platform_object* auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, itr);
-        if (auth_obj){
-            d.modify(*auth_obj, [&](account_auth_platform_object& a){
-                a.is_active = true;
-            });
-        }
-    }
-    for (auto itr : remove_platforms){
-        const account_auth_platform_object* auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, itr);
-        if (auth_obj){
-            d.modify(*auth_obj, [&](account_auth_platform_object& a){
-                a.is_active = false;
-            });
-        }
-    }
+   for (auto itr = o.secondary->account_uid_auths.begin(); itr != o.secondary->account_uid_auths.end(); itr++){
+      authority::account_uid_auth_type auth_type = itr->first;
+      if (!acnt->secondary.account_uid_auths.count(itr->first) && d.find_platform_by_owner(auth_type.uid))
+         add_platforms.emplace_back(auth_type.uid);
+   }
+   for (auto itr = acnt->secondary.account_uid_auths.begin(); itr != acnt->secondary.account_uid_auths.end(); itr++){
+      authority::account_uid_auth_type auth_type = itr->first;
+      if (!o.secondary->account_uid_auths.count(itr->first) && d.find_platform_by_owner(auth_type.uid))
+         remove_platforms.emplace_back(auth_type.uid);
+   }
+
+   for (auto itr : add_platforms){
+      const account_auth_platform_object* auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, itr);
+      if (auth_obj){
+         d.modify(*auth_obj, [&](account_auth_platform_object& a){
+            a.is_active = true;
+         });
+      }
+   }
+   for (auto itr : remove_platforms){
+      const account_auth_platform_object* auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, itr);
+      if (auth_obj){
+         d.modify(*auth_obj, [&](account_auth_platform_object& a){
+            a.is_active = false;
+         });
+      }
+   }
 }
 
 void_result account_update_auth_evaluator::do_evaluate( const account_update_auth_operation& o )
@@ -276,7 +269,9 @@ void_result account_update_auth_evaluator::do_evaluate( const account_update_aut
 void_result account_update_auth_evaluator::do_apply( const account_update_auth_operation& o )
 { try {
    database& d = db();
-   do_update_auth_platform_object(o);
+
+   if (o.secondary)
+      do_update_auth_platform_object(o);
 
    d.modify( *acnt, [&](account_object& a){
       if( o.owner )
