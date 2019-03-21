@@ -264,7 +264,7 @@ namespace graphene { namespace chain {
 		 map<account_uid_type, Recerptor_Parameter> receiptors; //receiptors of the post
 		 optional<share_type>                       forward_price;
          optional<license_lid_type>                 license_lid;
-         uint32_t                                   permission_flags = 0xFFFFFFFF;
+         uint32_t                                   permission_flags = 0xFF;
          bool                                       score_settlement = false;
 
          post_id_type get_id()const { return id; }
