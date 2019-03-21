@@ -101,22 +101,22 @@ void database::reindex( fc::path data_dir )
       }
       if( i < undo_point )
          apply_block(*block, skip_witness_signature |
-                             //skip_transaction_signatures |
+                             skip_transaction_signatures |
                              skip_transaction_dupe_check |
                              skip_tapos_check |
                              skip_witness_schedule_check |
-                             skip_invariants_check);
-                             //skip_authority_check);
+                             skip_invariants_check |
+                             skip_authority_check);
       else
       {
          _undo_db.enable();
          push_block(*block, skip_witness_signature |
-                            //skip_transaction_signatures |
+                            skip_transaction_signatures |
                             skip_transaction_dupe_check |
                             skip_tapos_check |
                             skip_witness_schedule_check |
-                            skip_invariants_check);
-                            //skip_authority_check);
+                            skip_invariants_check |
+                            skip_authority_check);
       }
    }
    _undo_db.enable();
