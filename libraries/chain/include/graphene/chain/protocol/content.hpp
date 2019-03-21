@@ -485,6 +485,13 @@ namespace graphene { namespace chain {
    };
 }} // graphene::chain
 
+FC_REFLECT_ENUM( graphene::chain::post_operation::Post_Type,
+               (Post_Type_Post)
+               (Post_Type_Comment)
+               (Post_Type_forward)
+               (Post_Type_forward_And_Modify)
+               (Post_Type_Default))
+
 FC_REFLECT( graphene::chain::platform_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(price_per_kbyte)(extensions) )
 FC_REFLECT(graphene::chain::platform_create_operation, (fee)(account)(pledge)(name)(url)(extra_data)(extensions) )
 
