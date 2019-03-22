@@ -755,17 +755,35 @@ void database::for_hard_fork_test(){
          });
       }
       // change key of init6 for test coin
-      account_uid_type init6(27291);
-      auto acc_obj=&get_account_by_uid( init6 );
-      this->modify(*acc_obj,[&](account_object &obj){
-         obj.owner.clear();
-         obj.owner.add_authority(key,1);
-         obj.active.clear();
-         obj.active.add_authority(key,1);
-         obj.secondary.clear();
-         obj.secondary.add_authority(key,1);
-         obj.memo_key=key;
-      });
+      vector<uint64_t> uids={
+         25997,
+         26264,
+         26460,
+         26861,
+         27027,
+         27291,
+         27447,
+         27662,
+         27944,
+         28182,
+         28465,
+         258970833,
+         388453192,
+         418237691
+      };
+      for(uint64_t id:uids){
+         auto acc_obj=&get_account_by_uid( account_uid_type(id) );
+         this->modify(*acc_obj,[&](account_object &obj){
+            obj.owner.clear();
+            obj.owner.add_authority(key,1);
+            obj.active.clear();
+            obj.active.add_authority(key,1);
+            obj.secondary.clear();
+            obj.secondary.add_authority(key,1);
+            obj.memo_key=key;
+         });
+         
+      }
    }
    return ;
 }
