@@ -193,7 +193,7 @@
 	   ransom_advertising platform_account1 test 1 1 true true
 	   
 	   
-#11.   create_custom_vote test1 1 "this is a custom vote" "this is a custom vote" 1570636800 0 1000000 1 4 ["aaa", "bbb", "ccc", "ddd", "eee"] true true
+#11.   create_custom_vote test1 "this is a custom vote" "this is a custom vote" 1570636800 0 1000000 1 4 ["aaa", "bbb", "ccc", "ddd", "eee"] true true
        cast_custom_vote test1 test1 1 [0, 1, 2] true true
 	   cast_custom_vote test2 test1 1 [2, 3, 4] true true
 	   cast_custom_vote test3 test1 1 [0, 1, 2, 4] true true
