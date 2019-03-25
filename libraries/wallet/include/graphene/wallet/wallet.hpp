@@ -1559,9 +1559,7 @@ class wallet_api
                                                          uint32_t         end_period,
                                                          string           platform,
                                                          string           poster,
-                                                         string           post_pid,
-                                                         object_id_type   lower_bound_active,
-                                                         uint32_t         limit);
+                                                         string           post_pid);
 
       vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
                                                                         uint32_t         end_period,

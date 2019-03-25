@@ -2792,9 +2792,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                                       uint32_t         end_period,
                                                       string           platform,
                                                       string           poster,
-                                                      string           post_pid,
-                                                      object_id_type   lower_bound_active, 
-                                                      uint32_t         limit)
+                                                      string           post_pid)
    {
        try {
            FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
@@ -2802,7 +2800,7 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type poster_uid = get_account_uid(poster);
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
            return _remote_db->get_post_profits_detail(begin_period, end_period, platform_uid, poster_uid, postid);
-       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(poster)(post_pid)(lower_bound_active)(limit))
+       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(poster)(post_pid))
    }
 
    vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
@@ -4384,11 +4382,9 @@ vector<active_post_object> wallet_api::get_post_profits_detail(uint32_t         
                                                                uint32_t         end_period,
                                                                string           platform,
                                                                string           poster,
-                                                               string           post_pid,
-                                                               object_id_type   lower_bound_active,
-                                                               uint32_t         limit)
+                                                               string           post_pid)
 {
-    return my->get_post_profits_detail(begin_period, end_period, platform, poster, post_pid, lower_bound_active, limit);
+    return my->get_post_profits_detail(begin_period, end_period, platform, poster, post_pid);
 }
 
 vector<Platform_Period_Profit_Detail> wallet_api::get_platform_profits_detail(uint32_t         begin_period,
