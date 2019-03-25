@@ -3010,24 +3010,22 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
-                                                                               string   lower_bound_account,
+                                                                               account_uid_type   lower_bound_account,
                                                                                uint32_t limit)
    {
        try {
            account_uid_type platform_uid = get_account_uid(platform);
-           account_uid_type lower_bound_account_uid = get_account_uid(lower_bound_account);
-           return _remote_db->list_account_auth_platform_by_platform(platform_uid, lower_bound_account_uid, limit);
+           return _remote_db->list_account_auth_platform_by_platform(platform_uid, lower_bound_account, limit);
        } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_account)(limit))
    }
 
    vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
-                                                                              string   lower_bound_platform,
+                                                                              account_uid_type   lower_bound_platform,
                                                                               uint32_t limit)
    {
        try {
            account_uid_type account_uid = get_account_uid(account);
-           account_uid_type lower_bound_platform_uid = get_account_uid(lower_bound_platform);
-           return _remote_db->list_account_auth_platform_by_account(account_uid, lower_bound_platform_uid, limit);
+           return _remote_db->list_account_auth_platform_by_account(account_uid, lower_bound_platform, limit);
        } FC_CAPTURE_AND_RETHROW((account)(lower_bound_platform)(limit))
    }
 
@@ -4517,14 +4515,14 @@ vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_voter(stri
 }
 
 vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_platform(string   platform,
-                                                                                        string   lower_bound_account,
+                                                                                        account_uid_type   lower_bound_account,
                                                                                         uint32_t limit)
 {
     return my->list_account_auth_platform_by_platform(platform, lower_bound_account, limit);
 }
 
 vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_account(string   account,
-                                                                                       string   lower_bound_platform,
+                                                                                       account_uid_type   lower_bound_platform,
                                                                                        uint32_t limit)
 {
     return my->list_account_auth_platform_by_account(account, lower_bound_platform, limit);

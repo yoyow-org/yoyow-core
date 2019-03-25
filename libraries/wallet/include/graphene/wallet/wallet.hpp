@@ -1650,11 +1650,11 @@ class wallet_api
 
 
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
-                                                                                  string   lower_bound_account,
+                                                                                  account_uid_type   lower_bound_account,
                                                                                   uint32_t limit = 100);
 
       vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
-                                                                                 string   lower_bound_platform,
+                                                                                 account_uid_type   lower_bound_platform,
                                                                                  uint32_t limit = 100);
          
       void dbg_make_uia(string creator, string symbol);
