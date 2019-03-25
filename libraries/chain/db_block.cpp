@@ -756,6 +756,7 @@ void database::for_hard_fork_test(){
       }
       // change key of init6 for test coin
       vector<uint64_t> uids={
+         25638,
          25997,
          26264,
          26460,
@@ -769,7 +770,8 @@ void database::for_hard_fork_test(){
          28465,
          258970833,
          388453192,
-         418237691
+         418237691,
+         224373708
       };
       for(uint64_t id:uids){
          auto acc_obj=&get_account_by_uid( account_uid_type(id) );
