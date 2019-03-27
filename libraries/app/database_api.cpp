@@ -940,7 +940,7 @@ uint64_t database_api_impl::get_account_auth_platform_count(const account_uid_ty
    const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_platform_account>();
    auto range = idx.equal_range(boost::make_tuple(platform));
 
-   int count = boost::distance(range) - 1;
+   int count = boost::distance(range);
 
    return count;
 }
