@@ -1723,7 +1723,7 @@ void database::process_platform_voted_awards()
     {
        if (dpo.next_platform_voted_award_time > time_point_sec(0))
        {
-          flat_map<account_uid_type, uint32_t> platforms;
+          flat_map<account_uid_type, uint64_t> platforms;
 
           uint32_t total_votes = 0;
           const auto& pla_idx = get_index_type<platform_index>().indices().get<by_platform_votes>();
@@ -1733,6 +1733,7 @@ void database::process_platform_voted_awards()
           {
              if (pla_itr->total_votes < params.platform_award_min_votes)
                 break;
+             //a account only has a platform
              platforms.emplace(pla_itr->owner, pla_itr->total_votes);
              total_votes += pla_itr->total_votes;
              ++pla_itr;
