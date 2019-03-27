@@ -1725,7 +1725,7 @@ void database::process_platform_voted_awards()
        {
           flat_map<account_uid_type, uint64_t> platforms;
 
-          uint32_t total_votes = 0;
+          uint128_t total_votes = 0;
           const auto& pla_idx = get_index_type<platform_index>().indices().get<by_platform_votes>();
           auto pla_itr = pla_idx.lower_bound(std::make_tuple(true));// assume false < true
           auto limit = params.platform_award_requested_rank;      

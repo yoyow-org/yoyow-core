@@ -2742,6 +2742,17 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(from_account))
    }
 
+   vector<score_object> get_scores_by_uid(string   scorer,
+                                          uint32_t period,
+                                          object_id_type lower_bound_score,
+                                          uint32_t limit)
+   {
+      try {
+         account_uid_type scorer_uid = get_account_uid(scorer);
+         return _remote_db->get_scores_by_uid(scorer_uid, period, lower_bound_score, limit);
+      } FC_CAPTURE_AND_RETHROW((scorer)(period)(lower_bound_score)(limit))
+   }
+
    vector<score_object> list_scores(string   platform,
                                     string   poster_uid,
                                     string   post_pid,
@@ -3005,6 +3016,14 @@ signed_transaction account_cancel_auth_platform(string account,
 
          return sign_transaction(tx, broadcast);
       } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creater)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
+   }
+
+   uint64_t get_account_auth_platform_count(string platform)
+   {
+      try {
+         account_uid_type platform_uid = get_account_uid(platform);
+         return _remote_db->get_account_auth_platform_count(platform_uid);
+      } FC_CAPTURE_AND_RETHROW((platform))
    }
 
    vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
@@ -4352,6 +4371,14 @@ score_object wallet_api::get_score(string platform,
     return my->get_score(platform, poster_uid, post_pid, from_account);
 }
 
+vector<score_object> wallet_api::get_scores_by_uid(string   scorer,
+                                       uint32_t period,
+                                       object_id_type lower_bound_score,
+                                       uint32_t limit)
+{
+   return my->get_scores_by_uid(scorer, period, lower_bound_score, limit);
+}
+
 vector<score_object> wallet_api::list_scores(string platform,
                                              string poster_uid,
                                              string post_pid,
@@ -4508,6 +4535,11 @@ vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_voter(stri
 {
    account_uid_type account = my->get_account_uid(voter);
    return my->_remote_db->list_cast_custom_votes_by_voter(account, lower_bound_cast_custom_vote, limit);
+}
+
+uint64_t wallet_api::get_account_auth_platform_count(string platform)
+{
+   return my->get_account_auth_platform_count(platform);
 }
 
 vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_platform(string   platform,

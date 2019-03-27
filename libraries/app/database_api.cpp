@@ -102,6 +102,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       map<string,account_uid_type> lookup_accounts_by_name(const string& lower_bound_name, uint32_t limit)const;
       uint64_t get_account_count()const;
 
+      uint64_t get_account_auth_platform_count(const account_uid_type platform)const;
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(const account_uid_type platform,
                                                                                   const account_uid_type lower_bound_account,
                                                                                   const uint32_t limit)const;
@@ -137,6 +138,10 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                        const account_uid_type poster_uid,
                                        const post_pid_type    post_pid,
                                        const account_uid_type from_account)const;
+      vector<score_object> get_scores_by_uid(const account_uid_type  scorer,
+                                             const uint32_t period,
+                                             const object_id_type lower_bound_score,
+                                             const uint32_t limit)const;
 
       vector<score_object> list_scores(const account_uid_type platform,
                                        const account_uid_type poster_uid,
@@ -925,6 +930,21 @@ map<string,account_uid_type> database_api_impl::lookup_accounts_by_name(const st
    return result;
 }
 
+uint64_t database_api::get_account_auth_platform_count(const account_uid_type platform)const
+{
+   return my->get_account_auth_platform_count(platform);
+}
+
+uint64_t database_api_impl::get_account_auth_platform_count(const account_uid_type platform)const
+{
+   const auto& idx = _db.get_index_type<account_auth_platform_index>().indices().get<by_platform_account>();
+   auto range = idx.equal_range(boost::make_tuple(platform));
+
+   int count = boost::distance(range) - 1;
+
+   return count;
+}
+
 vector<account_auth_platform_object> database_api::list_account_auth_platform_by_platform(const account_uid_type platform,
                                                                                           const account_uid_type lower_bound_account,
                                                                                           const uint32_t limit)const
@@ -1203,6 +1223,37 @@ optional<score_object> database_api_impl::get_score(const account_uid_type platf
         return *o;
     }
     return{};
+}
+
+vector<score_object> database_api::get_scores_by_uid(const account_uid_type  scorer,
+                                                     const uint32_t period,
+                                                     const object_id_type lower_bound_score,
+                                                     const uint32_t limit)const
+{
+   return my->get_scores_by_uid(scorer, period, lower_bound_score, limit);
+}
+
+vector<score_object> database_api_impl::get_scores_by_uid(const account_uid_type  scorer,
+                                                          const uint32_t period,
+                                                          const object_id_type lower_bound_score,
+                                                          const uint32_t limit)const
+{
+   FC_ASSERT(limit <= 100);
+   vector<score_object> result;
+   uint32_t count = 0;
+
+   const auto& sce_idx = _db.get_index_type<score_index>().indices().get<by_from_account_uid>();
+   auto itr = sce_idx.lower_bound(std::make_tuple(scorer, period, lower_bound_score));
+
+   while (itr != sce_idx.end() && count < limit && 
+      itr->from_account_uid == scorer && itr->period_sequence == period)
+   {
+      result.push_back(*itr);
+      itr++;
+      count++;
+   }
+
+   return result;
 }
 
 vector<score_object> database_api::list_scores(const account_uid_type platform,

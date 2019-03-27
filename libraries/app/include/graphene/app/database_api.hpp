@@ -342,6 +342,7 @@ class database_api
        */
       map<string,account_uid_type> lookup_accounts_by_name(const string& lower_bound_name, uint32_t limit)const;
 
+      uint64_t get_account_auth_platform_count(const account_uid_type platform)const;
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(const account_uid_type platform, 
                                                                                   const account_uid_type lower_bound_account, 
                                                                                   const uint32_t limit)const;
@@ -444,6 +445,11 @@ class database_api
                                        const account_uid_type poster_uid,
                                        const post_pid_type    post_pid,
                                        const account_uid_type from_account)const;
+
+      vector<score_object> get_scores_by_uid(const account_uid_type  scorer,
+                                             const uint32_t period,
+                                             const object_id_type lower_bound_score,
+                                             const uint32_t limit)const;
 
       vector<score_object> list_scores(const account_uid_type platform,
                                        const account_uid_type poster_uid,
@@ -764,6 +770,7 @@ FC_API( graphene::app::database_api,
    (get_account_references)
    //(lookup_account_names)
    (lookup_accounts_by_name)
+   (get_account_auth_platform_count)
    (list_account_auth_platform_by_platform)
    (list_account_auth_platform_by_account)
    (get_account_count)
@@ -780,6 +787,7 @@ FC_API( graphene::app::database_api,
    (get_post)
    (get_posts_by_platform_poster)
    (get_score)
+   (get_scores_by_uid)
    (list_scores)
    (get_license)
    (list_licenses)

@@ -1538,7 +1538,11 @@ class wallet_api
                              string poster_uid,
                              string post_pid,
                              string from_account);
-
+      
+      vector<score_object> get_scores_by_uid(string   scorer,
+                                             uint32_t period,
+                                             object_id_type lower_bound_score,
+                                             uint32_t limit);
       vector<score_object> list_scores(string   platform,
                                        string   poster_uid,
                                        string   post_pid,
@@ -1646,6 +1650,8 @@ class wallet_api
                                                                       object_id_type lower_bound_cast_custom_vote, 
                                                                       uint32_t limit);
 
+
+      uint64_t get_account_auth_platform_count(string platform);
 
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
                                                                                   account_uid_type   lower_bound_account,
@@ -1858,6 +1864,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_post)
         (get_posts_by_platform_poster)
         (get_score)
+        (get_scores_by_uid)
         (list_scores)
         (get_license)
         (list_licenses)
@@ -1880,6 +1887,7 @@ FC_API( graphene::wallet::wallet_api,
         (lookup_custom_votes)
         (list_cast_custom_votes_by_id)
         (list_cast_custom_votes_by_voter)
+        (get_account_auth_platform_count)
         (list_account_auth_platform_by_platform)
         (list_account_auth_platform_by_account)
         (get_global_properties_extensions)

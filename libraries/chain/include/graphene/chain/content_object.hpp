@@ -503,7 +503,8 @@ namespace graphene { namespace chain {
                                  composite_key< 
                                      score_object,
                                      member< score_object, account_uid_type, &score_object::from_account_uid >,
-                                     member< score_object, uint64_t,         &score_object::period_sequence >>
+                                     member< score_object, uint64_t,         &score_object::period_sequence >,
+                                     member< object,       object_id_type,   &object::id >>
                                  >,
           ordered_unique< tag<by_post_pid>, 
                               composite_key<
