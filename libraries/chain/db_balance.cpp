@@ -150,7 +150,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
    while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->voter == account)
    {
       auto custom_vote_itr = custom_vote_idx.find(std::make_tuple(cast_vote_itr->custom_vote_creater,cast_vote_itr->custom_vote_vid));
-      FC_ASSERT(custom_vote_itr != custom_vote_idx.end(), "custom vote {id} not found.",("id", cast_vote_itr->custom_vote_vid));     
+      FC_ASSERT(custom_vote_itr != custom_vote_idx.end(), "custom vote ${id} not found.",("id", cast_vote_itr->custom_vote_vid));     
       if (head_block_time() <= custom_vote_itr->vote_expired_time)
       {
          modify(*custom_vote_itr, [&](custom_vote_object& obj)
