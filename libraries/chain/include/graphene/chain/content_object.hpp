@@ -499,7 +499,7 @@ namespace graphene { namespace chain {
 	   score_object,
 	   indexed_by<
 	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-		  ordered_non_unique< tag<by_from_account_uid>, 
+        ordered_unique< tag<by_from_account_uid>, 
                                  composite_key< 
                                      score_object,
                                      member< score_object, account_uid_type, &score_object::from_account_uid >,
