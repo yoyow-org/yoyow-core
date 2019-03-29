@@ -53,13 +53,13 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
                    "the transfer permisson of platform ${p} authorized by account ${a} is invalid. ",
                    ("a", (op.from))("p", sign_account));
                FC_ASSERT(account_stats.prepaid >= op.amount.amount,
-                   "Insufficient balance: unable to transfer, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+                   "Insufficient balance: unable to transfer, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
                    ("c", (account_stats.prepaid))("a", op.from)("n", op.amount.amount));
                if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
                {
                    share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats.prepaid);
                    FC_ASSERT(usable_prepaid >= op.amount.amount,
-                       "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
+                       "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
                        ("c", usable_prepaid)("p", sign_account)("a", op.from)("n", op.amount.amount));
                }
            }

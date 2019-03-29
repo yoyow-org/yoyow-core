@@ -511,14 +511,14 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                    "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
                    ("p", op.platform)("a", op.poster));
            FC_ASSERT(account_stats->prepaid >= *origin_post.forward_price,
-               "Insufficient balance: unable to forward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+               "Insufficient balance: unable to forward, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
                ("c", (account_stats->prepaid))("a", op.poster)("n", origin_post.forward_price));
 
            if (auth_object && auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
            {
                share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats->prepaid);
                FC_ASSERT(usable_prepaid >= *origin_post.forward_price,
-                   "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
+                   "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
                    ("c", (usable_prepaid))("p", sign_account)("a", op.poster)("n", *origin_post.forward_price));
            }
        }
@@ -705,12 +705,12 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
            if (ext_para->buyout_ratio.valid())
            {
                FC_ASSERT(iter->second.cur_ratio >= *(ext_para->buyout_ratio),
-                   "the ratio ${r} of receiptor ${p} is less then sell ${sp} .",
+                   "the ratio ${r} of receiptor ${p} is less than sell ${sp} .",
                    ("r", iter->second.cur_ratio)("p", *(ext_para->receiptor))("sp", *(ext_para->buyout_ratio)));
                if (ext_para->receiptor == op.poster)
                {
                    FC_ASSERT((iter->second.cur_ratio - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) >= *(ext_para->buyout_ratio),
-                       "the ratio ${r} of poster ${p} will less then min ratio.",
+                       "the ratio ${r} of poster ${p} will less than min ratio.",
                        ("r", (iter->second.cur_ratio - *(ext_para->buyout_ratio)))("p", *(ext_para->receiptor)));
                }
                if (post->receiptors.find(*(ext_para->receiptor)) == post->receiptors.end()) //add a new receiptor
@@ -798,7 +798,7 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
             }
         }
 		FC_ASSERT(account_stats->csaf >= op.csaf,
-                  "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less then needed [${n}]",
+                  "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less than needed [${n}]",
 			      ("f",op.from_account_uid)("c",account_stats->csaf)("n",op.csaf));
 
         FC_ASSERT(d.find_score(op.platform, op.poster, op.post_pid, op.from_account_uid)==nullptr, "only score a post once");
@@ -901,7 +901,7 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
 			const auto& from_balance = d.get_balance(*from_account, transfer_asset_object);
 			bool sufficient_balance = from_balance.amount >= op.amount.amount;
 			FC_ASSERT(sufficient_balance, 
-                      "Insufficient balance: unable to reward, because account: ${f} `s balance [${c}] is less then needed [${n}]",
+                      "Insufficient balance: unable to reward, because account: ${f} `s balance [${c}] is less than needed [${n}]",
 				      ("f", op.from_account_uid)("c", from_balance.amount)("n", op.amount.amount));
 		}
 
@@ -1016,13 +1016,13 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
             "the reward permisson of platform ${p} authorized by account ${a} is invalid. ",
             ("p", op.platform)("a", op.poster));  
         FC_ASSERT(account_stats->prepaid >= op.amount, 
-                  "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+                  "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", op.amount));
         if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
         {
             share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats->prepaid);
             FC_ASSERT(usable_prepaid >= op.amount,
-                      "Insufficient balance: unable to reward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
+                      "Insufficient balance: unable to reward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
                       ("c", usable_prepaid)("p", sign_account)("a", op.from_account_uid)("n", op.amount));
         }   
 
@@ -1146,7 +1146,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
         if (op.receiptor_account_uid == post.poster)
         {
             FC_ASSERT((iter->second.cur_ratio - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) >= iter->second.buyout_ratio,
-                      "the ratio ${r} of poster ${p} will less then min ratio.",
+                      "the ratio ${r} of poster ${p} will less than min ratio.",
                       ("r", (iter->second.cur_ratio - iter->second.buyout_ratio))("p", post.poster));
         }
 		if (iter->second.buyout_ratio < iter->second.cur_ratio)
@@ -1171,13 +1171,13 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
             {
                 share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats->prepaid);
                 FC_ASSERT(usable_prepaid >= iter->second.buyout_price,
-                    "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
+                    "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
                     ("c", usable_prepaid)("p", sign_account)("a", op.from_account_uid)("n", iter->second.buyout_price));
             }
         }
         
         FC_ASSERT(account_stats->prepaid >= iter->second.buyout_price, 
-                  "Insufficient balance: unable to buyout, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
+                  "Insufficient balance: unable to buyout, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", iter->second.buyout_price));
 		return void_result();
 	}FC_CAPTURE_AND_RETHROW((op))

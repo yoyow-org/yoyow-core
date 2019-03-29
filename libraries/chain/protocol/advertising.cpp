@@ -11,8 +11,8 @@ void advertising_create_operation::validate()const
 {
     validate_op_fee(fee, "advertising_create ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(unit_time > 0, "unit time must be grater then 0");
-    FC_ASSERT(unit_price > 0, "unit price must be grater then 0");
+    FC_ASSERT(unit_time > 0, "unit time must be grater than 0");
+    FC_ASSERT(unit_price > 0, "unit price must be grater than 0");
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
@@ -30,12 +30,12 @@ void advertising_update_operation::validate()const
     validate_op_fee(fee, "advertising_update ");
     validate_account_uid(platform, "platform");
     FC_ASSERT(description.valid() || unit_price.valid() || unit_time.valid() || on_sell.valid(), "must update some parameter");
-    FC_ASSERT(advertising_aid > 0, "advertising_aid should more then 0. ");
+    FC_ASSERT(advertising_aid > 0, "advertising_aid should more than 0. ");
     if (unit_price.valid()){
-        FC_ASSERT(*unit_price > 0, "unit price must be greater then 0");
+        FC_ASSERT(*unit_price > 0, "unit price must be greater than 0");
     }
     if (unit_time.valid()){
-        FC_ASSERT(*unit_time > 0, "unit time must be greater then 0");
+        FC_ASSERT(*unit_time > 0, "unit time must be greater than 0");
     }
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
@@ -58,8 +58,8 @@ void advertising_buy_operation::validate()const
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account, "from_account");
     FC_ASSERT(platform != from_account, "platform can`t buy own advertising. ");
-    FC_ASSERT(buy_number > 0, "buy number must greater then 0. ");
-    FC_ASSERT(advertising_aid > 0, "advertising_aid should more then 0. ");
+    FC_ASSERT(buy_number > 0, "buy number must greater than 0. ");
+    FC_ASSERT(advertising_aid > 0, "advertising_aid should more than 0. ");
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
@@ -78,7 +78,7 @@ void advertising_confirm_operation::validate()const
 {
     validate_op_fee(fee, "advertising_comfirm ");
     validate_account_uid(platform, "platform");
-    FC_ASSERT(advertising_aid > 0, "advertising_aid should more then 0. ");
+    FC_ASSERT(advertising_aid > 0, "advertising_aid should more than 0. ");
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
@@ -93,7 +93,7 @@ void advertising_ransom_operation::validate()const
     validate_op_fee(fee, "advertising_ransom ");
     validate_account_uid(platform, "platform");
     validate_account_uid(from_account, "from_account");
-    FC_ASSERT(advertising_aid > 0, "advertising_aid should more then 0. ");
+    FC_ASSERT(advertising_aid > 0, "advertising_aid should more than 0. ");
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
