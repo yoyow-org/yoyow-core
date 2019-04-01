@@ -2806,7 +2806,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                                       string           post_pid)
    {
        try {
-           FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
+           FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
            account_uid_type platform_uid = get_account_uid(platform);
            account_uid_type poster_uid = get_account_uid(poster);
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
@@ -2819,7 +2819,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                                                      string           platform)
    {
        try {
-           FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
+           FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
            account_uid_type platform_uid = get_account_uid(platform);
            return _remote_db->get_platform_profits_detail(begin_period, end_period, platform_uid);
        } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform))
@@ -2830,7 +2830,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                                                  string           poster)
    {
        try {
-           FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
+           FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
            account_uid_type poster_uid = get_account_uid(poster);
            return _remote_db->get_poster_profits_detail(begin_period, end_period, poster_uid);
        } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(poster))

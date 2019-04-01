@@ -179,7 +179,7 @@ void post_operation::validate()const
        }
        FC_ASSERT(ext.license_lid.valid(), "post operation`s license_lid is invalid.");
        if (ext.forward_price.valid())
-           FC_ASSERT(*(ext.forward_price) > share_type(0), "buyout price should more then 0. ");
+           FC_ASSERT(*(ext.forward_price) > share_type(0), "buyout price should more than 0. ");
    }
 }
 
@@ -203,9 +203,9 @@ void post_update_operation::validate()const
            FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
        }
        if (ext.buyout_ratio.valid())
-           FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "buyout_ratio is more then max. ");
+           FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "buyout_ratio is more than max. ");
        if (ext.buyout_price.valid())
-           FC_ASSERT(*(ext.buyout_price) > share_type(0), "buyout price should more then 0. ");
+           FC_ASSERT(*(ext.buyout_price) > share_type(0), "buyout price should more than 0. ");
    }
 }
 
@@ -239,7 +239,7 @@ void score_create_operation::validate()const
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
 	FC_ASSERT((score >= -5) && (score <= 5), "The score_create_operation`s score over range");
-    FC_ASSERT(csaf > 0, "The score_create_operation`s member points must more then 0.");
+    FC_ASSERT(csaf > 0, "The score_create_operation`s member points must more than 0.");
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 

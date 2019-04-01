@@ -106,6 +106,11 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
       }
    });
 
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+   d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+      _dpo.total_witness_pledge += op.pledge.amount;
+   });
+
    return new_witness_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -235,6 +240,11 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
 
          if( op.new_url.valid() )
             wit.url = *op.new_url;
+      });
+
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+         _dpo.total_witness_pledge += delta;
       });
 
       // update schedule
@@ -563,6 +573,11 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          d.modify( *witness_obj, [&]( witness_object& wit ) {
             wit.pledge              -= from_pledge.value;
             wit.pledge_last_update  =  d.head_block_time();
+         });
+
+         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+         d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+            _dpo.total_witness_pledge -= from_pledge.value;
          });
 
          // update schedule

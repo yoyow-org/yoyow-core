@@ -482,16 +482,17 @@ namespace graphene { namespace chain {
          void update_global_dynamic_data( const signed_block& b );
          void update_undo_db_size();
          void update_signing_witness(const witness_object& signing_witness, const signed_block& new_block);
+         share_type get_witness_pay();
          void update_last_irreversible_block();
          void clear_expired_transactions();
          void clear_expired_proposals();
-		 void clear_active_post();
+		     void clear_active_post();
          void clear_unnecessary_objects();//advertisng order, custom vote and cast custom vote
          void update_reduce_witness_csaf();//only execute once for HARDFORK_0_4_BLOCKNUM
 
          std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
             get_effective_csaf(const active_post_object& active_post);
-		 void clear_expired_scores();
+		     void clear_expired_scores();
          void update_maintenance_flag( bool new_maintenance_flag );
          void clear_expired_csaf_leases();
          void update_average_witness_pledges();

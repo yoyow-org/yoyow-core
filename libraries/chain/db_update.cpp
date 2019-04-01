@@ -127,8 +127,8 @@ void database::update_signing_witness(const witness_object& signing_witness, con
       witness_pay = gpo.parameters.by_vote_top_witness_pay_per_block;
    else if( wit_type == scheduled_by_vote_rest )
       witness_pay = gpo.parameters.by_vote_rest_witness_pay_per_block;
-   else if( wit_type == scheduled_by_pledge )
-      witness_pay = gpo.parameters.by_pledge_witness_pay_per_block;
+   else if (wit_type == scheduled_by_pledge)
+      witness_pay = get_witness_pay();
    witness_pay = std::min( witness_pay, budget_this_block );
 
    share_type budget_remained = budget_this_block - witness_pay;
@@ -167,6 +167,39 @@ void database::update_signing_witness(const witness_object& signing_witness, con
       _stat.witness_total_produced += 1;
       _stat.witness_last_confirmed_block_num = new_block.block_num();
    } );
+}
+
+share_type database::get_witness_pay()
+{
+   const global_property_object& gpo = get_global_properties();
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+
+   if (head_block_time() < HARDFORK_0_4_TIME)
+      return gpo.parameters.by_pledge_witness_pay_per_block;
+
+   share_type witness_pay = 0;
+
+   if (dpo.total_witness_pledge < GRAPHENE_WITNESS_PAY_LOWER_POINT)
+   {
+      bigint witness_pay_per_year = (bigint)GRAPHENE_WITNESS_PAY_LOWER_POINT_RATE * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
+      witness_pay = witness_pay_per_year*gpo.parameters.block_interval / 86400 * 365;
+   }
+   else
+   {
+      bigint pledge = 0;
+      if (dpo.total_witness_pledge <= GRAPHENE_WITNESS_PAY_UPPER_POINT)
+         pledge = (bigint)(dpo.total_witness_pledge.value);
+      else
+         pledge = GRAPHENE_WITNESS_PAY_UPPER_POINT;
+
+      bigint rate = pledge * pledge * GRAPHENE_WITNESS_PAY_SECOND_MODULUS
+                  - pledge * pledge * pledge * GRAPHENE_WITNESS_PAY_FIRST_MODULUS
+                  - pledge * GRAPHENE_WITNESS_PAY_THIRD_MODULUS
+                  + GRAPHENE_WITNESS_PAY_FOUR_MODULUS;
+      witness_pay = pledge * rate / (GRAPHENE_WITNESS_PAY_PERCENT * GRAPHENE_100_PERCENT * 86400 * 365);
+   }
+
+   return witness_pay;
 }
 
 void database::update_last_irreversible_block()
