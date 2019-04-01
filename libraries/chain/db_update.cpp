@@ -196,7 +196,8 @@ share_type database::get_witness_pay()
                   - pledge * pledge * pledge * GRAPHENE_WITNESS_PAY_FIRST_MODULUS
                   - pledge * GRAPHENE_WITNESS_PAY_THIRD_MODULUS
                   + GRAPHENE_WITNESS_PAY_FOUR_MODULUS;
-      witness_pay = pledge * rate / (GRAPHENE_WITNESS_PAY_PERCENT * GRAPHENE_100_PERCENT * 86400 * 365);
+      witness_pay = pledge * rate * gpo.parameters.block_interval / 
+         (GRAPHENE_WITNESS_PAY_PERCENT * GRAPHENE_100_PERCENT * 86400 * 365);
    }
 
    return witness_pay;
