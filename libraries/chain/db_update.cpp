@@ -128,7 +128,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    else if( wit_type == scheduled_by_vote_rest )
       witness_pay = gpo.parameters.by_vote_rest_witness_pay_per_block;
    else if (wit_type == scheduled_by_pledge)
-      witness_pay = get_witness_pay();
+      witness_pay = get_witness_pay_by_pledge();
    witness_pay = std::min( witness_pay, budget_this_block );
 
    share_type budget_remained = budget_this_block - witness_pay;
@@ -169,7 +169,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    } );
 }
 
-share_type database::get_witness_pay()
+share_type database::get_witness_pay_by_pledge()
 {
    const global_property_object& gpo = get_global_properties();
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
@@ -177,40 +177,38 @@ share_type database::get_witness_pay()
    if (head_block_time() < HARDFORK_0_4_TIME)
       return gpo.parameters.by_pledge_witness_pay_per_block;
 
-   const uint64_t witness_pay_percent = 1000000;
+   const uint64_t witness_pay_first_modulus    = 1052;
+   const uint64_t witness_pay_second_modulus   = 69370;
+   const uint64_t witness_pay_third_modulus    = 1656000;
+   const uint64_t witness_pay_four_modulus     = 21120000;
+   const uint64_t witness_pay_percent          = 1000000;
+   const uint64_t witness_pay_lower_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000000);
+   const uint64_t witness_pay_upper_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(320000000);
    const uint64_t witness_pay_lower_point_rate = GRAPHENE_1_PERCENT * 25;
-
-   const uint64_t witness_pay_lower_point = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000000);
-   const uint64_t witness_pay_upper_point = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(32000000);
    
-   const uint64_t witness_pay_first_modulus  = 1052;
-   const uint64_t witness_pay_second_modulus = 69370;
-   const uint64_t witness_pay_third_modulus  = 1656000;
-   const uint64_t witness_pay_four_modulus   = 21120000;
+   if (dpo.total_witness_pledge >= witness_pay_upper_point)
+      return 150110208 * GRAPHENE_BLOCKCHAIN_PRECISION*gpo.parameters.block_interval / (86400 * 365);
    
    share_type witness_pay = 0;
 
    if (dpo.total_witness_pledge < witness_pay_lower_point)
    {
       bigint witness_pay_per_year = (bigint)witness_pay_lower_point_rate * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
-      witness_pay = witness_pay_per_year*gpo.parameters.block_interval / 86400 * 365;
+      witness_pay = witness_pay_per_year*gpo.parameters.block_interval / (86400 * 365);
    }
    else
    {
-      bigint pledge = 0;
-      if (dpo.total_witness_pledge <= witness_pay_upper_point)
-         pledge = dpo.total_witness_pledge.value;
-      else
-         pledge = witness_pay_upper_point;
-
-      bigint A = GRAPHENE_BLOCKCHAIN_PRECISION*10000000;
+      bigint pledge = dpo.total_witness_pledge.value;
+      bigint A = GRAPHENE_BLOCKCHAIN_PRECISION * 10000000;
 
       bigint rate = pledge * pledge * witness_pay_second_modulus * A
-                  - pledge * pledge * pledge * witness_pay_first_modulus
-                  - pledge * witness_pay_third_modulus * A * A
-                  + (bigint)witness_pay_four_modulus * A * A * A;
-      witness_pay = pledge * rate * gpo.parameters.block_interval / 
-         (A*A*A*witness_pay_percent * GRAPHENE_100_PERCENT * 86400 * 365);
+         - pledge * pledge * pledge * witness_pay_first_modulus
+         - pledge * witness_pay_third_modulus * A * A
+         + (bigint)witness_pay_four_modulus * A * A * A;
+
+      bigint witness_pay_per_year = pledge * rate * GRAPHENE_1_PERCENT /
+         (A*A*A*witness_pay_percent*GRAPHENE_100_PERCENT);
+      witness_pay = (witness_pay_per_year * gpo.parameters.block_interval / (86400 * 365)).to_int64();
    }
 
    return witness_pay;
