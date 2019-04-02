@@ -187,14 +187,17 @@ share_type database::get_witness_pay_by_pledge()
    const uint64_t witness_pay_lower_point_rate = GRAPHENE_1_PERCENT * 25;
    
    if (dpo.total_witness_pledge >= witness_pay_upper_point)
-      return 150110208 * GRAPHENE_BLOCKCHAIN_PRECISION*gpo.parameters.block_interval / (86400 * 365);
+   {
+      share_type witness_pay_per_year = 150110208 * GRAPHENE_BLOCKCHAIN_PRECISION / 10;
+      return witness_pay_per_year * gpo.parameters.block_interval / (86400 * 365);
+   }
    
    share_type witness_pay = 0;
 
    if (dpo.total_witness_pledge < witness_pay_lower_point)
    {
       bigint witness_pay_per_year = (bigint)witness_pay_lower_point_rate * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
-      witness_pay = witness_pay_per_year*gpo.parameters.block_interval / (86400 * 365);
+      witness_pay = (witness_pay_per_year*gpo.parameters.block_interval / (86400 * 365)).to_int64();
    }
    else
    {
