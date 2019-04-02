@@ -177,27 +177,40 @@ share_type database::get_witness_pay()
    if (head_block_time() < HARDFORK_0_4_TIME)
       return gpo.parameters.by_pledge_witness_pay_per_block;
 
+   const uint64_t witness_pay_percent = 1000000;
+   const uint64_t witness_pay_lower_point_rate = GRAPHENE_1_PERCENT * 25;
+
+   const uint64_t witness_pay_lower_point = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000000);
+   const uint64_t witness_pay_upper_point = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(32000000);
+   
+   const uint64_t witness_pay_first_modulus  = 1052;
+   const uint64_t witness_pay_second_modulus = 69370;
+   const uint64_t witness_pay_third_modulus  = 1656000;
+   const uint64_t witness_pay_four_modulus   = 21120000;
+   
    share_type witness_pay = 0;
 
-   if (dpo.total_witness_pledge < GRAPHENE_WITNESS_PAY_LOWER_POINT)
+   if (dpo.total_witness_pledge < witness_pay_lower_point)
    {
-      bigint witness_pay_per_year = (bigint)GRAPHENE_WITNESS_PAY_LOWER_POINT_RATE * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
+      bigint witness_pay_per_year = (bigint)witness_pay_lower_point_rate * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
       witness_pay = witness_pay_per_year*gpo.parameters.block_interval / 86400 * 365;
    }
    else
    {
       bigint pledge = 0;
-      if (dpo.total_witness_pledge <= GRAPHENE_WITNESS_PAY_UPPER_POINT)
-         pledge = (bigint)(dpo.total_witness_pledge.value);
+      if (dpo.total_witness_pledge <= witness_pay_upper_point)
+         pledge = dpo.total_witness_pledge.value;
       else
-         pledge = GRAPHENE_WITNESS_PAY_UPPER_POINT;
+         pledge = witness_pay_upper_point;
 
-      bigint rate = pledge * pledge * GRAPHENE_WITNESS_PAY_SECOND_MODULUS
-                  - pledge * pledge * pledge * GRAPHENE_WITNESS_PAY_FIRST_MODULUS
-                  - pledge * GRAPHENE_WITNESS_PAY_THIRD_MODULUS
-                  + GRAPHENE_WITNESS_PAY_FOUR_MODULUS;
+      bigint A = GRAPHENE_BLOCKCHAIN_PRECISION*10000000;
+
+      bigint rate = pledge * pledge * witness_pay_second_modulus * A
+                  - pledge * pledge * pledge * witness_pay_first_modulus
+                  - pledge * witness_pay_third_modulus * A * A
+                  + (bigint)witness_pay_four_modulus * A * A * A;
       witness_pay = pledge * rate * gpo.parameters.block_interval / 
-         (GRAPHENE_WITNESS_PAY_PERCENT * GRAPHENE_100_PERCENT * 86400 * 365);
+         (A*A*A*witness_pay_percent * GRAPHENE_100_PERCENT * 86400 * 365);
    }
 
    return witness_pay;
