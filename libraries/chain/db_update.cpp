@@ -130,7 +130,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    else if (wit_type == scheduled_by_pledge)
       witness_pay = get_witness_pay_by_pledge();
    witness_pay = std::min( witness_pay, budget_this_block );
-
+   
    share_type budget_remained = budget_this_block - witness_pay;
    FC_ASSERT( budget_remained >= 0 );
 
@@ -185,22 +185,12 @@ share_type database::get_witness_pay_by_pledge()
    const uint64_t witness_pay_lower_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000000);
    const uint64_t witness_pay_upper_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(320000000);
    const uint64_t witness_pay_lower_point_rate = GRAPHENE_1_PERCENT * 25;
-   
-   if (dpo.total_witness_pledge >= witness_pay_upper_point)
-   {
-      share_type witness_pay_per_year = 150110208 * GRAPHENE_BLOCKCHAIN_PRECISION / 10;
-      return witness_pay_per_year * gpo.parameters.block_interval / (86400 * 365);
-   }
-   
-   share_type witness_pay = 0;
 
-   if (dpo.total_witness_pledge < witness_pay_lower_point)
-   {
-      bigint witness_pay_per_year = (bigint)witness_pay_lower_point_rate * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
-      witness_pay = (witness_pay_per_year*gpo.parameters.block_interval / (86400 * 365)).to_int64();
+   bigint witness_pay_per_year = 0;
+   if (dpo.total_witness_pledge < witness_pay_lower_point) {
+      witness_pay_per_year = (bigint)witness_pay_lower_point_rate * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
    }
-   else
-   {
+   else if (dpo.total_witness_pledge < witness_pay_upper_point) {
       bigint pledge = dpo.total_witness_pledge.value;
       bigint A = GRAPHENE_BLOCKCHAIN_PRECISION * 10000000;
 
@@ -209,10 +199,14 @@ share_type database::get_witness_pay_by_pledge()
          - pledge * witness_pay_third_modulus * A * A
          + (bigint)witness_pay_four_modulus * A * A * A;
 
-      bigint witness_pay_per_year = pledge * rate * GRAPHENE_1_PERCENT /
+      witness_pay_per_year = pledge * rate * GRAPHENE_1_PERCENT /
          (A*A*A*witness_pay_percent*GRAPHENE_100_PERCENT);
-      witness_pay = (witness_pay_per_year * gpo.parameters.block_interval / (86400 * 365)).to_int64();
    }
+   else {
+      witness_pay_per_year = 150110208 * GRAPHENE_BLOCKCHAIN_PRECISION / 10;
+   }
+
+   share_type witness_pay = (witness_pay_per_year * gpo.parameters.block_interval / (86400 * 365)).to_int64();
 
    return witness_pay;
 }
