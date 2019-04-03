@@ -441,6 +441,8 @@ namespace graphene { namespace chain {
          uint32_t                               _advertising_order_remaining_time = 86400*365;
          uint32_t                               _custom_vote_remaining_time = 86400*365;
 
+         bool                                   _reduce_witness_csaf = false;
+
          template<class Index>
          vector<std::reference_wrapper<const typename Index::object_type>> sort_votable_objects(size_t count)const;
 

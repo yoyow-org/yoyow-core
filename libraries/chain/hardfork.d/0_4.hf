@@ -1,9 +1,6 @@
 // add content ops
 #ifndef HARDFORK_0_4_TIME
-#define HARDFORK_0_4_TIME (fc::time_point_sec( 1550713707 ))  //1550713707  2019-02-21T09:48:27 UTC
+#define HARDFORK_0_4_TIME (fc::time_point_sec( 1555084800 ))  //1555084800  2019-04-13T00:00:00 UTC
 #endif
 
-#ifndef HARDFORK_0_4_BLOCKNUM
-#define HARDFORK_0_4_BLOCKNUM (uint64_t( 15323889 ))//hard fork block num 15323888+1
-#endif
 

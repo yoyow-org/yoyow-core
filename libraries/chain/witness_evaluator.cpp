@@ -87,7 +87,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
    const uint64_t csaf_window = global_params.csaf_accumulate_window;
    auto block_time = d.head_block_time();
-   bool reduce_witness = d.head_block_num() > HARDFORK_0_4_BLOCKNUM;
+   bool reduce_witness = d.head_block_time() > HARDFORK_0_4_TIME;
 
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.last_witness_sequence += 1;
@@ -202,7 +202,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       {
           const uint64_t csaf_window = global_params.csaf_accumulate_window;
           auto block_time = d.head_block_time();
-          bool reduce_witness = d.head_block_num() > HARDFORK_0_4_BLOCKNUM;
+          bool reduce_witness = d.head_block_time() > HARDFORK_0_4_TIME;
          d.modify( *account_stats, [&](account_statistics_object& s) {
             if( s.releasing_witness_pledge > delta )
                s.releasing_witness_pledge -= delta;
@@ -548,7 +548,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       // update account stats object
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
       auto block_time = d.head_block_time();
-      bool reduce_witness = d.head_block_num() > HARDFORK_0_4_BLOCKNUM;
+      bool reduce_witness = d.head_block_time() > HARDFORK_0_4_TIME;
       d.modify( *account_stats, [&]( account_statistics_object& s ) {
          if( from_releasing > 0 )
          {
