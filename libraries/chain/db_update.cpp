@@ -465,14 +465,15 @@ void database::clear_expired_csaf_leases()
    const auto head_time = head_block_time();
    const auto& idx = get_index_type<csaf_lease_index>().indices().get<by_expiration>();
    auto itr = idx.begin();
+   bool reduce_witness = head_block_time() > HARDFORK_0_4_TIME;
    while( itr != idx.end() && itr->expiration <= head_time )
    {
       modify( get_account_statistics_by_uid( itr->from ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, _reduce_witness_csaf);
+         s.update_coin_seconds_earned(csaf_window, head_time, reduce_witness);
          s.core_leased_out -= itr->amount;
       });
       modify( get_account_statistics_by_uid( itr->to ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, _reduce_witness_csaf);
+         s.update_coin_seconds_earned(csaf_window, head_time, reduce_witness);
          s.core_leased_in -= itr->amount;
       });
       remove( *itr );
@@ -505,7 +506,7 @@ void database::release_witness_pledges()
          s.total_witness_pledge -= s.releasing_witness_pledge;
          s.releasing_witness_pledge = 0;
          s.witness_pledge_release_block_number = -1;
-         if (_reduce_witness_csaf)
+         if (head_block_time() > HARDFORK_0_4_TIME)
              s.update_coin_seconds_earned(csaf_window, head_block_time(), true);
       });
       itr = idx.begin();

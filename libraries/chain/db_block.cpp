@@ -547,10 +547,14 @@ void database::_apply_block( const signed_block& next_block )
 
    clear_unnecessary_objects();
 
-   if (head_block_time() >= HARDFORK_0_4_TIME && !_reduce_witness_csaf)
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   if (head_block_time() >= HARDFORK_0_4_TIME && !dpo.reduce_witness_csaf)
    {
       update_reduce_witness_csaf();
-      _reduce_witness_csaf = true;
+      modify(dpo, [&](dynamic_global_property_object& dp)
+      {
+         dp.reduce_witness_csaf = true;
+      });
    }       
 
    //dlog("before update_witness_schedule");
