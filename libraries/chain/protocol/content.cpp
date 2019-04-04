@@ -314,8 +314,7 @@ share_type license_create_operation::calculate_fee(const fee_parameters_type& k)
 {
     share_type core_fee_required = k.fee;
     auto hash_size = fc::raw::pack_size(hash_value);
-    if (hash_size > 65)
-        core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
+    core_fee_required += calculate_data_fee(hash_size, k.price_per_kbyte);
     core_fee_required += calculate_data_fee(fc::raw::pack_size(extra_data), k.price_per_kbyte);
     core_fee_required += calculate_data_fee(fc::raw::pack_size(title), k.price_per_kbyte);
     core_fee_required += calculate_data_fee(fc::raw::pack_size(body), k.price_per_kbyte);

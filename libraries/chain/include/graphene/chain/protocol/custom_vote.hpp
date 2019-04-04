@@ -9,8 +9,8 @@ namespace graphene { namespace chain {
 struct custom_vote_create_operation : public base_operation
 {
    struct fee_parameters_type {
-      uint64_t fee = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
-      uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+      uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+      uint32_t price_per_kbyte = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
       uint64_t min_real_fee = 0;
       uint16_t min_rf_percent = 0;
       extensions_type   extensions;
@@ -43,8 +43,8 @@ struct custom_vote_create_operation : public base_operation
 struct custom_vote_cast_operation : public base_operation
 {
    struct fee_parameters_type {
-      uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
-      uint32_t price_per_kbyte = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+      uint64_t fee = 0.01 * GRAPHENE_BLOCKCHAIN_PRECISION;
+      uint32_t price_per_kbyte = 0;
       uint64_t min_real_fee = 0;
       uint16_t min_rf_percent = 0;
       extensions_type   extensions;

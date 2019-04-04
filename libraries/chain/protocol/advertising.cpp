@@ -20,8 +20,7 @@ share_type advertising_create_operation::calculate_fee(const fee_parameters_type
 {
     share_type core_fee_required = k.fee;
     auto data_size = fc::raw::pack_size(description);
-    if (data_size > 65)
-        core_fee_required += calculate_data_fee(data_size, k.price_per_kbyte);
+    core_fee_required += calculate_data_fee(data_size, k.price_per_kbyte);
     return core_fee_required;
 }
 
@@ -46,8 +45,7 @@ share_type advertising_update_operation::calculate_fee(const fee_parameters_type
     if (description.valid())
     {
         auto data_size = fc::raw::pack_size(*description);
-        if (data_size > 65)
-            core_fee_required += calculate_data_fee(data_size, k.price_per_kbyte);
+        core_fee_required += calculate_data_fee(data_size, k.price_per_kbyte);
     }
     return core_fee_required;
 }
@@ -69,8 +67,7 @@ share_type advertising_buy_operation::calculate_fee(const fee_parameters_type& k
     if (memo)
         core_fee_required += calculate_data_fee(fc::raw::pack_size(memo), k.price_per_kbyte);
     auto size = fc::raw::pack_size(extra_data);
-    if (size > 65)
-        core_fee_required += calculate_data_fee(size, k.price_per_kbyte);
+    core_fee_required += calculate_data_fee(size, k.price_per_kbyte);
     return core_fee_required;
 }
 
