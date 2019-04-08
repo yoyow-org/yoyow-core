@@ -306,7 +306,7 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    found = ( itr != ka.end() );
    auth_object = d.find_account_auth_platform_object_by_account_platform(o.uid, o.platform);
    if (d.head_block_time() < HARDFORK_0_4_TIME)
-       FC_ASSERT(!(auth_object && found), "platform ${p} is already in secondary authority", ("p", o.platform));
+       FC_ASSERT(!found, "platform ${p} is already in secondary authority", ("p", o.platform));
    else
        FC_ASSERT(ext_para, "account_auth_platform`s extension is invalid. ");
 
