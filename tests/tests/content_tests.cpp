@@ -25,6 +25,41 @@ using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( operation_tests, database_fixture )
 
+BOOST_AUTO_TEST_CASE(witness_csaf_test)
+{
+    try
+    {
+        ACTORS((1000)(2000));
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+        auto _core = [&](int64_t x) -> asset
+        {  return asset(x*prec);    };
+
+        transfer(committee_account, u_1000_id, _core(100000));
+        transfer(committee_account, u_2000_id, _core(100000));
+        const witness_object& witness1 = create_witness(u_1000_id, u_1000_private_key);
+        const witness_object& witness2 = create_witness(u_2000_id, u_2000_private_key);
+        
+
+        //###############################  before reduce witness csaf on hardfork_4_time
+
+        collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
+        const account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
+        BOOST_CHECK(ants_1000.csaf == 1000 * prec);
+
+        //###############################  reduce witness csaf on hardfork_4_time. need to modify hardfork_4_time and debug
+
+        //collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
+        //const account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
+        //BOOST_CHECK(ants_1000.csaf == 1000 * prec);
+
+    }
+    catch (const fc::exception& e)
+    {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
 BOOST_AUTO_TEST_CASE(collect_csaf_test)
 {
     try

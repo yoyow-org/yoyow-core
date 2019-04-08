@@ -599,7 +599,8 @@ const witness_object& database_fixture::create_witness( const account_object& ow
    witness_create_operation op;
    op.account = owner.uid;
    op.block_signing_key = signing_private_key.get_public_key();
-   op.pledge = asset(10000);
+   /*op.pledge = asset(10000);*/
+   op.pledge = asset(10000*100000);
    op.url = "";
    trx.operations.push_back(op);
    trx.validate();
