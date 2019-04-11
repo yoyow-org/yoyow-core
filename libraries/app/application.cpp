@@ -180,10 +180,7 @@ namespace detail {
          else
          {
             vector<string> seeds = {
-#ifdef HARD_FORK_TEST
-               "39.98.69.186:2019",  // yoyow harfork test seed node
-#endif HARD_FORK_TEST
-               "seed01.yoyow.org:2018"  // yoyow mainnet
+                "testseed01.yoyow.org:3017"  // yoyow testnet
             };
 
             for( const string& endpoint_string : seeds )
