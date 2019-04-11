@@ -252,11 +252,7 @@
 
 #define GRAPHENE_CURRENT_DB_VERSION                          "YYW1.1"
 
-#ifdef HARD_FORK_TEST
-   #define GRAPHENE_IRREVERSIBLE_THRESHOLD                      (30 * GRAPHENE_1_PERCENT)
-#else
-   #define GRAPHENE_IRREVERSIBLE_THRESHOLD                      (75 * GRAPHENE_1_PERCENT)
-#endif HARD_FORK_TEST
+#define GRAPHENE_IRREVERSIBLE_THRESHOLD                      (75 * GRAPHENE_1_PERCENT)
 
 /**
  *  Reserved Account IDs with special meaning

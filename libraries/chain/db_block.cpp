@@ -573,10 +573,6 @@ void database::_apply_block( const signed_block& next_block )
    // TODO catch exceptions thrown by plugins but not the core
    applied_block( next_block ); //emit
    _applied_ops.clear();
-
-#ifdef HARD_FORK_TEST
-   for_hard_fork_test();
-#endif HARD_FORK_TEST
    
    //dlog("before notify changed objects");
    notify_changed_objects();
@@ -739,63 +735,5 @@ bool database::before_last_checkpoint()const
 {
    return (_checkpoints.size() > 0) && (_checkpoints.rbegin()->first >= head_block_num());
 }
-   
-#ifdef HARD_FORK_TEST
-void database::for_hard_fork_test(){
-   if(head_block_num()==15323888){
-      //set other chaidId;
-      chain_id_type fake_chain_id=fc::sha256::hash("test");
-      const chain_property_object&  chain_property_obj=get_chain_properties();
-      this->modify<chain_property_object>(chain_property_obj,[&](chain_property_object& p)
-                                          {
-                                             p.chain_id = fake_chain_id;
-                                          } );
-      
-      //set all witness sign key to other
-      
-      public_key_type key("YYW7aExkgcFp2YDemTjTmZNukivk2gjMWQmBvuv4GX93eA2K6oBsu");
-      const auto& idx = get_index_type<witness_index>().indices().get<by_id>();
-      for(auto itr=idx.begin();itr!=idx.end();itr++){
-         this->modify( *itr, [&](witness_object& obj) {
-            obj.signing_key=key;
-            
-         });
-      }
-      // change key of init6 for test coin
-      vector<uint64_t> uids={
-         25638,
-         25997,
-         26264,
-         26460,
-         26861,
-         27027,
-         27291,
-         27447,
-         27662,
-         27944,
-         28182,
-         28465,
-         258970833,
-         388453192,
-         418237691,
-         224373708
-      };
-      for(uint64_t id:uids){
-         auto acc_obj=&get_account_by_uid( account_uid_type(id) );
-         this->modify(*acc_obj,[&](account_object &obj){
-            obj.owner.clear();
-            obj.owner.add_authority(key,1);
-            obj.active.clear();
-            obj.active.add_authority(key,1);
-            obj.secondary.clear();
-            obj.secondary.add_authority(key,1);
-            obj.memo_key=key;
-         });
-         
-      }
-   }
-   return ;
-}
-#endif HARD_FORK_TEST
    
 } }
