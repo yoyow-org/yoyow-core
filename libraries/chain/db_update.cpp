@@ -206,7 +206,8 @@ share_type database::get_witness_pay_by_pledge()
       witness_pay_per_year = 150110208 * GRAPHENE_BLOCKCHAIN_PRECISION / 10;
    }
 
-   share_type witness_pay = (witness_pay_per_year * gpo.parameters.block_interval / (86400 * 365)).to_int64();
+   share_type witness_pay = (witness_pay_per_year * gpo.parameters.block_interval *gpo.active_witnesses.size() 
+      / (86400 * 365 * dpo.by_pledge_active_witness_count)).to_int64();
 
    return witness_pay;
 }
@@ -1077,6 +1078,9 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                 v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
              if (pv.custom_vote_effective_time.valid())
                 v.custom_vote_effective_time = *pv.custom_vote_effective_time;
+
+             if (pv.min_witness_block_produce_pledge.valid())
+                v.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
 					}
 					else
 					{
@@ -1125,6 +1129,9 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                cp.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
             if (pv.custom_vote_effective_time.valid())
                cp.custom_vote_effective_time = *pv.custom_vote_effective_time;
+
+            if (pv.min_witness_block_produce_pledge.valid())
+               cp.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
 
             graphene::chain::ext_chain_parameter ex;
             ex.content_parameter = cp;

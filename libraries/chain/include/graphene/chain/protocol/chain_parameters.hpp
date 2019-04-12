@@ -61,6 +61,8 @@ namespace graphene { namespace chain {
       uint32_t    advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;
       share_type  advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;
       uint32_t    custom_vote_effective_time          = GRAPHENE_DEFAULT_CUSTOM_VOTE_EFFECTIVE_TIME;
+
+      uint64_t    min_witness_block_produce_pledge    = GRAPHENE_DEFAULT_MIN_WITNESS_BLOCK_PRODUCE_PLEDGE;
 	 };
 
    struct ext_chain_parameter
@@ -156,17 +158,18 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
 			(total_platform_voted_award_amount)
 			(platform_award_min_votes)
 			(platform_award_requested_rank)           
-            (platform_award_basic_rate)
-            (casf_modulus)
-            (post_award_expiration)
-            (approval_casf_min_weight)
-            (approval_casf_first_rate)
-            (approval_casf_second_rate)
-            (receiptor_award_modulus)
-            (disapprove_award_modulus)
-            (advertising_confirmed_fee_rate)
-            (advertising_confirmed_min_fee)
-            (custom_vote_effective_time))
+      (platform_award_basic_rate)
+      (casf_modulus)
+      (post_award_expiration)
+      (approval_casf_min_weight)
+      (approval_casf_first_rate)
+      (approval_casf_second_rate)
+      (receiptor_award_modulus)
+      (disapprove_award_modulus)
+      (advertising_confirmed_fee_rate)
+      (advertising_confirmed_min_fee)
+      (custom_vote_effective_time)
+      (min_witness_block_produce_pledge))
 
 FC_REFLECT(graphene::chain::ext_chain_parameter, (content_parameter))
 

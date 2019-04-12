@@ -230,6 +230,8 @@ void committee_updatable_content_parameters::validate()const
    if (advertising_confirmed_fee_rate.valid())
       FC_ASSERT(*advertising_confirmed_fee_rate > 0 && *advertising_confirmed_fee_rate < GRAPHENE_100_PERCENT, 
                "advertising confirmed fee rate should be in range 0-100%");
+   if (min_witness_block_produce_pledge.valid())
+      FC_ASSERT(*min_witness_block_produce_pledge > 0, "min witness block produce pledge must be positive");
 }
 
 void committee_proposal_create_operation::validate()const

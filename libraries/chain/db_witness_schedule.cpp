@@ -162,20 +162,30 @@ void database::update_witness_schedule()
       uint16_t pledge_added = 0;
       vector<const witness_object*> by_pledge_processed;
       fc::uint128_t new_by_pledge_time = wso.current_by_pledge_time;
+      share_type min_witness_blcok_produce_pledge = gpo.parameters.get_award_params().min_witness_block_produce_pledge;
       const auto& pledge_idx = get_index_type<witness_index>().indices().get<by_pledge_schedule>();
       auto pledge_itr = pledge_idx.lower_bound( true );
       while( pledge_itr != pledge_idx.end() && pledge_added < pledge_max )
       {
-         by_pledge_processed.push_back( &(*pledge_itr) );
-         new_by_pledge_time = pledge_itr->by_pledge_scheduled_time;
-         account_uid_type uid = pledge_itr->account;
-         if( pledge_itr->signing_key != public_key_type() && new_witnesses.find( uid ) == new_witnesses.end() )
+         if (pledge_itr->pledge >= min_witness_blcok_produce_pledge || head_block_time() < HARDFORK_0_4_TIME)
          {
-            new_witnesses.insert( std::make_pair( uid, scheduled_by_pledge ) );
-            ++pledge_added;
-         }
+            by_pledge_processed.push_back(&(*pledge_itr));
+            new_by_pledge_time = pledge_itr->by_pledge_scheduled_time;
+            account_uid_type uid = pledge_itr->account;
+            if (pledge_itr->signing_key != public_key_type() && new_witnesses.find(uid) == new_witnesses.end())
+            {
+               new_witnesses.insert(std::make_pair(uid, scheduled_by_pledge));
+               ++pledge_added;
+            }
+         }     
          ++pledge_itr;
       }
+
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      modify(dpo, [&](dynamic_global_property_object& _dpo)
+      {
+         _dpo.by_pledge_active_witness_count = pledge_added;
+      });
 
       // update by_pledge_schedule
       if( pledge_added > 0 )
