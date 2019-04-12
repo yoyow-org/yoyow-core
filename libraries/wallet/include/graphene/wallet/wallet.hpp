@@ -1567,11 +1567,15 @@ class wallet_api
 
       vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
                                                                         uint32_t         end_period,
-                                                                        string           platform);
+                                                                        string           platform,
+                                                                        uint32_t         lower_bound_index,
+                                                                        uint32_t         limit);
 
       vector<Poster_Period_Profit_Detail> get_poster_profits_detail(uint32_t         begin_period,
                                                                     uint32_t         end_period,
-                                                                    string           poster);
+                                                                    string           poster,
+                                                                    uint32_t         lower_bound_index,
+                                                                    uint32_t         limit);
 
       share_type get_score_profit(string account, uint32_t period);
 

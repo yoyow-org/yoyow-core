@@ -182,11 +182,15 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector<Platform_Period_Profit_Detail> get_platform_profits_detail(const uint32_t         begin_period,
                                                                         const uint32_t         end_period,
-                                                                        const account_uid_type platform)const;
+                                                                        const account_uid_type platform,
+                                                                        const uint32_t         lower_bound_index,
+                                                                        uint32_t               limit)const;
 
       vector<Poster_Period_Profit_Detail> get_poster_profits_detail(const uint32_t         begin_period,
                                                                     const uint32_t         end_period,
-                                                                    const account_uid_type poster)const;
+                                                                    const account_uid_type poster,
+                                                                    const uint32_t   lower_bound_index,
+                                                                    uint32_t         limit)const;
 
       share_type get_score_profit(account_uid_type account, uint32_t period)const;
 
@@ -1532,6 +1536,7 @@ vector<active_post_object> database_api_impl::get_post_profits_detail(const uint
                                                                       const post_pid_type    post_pid)const
 {
    FC_ASSERT(begin_period <= end_period);
+   FC_ASSERT(end_period - begin_period <= 100);
 
    vector<active_post_object> vtr_active_objects;
    const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_post>();
@@ -1549,17 +1554,23 @@ vector<active_post_object> database_api_impl::get_post_profits_detail(const uint
 
 vector<Platform_Period_Profit_Detail> database_api::get_platform_profits_detail(const uint32_t         begin_period,
                                                                                 const uint32_t         end_period,
-                                                                                const account_uid_type platform)const
+                                                                                const account_uid_type platform,
+                                                                                const uint32_t         lower_bound_index,
+                                                                                uint32_t               limit)const
 {
-    return my->get_platform_profits_detail(begin_period, end_period, platform);
+    return my->get_platform_profits_detail(begin_period, end_period, platform, lower_bound_index, limit);
 }
 
 vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_detail(const uint32_t         begin_period,
                                                                                      const uint32_t         end_period,
-                                                                                     const account_uid_type platform)const
+                                                                                     const account_uid_type platform,
+                                                                                     const uint32_t         lower_bound_index,
+                                                                                     uint32_t               limit)const
 {
     FC_ASSERT(begin_period <= end_period);
-
+    FC_ASSERT(end_period - begin_period <= 100);
+    FC_ASSERT(limit <= 100);
+    uint32_t begin_index = 0;
     vector<Platform_Period_Profit_Detail> vtr_profit_details;
     for (int i = begin_period; i <= end_period; i++)
     {
@@ -1578,10 +1589,13 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
 
             const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_platforms>();
             auto itr_begin = idx.lower_bound(std::make_tuple(platform, i));
-            while (itr_begin != idx.end() && itr_begin->platform == platform && itr_begin->period_sequence == i)
+            while (itr_begin != idx.end() && itr_begin->platform == platform && itr_begin->period_sequence == i && limit--)
             {
-                detail.active_post_pids.push_back({ platform, (*itr_begin).poster, (*itr_begin).post_pid });
+                if (begin_index >= lower_bound_index){
+                    detail.active_objects.push_back(*itr_begin);
+                }
                 ++itr_begin;
+                ++begin_index;
             }
             vtr_profit_details.emplace_back(detail);
         }
@@ -1591,17 +1605,23 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
 
 vector<Poster_Period_Profit_Detail> database_api::get_poster_profits_detail(const uint32_t         begin_period,
                                                                             const uint32_t         end_period,
-                                                                            const account_uid_type poster)const
+                                                                            const account_uid_type poster,
+                                                                            const uint32_t         lower_bound_index,
+                                                                            uint32_t               limit)const
 {
-    return my->get_poster_profits_detail(begin_period, end_period, poster);
+    return my->get_poster_profits_detail(begin_period, end_period, poster, lower_bound_index, limit);
 }
 
 vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail(const uint32_t         begin_period,
                                                                                  const uint32_t         end_period,
-                                                                                 const account_uid_type poster)const
+                                                                                 const account_uid_type poster,
+                                                                                 const uint32_t         lower_bound_index,
+                                                                                 uint32_t               limit)const
 {
     FC_ASSERT(begin_period <= end_period);
-
+    FC_ASSERT(end_period - begin_period <= 100);
+    FC_ASSERT(limit <= 100);
+    uint32_t begin_index = 0;
     vector<Poster_Period_Profit_Detail> result;
     const auto& apt_idx = _db.get_index_type<active_post_index>().indices().get<by_poster>();
 
@@ -1616,11 +1636,12 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
        bool exist = false;
 
        while (itr != apt_idx.end() && itr->receiptor_details.count(poster) 
-              && itr->period_sequence == start && itr->poster == poster)
+              && itr->period_sequence == start && itr->poster == poster && limit--)
        {
           ppd.total_forward += itr->receiptor_details.at(poster).forward;
           ppd.total_post_award += itr->receiptor_details.at(poster).post_award;
-          ppd.active_post_pids.push_back({itr->platform, poster, itr->post_pid});
+          if (begin_index >= lower_bound_index)
+              ppd.active_objects.push_back(*itr);
 
           for (const auto& r : itr->receiptor_details.at(poster).rewards)
           {
@@ -1632,6 +1653,7 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
           if (!exist)
              exist = true;
           ++itr;
+          ++begin_index;
        }
        
        if (exist)

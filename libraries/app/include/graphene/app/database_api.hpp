@@ -109,13 +109,6 @@ struct asset_object_with_data : public asset_object
    asset_dynamic_data_object dynamic_asset_data;
 };
 
-struct Post_Object_Index
-{
-    account_uid_type platform;
-    account_uid_type poster;
-    post_pid_type    postid;
-};
-
 struct Platform_Period_Profit_Detail
 {
     uint32_t                               cur_period;
@@ -127,7 +120,7 @@ struct Platform_Period_Profit_Detail
     share_type                             post_profits = 0;
     share_type                             platform_profits = 0;
 
-    vector<Post_Object_Index>              active_post_pids;
+    vector<active_post_object>             active_objects;
 };
 
 struct Poster_Period_Profit_Detail
@@ -139,7 +132,7 @@ struct Poster_Period_Profit_Detail
     flat_map<asset_aid_type, share_type>   total_rewards;
     share_type                             total_post_award = 0;
 
-    vector<Post_Object_Index>              active_post_pids;
+    vector<active_post_object>             active_objects;
 };
 /**
  * @brief The database_api class implements the RPC API for the chain database.
@@ -491,11 +484,15 @@ class database_api
 
       vector<Platform_Period_Profit_Detail> get_platform_profits_detail(const uint32_t         begin_period,
                                                                         const uint32_t         end_period,
-                                                                        const account_uid_type platform)const;
+                                                                        const account_uid_type platform,
+                                                                        const uint32_t         lower_bound_index,
+                                                                        uint32_t               limit)const;
 
       vector<Poster_Period_Profit_Detail> get_poster_profits_detail(const uint32_t         begin_period,
                                                                     const uint32_t         end_period,
-                                                                    const account_uid_type poster)const;
+                                                                    const account_uid_type poster,
+                                                                    const uint32_t         lower_bound_index,
+                                                                    uint32_t               limit)const;
 
       share_type get_score_profit(account_uid_type account, uint32_t period)const;
 
@@ -698,11 +695,6 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_balances)
           );
 
-FC_REFLECT(graphene::app::Post_Object_Index,
-          (platform)
-          (poster)
-          (postid));
-
 FC_REFLECT(graphene::app::Platform_Period_Profit_Detail,
           (cur_period)
           (platform_account)
@@ -711,14 +703,14 @@ FC_REFLECT(graphene::app::Platform_Period_Profit_Detail,
           (foward_profits)
           (post_profits)
           (platform_profits)
-          (active_post_pids));
+          (active_objects));
 FC_REFLECT(graphene::app::Poster_Period_Profit_Detail,
           (cur_period)
           (poster_account)
           (total_forward)
           (total_rewards)
           (total_post_award)
-          (active_post_pids));
+          (active_objects));
 
 FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_uid)

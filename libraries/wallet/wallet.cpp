@@ -2807,6 +2807,7 @@ signed_transaction account_cancel_auth_platform(string account,
    {
        try {
            FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
+           FC_ASSERT(end_period - begin_period <= 100);
            account_uid_type platform_uid = get_account_uid(platform);
            account_uid_type poster_uid = get_account_uid(poster);
            post_pid_type postid = fc::to_uint64(fc::string(post_pid));
@@ -2816,24 +2817,30 @@ signed_transaction account_cancel_auth_platform(string account,
 
    vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
                                                                      uint32_t         end_period,
-                                                                     string           platform)
+                                                                     string           platform,
+                                                                     uint32_t         lower_bound_index,
+                                                                     uint32_t         limit)
    {
        try {
            FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
+           FC_ASSERT(end_period - begin_period <= 100);
            account_uid_type platform_uid = get_account_uid(platform);
-           return _remote_db->get_platform_profits_detail(begin_period, end_period, platform_uid);
-       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform))
+           return _remote_db->get_platform_profits_detail(begin_period, end_period, platform_uid, lower_bound_index, limit);
+       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(lower_bound_index)(limit))
    }
 
    vector<Poster_Period_Profit_Detail> get_poster_profits_detail(uint32_t         begin_period,
                                                                  uint32_t         end_period,
-                                                                 string           poster)
+                                                                 string           poster,
+                                                                 uint32_t         lower_bound_index,
+                                                                 uint32_t         limit)
    {
        try {
            FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
+           FC_ASSERT(end_period - begin_period <= 100);
            account_uid_type poster_uid = get_account_uid(poster);
-           return _remote_db->get_poster_profits_detail(begin_period, end_period, poster_uid);
-       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(poster))
+           return _remote_db->get_poster_profits_detail(begin_period, end_period, poster_uid, lower_bound_index, limit);
+       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(poster)(lower_bound_index)(limit))
    }
 
    share_type get_score_profit(string account, uint32_t period)
@@ -4416,16 +4423,20 @@ vector<active_post_object> wallet_api::get_post_profits_detail(uint32_t         
 
 vector<Platform_Period_Profit_Detail> wallet_api::get_platform_profits_detail(uint32_t         begin_period,
                                                                               uint32_t         end_period,
-                                                                              string           platform)
+                                                                              string           platform,
+                                                                              uint32_t         lower_bound_index,
+                                                                              uint32_t         limit)
 {
-    return my->get_platform_profits_detail(begin_period, end_period, platform);
+    return my->get_platform_profits_detail(begin_period, end_period, platform, lower_bound_index, limit);
 }
 
 vector<Poster_Period_Profit_Detail> wallet_api::get_poster_profits_detail(uint32_t         begin_period,
                                                                           uint32_t         end_period,
-                                                                          string           poster)
+                                                                          string           poster,
+                                                                          uint32_t         lower_bound_index,
+                                                                          uint32_t         limit)
 {
-    return my->get_poster_profits_detail(begin_period, end_period, poster);
+    return my->get_poster_profits_detail(begin_period, end_period, poster, lower_bound_index, limit);
 }
 
 share_type wallet_api::get_score_profit(string account, uint32_t period)
