@@ -1253,8 +1253,8 @@ vector<score_object> database_api_impl::get_scores_by_uid(const account_uid_type
       itr->from_account_uid == scorer && itr->period_sequence == period)
    {
       result.push_back(*itr);
-      itr++;
-      count++;
+      ++itr;
+      ++count;
    }
 
    return result;
@@ -1678,7 +1678,7 @@ share_type database_api_impl::get_score_profit(account_uid_type account, uint32_
    while (itr != sce_idx.end() && itr->from_account_uid == account && itr->period_sequence == period)
    {
       amount += itr->profits;
-      itr++;
+      ++itr;
    }
 
    return amount;

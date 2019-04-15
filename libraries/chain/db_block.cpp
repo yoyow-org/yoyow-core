@@ -613,8 +613,10 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
        {
            if (op.which() == operation::tag< transfer_operation >::value ||
                op.which() == operation::tag< post_operation >::value || 
+               op.which() == operation::tag< post_update_operation >::value ||
                op.which() == operation::tag< reward_proxy_operation >::value || 
-               op.which() == operation::tag< buyout_operation >::value )
+               op.which() == operation::tag< buyout_operation >::value ||
+               op.which() == operation::tag< score_create_operation >::value )
            {
                return true;
            }

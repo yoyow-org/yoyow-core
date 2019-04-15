@@ -1309,6 +1309,9 @@ void database::check_invariants()
             for( size_t i = 1; i < gpo.parameters.max_governance_voting_proxy_level; ++i )
                total_proxied_votes[i] += s.proxied_votes[i-1];
          }
+         const auto& account = get_account_by_uid(s.uid);
+         if (account.register_by_platform)
+             total_voter_platform_votes += s.effective_votes;
          for( size_t i = 0; i < gpo.parameters.max_governance_voting_proxy_level; ++i )
             total_got_proxied_votes[i] += s.proxied_votes[i];
       }

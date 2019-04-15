@@ -156,7 +156,8 @@ namespace graphene { namespace chain {
 	   {
 		   if (to_buyout)
 			   FC_ASSERT(buyout_ratio <= cur_ratio, "forward_ratio must be less than cur_ratio");
-		   FC_ASSERT(cur_ratio <= (10000 - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "forward_ratio must be less then 75%");
+           FC_ASSERT(cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "forward_ratio must be less then ${n}%",
+               ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO)/100));
 	   }
 
        bool operator == (Recerptor_Parameter r1)
@@ -280,11 +281,13 @@ namespace graphene { namespace chain {
 		  if (extensions.valid())
 		  {
               const post_update_operation::ext& ext = extensions->value;
-              if ((ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()) && a.find(poster) == a.end())
+              if (ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid())
                   a.insert(poster);
-              if (ext.receiptor.valid() && a.find(*(ext.receiptor)) == a.end())
+              if (ext.receiptor.valid() )
                   a.insert(*(ext.receiptor));
 		  }
+          else
+              a.insert(poster);    // Requires authors to change the permissions
       }
    };
 
@@ -300,7 +303,7 @@ namespace graphene { namespace chain {
    struct score_create_operation : public base_operation
    {
 	   struct fee_parameters_type {
-		   uint64_t fee = 0.01 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/100;
 		   uint32_t price_per_kbyte = 0;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
@@ -339,7 +342,7 @@ namespace graphene { namespace chain {
    struct reward_operation : public base_operation
    {
 	   struct fee_parameters_type {
-		   uint64_t fee = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
 		   uint32_t price_per_kbyte = 0;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
@@ -377,7 +380,7 @@ namespace graphene { namespace chain {
    struct reward_proxy_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
            uint32_t price_per_kbyte = 0;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
@@ -417,7 +420,7 @@ namespace graphene { namespace chain {
    struct buyout_operation : public base_operation
    {
 	   struct fee_parameters_type {
-		   uint64_t fee = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
 		   uint32_t price_per_kbyte = 0;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
@@ -456,7 +459,7 @@ namespace graphene { namespace chain {
    struct license_create_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
            uint32_t price_per_kbyte = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;

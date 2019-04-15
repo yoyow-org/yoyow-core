@@ -165,13 +165,14 @@ void post_operation::validate()const
            FC_ASSERT(receiptor.size() >= 2 && receiptor.size() <= 5, "receiptors` size must be >= 2 and <= 5");
            auto itor = receiptor.find(platform);
            FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
-           FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 25%");
+           FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO/100));
            auto itor_poster = receiptor.find(poster);
            FC_ASSERT(itor_poster != receiptor.end(), "poster must be included by receiptors");
-           FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster`s ratio must be >= 25%");
+           FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster`s ratio must be >= ${n}%", ("n", GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO / 100));
            uint32_t total = 0;
            for (auto iter : receiptor)
            {
+               validate_account_uid(iter.first, "receiptor");
                iter.second.validate();
                total += iter.second.cur_ratio;
            }
@@ -189,8 +190,6 @@ void post_update_operation::validate()const
    validate_account_uid( poster, "poster " );
    validate_account_uid( platform, "platform " );
    FC_ASSERT( post_pid > uint64_t( 0 ), "post_pid must be greater than 0 ");
-   FC_ASSERT(hash_value.valid() || extra_data.valid() || title.valid() || body.valid() || extensions.valid(),
-             "Should change something");
 
    if (extensions.valid())
    {
@@ -200,12 +199,15 @@ void post_update_operation::validate()const
            "Should change something");
        if (ext.receiptor.valid())
        {
+           validate_account_uid(*(ext.receiptor), "receiptor");
            FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
        }
        if (ext.buyout_ratio.valid())
            FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "buyout_ratio is more than max. ");
        if (ext.buyout_price.valid())
            FC_ASSERT(*(ext.buyout_price) > share_type(0), "buyout price should more than 0. ");
+       if (ext.forward_price.valid())
+           FC_ASSERT(*(ext.forward_price) > share_type(0), "forward price should more than 0. ");
    }
 }
 
@@ -292,6 +294,7 @@ void buyout_operation::validate()const
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
 	FC_ASSERT(from_account_uid != platform, "from_account shouldn`t be platform");
+    FC_ASSERT(from_account_uid != receiptor_account_uid, "from_account shouldn`t be receiptor");
 	FC_ASSERT(receiptor_account_uid != platform, "platform shouldn`t sell out its receipt ratio");
 	validate_account_uid(receiptor_account_uid, "from account ");
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");

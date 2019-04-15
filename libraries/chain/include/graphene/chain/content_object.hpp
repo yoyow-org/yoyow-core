@@ -272,11 +272,12 @@ namespace graphene { namespace chain {
 		 {
 			 auto itor = receiptors.find(platform);
 			 FC_ASSERT(itor != receiptors.end(), "platform must be included by receiptors");
-			 FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 30%");  
+             FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO/100));
 			 uint32_t total = 0;
 			 for (auto iter : receiptors)
 			 {
-                 FC_ASSERT(iter.second.cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The cur_ratio of receiptor should less then 70%");
+                 FC_ASSERT(iter.second.cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The cur_ratio of receiptor should less then ${n}%", 
+                     ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO)/100));
 				 total += iter.second.cur_ratio;
 				 if (iter.second.to_buyout)
 					 FC_ASSERT(iter.second.cur_ratio >= iter.second.buyout_ratio, "buyout_ratio must less then cur_ratio");

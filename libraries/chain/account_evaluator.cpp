@@ -220,12 +220,12 @@ void account_update_auth_evaluator::do_update_auth_platform_object(const operati
    vector<account_uid_type> add_platforms;
    vector<account_uid_type> remove_platforms;
 
-   for (auto itr = o.secondary->account_uid_auths.begin(); itr != o.secondary->account_uid_auths.end(); itr++){
+   for (auto itr = o.secondary->account_uid_auths.begin(); itr != o.secondary->account_uid_auths.end(); ++itr){
       authority::account_uid_auth_type auth_type = itr->first;
       if (!acnt->secondary.account_uid_auths.count(auth_type) && d.find_platform_by_owner(auth_type.uid))
          add_platforms.emplace_back(auth_type.uid);
    }
-   for (auto itr = acnt->secondary.account_uid_auths.begin(); itr != acnt->secondary.account_uid_auths.end(); itr++){
+   for (auto itr = acnt->secondary.account_uid_auths.begin(); itr != acnt->secondary.account_uid_auths.end(); ++itr){
       authority::account_uid_auth_type auth_type = itr->first;
       if (!o.secondary->account_uid_auths.count(auth_type) && d.find_platform_by_owner(auth_type.uid))
          remove_platforms.emplace_back(auth_type.uid);

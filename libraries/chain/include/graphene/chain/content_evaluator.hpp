@@ -62,6 +62,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
          const account_statistics_object* account_stats = nullptr;
          const post_operation::ext* ext_para = nullptr;
          const account_auth_platform_object* auth_object = nullptr;
+         const post_object* origin_post = nullptr;
    };
 
    class post_update_evaluator : public evaluator<post_update_evaluator>
