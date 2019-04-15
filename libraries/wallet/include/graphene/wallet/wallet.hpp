@@ -1611,7 +1611,7 @@ class wallet_api
       signed_transaction confirm_advertising(string         platform,
                                              advertising_aid_type         advertising_aid,
                                              advertising_order_oid_type   advertising_order_oid,
-                                             bool           comfirm,
+                                             bool           confirm,
                                              bool           csaf_fee = true,
                                              bool           broadcast = false
                                              );

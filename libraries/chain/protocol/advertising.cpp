@@ -73,7 +73,7 @@ share_type advertising_buy_operation::calculate_fee(const fee_parameters_type& k
 
 void advertising_confirm_operation::validate()const
 {
-    validate_op_fee(fee, "advertising_comfirm ");
+    validate_op_fee(fee, "advertising_confirm ");
     validate_account_uid(platform, "platform");
     FC_ASSERT(advertising_aid > 0, "advertising_aid should more than 0. ");
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");

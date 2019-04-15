@@ -430,7 +430,7 @@ database::get_effective_csaf(const active_post_object& active_post)
       //bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
       effective_csaf_container.emplace_back(std::make_tuple(itr->id, effective_casf, itr->score >= 0));
 
-      itr++;
+      ++itr;
    }
 
    return std::make_tuple(effective_csaf_container, total_effective_csaf);

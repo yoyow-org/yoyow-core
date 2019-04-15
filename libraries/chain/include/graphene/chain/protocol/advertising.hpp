@@ -10,7 +10,7 @@ namespace graphene { namespace chain {
    struct advertising_create_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION / 10;
            uint32_t price_per_kbyte = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
@@ -39,7 +39,7 @@ namespace graphene { namespace chain {
    struct advertising_update_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION / 10;
            uint32_t price_per_kbyte = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
@@ -70,7 +70,7 @@ namespace graphene { namespace chain {
    struct advertising_buy_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION / 10;
            uint32_t price_per_kbyte = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
@@ -102,7 +102,7 @@ namespace graphene { namespace chain {
    struct advertising_confirm_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 0.1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION / 10;
            uint32_t price_per_kbyte = 0;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
@@ -114,7 +114,7 @@ namespace graphene { namespace chain {
        account_uid_type             platform;
        advertising_aid_type         advertising_aid;
        advertising_order_oid_type   advertising_order_oid;
-       bool                         iscomfirm;
+       bool                         isconfirm;
 
        extensions_type              extensions;
 
@@ -166,7 +166,7 @@ FC_REFLECT(graphene::chain::advertising_buy_operation::fee_parameters_type, (fee
 FC_REFLECT(graphene::chain::advertising_buy_operation, (fee)(advertising_order_oid)(from_account)(platform)(advertising_aid)(start_time)(buy_number)(extra_data)(memo)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_confirm_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_aid)(advertising_order_oid)(iscomfirm)(extensions))
+FC_REFLECT(graphene::chain::advertising_confirm_operation, (fee)(platform)(advertising_aid)(advertising_order_oid)(isconfirm)(extensions))
 
 FC_REFLECT(graphene::chain::advertising_ransom_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::advertising_ransom_operation, (fee)(from_account)(platform)(advertising_aid)(advertising_order_oid)(extensions))

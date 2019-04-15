@@ -2662,7 +2662,7 @@ signed_transaction account_cancel_auth_platform(string account,
    signed_transaction confirm_advertising(string              platform,
                                           advertising_aid_type        advertising_aid,
                                           advertising_order_oid_type  advertising_order_oid,
-                                          bool                comfirm,
+                                          bool                confirm,
                                           bool                csaf_fee = true,
                                           bool                broadcast = false
                                          )
@@ -2674,7 +2674,7 @@ signed_transaction account_cancel_auth_platform(string account,
          confirm_op.platform = get_account_uid(platform);
          confirm_op.advertising_aid = advertising_aid;
          confirm_op.advertising_order_oid = advertising_order_oid;
-         confirm_op.iscomfirm = comfirm;
+         confirm_op.isconfirm = confirm;
 
          signed_transaction tx;
          tx.operations.push_back(confirm_op);
@@ -2683,7 +2683,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          return sign_transaction(tx, broadcast);
 
-      } FC_CAPTURE_AND_RETHROW((platform)(advertising_aid)(advertising_order_oid)(comfirm)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((platform)(advertising_aid)(advertising_order_oid)(confirm)(csaf_fee)(broadcast))
    }
 
    post_object get_post(string platform_owner,
@@ -4344,11 +4344,11 @@ signed_transaction wallet_api::buy_advertising(string               account,
 signed_transaction wallet_api::confirm_advertising(string         platform,
                                                    advertising_aid_type         advertising_aid,
                                                    advertising_order_oid_type   advertising_order_oid,
-                                                   bool           comfirm,
+                                                   bool           confirm,
                                                    bool           csaf_fee,
                                                    bool           broadcast)
 {
-    return my->confirm_advertising(platform, advertising_aid, advertising_order_oid, comfirm, csaf_fee, broadcast);
+    return my->confirm_advertising(platform, advertising_aid, advertising_order_oid, confirm, csaf_fee, broadcast);
 }
 
 post_object wallet_api::get_post(string platform_owner,

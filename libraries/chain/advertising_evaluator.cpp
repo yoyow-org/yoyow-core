@@ -96,29 +96,25 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(advertising_obj != nullptr && advertising_obj->platform == op.platform, 
          "advertising ${tid} on platform ${platform} is invalid.",("tid", op.advertising_aid)("platform", op.platform));
       FC_ASSERT(advertising_obj->on_sell, "advertising ${id} on platform ${platform} not on sell", ("id", op.advertising_aid)("platform", op.platform));
-      FC_ASSERT(op.start_time >= d.head_block_time(), "start time should be later");
+      FC_ASSERT(op.start_time >= d.head_block_time() && op.start_time <= d.head_block_time() + 10*365*86400, 
+         "start time should be more than current time and not more than next ten years");
       FC_ASSERT((advertising_obj->last_order_sequence + 1) == op.advertising_order_oid, "advertising_order_oid ${pid} is invalid.", ("pid", op.advertising_order_oid));
       
       const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_order_state>();
       auto itr = idx.lower_bound(std::make_tuple(advertising_accepted, op.platform, op.advertising_aid));
 
-      FC_ASSERT(advertising_obj->unit_time <= 10*365*24*60*60 / op.buy_number, "advertising purchasing time should not more than ten years ");
+      FC_ASSERT(advertising_obj->unit_time <= 10*365*86400 / op.buy_number, "advertising purchasing time should not more than ten years ");
 
       time_point_sec end_time = op.start_time + advertising_obj->unit_time * op.buy_number;
       while (itr != idx.end() && itr->advertising_aid == op.advertising_aid && itr->platform == op.platform && itr->status == advertising_accepted) {
          if (op.start_time >= itr->end_time || end_time <= itr->start_time) {
-            itr++;
+            ++itr;
             continue;
          }       
          FC_ASSERT(false, "purchasing date have a conflict, buy advertising failed");
       }
 
-      const auto& from_balance = d.get_balance(op.from_account, GRAPHENE_CORE_ASSET_AID);
       necessary_balance = advertising_obj->unit_price * op.buy_number;
-      FC_ASSERT(from_balance.amount >= necessary_balance,
-         "Insufficient Balance: ${balance}, not enough to buy advertising ${tid} that ${need} needed.",
-         ("need", necessary_balance)("balance", d.to_pretty_string(from_balance)));
-
       const auto& params = d.get_global_properties().parameters.get_award_params();
       FC_ASSERT(necessary_balance > params.advertising_confirmed_min_fee, 
          "buy price is not enough to pay The lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
@@ -164,7 +160,7 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
    try {
       const database& d = db();
 
-      FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only advertising comfirm after HARDFORK_0_4_TIME");
+      FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only advertising confirm after HARDFORK_0_4_TIME");
       const auto& advertising_obj = d.find_advertising(op.platform, op.advertising_aid);
       FC_ASSERT(advertising_obj != nullptr && advertising_obj->platform == op.platform,
          "advertising ${tid} on platform ${platform} is invalid.", ("tid", op.advertising_aid)("platform", op.platform));
@@ -174,7 +170,7 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(advertising_order_obj->status == advertising_undetermined,
           "order ${p}_${ad}_${order} already effective or refused.", ("p",op.platform)("ad",op.advertising_aid)("order", op.advertising_order_oid));
 
-      if (op.iscomfirm) {
+      if (op.isconfirm) {
          const auto& params = d.get_global_properties().parameters.get_award_params();
          FC_ASSERT(advertising_order_obj->released_balance > params.advertising_confirmed_min_fee,
             "buy price is not enough to pay the lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
@@ -191,7 +187,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
       database& d = db();
 
       advertising_confirm_result result;
-      if (op.iscomfirm)
+      if (op.isconfirm)
       {
          share_type released_balance = advertising_order_obj->released_balance;
          d.modify(*advertising_order_obj, [&](advertising_order_object& obj)
@@ -223,14 +219,14 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
          while (itr != idx.end() && itr->platform == op.platform && itr->advertising_aid == op.advertising_aid && itr->status == advertising_undetermined)
          {
             if (itr->start_time >= advertising_order_obj->end_time || itr->end_time <= advertising_order_obj->start_time) {
-               itr++;
+               ++itr;
             }
             else
             {
                d.adjust_balance(itr->user, asset(itr->released_balance));
                result.emplace(itr->user, itr->released_balance);  
                update_orders.push_back(itr->id);              
-               itr++;
+               ++itr;
             }           
          } 
         
@@ -245,7 +241,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
                   obj.status = advertising_refused;
                   obj.handle_time = d.head_block_time();
                });
-            }    
+            }
          }
       }
       else
@@ -277,8 +273,10 @@ void_result advertising_ransom_evaluator::do_evaluate(const operation_type& op)
         advertising_order_obj = d.find_advertising_order(op.platform, op.advertising_aid, op.advertising_order_oid);
         FC_ASSERT(advertising_order_obj != nullptr, "order ${p}_${ad}_${order} is not existent", ("p", op.platform)("ad", op.advertising_aid)("order", op.advertising_order_oid));
         FC_ASSERT(advertising_order_obj->user == op.from_account, "your can only ransom your own order. ");
-        FC_ASSERT(advertising_order_obj->buy_request_time + GRAPHENE_ADVERTISING_COMFIRM_TIME < d.head_block_time(), 
-           "the buy advertising is undetermined. Can`t ransom now.");
+        FC_ASSERT(advertising_order_obj->buy_request_time + GRAPHENE_ADVERTISING_CONFIRM_TIME < d.head_block_time(), 
+           "it's not time to ransom, Can`t ransom now.");
+        FC_ASSERT(advertising_order_obj->status == advertising_undetermined,
+           "the buy advertising is not undetermined. Can`t ransom now.");
 
         return void_result();
 
