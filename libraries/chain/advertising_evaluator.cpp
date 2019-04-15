@@ -215,7 +215,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
          const auto& idx = d.get_index_type<advertising_order_index>().indices().get<by_advertising_order_state>();
          auto itr = idx.lower_bound(std::make_tuple(advertising_undetermined, op.platform, op.advertising_aid));
 
-         vector<object_id_type> update_orders;
+         vector<std::reference_wrapper<const advertising_order_object>> refs;
          while (itr != idx.end() && itr->platform == op.platform && itr->advertising_aid == op.advertising_aid && itr->status == advertising_undetermined)
          {
             if (itr->start_time >= advertising_order_obj->end_time || itr->end_time <= advertising_order_obj->start_time) {
@@ -225,24 +225,19 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
             {
                d.adjust_balance(itr->user, asset(itr->released_balance));
                result.emplace(itr->user, itr->released_balance);  
-               update_orders.push_back(itr->id);              
+               refs.emplace_back(std::cref(*itr));
                ++itr;
             }           
          } 
-        
-         const auto& idx_by_id = d.get_index_type<advertising_order_index>().indices().get<by_id>();
-         for (const auto& id : update_orders)
+
+         std::for_each(refs.begin(), refs.end(), [&](const advertising_order_object& advertising_order) 
          {
-            auto update_itr = idx_by_id.find(id);
-            if (update_itr != idx_by_id.end())
+            d.modify(advertising_order, [&](advertising_order_object& obj)
             {
-               d.modify(*update_itr, [&](advertising_order_object& obj)
-               {
-                  obj.status = advertising_refused;
-                  obj.handle_time = d.head_block_time();
-               });
-            }
-         }
+               obj.status = advertising_refused;
+               obj.handle_time = d.head_block_time();
+            });
+         });
       }
       else
       {
