@@ -159,7 +159,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
                obj.vote_result.at(v) += delta.amount.value;
          });
       }
-      cast_vote_itr++; 
+      ++cast_vote_itr; 
    }
 
 } FC_CAPTURE_AND_RETHROW( (account)(delta) ) }

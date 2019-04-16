@@ -298,13 +298,14 @@ void database::clear_active_post()
 
 void database::clear_unnecessary_objects()
 {
+   const auto block_time = head_block_time();
    switch (head_block_num() % 10) {
    case 0: 
    {
-      if (head_block_time() < time_point_sec(_advertising_order_remaining_time))
+      if (block_time < time_point_sec(_advertising_order_remaining_time))
          break;
       const auto& ado_idx = get_index_type<advertising_order_index>().indices().get<by_clear_time>();
-      const auto& ado_end = ado_idx.lower_bound(head_block_time() - _advertising_order_remaining_time);
+      const auto& ado_end = ado_idx.lower_bound(block_time - _advertising_order_remaining_time);
       auto ado_itr = ado_idx.begin();
 
       while (ado_itr != ado_end) {
@@ -315,10 +316,10 @@ void database::clear_unnecessary_objects()
    }
    case 3:
    {
-      if (head_block_time() < time_point_sec(_custom_vote_remaining_time))
+      if (block_time < time_point_sec(_custom_vote_remaining_time))
          break;
       const auto& custom_vote_idx = get_index_type<custom_vote_index>().indices().get<by_expired_time>();
-      const auto& custom_vote_end = custom_vote_idx.lower_bound(head_block_time() - _custom_vote_remaining_time);
+      const auto& custom_vote_end = custom_vote_idx.lower_bound(block_time - _custom_vote_remaining_time);
       auto custom_vote_itr = custom_vote_idx.begin();
 
       while (custom_vote_itr != custom_vote_end) {
@@ -347,7 +348,7 @@ void database::update_reduce_witness_csaf()
 {
     const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
     const auto& witness_idx = get_index_type<witness_index>().indices();
-    for (auto itr = witness_idx.begin(); itr != witness_idx.end(); itr++)
+    for (auto itr = witness_idx.begin(); itr != witness_idx.end(); ++itr)
     {
         const account_statistics_object& statistics_obj = get_account_statistics_by_uid(itr->account);
         modify(statistics_obj, [&](account_statistics_object& s) {
@@ -1243,7 +1244,7 @@ void database::check_invariants()
    while (advertising_iter != adt_idx.end() && advertising_iter->status == advertising_undetermined)
    {
        total_advertising_released += advertising_iter->released_balance;
-       advertising_iter++;
+       ++advertising_iter;
    }
 
    share_type current_supply = get_core_asset().dynamic_data(*this).current_supply;
@@ -1553,7 +1554,8 @@ void database::clear_resigned_platform_votes()
 void database::process_content_platform_awards()
 { 
 	const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-	if (head_block_time() >= dpo.next_content_award_time  )
+  const auto block_time = head_block_time();
+	if (block_time >= dpo.next_content_award_time  )
 	{
 		const global_property_object& gpo = get_global_properties();
 		const auto& params = gpo.parameters.get_award_params();
@@ -1579,9 +1581,9 @@ void database::process_content_platform_awards()
 			clear_active_post();
 			modify(dpo, [&](dynamic_global_property_object& _dpo)
 			{
-				_dpo.last_content_award_time = head_block_time();
-				_dpo.next_content_award_time = head_block_time() + params.content_award_interval;
-				_dpo.current_active_post_sequence++;
+				_dpo.last_content_award_time = block_time;
+        _dpo.next_content_award_time = block_time + params.content_award_interval;
+				++_dpo.current_active_post_sequence;
         _dpo.content_award_enable = true;
 			});
 			return;
@@ -1634,7 +1636,7 @@ void database::process_content_platform_awards()
           (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
  
        flat_map<account_uid_type, share_type> platform_receiptor_award;
-       for (auto itr = post_effective_casf.begin(); itr != post_effective_casf.end(); itr++)
+       for (auto itr = post_effective_casf.begin(); itr != post_effective_casf.end(); ++itr)
        {
           share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
              total_effective_csaf_amount.value).to_uint64();
@@ -1689,7 +1691,7 @@ void database::process_content_platform_awards()
                 (total_award_csaf * GRAPHENE_100_PERCENT)).to_uint64();
              else
                 to_add = (effective_csaf_per_account * score_earned.value / total_award_csaf).to_uint64();
-             const auto& score_obj = get_score(std::get<0>(e));
+             const auto& score_obj = get(std::get<0>(e));
              modify(score_obj, [&](score_object& obj)
              {
                 obj.profits = to_add;
@@ -1754,9 +1756,9 @@ void database::process_content_platform_awards()
 
 		modify(dpo, [&](dynamic_global_property_object& _dpo)
 		{
-			_dpo.last_content_award_time = head_block_time();
-			_dpo.next_content_award_time = head_block_time() + params.content_award_interval;
-			_dpo.current_active_post_sequence++;
+      _dpo.last_content_award_time = block_time;
+      _dpo.next_content_award_time = block_time + params.content_award_interval;
+			++_dpo.current_active_post_sequence;
 		});
 
 		clear_active_post();
@@ -1766,7 +1768,8 @@ void database::process_content_platform_awards()
 void database::process_platform_voted_awards()
 {
 	const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-	if (head_block_time() >= dpo.next_platform_voted_award_time)
+  const auto block_time = head_block_time();
+  if (block_time >= dpo.next_platform_voted_award_time)
 	{
 		const global_property_object& gpo = get_global_properties();
 		const auto& params = gpo.parameters.get_award_params();
@@ -1826,7 +1829,7 @@ void database::process_platform_voted_awards()
                 {
                    if (pla.vote_profits.size() >= _latest_active_post_periods)
                       pla.vote_profits.erase(pla.vote_profits.begin());
-                   pla.vote_profits.emplace(head_block_time(), p.second);
+                   pla.vote_profits.emplace(block_time, p.second);
                 });
              }
 
@@ -1841,8 +1844,8 @@ void database::process_platform_voted_awards()
 
        modify(dpo, [&](dynamic_global_property_object& _dpo)
        {
-          _dpo.last_platform_voted_award_time = head_block_time();
-          _dpo.next_platform_voted_award_time = head_block_time() + params.platform_award_interval;
+          _dpo.last_platform_voted_award_time = block_time;
+          _dpo.next_platform_voted_award_time = block_time + params.platform_award_interval;
        });
 
 		}

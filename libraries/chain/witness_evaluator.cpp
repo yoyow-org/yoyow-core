@@ -562,12 +562,12 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          if (reduce_witness)
              s.update_coin_seconds_earned(csaf_window, block_time, true);
       });
-      
+
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
-         _dpo.total_witness_pledge -= from_pledge.value;
+         _dpo.total_witness_pledge -= total;
       });
-
+      
       // update witness object
       if( from_pledge > 0 && witness_obj != nullptr )
       {

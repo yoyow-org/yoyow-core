@@ -156,7 +156,7 @@ namespace graphene { namespace chain {
 	   {
 		   if (to_buyout)
 			   FC_ASSERT(buyout_ratio <= cur_ratio, "forward_ratio must be less than cur_ratio");
-           FC_ASSERT(cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "forward_ratio must be less then ${n}%",
+           FC_ASSERT(cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "forward_ratio must be less than ${n}%",
                ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO)/100));
 	   }
 

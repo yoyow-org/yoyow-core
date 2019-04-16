@@ -25,6 +25,7 @@ share_type custom_vote_create_operation::calculate_fee(const fee_parameters_type
 {
    share_type core_fee_required = k.fee;
    auto size = fc::raw::pack_size(description);
+   size += fc::raw::pack_size(title);
    size += fc::raw::pack_size(options);
    core_fee_required += calculate_data_fee(size, k.price_per_kbyte);
    return core_fee_required;

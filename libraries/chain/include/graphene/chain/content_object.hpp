@@ -276,11 +276,11 @@ namespace graphene { namespace chain {
 			 uint32_t total = 0;
 			 for (auto iter : receiptors)
 			 {
-                 FC_ASSERT(iter.second.cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The cur_ratio of receiptor should less then ${n}%", 
+                 FC_ASSERT(iter.second.cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The cur_ratio of receiptor should less than ${n}%", 
                      ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO)/100));
 				 total += iter.second.cur_ratio;
 				 if (iter.second.to_buyout)
-					 FC_ASSERT(iter.second.cur_ratio >= iter.second.buyout_ratio, "buyout_ratio must less then cur_ratio");
+					 FC_ASSERT(iter.second.cur_ratio >= iter.second.buyout_ratio, "buyout_ratio must less than cur_ratio");
 			 }
              FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
 		 }
