@@ -36,6 +36,7 @@
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
 #include <fc/uint128.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 namespace graphene { namespace chain {
 
@@ -1604,14 +1605,15 @@ void database::process_content_platform_awards()
         const auto& idx = get_index_type<score_index>().indices().get<by_period_sequence>();
         auto itr = idx.lower_bound(std::make_tuple(apt_itr->platform, apt_itr->poster, apt_itr->post_pid, apt_itr->period_sequence));
         
-        share_type approval_amount = 0;
+        boost::multiprecision::int128_t approval_amount = 0;
         while (itr != idx.end() && itr->platform == apt_itr->platform && itr->poster == apt_itr->poster &&
            itr->post_pid == apt_itr->post_pid && itr->period_sequence == apt_itr->period_sequence)
         {
-           approval_amount += itr->csaf * itr->score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT);
+           approval_amount += (boost::multiprecision::int128_t)itr->csaf.value * itr->score * params.casf_modulus 
+              / (5 * GRAPHENE_100_PERCENT);
            ++itr;
         }
-        share_type csaf = apt_itr->total_csaf + approval_amount;
+        share_type csaf = apt_itr->total_csaf + approval_amount.convert_to<int64_t>();
         if (csaf > 0)
         {
            total_effective_csaf_amount += csaf;
