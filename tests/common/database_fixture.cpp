@@ -1693,7 +1693,7 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
    vector<std::tuple<account_uid_type, share_type, bool>> effective_csaf_container;
    for (const auto& score : scores)
    {
-      const auto& score_obj = db.get_score(score);
+      const auto& score_obj = db.get(score);
       total_csaf = total_csaf + score_obj.csaf.value;
       share_type effective_casf = 0;
       if (total_csaf <= turn_point_first)

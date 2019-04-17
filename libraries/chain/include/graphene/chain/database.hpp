@@ -357,7 +357,6 @@ namespace graphene { namespace chain {
 
          const license_object& get_license_by_platform(account_uid_type platform, license_lid_type license_lid)const;
          const license_object* find_license_by_platform(account_uid_type platform, license_lid_type license_lid)const;
-         const score_object& get_score(score_id_type sid)const;
          const score_object& get_score(account_uid_type platform,
                                        account_uid_type poster,
                                        post_pid_type post_pid,

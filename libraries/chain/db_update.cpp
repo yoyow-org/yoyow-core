@@ -1033,9 +1033,9 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 				modify(get_global_properties(), [&](global_property_object& _gpo)
 				{
 				  auto& o = _gpo.parameters;
-					if (o.extensions.valid() && o.extensions->value.content_parameter.valid())
+					if (o.extensions.valid())
 					{
-             auto& v = *(o.extensions->value.content_parameter);
+             auto& v = *(o.extensions);
              if (pv.content_award_interval.valid())
                 v.content_award_interval = *pv.content_award_interval;
              if (pv.platform_award_interval.valid())
@@ -1135,10 +1135,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
             if (pv.min_witness_block_produce_pledge.valid())
                cp.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
 
-            graphene::chain::ext_chain_parameter ex;
-            ex.content_parameter = cp;
-            o.extensions = extension<graphene::chain::ext_chain_parameter>();
-            o.extensions->value = ex;
+            o.extensions = cp;
 					}
 				});
 			}

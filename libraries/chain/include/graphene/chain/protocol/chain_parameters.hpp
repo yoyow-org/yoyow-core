@@ -65,11 +65,6 @@ namespace graphene { namespace chain {
       uint64_t    min_witness_block_produce_pledge    = GRAPHENE_DEFAULT_MIN_WITNESS_BLOCK_PRODUCE_PLEDGE;
 	 };
 
-   struct ext_chain_parameter
-   {
-      optional<content_parameter_extension_type> content_parameter;
-   };
-
    struct chain_parameters
    {
       /** using a smart ref breaks the circular dependency created between operations and the fee schedule */
@@ -138,7 +133,7 @@ namespace graphene { namespace chain {
       uint32_t                platform_pledge_release_delay           = GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY;
       uint16_t                platform_max_vote_per_account           = GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT;
 		
-      optional< extension<ext_chain_parameter>  >  extensions;
+      optional< content_parameter_extension_type  >  extensions;
 
       /** defined in fee_schedule.cpp */
       void validate()const;
@@ -170,8 +165,6 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
       (advertising_confirmed_min_fee)
       (custom_vote_effective_time)
       (min_witness_block_produce_pledge))
-
-FC_REFLECT(graphene::chain::ext_chain_parameter, (content_parameter))
 
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)

@@ -146,7 +146,7 @@ namespace graphene { namespace chain {
          while (root.pub_keys.empty() && root.children.size() == 1 && depth)
          {
             root = *(root.children.begin());
-            depth--;
+            --depth;
          }
          return root.uid;
       }
@@ -160,7 +160,7 @@ namespace graphene { namespace chain {
          while (root.pub_keys.empty() && root.children.size() == 1 && depth)
          {
             root = *(root.children.begin());
-            depth--;
+            --depth;
          }
          return root.uid;
       }
@@ -174,7 +174,7 @@ namespace graphene { namespace chain {
          while (root.pub_keys.empty() && root.children.size() == 1 && depth)
          {
             root = *(root.children.begin());
-            depth--;
+            --depth;
          }
          return root.uid;
       }

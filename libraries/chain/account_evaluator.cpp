@@ -289,6 +289,8 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
    if (o.extensions.valid())
    {
        FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME);
+       FC_ASSERT(o.extensions->value.limit_for_platform.valid() || o.extensions->value.permission_flags.valid() || o.extensions->value.memo.valid(),
+           "accont_auth_platform_operation must change some thing");
        ext_para = &o.extensions->value;
    }
    acnt = &d.get_account_by_uid( o.uid );

@@ -690,15 +690,14 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
    else
        FC_ASSERT(op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid() || op.extensions.valid(), "Should change something");
 
+   post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
+   FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
+
    if (op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid())
    {
 	   FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
 
 	   FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
-
-	   post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
-
-	   FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
    }
 
    if (op.extensions.valid())
@@ -711,8 +710,6 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
            account_uid_type sign_account = sigs.real_secondary_uid(*(ext_para->receiptor), 1);
            FC_ASSERT(sign_account != op.platform, "platform can`t change other receiptor. ");
 
-           post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
-           FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
            auto iter = post->receiptors.find(*(ext_para->receiptor));
            FC_ASSERT(iter != post->receiptors.end(), "receiptor:${r} not found.", ("r", *(ext_para->receiptor)));
            if (ext_para->buyout_ratio.valid())
@@ -1172,7 +1169,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
 
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
-        if (sign_account != op.platform)
+        if (sign_account != op.from_account_uid)
             auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
         
         if (auth_object){
@@ -1227,19 +1224,18 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
 				old_receiptor->second.to_buyout    = false;
 				old_receiptor->second.buyout_price = 0;
 				old_receiptor->second.buyout_ratio = 0;
-
-                auto buy_receiptor = p.receiptors.find(op.from_account_uid);
-                if (buy_receiptor != p.receiptors.end()){
-                    buy_receiptor->second.cur_ratio += para.buyout_ratio;
-                }
-                else
-				    p.receiptors.insert(make_pair(op.from_account_uid, Recerptor_Parameter{ para.buyout_ratio, false, 0, 0 }));
 			}
 			else if (para.buyout_ratio == para.cur_ratio)
 			{
-				p.receiptors.erase(op.receiptor_account_uid);
-				p.receiptors.insert(make_pair(op.from_account_uid, Recerptor_Parameter{ para.buyout_ratio, false, 0, 0 }));
+				p.receiptors.erase(op.receiptor_account_uid); 
 			}
+
+            auto buy_receiptor = p.receiptors.find(op.from_account_uid);
+            if (buy_receiptor != p.receiptors.end()){
+                buy_receiptor->second.cur_ratio += para.buyout_ratio;
+            }
+            else
+                p.receiptors.insert(make_pair(op.from_account_uid, Recerptor_Parameter{ para.buyout_ratio, false, 0, 0 }));
 		});
 
 		return void_result();

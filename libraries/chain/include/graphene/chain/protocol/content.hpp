@@ -135,11 +135,13 @@ namespace graphene { namespace chain {
    class Recerptor_Parameter
    {
    public:
-	   uint16_t       cur_ratio;
-	   bool           to_buyout;
-	   uint16_t       buyout_ratio;
-	   share_type     buyout_price;
-       time_point_sec buyout_expiration = time_point_sec::maximum();
+	   uint16_t          cur_ratio;
+	   bool              to_buyout;
+	   uint16_t          buyout_ratio;
+	   share_type        buyout_price;
+       time_point_sec    buyout_expiration = time_point_sec::maximum();
+       extensions_type   extensions;
+
 
        Recerptor_Parameter(){}
 
@@ -155,12 +157,12 @@ namespace graphene { namespace chain {
 	   void validate()const
 	   {
 		   if (to_buyout)
-			   FC_ASSERT(buyout_ratio <= cur_ratio, "forward_ratio must be less than cur_ratio");
-           FC_ASSERT(cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "forward_ratio must be less than ${n}%",
+			   FC_ASSERT(buyout_ratio <= cur_ratio, "buyout_ratio must be less than cur_ratio");
+           FC_ASSERT(cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "cur_ratio must be less than ${n}%",
                ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO)/100));
 	   }
 
-       bool operator == (Recerptor_Parameter r1)
+       bool operator == (const Recerptor_Parameter& r1) const
        {
            return (cur_ratio == r1.cur_ratio) &&
                   (to_buyout == r1.to_buyout) && 
@@ -275,14 +277,20 @@ namespace graphene { namespace chain {
       share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
       {
-		  a.insert(platform);  // Requires platform to change the permissions
-		  if (hash_value.valid() || extra_data.valid() || title.valid() || body.valid())
-			  a.insert(poster);    // Requires authors to change the permissions
+          if (hash_value.valid() || extra_data.valid() || title.valid() || body.valid()){
+              a.insert(platform);  // Requires platform to change the permissions
+              a.insert(poster);    // Requires authors to change the permissions
+          }
+			  
 		  if (extensions.valid())
 		  {
               const post_update_operation::ext& ext = extensions->value;
-              if (ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid())
-                  a.insert(poster);
+              if (ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()){
+                  if (!a.count(platform))
+                      a.insert(platform);
+                  if (!a.count(poster))
+                      a.insert(poster);
+              }
               if (ext.receiptor.valid() )
                   a.insert(*(ext.receiptor));
 		  }
@@ -443,7 +451,6 @@ namespace graphene { namespace chain {
        void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
 	   {
 		   a.insert(from_account_uid);    // Requires authors to change the permissions
-		   a.insert(platform);  // Requires platform to change the permissions
 	   }
    };
 
@@ -523,7 +530,7 @@ FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(platform)(
 FC_REFLECT(graphene::chain::reward_proxy_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::reward_proxy_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
-FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration))
+FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(extensions))
 
 FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(extensions))

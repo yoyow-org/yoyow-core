@@ -289,8 +289,8 @@ namespace graphene { namespace chain {
 
 	 content_parameter_extension_type chain_parameters::get_award_params()const
 	 {
-     if (extensions.valid() && extensions->value.content_parameter.valid())
-        return *(extensions->value.content_parameter);
+      if (extensions.valid())
+         return *extensions;
      else
         return content_parameter_extension_type();
 	 }
