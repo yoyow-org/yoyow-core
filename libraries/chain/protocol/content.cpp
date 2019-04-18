@@ -239,7 +239,6 @@ void score_create_operation::validate()const
 	validate_account_uid(poster, "poster ");
 	validate_account_uid(platform, "platform");
 	validate_account_uid(from_account_uid, "from account ");
-    FC_ASSERT(from_account_uid != poster, "from account shouldn`t be poster");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
 	FC_ASSERT((score >= -5) && (score <= 5), "The score_create_operation`s score over range");
     FC_ASSERT(csaf > 0, "The score_create_operation`s member points must more than 0.");
