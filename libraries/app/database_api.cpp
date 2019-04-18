@@ -192,6 +192,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                                                     const uint32_t   lower_bound_index,
                                                                     uint32_t         limit)const;
 
+      uint64_t get_posts_count(optional<account_uid_type> platform, optional<account_uid_type> poster)const;
+
       share_type get_score_profit(account_uid_type account, uint32_t period)const;
 
       // Balances
@@ -1662,6 +1664,29 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
     }
     
     return result;
+}
+
+uint64_t database_api::get_posts_count(optional<account_uid_type> platform, optional<account_uid_type> poster)const
+{
+   return my->get_posts_count(platform, poster);
+}
+
+uint64_t database_api_impl::get_posts_count(optional<account_uid_type> platform, optional<account_uid_type> poster)const
+{
+   const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_post_pid>();
+   if (platform.valid()) {
+      if (poster.valid())
+         return post_idx.count(std::make_tuple(*platform, *poster));
+      else
+         return post_idx.count(*platform);
+   }
+   else {
+      if (poster.valid())
+         FC_ASSERT(false, "platform should be valid when poster is valid");
+      else
+         return post_idx.size();
+   }
+      
 }
 
 share_type database_api::get_score_profit(account_uid_type account, uint32_t period)const

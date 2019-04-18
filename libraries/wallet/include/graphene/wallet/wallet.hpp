@@ -1534,6 +1534,8 @@ class wallet_api
                                                        object_id_type   lower_bound_post,
                                                        uint32_t         limit);
 
+      uint64_t get_posts_count(optional<string> platform, optional<string> poster);
+
       score_object get_score(string platform,
                              string poster_uid,
                              string post_pid,
@@ -1867,6 +1869,7 @@ FC_API( graphene::wallet::wallet_api,
         (account_manage)
         (get_post)
         (get_posts_by_platform_poster)
+        (get_posts_count)
         (get_score)
         (get_scores_by_uid)
         (list_scores)

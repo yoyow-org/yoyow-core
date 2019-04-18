@@ -685,20 +685,21 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
    d.get_platform_by_owner( op.platform ); // make sure pid exists
    const account_object* poster_account = &d.get_account_by_uid( op.poster );
    const account_statistics_object* account_stats = &d.get_account_statistics_by_uid( op.poster );
-   if (d.head_block_time() < HARDFORK_0_4_TIME)
-       FC_ASSERT(op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid(), "Should change something");
-   else
+   if (d.head_block_time() >= HARDFORK_0_4_TIME){
        FC_ASSERT(op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid() || op.extensions.valid(), "Should change something");
-
+       if (op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid())
+       {
+           FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
+           FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
+       }
+   }
+   else{
+       FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
+       FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
+   }
+       
    post = d.find_post_by_platform(op.platform, op.poster, op.post_pid);
    FC_ASSERT(post != nullptr, "post ${pid} is invalid.", ("pid", op.post_pid));
-
-   if (op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid())
-   {
-	   FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
-
-	   FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
-   }
 
    if (op.extensions.valid())
    {

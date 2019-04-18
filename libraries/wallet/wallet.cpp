@@ -2723,6 +2723,29 @@ signed_transaction account_cancel_auth_platform(string account,
        } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(begin_time_range)(end_time_range)(lower_bound_post)(limit))
    }
 
+   uint64_t get_posts_count(optional<string> platform, optional<string> poster)
+   {
+      try {
+
+         if (platform.valid()) {
+            account_uid_type platform_uid = get_account_uid(*platform);
+            if (poster.valid()) {
+               account_uid_type poster_uid = get_account_uid(*poster);
+               return _remote_db->get_posts_count(platform_uid, poster_uid);
+            }
+            else
+               return _remote_db->get_posts_count(platform_uid, optional<account_uid_type>());
+         }
+         else {
+            if (poster.valid())
+               FC_THROW("platform should be valid when poster is valid");
+            else
+               return _remote_db->get_posts_count(optional<account_uid_type>(), optional<account_uid_type>());
+         }
+            
+      } FC_CAPTURE_AND_RETHROW((platform)(poster))
+   }
+
    score_object get_score(string platform,
                           string poster_uid,
                           string post_pid,
@@ -4368,6 +4391,11 @@ vector<post_object> wallet_api::get_posts_by_platform_poster(string           pl
     time_point_sec  begin_time(begin_time_range);
     time_point_sec  end_time(end_time_range);
     return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, lower_bound_post, limit);
+}
+
+uint64_t wallet_api::get_posts_count(optional<string> platform, optional<string> poster)
+{
+   return my->get_posts_count(platform, poster);
 }
 
 score_object wallet_api::get_score(string platform,

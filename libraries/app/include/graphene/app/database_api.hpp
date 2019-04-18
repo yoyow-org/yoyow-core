@@ -494,6 +494,8 @@ class database_api
                                                                     const uint32_t         lower_bound_index,
                                                                     uint32_t               limit)const;
 
+      uint64_t get_posts_count(optional<account_uid_type> platform, optional<account_uid_type> poster)const;
+
       share_type get_score_profit(account_uid_type account, uint32_t period)const;
 
       /**
@@ -778,6 +780,7 @@ FC_API( graphene::app::database_api,
    (get_platform_count)
    (get_post)
    (get_posts_by_platform_poster)
+   (get_posts_count)
    (get_score)
    (get_scores_by_uid)
    (list_scores)
