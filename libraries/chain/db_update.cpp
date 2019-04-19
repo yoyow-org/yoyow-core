@@ -1676,7 +1676,7 @@ void database::process_content_platform_awards()
           });
 
           if (post.score_settlement)
-             break;
+             continue;
           //result <vector<score account id, effective csaf for the score, is or not approve>, total effective csaf to award>
           auto result = get_effective_csaf(*(std::get<0>(*itr)));
           uint128_t total_award_csaf = (uint128_t)std::get<1>(result).value;
