@@ -272,12 +272,15 @@ namespace graphene { namespace chain {
 		 {
 			 auto itor = receiptors.find(platform);
 			 FC_ASSERT(itor != receiptors.end(), "platform must be included by receiptors");
-             FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO/100));
+             if (poster == platform)
+                 FC_ASSERT(itor->second.cur_ratio >= GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster and platform ratio must be more than ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO / 100));
+             else
+                 FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO/100));
 			 uint32_t total = 0;
 			 for (auto iter : receiptors)
 			 {
-                 FC_ASSERT(iter.second.cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The cur_ratio of receiptor should less than ${n}%", 
-                     ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO)/100));
+                 FC_ASSERT(iter.second.cur_ratio <= GRAPHENE_100_PERCENT, "The cur_ratio of receiptor should less than ${n}%", 
+                     ("n", GRAPHENE_100_PERCENT/100));
 				 total += iter.second.cur_ratio;
 				 if (iter.second.to_buyout)
 					 FC_ASSERT(iter.second.cur_ratio >= iter.second.buyout_ratio, "buyout_ratio must less than cur_ratio");

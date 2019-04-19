@@ -162,13 +162,22 @@ void post_operation::validate()const
        if (ext.receiptors.valid())
        {
            const map<account_uid_type, Recerptor_Parameter>& receiptor = *(ext.receiptors);
-           FC_ASSERT(receiptor.size() >= 2 && receiptor.size() <= 5, "receiptors` size must be >= 2 and <= 5");
-           auto itor = receiptor.find(platform);
-           FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
-           FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO/100));
-           auto itor_poster = receiptor.find(poster);
-           FC_ASSERT(itor_poster != receiptor.end(), "poster must be included by receiptors");
-           FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster`s ratio must be >= ${n}%", ("n", GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO / 100));
+           FC_ASSERT(receiptor.size() >= 1 && receiptor.size() <= 5, "receiptors` size must be >= 2 and <= 5");
+
+           if (platform == poster){
+               auto itor = receiptor.find(platform);
+               FC_ASSERT(itor->second.cur_ratio >= GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO,
+                   "platform`s ratio must be ${n}%", ("n", (GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) / 100));
+           }
+           else{
+               auto itor = receiptor.find(platform);
+               FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
+               FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO / 100));
+               auto itor_poster = receiptor.find(poster);
+               FC_ASSERT(itor_poster != receiptor.end(), "poster must be included by receiptors");
+               FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster`s ratio must be >= ${n}%", ("n", GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO / 100));
+           }
+           
            uint32_t total = 0;
            for (auto iter : receiptor)
            {
@@ -200,12 +209,22 @@ void post_update_operation::validate()const
        if (ext.receiptor.valid())
        {
            validate_account_uid(*(ext.receiptor), "receiptor");
-           FC_ASSERT(ext.receiptor != platform, "The platform can`t change receiptor ratio");
+           if (ext.receiptor == platform)
+               FC_ASSERT(poster == platform, "The platform can`t change other receiptor ratio");
+
+           if (ext.buyout_ratio.valid()){
+               if (poster == platform && ext.receiptor == poster)
+                   FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO)
+                   , "buyout_ratio is more than max limit ${n}. ", ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO)/100));
+               else
+                   FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), 
+                   "buyout_ratio is more than max limit ${n}. ", ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO)/100));
+           }
+
+           if (ext.buyout_price.valid())
+               FC_ASSERT(*(ext.buyout_price) > share_type(0), "buyout price should more than 0. ");
        }
-       if (ext.buyout_ratio.valid())
-           FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "buyout_ratio is more than max. ");
-       if (ext.buyout_price.valid())
-           FC_ASSERT(*(ext.buyout_price) > share_type(0), "buyout price should more than 0. ");
+       
        if (ext.forward_price.valid())
            FC_ASSERT(*(ext.forward_price) > share_type(0), "forward price should more than 0. ");
    }
@@ -292,9 +311,11 @@ void buyout_operation::validate()const
 	validate_account_uid(platform, "platform");
 	validate_account_uid(from_account_uid, "from account ");
 	FC_ASSERT(post_pid > uint64_t(0), "post_pid must be greater than 0 ");
-	FC_ASSERT(from_account_uid != platform, "from_account shouldn`t be platform");
     FC_ASSERT(from_account_uid != receiptor_account_uid, "from_account shouldn`t be receiptor");
-	FC_ASSERT(receiptor_account_uid != platform, "platform shouldn`t sell out its receipt ratio");
+    if (platform != poster){
+        FC_ASSERT(from_account_uid != platform, "platform receiptor ratio can`t change. ");
+        FC_ASSERT(receiptor_account_uid != platform, "platform receiptor ratio can`t change. ");
+    }
 	validate_account_uid(receiptor_account_uid, "from account ");
     FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
