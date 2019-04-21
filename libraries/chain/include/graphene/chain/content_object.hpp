@@ -26,7 +26,8 @@ namespace graphene { namespace chain {
          {
              flat_map<asset_aid_type, share_type>   rewards_profits;
              share_type                             foward_profits    = 0;
-             share_type                             post_profits      = 0;
+             share_type                             post_profits      = 0; //post and platform is the same , include post,platform and buyout profits from content
+             share_type                             post_profits_by_platform = 0;//only platform from content
              share_type                             platform_profits  = 0;
          };
          
@@ -67,7 +68,8 @@ namespace graphene { namespace chain {
                                  asset      reward_profit = asset(),
                                  share_type forward_profit = 0,
                                  share_type post_profit = 0,
-                                 share_type platform_profit = 0
+                                 share_type platform_profit = 0,
+                                 share_type post_profit_by_platform = 0
                                  )
          {
              auto iter = period_profits.find(period);
@@ -83,6 +85,7 @@ namespace graphene { namespace chain {
                  iter->second.foward_profits   += forward_profit;
                  iter->second.post_profits     += post_profit;
                  iter->second.platform_profits += platform_profit;
+                 iter->second.post_profits_by_platform += post_profit_by_platform;
              }
              else
              {
@@ -94,6 +97,7 @@ namespace graphene { namespace chain {
                  profits.foward_profits   = forward_profit;
                  profits.post_profits     = post_profit;
                  profits.platform_profits = platform_profit;
+                 profits.post_profits_by_platform = post_profit_by_platform;
                  period_profits.emplace(period, profits);
              }
          }
@@ -412,6 +416,13 @@ namespace graphene { namespace chain {
            receiptor_details.emplace(uid, detail);
         }
      }
+
+     bool is_get_profit()const {
+        if (post_award == 0 && forward_award == 0 && receiptor_details.size() == 0)
+           return false;
+        else
+           return true;
+     }
 	 };
 
    struct by_poster{};
@@ -607,7 +618,7 @@ namespace graphene { namespace chain {
 }}
 
 FC_REFLECT( graphene::chain::platform_object::Platform_Period_Profits,
-                    (rewards_profits)(foward_profits)(post_profits)(platform_profits))
+                    (rewards_profits)(foward_profits)(post_profits)(post_profits_by_platform)(platform_profits))
 
 FC_REFLECT_DERIVED( graphene::chain::platform_object,
                     (graphene::db::object),

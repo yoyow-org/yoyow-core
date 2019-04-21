@@ -1574,7 +1574,7 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
     FC_ASSERT(limit <= 100);
     uint32_t begin_index = 0;
     vector<Platform_Period_Profit_Detail> vtr_profit_details;
-    for (int i = begin_period; i <= end_period; i++)
+    for (int i = begin_period; i <= end_period; ++i)
     {
         const platform_object& platform_obj = _db.get_platform_by_owner(platform);
         auto iter_profit = platform_obj.period_profits.find(i);
@@ -1586,6 +1586,7 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
             detail.platform_name    = platform_obj.name;
             detail.foward_profits   = iter_profit->second.foward_profits;
             detail.post_profits     = iter_profit->second.post_profits;
+            detail.post_profits_by_platform = iter_profit->second.post_profits_by_platform;
             detail.platform_profits = iter_profit->second.platform_profits;
             detail.rewards_profits  = iter_profit->second.rewards_profits;
 
@@ -1593,7 +1594,7 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
             auto itr_begin = idx.lower_bound(std::make_tuple(platform, i));
             while (itr_begin != idx.end() && itr_begin->platform == platform && itr_begin->period_sequence == i && limit--)
             {
-                if (begin_index >= lower_bound_index){
+                if (begin_index >= lower_bound_index && itr_begin->is_get_profit()){
                     detail.active_objects.push_back(*itr_begin);
                 }
                 ++itr_begin;

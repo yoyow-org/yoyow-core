@@ -1634,7 +1634,7 @@ void database::process_content_platform_awards()
        uint128_t content_award_amount_per_period = (uint128_t)(params.total_content_award_amount.value) *
           (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
  
-       flat_map<account_uid_type, share_type> platform_receiptor_award;
+       flat_map<account_uid_type, std::pair<share_type, share_type>> platform_receiptor_award;
        for (auto itr = post_effective_casf.begin(); itr != post_effective_casf.end(); ++itr)
        {
           share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
@@ -1660,13 +1660,24 @@ void database::process_content_platform_awards()
           }
           receipor.emplace(post.platform, temp);
           //platform earned from content
-          if (platform_receiptor_award.count(post.platform))
-             platform_receiptor_award.at(post.platform) += temp;
+          share_type award_only_from_platform;
+          if (post.poster == post.platform)
+             award_only_from_platform = ((uint128_t)receiptor_earned.value * GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO /
+                GRAPHENE_100_PERCENT).to_uint64();
           else
-             platform_receiptor_award.emplace(post.platform, temp);
+             award_only_from_platform = temp;
+          if (platform_receiptor_award.count(post.platform))
+          {
+             platform_receiptor_award.at(post.platform).first += temp;
+             platform_receiptor_award.at(post.platform).second += award_only_from_platform;
+          }
+          else
+          {
+             platform_receiptor_award.emplace(post.platform, std::make_pair(temp, award_only_from_platform));
+          }           
           //adjust_balance(post.platform, asset(temp));
           actual_awards += receiptor_earned;  
-
+             
           modify(*(std::get<0>(*itr)), [&](active_post_object& act)
           {
              act.positive_win = std::get<2>(*itr) >= 0;
@@ -1711,13 +1722,13 @@ void database::process_content_platform_awards()
           });
        }
 
-       for (const auto&p : platform_receiptor_award)
+       for (const auto& p : platform_receiptor_award)
        {
-          adjust_balance(p.first, asset(p.second));
+          adjust_balance(p.first, asset(p.second.first));
           const auto& platform = get_platform_by_owner(p.first);
           modify(platform, [&](platform_object& pla)
           {
-             pla.add_period_profits(dpo.current_active_post_sequence, _latest_active_post_periods, asset(), 0, p.second, 0);
+             pla.add_period_profits(dpo.current_active_post_sequence, _latest_active_post_periods, asset(), 0, p.second.first, 0, p.second.second);
           });
        }
 		}

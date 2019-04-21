@@ -118,6 +118,7 @@ struct Platform_Period_Profit_Detail
     flat_map<asset_aid_type, share_type>   rewards_profits;
     share_type                             foward_profits = 0;
     share_type                             post_profits = 0;
+    share_type                             post_profits_by_platform = 0;
     share_type                             platform_profits = 0;
 
     vector<active_post_object>             active_objects;
