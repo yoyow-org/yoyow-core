@@ -1592,10 +1592,11 @@ vector<Platform_Period_Profit_Detail> database_api_impl::get_platform_profits_de
 
             const auto& idx = _db.get_index_type<active_post_index>().indices().get<by_platforms>();
             auto itr_begin = idx.lower_bound(std::make_tuple(platform, i));
-            while (itr_begin != idx.end() && itr_begin->platform == platform && itr_begin->period_sequence == i && limit--)
+            while (itr_begin != idx.end() && itr_begin->platform == platform && itr_begin->period_sequence == i && limit)
             {
                 if (begin_index >= lower_bound_index && itr_begin->is_get_profit()){
                     detail.active_objects.push_back(*itr_begin);
+                    --limit;
                 }
                 ++itr_begin;
                 ++begin_index;
@@ -1639,13 +1640,15 @@ vector<Poster_Period_Profit_Detail> database_api_impl::get_poster_profits_detail
        bool exist = false;
 
        while (itr != apt_idx.end() && itr->receiptor_details.count(poster) 
-              && itr->period_sequence == start && itr->poster == poster && limit--)
+              && itr->period_sequence == start && itr->poster == poster)
        {
           ppd.total_forward += itr->receiptor_details.at(poster).forward;
           ppd.total_post_award += itr->receiptor_details.at(poster).post_award;
-          if (begin_index >= lower_bound_index)
-              ppd.active_objects.push_back(*itr);
-
+          if (begin_index >= lower_bound_index && limit) {
+             ppd.active_objects.push_back(*itr);
+             --limit;
+          }
+              
           for (const auto& r : itr->receiptor_details.at(poster).rewards)
           {
              if (ppd.total_rewards.count(r.first))
