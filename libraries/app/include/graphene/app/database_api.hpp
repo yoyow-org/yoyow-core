@@ -705,6 +705,7 @@ FC_REFLECT(graphene::app::Platform_Period_Profit_Detail,
           (rewards_profits)
           (foward_profits)
           (post_profits)
+          (post_profits_by_platform)
           (platform_profits)
           (active_objects));
 FC_REFLECT(graphene::app::Poster_Period_Profit_Detail,
