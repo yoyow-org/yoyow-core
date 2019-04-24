@@ -162,10 +162,11 @@ void post_operation::validate()const
        if (ext.receiptors.valid())
        {
            const map<account_uid_type, Recerptor_Parameter>& receiptor = *(ext.receiptors);
-           FC_ASSERT(receiptor.size() >= 1 && receiptor.size() <= 5, "receiptors` size must be >= 2 and <= 5");
+           FC_ASSERT(receiptor.size() >= 1 && receiptor.size() <= 5, "receiptors` size must be >= 1 and <= 5");
 
            if (platform == poster){
                auto itor = receiptor.find(platform);
+               FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
                FC_ASSERT(itor->second.cur_ratio >= GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO,
                    "platform`s ratio must be ${n}%", ("n", (GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) / 100));
            }
