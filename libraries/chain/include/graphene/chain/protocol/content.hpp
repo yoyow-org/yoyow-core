@@ -284,10 +284,8 @@ namespace graphene { namespace chain {
 		  {
               const post_update_operation::ext& ext = extensions->value;
               if (ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()){
-                  if (!a.count(platform))
-                      a.insert(platform);
-                  if (!a.count(poster))
-                      a.insert(poster);
+                  a.insert(platform);
+                  a.insert(poster);
               }
               if (ext.receiptor.valid() )
                   a.insert(*(ext.receiptor));

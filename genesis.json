@@ -1,56 +1,56 @@
 {
-  "initial_timestamp": "2017-09-05T04:00:00",
+  "initial_timestamp": "2019-04-23T16:45:00",
   "max_core_supply": "200000000000000",
   "initial_parameters": {
     "current_fees": {
       "parameters": [[
           0,{
-            "fee": 200000,
-            "price_per_kbyte": 100000,
+            "fee": 20000,
+            "price_per_kbyte": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           1,{
-            "basic_fee": 500000,
-            "price_per_kbyte": 100000,
+            "basic_fee": 0,
+            "price_per_auth": 0,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           2,{
-            "fee": 100000,
+            "fee": 0,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           3,{
-            "fee": 100000,
-            "price_per_kbyte": 100000,
+            "fee": 10000,
+            "price_per_auth": 0,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           4,{
-            "fee": 100000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           5,{
-            "fee": 100000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           6,{
-            "fee": 100000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           7,{
-            "fee": 100000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
@@ -62,26 +62,26 @@
           }
         ],[
           9,{
-            "fee": 1000000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           10,{
-            "fee": 100000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           11,{
-            "basic_fee": 100000,
-            "price_per_item": 100000,
+            "basic_fee": 10000,
+            "price_per_item": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           12,{
-            "fee": 100000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
@@ -93,20 +93,20 @@
           }
         ],[
           14,{
-            "fee": 1000000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           15,{
-            "basic_fee": 100000,
-            "price_per_witness": 100000,
+            "basic_fee": 10000,
+            "price_per_witness": 1000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
         ],[
           16,{
-            "fee": 100000,
+            "fee": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
@@ -118,8 +118,8 @@
           }
         ],[
           18,{
-            "fee": 100000,
-            "price_per_kbyte": 1000000,
+            "fee": 10000,
+            "price_per_kbyte": 10000,
             "min_real_fee": 0,
             "min_rf_percent": 0
           }
@@ -132,14 +132,14 @@
     "maximum_time_until_expiration": 86400,
     "maximum_authority_membership": 10,
     "max_authority_depth": 2,
-    "csaf_rate": 86400000,
+    "csaf_rate": 864000000,
     "max_csaf_per_account": 100000000,
     "csaf_accumulate_window": 604800,
     "min_witness_pledge": 1000000000,
-    "max_witness_pledge_seconds": 86400,
+    "max_witness_pledge_seconds": 604800,
     "witness_avg_pledge_update_interval": 1200,
     "witness_pledge_release_delay": 600,
-    "min_governance_voting_balance": 100000000,
+    "min_governance_voting_balance": 1000000000,
     "max_governance_voting_proxy_level": 4,
     "governance_voting_expiration_blocks": 144000,
     "governance_votes_update_interval": 3600,
@@ -161,49 +161,65 @@
     "max_committee_members_voted_per_account": 1,
     "witness_report_prosecution_period": 28800,
     "witness_report_allow_pre_last_block": true,
-    "witness_report_pledge_deduction_amount": 100000000
+    "witness_report_pledge_deduction_amount": 100000000,
+    "platform_min_pledge": 1000000000,
+    "platform_max_pledge_seconds": 604800,
+    "platform_avg_pledge_update_interval": 1200,
+    "platform_pledge_release_delay": 28800,
+    "platform_max_vote_per_account": 10
   },
   "initial_accounts": [{
+      "uid": 23080,
+      "name": "nathan",
+      "registrar": 25638,
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "is_lifetime_member": true,
+      "is_registrar": false,
+      "is_full_member": true
+    },{
       "uid": 25638,
       "name": "init",
       "registrar": 25638,
-      "owner_key": "YYW7JDPcDDH8PetSMgQjMDNfjLNDWFZKxRedqBDrUo2mUAwxvamTm",
-      "active_key": "YYW7JDPcDDH8PetSMgQjMDNfjLNDWFZKxRedqBDrUo2mUAwxvamTm",
-      "secondary_key": "YYW7JDPcDDH8PetSMgQjMDNfjLNDWFZKxRedqBDrUo2mUAwxvamTm",
-      "memo_key": "YYW7JDPcDDH8PetSMgQjMDNfjLNDWFZKxRedqBDrUo2mUAwxvamTm",
-      "is_lifetime_member": false,
+      "owner_key": "YYW5dRX8MN9NEnxwnN4A9Vt36eLeuiH3WFwS8s16QVBsMP6iAgrzQ",
+      "active_key": "YYW5dRX8MN9NEnxwnN4A9Vt36eLeuiH3WFwS8s16QVBsMP6iAgrzQ",
+      "secondary_key": "YYW5dRX8MN9NEnxwnN4A9Vt36eLeuiH3WFwS8s16QVBsMP6iAgrzQ",
+      "memo_key": "YYW5dRX8MN9NEnxwnN4A9Vt36eLeuiH3WFwS8s16QVBsMP6iAgrzQ",
+      "is_lifetime_member": true,
       "is_registrar": true,
       "is_full_member": true
     },{
       "uid": 25997,
       "name": "init1",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
-      "is_registrar": true,
+      "is_registrar": false,
       "is_full_member": true
     },{
       "uid": 26264,
       "name": "init2",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
-      "is_registrar": true,
+      "is_registrar": false,
       "is_full_member": true
     },{
       "uid": 26460,
       "name": "init3",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
       "is_full_member": true
@@ -211,10 +227,10 @@
       "uid": 26861,
       "name": "init4",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
       "is_full_member": true
@@ -222,90 +238,79 @@
       "uid": 27027,
       "name": "init5",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
-      "is_full_member": false
+      "is_full_member": true
     },{
       "uid": 27291,
       "name": "init6",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
-      "is_full_member": false
+      "is_full_member": true
     },{
       "uid": 27447,
       "name": "init7",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
-      "is_full_member": false
+      "is_full_member": true
     },{
       "uid": 27662,
       "name": "init8",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
-      "is_full_member": false
+      "is_full_member": true
     },{
       "uid": 27944,
       "name": "init9",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
-      "is_full_member": false
+      "is_full_member": true
     },{
       "uid": 28182,
       "name": "init10",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
-      "is_full_member": false
+      "is_full_member": true
     },{
       "uid": 28465,
       "name": "init11",
       "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
+      "owner_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "active_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "secondary_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
+      "memo_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy",
       "is_lifetime_member": true,
       "is_registrar": false,
-      "is_full_member": false
-    },{
-      "uid": 23080,
-      "name": "nathan",
-      "registrar": 25638,
-      "owner_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "active_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "secondary_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "memo_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c",
-      "is_lifetime_member": false,
-      "is_registrar": false,
-      "is_full_member": false
+      "is_full_member": true
     }
   ],
   "initial_assets": [],
@@ -320,37 +325,37 @@
   "initial_active_witnesses": 11,
   "initial_witness_candidates": [{
       "owner_name": "init1",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init2",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init3",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init4",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init5",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init6",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init7",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init8",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init9",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init10",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     },{
       "owner_name": "init11",
-      "block_signing_key": "YYW7k2tf9fZAtNgekmd6pHWJuKrHVcRjE1ea8qH3LZrVHfrh7jS5c"
+      "block_signing_key": "YYW5xhgecRawPgbq3ZaHdnxpo6TvySM1cLw2wBH7ZGXePkUcAVNJy"
     }
   ],
   "initial_committee_candidates": [{
@@ -385,7 +390,7 @@
       "url": "https://yoyow.org/"
     }
   ],
-  "initial_chain_id": "fc4d0a4b31a64eba4a817582d86181682bcca8d40277f129f4de0815764f3271",
+  "initial_chain_id": "0218117f0977c6c6abc97e4c0f204c732e666e1f0073eae71e87d44f2ef0d25f",
   "immutable_parameters": {
     "min_committee_member_count": 11,
     "min_witness_count": 11,
