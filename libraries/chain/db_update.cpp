@@ -1032,111 +1032,54 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 				const auto& pv = content_item->value;
 				modify(get_global_properties(), [&](global_property_object& _gpo)
 				{
-				  auto& o = _gpo.parameters;
-					if (o.extensions.valid())
-					{
-             auto& v = *(o.extensions);
-             if (pv.content_award_interval.valid())
-                v.content_award_interval = *pv.content_award_interval;
-             if (pv.platform_award_interval.valid())
-                v.platform_award_interval = *pv.platform_award_interval;
-             if (pv.max_csaf_per_approval.valid())
-                v.max_csaf_per_approval = *pv.max_csaf_per_approval;
-             if (pv.approval_expiration.valid())
-                v.approval_expiration = *pv.approval_expiration;
-             if (pv.min_effective_csaf.valid())
-                v.min_effective_csaf = *pv.min_effective_csaf;
-             if (pv.total_content_award_amount.valid())
-                v.total_content_award_amount = *pv.total_content_award_amount;
-             if (pv.total_platform_content_award_amount.valid())
-                v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
-             if (pv.total_platform_voted_award_amount.valid())
-                v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
-             if (pv.platform_award_min_votes.valid())
-                v.platform_award_min_votes = *pv.platform_award_min_votes;
-             if (pv.platform_award_requested_rank.valid())
-                v.platform_award_requested_rank = *pv.platform_award_requested_rank;
+           auto& v = _gpo.parameters.content_parameters;
+           if (pv.content_award_interval.valid())
+              v.content_award_interval = *pv.content_award_interval;
+           if (pv.platform_award_interval.valid())
+              v.platform_award_interval = *pv.platform_award_interval;
+           if (pv.max_csaf_per_approval.valid())
+              v.max_csaf_per_approval = *pv.max_csaf_per_approval;
+           if (pv.approval_expiration.valid())
+              v.approval_expiration = *pv.approval_expiration;
+           if (pv.min_effective_csaf.valid())
+              v.min_effective_csaf = *pv.min_effective_csaf;
+           if (pv.total_content_award_amount.valid())
+              v.total_content_award_amount = *pv.total_content_award_amount;
+           if (pv.total_platform_content_award_amount.valid())
+              v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
+           if (pv.total_platform_voted_award_amount.valid())
+              v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
+           if (pv.platform_award_min_votes.valid())
+              v.platform_award_min_votes = *pv.platform_award_min_votes;
+           if (pv.platform_award_requested_rank.valid())
+              v.platform_award_requested_rank = *pv.platform_award_requested_rank;
 
-             if (pv.platform_award_basic_rate.valid())
-                v.platform_award_basic_rate = *pv.platform_award_basic_rate;
-             if (pv.casf_modulus.valid())
-                v.casf_modulus = *pv.casf_modulus;
-             if (pv.post_award_expiration.valid())
-                v.post_award_expiration = *pv.post_award_expiration;
-             if (pv.approval_casf_min_weight.valid())
-                v.approval_casf_min_weight = *pv.approval_casf_min_weight;
-             if (pv.approval_casf_first_rate.valid())
-                v.approval_casf_first_rate = *pv.approval_casf_first_rate;
-             if (pv.approval_casf_second_rate.valid())
-                v.approval_casf_second_rate = *pv.approval_casf_second_rate;
-             if (pv.receiptor_award_modulus.valid())
-                v.receiptor_award_modulus = *pv.receiptor_award_modulus;
-             if (pv.disapprove_award_modulus.valid())
-                v.disapprove_award_modulus = *pv.disapprove_award_modulus;
+           if (pv.platform_award_basic_rate.valid())
+              v.platform_award_basic_rate = *pv.platform_award_basic_rate;
+           if (pv.casf_modulus.valid())
+              v.casf_modulus = *pv.casf_modulus;
+           if (pv.post_award_expiration.valid())
+              v.post_award_expiration = *pv.post_award_expiration;
+           if (pv.approval_casf_min_weight.valid())
+              v.approval_casf_min_weight = *pv.approval_casf_min_weight;
+           if (pv.approval_casf_first_rate.valid())
+              v.approval_casf_first_rate = *pv.approval_casf_first_rate;
+           if (pv.approval_casf_second_rate.valid())
+              v.approval_casf_second_rate = *pv.approval_casf_second_rate;
+           if (pv.receiptor_award_modulus.valid())
+              v.receiptor_award_modulus = *pv.receiptor_award_modulus;
+           if (pv.disapprove_award_modulus.valid())
+              v.disapprove_award_modulus = *pv.disapprove_award_modulus;
 
-             if (pv.advertising_confirmed_fee_rate.valid())
-                v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
-             if (pv.advertising_confirmed_min_fee.valid())
-                v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
-             if (pv.custom_vote_effective_time.valid())
-                v.custom_vote_effective_time = *pv.custom_vote_effective_time;
+           if (pv.advertising_confirmed_fee_rate.valid())
+              v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
+           if (pv.advertising_confirmed_min_fee.valid())
+              v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
+           if (pv.custom_vote_effective_time.valid())
+              v.custom_vote_effective_time = *pv.custom_vote_effective_time;
 
-             if (pv.min_witness_block_produce_pledge.valid())
-                v.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
-					}
-					else
-					{
-						content_parameter_extension_type cp;
-						if (pv.content_award_interval.valid())
-							cp.content_award_interval = *pv.content_award_interval;
-						if (pv.platform_award_interval.valid())
-							cp.platform_award_interval = *pv.platform_award_interval;
-						if (pv.max_csaf_per_approval.valid())
-							cp.max_csaf_per_approval = *pv.max_csaf_per_approval;
-						if (pv.approval_expiration.valid())
-							cp.approval_expiration = *pv.approval_expiration;
-						if (pv.min_effective_csaf.valid())
-							cp.min_effective_csaf = *pv.min_effective_csaf;
-						if (pv.total_content_award_amount.valid())
-							cp.total_content_award_amount = *pv.total_content_award_amount;
-						if (pv.total_platform_content_award_amount.valid())
-							cp.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
-						if (pv.total_platform_voted_award_amount.valid())
-							cp.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
-						if (pv.platform_award_min_votes.valid())
-							cp.platform_award_min_votes = *pv.platform_award_min_votes;
-						if (pv.platform_award_requested_rank.valid())
-							cp.platform_award_requested_rank = *pv.platform_award_requested_rank;
-
-            if (pv.platform_award_basic_rate.valid())
-               cp.platform_award_basic_rate = *pv.platform_award_basic_rate;
-            if (pv.casf_modulus.valid())
-               cp.casf_modulus = *pv.casf_modulus;
-            if (pv.post_award_expiration.valid())
-               cp.post_award_expiration = *pv.post_award_expiration;
-            if (pv.approval_casf_min_weight.valid())
-               cp.approval_casf_min_weight = *pv.approval_casf_min_weight;
-            if (pv.approval_casf_first_rate.valid())
-               cp.approval_casf_first_rate = *pv.approval_casf_first_rate;
-            if (pv.approval_casf_second_rate.valid())
-               cp.approval_casf_second_rate = *pv.approval_casf_second_rate;
-            if (pv.receiptor_award_modulus.valid())
-               cp.receiptor_award_modulus = *pv.receiptor_award_modulus;
-            if (pv.disapprove_award_modulus.valid())
-               cp.disapprove_award_modulus = *pv.disapprove_award_modulus;
-
-            if (pv.advertising_confirmed_fee_rate.valid())
-               cp.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
-            if (pv.advertising_confirmed_min_fee.valid())
-               cp.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
-            if (pv.custom_vote_effective_time.valid())
-               cp.custom_vote_effective_time = *pv.custom_vote_effective_time;
-
-            if (pv.min_witness_block_produce_pledge.valid())
-               cp.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
-
-            o.extensions = cp;
-					}
+           if (pv.min_witness_block_produce_pledge.valid())
+              v.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
 				});
 			}
 

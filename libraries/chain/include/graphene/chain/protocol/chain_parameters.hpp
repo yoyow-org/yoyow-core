@@ -133,12 +133,12 @@ namespace graphene { namespace chain {
       uint32_t                platform_pledge_release_delay           = GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY;
       uint16_t                platform_max_vote_per_account           = GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT;
 		
-      optional< content_parameter_extension_type  >  extensions;
+      content_parameter_extension_type content_parameters;
 
       /** defined in fee_schedule.cpp */
       void validate()const;
 
-			content_parameter_extension_type get_award_params()const;
+      content_parameter_extension_type get_award_params()const { return content_parameters; }
    };
 
 } }  // graphene::chain
@@ -230,5 +230,5 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (platform_avg_pledge_update_interval)
             (platform_pledge_release_delay)
             (platform_max_vote_per_account)
-			(extensions)
+            (content_parameters)
           )
