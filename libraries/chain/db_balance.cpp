@@ -144,22 +144,23 @@ void database::adjust_balance(account_uid_type account, asset delta )
    //update custom vote
    const auto& custom_vote_idx = get_index_type<custom_vote_index>().indices().get<by_creater>();
 
-   const auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-   auto cast_vote_itr = cast_vote_idx.lower_bound(account);
+   const auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_asset_id>();
+   auto cast_vote_itr = cast_vote_idx.lower_bound(std::make_tuple(account, delta.asset_id, head_block_time()));
 
-   while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->voter == account)
+   while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->voter == account 
+      && cast_vote_itr->vote_asset_id == delta.asset_id)
    {
-      auto custom_vote_itr = custom_vote_idx.find(std::make_tuple(cast_vote_itr->custom_vote_creater,cast_vote_itr->custom_vote_vid));
-      FC_ASSERT(custom_vote_itr != custom_vote_idx.end(), "custom vote ${id} not found.",("id", cast_vote_itr->custom_vote_vid));     
-      if (head_block_time() <= custom_vote_itr->vote_expired_time)
+      auto custom_vote_itr = custom_vote_idx.find(std::make_tuple(cast_vote_itr->custom_vote_creater, 
+         cast_vote_itr->custom_vote_vid));
+      FC_ASSERT(custom_vote_itr != custom_vote_idx.end(), 
+         "custom vote ${id} not found.", ("id", cast_vote_itr->custom_vote_vid));
+
+      modify(*custom_vote_itr, [&](custom_vote_object& obj)
       {
-         modify(*custom_vote_itr, [&](custom_vote_object& obj)
-         {
-            for (const auto& v : cast_vote_itr->vote_result)
-               obj.vote_result.at(v) += delta.amount.value;
-         });
-      }
-      ++cast_vote_itr; 
+         for (const auto& v : cast_vote_itr->vote_result)
+            obj.vote_result.at(v) += delta.amount.value;
+      });
+      ++cast_vote_itr;
    }
 
 } FC_CAPTURE_AND_RETHROW( (account)(delta) ) }

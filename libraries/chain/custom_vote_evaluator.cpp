@@ -83,12 +83,10 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
       const auto& idx = d.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
       auto itr = idx.find(std::make_tuple(op.voter, op.custom_vote_creater, op.custom_vote_vid));
       FC_ASSERT(itr == idx.end(), "account ${uid} already cast a vote for custom vote ${vid}", ("uid", op.voter)("vid", op.custom_vote_vid));
+      
+      auto last_index = *(op.vote_result.rbegin());
+      FC_ASSERT(last_index  < custom_vote_obj->options.size(), "option ${item} is not existent", ("item", last_index));
 
-      for (const auto& index : op.vote_result)
-      {
-         FC_ASSERT(index < custom_vote_obj->options.size(), "option ${item} is not existent", ("item", index));
-      }
-         
       return void_result();
    }FC_CAPTURE_AND_RETHROW((op))
 }
@@ -103,6 +101,8 @@ object_id_type custom_vote_cast_evaluator::do_apply(const operation_type& op)
          obj.custom_vote_creater = op.custom_vote_creater;
          obj.custom_vote_vid = op.custom_vote_vid;
          obj.vote_result = op.vote_result;
+         obj.vote_asset_id = custom_vote_obj->vote_asset_id;
+         obj.vote_expired_time = custom_vote_obj->vote_expired_time;
       });
 
       d.modify(*custom_vote_obj, [&](custom_vote_object& obj) 

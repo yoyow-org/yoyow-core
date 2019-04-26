@@ -24,12 +24,16 @@ namespace graphene { namespace chain {
       account_uid_type           voter;
       account_uid_type           custom_vote_creater;
       custom_vote_vid_type       custom_vote_vid;
+      asset_aid_type             vote_asset_id;
       std::set<uint8_t>          vote_result;
+    
+      time_point_sec             vote_expired_time;
    };
      
    struct by_custom_vote_vid{};
    struct by_custom_voter{};
    struct by_cast_custom_vote_id{};
+   struct by_custom_vote_asset_id{};
 
    /**
    * @ingroup object_index
@@ -56,6 +60,13 @@ namespace graphene { namespace chain {
             cast_custom_vote_object,
             member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::voter>,
             member< object, object_id_type,  &object::id >>
+         >,
+      ordered_non_unique< tag<by_custom_vote_asset_id>,
+         composite_key<
+            cast_custom_vote_object,
+            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::voter>,
+            member< cast_custom_vote_object, asset_aid_type,       &cast_custom_vote_object::vote_asset_id>,
+            member< cast_custom_vote_object, time_point_sec,       &cast_custom_vote_object::vote_expired_time >>
          >
       >
    > cast_custom_vote_multi_index_type;
@@ -126,4 +137,4 @@ FC_REFLECT_DERIVED( graphene::chain::custom_vote_object,
 
 FC_REFLECT_DERIVED( graphene::chain::cast_custom_vote_object,
                    (graphene::db::object),
-                   (voter)(custom_vote_creater)(custom_vote_vid)(vote_result))
+                   (voter)(custom_vote_creater)(custom_vote_vid)(vote_asset_id)(vote_result)(vote_expired_time))
