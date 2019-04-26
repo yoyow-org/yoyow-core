@@ -42,7 +42,7 @@ namespace graphene { namespace chain {
       cast_custom_vote_object,
       indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type,  &object::id > >,
-      ordered_non_unique< tag<by_custom_vote_vid>,
+      ordered_unique< tag<by_custom_vote_vid>,
       composite_key<cast_custom_vote_object,
             member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::custom_vote_creater>,
             member< cast_custom_vote_object, custom_vote_vid_type, &cast_custom_vote_object::custom_vote_vid >,
