@@ -1774,10 +1774,7 @@ void database::process_platform_voted_awards()
              share_type platform_average_award_basic = platform_award_basic / platforms.size();
              flat_map<account_uid_type, share_type> platform_award;
              for (const auto& p : platforms)
-             {
-                adjust_balance(p.first, asset(platform_average_award_basic));
                 platform_award.emplace(p.first, platform_average_award_basic);
-             }   
              share_type actual_awards = platform_average_award_basic * platforms.size();
             
              if (total_votes > 0)
@@ -1786,7 +1783,6 @@ void database::process_platform_voted_awards()
                 for (const auto& p : platforms)
                 {
                    share_type to_add = ((uint128_t)platform_award_by_votes.value * p.second / total_votes).to_uint64();
-                   adjust_balance(p.first, asset(to_add));
                    actual_awards += to_add;
                    platform_award.at(p.first) += to_add;
                 }       
@@ -1794,6 +1790,7 @@ void database::process_platform_voted_awards()
 
              for (const auto& p : platform_award)
              {
+                adjust_balance(p.first, asset(p.second));
                 const auto& platform = get_platform_by_owner(p.first);
                 modify(platform, [&](platform_object& pla)
                 {
