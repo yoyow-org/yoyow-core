@@ -681,7 +681,10 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
 
    return ptrx;
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
-
+void database::handle_non_consensus_index(const operation & op){
+   if(op.which()==operation::tag<custom_vote_cast_operation>::value)
+      update_non_consensus_index(op);
+}
 operation_result database::apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs)
 { try {
    int i_which = op.which();
@@ -693,6 +696,7 @@ operation_result database::apply_operation(transaction_evaluation_state& eval_st
    auto op_id = push_applied_operation( op );
    auto result = eval->evaluate( eval_state, op, true, sigs);
    set_applied_operation_result( op_id, result );
+   handle_non_consensus_index(op);
    return result;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 

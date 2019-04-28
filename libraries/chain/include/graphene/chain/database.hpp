@@ -214,6 +214,15 @@ namespace graphene { namespace chain {
           * pointer to the last value of every object that was removed.
           */
          fc::signal<void(const vector<object_id_type>&, const vector<const object*>&, const flat_set<account_uid_type>&)>  removed_objects;
+      
+         /** this signal is emitted any time account balance adjust for update vote
+          */
+         fc::signal<void(const account_uid_type&,const asset& delta)>           balance_adjusted;
+      
+      
+         /** this signal is emitted any time to update non consensus index
+          */
+         fc::signal<void(const operation&)>                                     update_non_consensus_index;
 
          //////////////////// db_witness_schedule.cpp ////////////////////
 
@@ -256,6 +265,8 @@ namespace graphene { namespace chain {
          void update_witness_avg_pledge( const account_uid_type uid );
          void update_witness_avg_pledge( const witness_object& wit );
          void adjust_witness_votes( const witness_object& witness, share_type delta );
+      
+         void handle_non_consensus_index(const operation& op);
 
       private:
          void update_witness_schedule();
