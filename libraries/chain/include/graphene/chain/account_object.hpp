@@ -288,7 +288,7 @@ namespace graphene { namespace chain {
           */
          time_point_sec membership_expiration_date;
 
-         bool             register_by_platform = false;
+         uint32_t         referrer_by_platform = 0;  //if referrered by platform, == platform.sequence
          ///The account that paid the fee to register this account. Receives a percentage of referral rewards.
          account_uid_type registrar;
          /// The account credited as referring this account. Receives a percentage of referral rewards.
@@ -785,7 +785,7 @@ namespace graphene { namespace chain {
 FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
                     //(membership_expiration_date)
-                    (register_by_platform)
+                    (referrer_by_platform)
                     //(registrar)(referrer)(lifetime_referrer)
                     //(network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
                     (uid)(name)(owner)(active)(secondary)(memo_key)(reg_info)

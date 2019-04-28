@@ -622,10 +622,14 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             obj.prepaid += surplus.convert_to<int64_t>();
          });
 
-         d.modify(d.get_platform_by_owner(origin_post->platform), [&](platform_object& obj)
-         {
-            obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(), surplus.convert_to<int64_t>(), 0, 0);
-         });
+         const platform_object* plat_obj = d.find_platform_by_owner(origin_post->platform);
+         if (plat_obj){
+             d.modify(*plat_obj, [&](platform_object& obj)
+             {
+                 obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(), surplus.convert_to<int64_t>(), 0, 0);
+             });
+         }
+        
          if (active_post && dpo.content_award_enable)
          {
             d.modify(*active_post, [&](active_post_object& obj)
@@ -1010,10 +1014,14 @@ void_result reward_evaluator::do_apply(const operation_type& op)
         ast.amount = surplus.convert_to<int64_t>();
 		d.adjust_balance(post->platform, ast);
 
-        d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
-        {
-            obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), ast, 0, 0, 0);
-        });
+        const platform_object* plat_obj = d.find_platform_by_owner(post->platform);
+        if (plat_obj){
+            d.modify(*plat_obj, [&](platform_object& obj)
+            {
+                obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), ast, 0, 0, 0);
+            });
+        }
+        
         if (active_post && dpo.content_award_enable)
         {
             d.modify(*active_post, [&](active_post_object& obj)
@@ -1140,10 +1148,14 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
             obj.prepaid += surplus.convert_to<int64_t>();
         });
 
-        d.modify(d.get_platform_by_owner(post->platform), [&](platform_object& obj)
-        {
-            obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(surplus.convert_to<int64_t>()), 0, 0, 0);
-        });
+        const platform_object* plat_obj = d.find_platform_by_owner(post->platform);
+        if (plat_obj){
+            d.modify(*plat_obj, [&](platform_object& obj)
+            {
+                obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(surplus.convert_to<int64_t>()), 0, 0, 0);
+            });
+        }
+        
         if (active_post && dpo.content_award_enable)
         {
             d.modify(*active_post, [&](active_post_object& obj)

@@ -342,7 +342,8 @@ namespace graphene { namespace chain {
          const registrar_takeover_object* find_registrar_takeover_object( account_uid_type uid )const;
 
          const platform_object& get_platform_by_owner( account_uid_type owner )const;
-         const platform_object* find_platform_by_owner( account_uid_type owner )const;
+         const platform_object* find_platform_by_sequence( account_uid_type owner, uint32_t sequence )const;
+         const platform_object* find_platform_by_owner(account_uid_type owner)const;
          const platform_vote_object* find_platform_vote( account_uid_type voter_uid,
                                                         uint32_t         voter_sequence,
                                                         account_uid_type platform_owner,
@@ -481,7 +482,7 @@ namespace graphene { namespace chain {
          void update_global_dynamic_data( const signed_block& b );
          void update_undo_db_size();
          void update_signing_witness(const witness_object& signing_witness, const signed_block& new_block);
-         share_type get_witness_pay_by_pledge();
+         share_type get_witness_pay_by_pledge(const global_property_object& gpo, const dynamic_global_property_object& dpo, const uint16_t by_pledge_witness_count);
          void update_last_irreversible_block();
          void clear_expired_transactions();
          void clear_expired_proposals();

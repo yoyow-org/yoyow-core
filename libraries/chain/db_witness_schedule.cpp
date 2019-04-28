@@ -166,25 +166,29 @@ void database::update_witness_schedule()
       const auto& pledge_idx = get_index_type<witness_index>().indices().get<by_pledge_schedule>();
       auto pledge_itr = pledge_idx.lower_bound( true );
       while( pledge_itr != pledge_idx.end() && pledge_added < pledge_max )
-      {
-         if (pledge_itr->pledge >= min_witness_blcok_produce_pledge || head_block_time() < HARDFORK_0_4_TIME)
+      { 
+         by_pledge_processed.push_back(&(*pledge_itr));
+         new_by_pledge_time = pledge_itr->by_pledge_scheduled_time;
+         account_uid_type uid = pledge_itr->account;
+         if (pledge_itr->signing_key != public_key_type() && new_witnesses.find(uid) == new_witnesses.end())
          {
-            by_pledge_processed.push_back(&(*pledge_itr));
-            new_by_pledge_time = pledge_itr->by_pledge_scheduled_time;
-            account_uid_type uid = pledge_itr->account;
-            if (pledge_itr->signing_key != public_key_type() && new_witnesses.find(uid) == new_witnesses.end())
+            if (pledge_itr->pledge >= min_witness_blcok_produce_pledge || head_block_time() < HARDFORK_0_4_TIME)
             {
                new_witnesses.insert(std::make_pair(uid, scheduled_by_pledge));
                ++pledge_added;
             }
-         }     
+         }
          ++pledge_itr;
       }
 
+      //update by_pledge_witness_pay_per_block
+      share_type witness_pay_by_pledge = 0;
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (pledge_added > 0)
+         witness_pay_by_pledge = get_witness_pay_by_pledge(gpo, dpo, pledge_added);    
       modify(dpo, [&](dynamic_global_property_object& _dpo)
       {
-         _dpo.by_pledge_active_witness_count = pledge_added;
+         _dpo.by_pledge_witness_pay_per_block = witness_pay_by_pledge;
       });
 
       // update by_pledge_schedule

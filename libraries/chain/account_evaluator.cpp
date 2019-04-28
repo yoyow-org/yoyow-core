@@ -94,7 +94,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
 
    //TODO review
    database& d = db();
-   const platform_object* platform = d.find_platform_by_owner(o.reg_info.registrar);
+   const platform_object* platform = d.find_platform_by_owner(o.reg_info.referrer);
 
    const auto& new_acnt_object = d.create<account_object>( [&]( account_object& obj ){
          obj.uid                  = o.uid;
@@ -104,7 +104,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.secondary            = o.secondary;
          obj.memo_key             = o.memo_key;
          obj.reg_info             = o.reg_info;
-         obj.register_by_platform = platform == nullptr ? false : true;
+         obj.referrer_by_platform = platform == nullptr ? 0 : platform->sequence;
          obj.create_time          = d.head_block_time();
          obj.last_update_time     = d.head_block_time();
 

@@ -97,10 +97,11 @@ void database::adjust_voter_votes( const voter_object& voter, share_type delta )
    }
 
    const account_object& ant = get_account_by_uid(voter.uid);
-   if (ant.register_by_platform)  // if account registed by platform, vote to platform
+   if (ant.referrer_by_platform)  // if account referred by platform, vote to platform
    {
-       const platform_object& plat = get_platform_by_owner(ant.reg_info.registrar);
-       adjust_platform_votes(plat, delta);
+       const platform_object* plat = find_platform_by_sequence(ant.reg_info.referrer, ant.referrer_by_platform);
+       if (plat)
+           adjust_platform_votes(*plat, delta);
    }
 }
 

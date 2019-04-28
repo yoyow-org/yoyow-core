@@ -126,10 +126,10 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    share_type witness_pay;
    if( wit_type == scheduled_by_vote_top )
       witness_pay = gpo.parameters.by_vote_top_witness_pay_per_block;
-   else if( wit_type == scheduled_by_vote_rest )
+   else if (wit_type == scheduled_by_vote_rest)
       witness_pay = gpo.parameters.by_vote_rest_witness_pay_per_block;
    else if (wit_type == scheduled_by_pledge)
-      witness_pay = get_witness_pay_by_pledge();
+      witness_pay = dpo.by_pledge_witness_pay_per_block;
    witness_pay = std::min( witness_pay, budget_this_block );
    
    share_type budget_remained = budget_this_block - witness_pay;
@@ -170,11 +170,8 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    } );
 }
 
-share_type database::get_witness_pay_by_pledge()
+share_type database::get_witness_pay_by_pledge(const global_property_object& gpo, const dynamic_global_property_object& dpo, const uint16_t by_pledge_witness_count)
 {
-   const global_property_object& gpo = get_global_properties();
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-
    if (head_block_time() < HARDFORK_0_4_TIME)
       return gpo.parameters.by_pledge_witness_pay_per_block;
 
@@ -208,7 +205,7 @@ share_type database::get_witness_pay_by_pledge()
    }
 
    share_type witness_pay = (witness_pay_per_year * gpo.parameters.block_interval *gpo.active_witnesses.size() 
-      / (86400 * 365 * dpo.by_pledge_active_witness_count)).to_int64();
+      / (86400 * 365 * by_pledge_witness_count)).to_int64();
 
    return witness_pay;
 }
@@ -1252,8 +1249,11 @@ void database::check_invariants()
                total_proxied_votes[i] += s.proxied_votes[i-1];
          }
          const auto& account = get_account_by_uid(s.uid);
-         if (account.register_by_platform)
-             total_voter_platform_votes += s.effective_votes;
+         if (account.referrer_by_platform){
+             const platform_object* plat = find_platform_by_sequence(account.reg_info.referrer, account.referrer_by_platform);
+             if (plat)
+                 total_voter_platform_votes += s.effective_votes;
+         }   
          for( size_t i = 0; i < gpo.parameters.max_governance_voting_proxy_level; ++i )
             total_got_proxied_votes[i] += s.proxied_votes[i];
       }
@@ -1668,11 +1668,20 @@ void database::process_content_platform_awards()
        for (const auto& p : platform_receiptor_award)
        {
           adjust_balance(p.first, asset(p.second.first));
-          const auto& platform = get_platform_by_owner(p.first);
-          modify(platform, [&](platform_object& pla)
+          if (auto platform = find_platform_by_owner(p.first))
           {
-             pla.add_period_profits(dpo.current_active_post_sequence, _latest_active_post_periods, asset(), 0, p.second.first, 0, p.second.second);
-          });
+             modify(*platform, [&](platform_object& pla)
+             {
+                pla.add_period_profits(
+                   dpo.current_active_post_sequence, 
+                   _latest_active_post_periods, 
+                   asset(), 
+                   0, 
+                   p.second.first, 
+                   0, 
+                   p.second.second);
+             });
+          }        
        }
 		}
 
@@ -1689,11 +1698,19 @@ void database::process_content_platform_awards()
           adjust_balance(p.first, asset(to_add));
           actual_awards += to_add;
 
-          const auto& platform = get_platform_by_owner(p.first);
-          modify(platform, [&](platform_object& pla)
+          if (auto platform = find_platform_by_owner(p.first))
           {
-             pla.add_period_profits(dpo.current_active_post_sequence, _latest_active_post_periods, asset(), 0, 0, to_add);
-          });
+             modify(*platform, [&](platform_object& pla)
+             {
+                pla.add_period_profits(
+                   dpo.current_active_post_sequence, 
+                   _latest_active_post_periods, 
+                   asset(), 
+                   0, 
+                   0, 
+                   to_add);
+             });
+          }
        }
     }
 

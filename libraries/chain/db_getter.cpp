@@ -288,6 +288,16 @@ const platform_object* database::find_platform_by_owner( account_uid_type owner 
       return nullptr;
 }
 
+const platform_object* database::find_platform_by_sequence(account_uid_type owner, uint32_t sequence)const
+{
+    const auto& idx = get_index_type<platform_index>().indices().get<by_valid>();
+    auto itr = idx.find(std::make_tuple(true, owner, sequence));
+    if (itr != idx.end())
+        return &(*itr);
+    else
+        return nullptr;
+}
+
 const platform_vote_object* database::find_platform_vote( account_uid_type voter_uid,
                                                         uint32_t         voter_sequence,
                                                         account_uid_type platform_owner,
