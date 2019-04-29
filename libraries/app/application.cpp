@@ -1014,7 +1014,6 @@ void application::initialize(const fc::path& data_dir, const boost::program_opti
    {
       wanted.push_back("witness");
       wanted.push_back("account_history");
-      wanted.push_back("non_consensus");
    }
    for (auto& it : wanted)
    {
