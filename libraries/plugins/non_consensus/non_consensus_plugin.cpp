@@ -101,24 +101,25 @@ void non_consensus_plugin_impl::create_custom_vote_index(const custom_vote_cast_
          obj.vote_asset_id = custom_vote_obj->vote_asset_id;
          obj.vote_expired_time = custom_vote_obj->vote_expired_time;
       });
+      db.modify(*custom_vote_obj, [&](custom_vote_object& obj)
+      {
+         for (const auto& v : op.vote_result)
+            obj.vote_result.at(v) += votes.value;
+      });
    }
    else {
       db.modify(*custom_vote_obj, [&](custom_vote_object& obj)
       {
          for (const auto& v : cast_itr->vote_result)
             obj.vote_result.at(v) -= votes.value;
+         for (const auto& v : op.vote_result)
+            obj.vote_result.at(v) += votes.value;
       });
       db.modify(*cast_itr, [&](cast_custom_vote_object& obj)
       {
          obj.vote_result = op.vote_result;
       });     
    }
-
-   db.modify(*custom_vote_obj, [&](custom_vote_object& obj)
-   {
-      for (const auto& v : op.vote_result)
-         obj.vote_result.at(v) += votes.value;
-   });
 }
 }
 
