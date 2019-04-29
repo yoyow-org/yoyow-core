@@ -25,6 +25,7 @@
 
 #include <graphene/witness/witness.hpp>
 #include <graphene/account_history/account_history_plugin.hpp>
+#include <graphene/non_consensus/non_consensus_plugin.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
@@ -173,14 +174,15 @@ int main(int argc, char** argv) {
    try {
       bpo::options_description app_options("Yoyow Node");
       bpo::options_description cfg_options("Yoyow Node");
+      std::set<std::string> non_consensus_indexs;
       app_options.add_options()
             ("help,h", "Print this help message and exit.")
             ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("yoyow_node_data_dir"), "Directory containing databases, configuration file, etc.")
             ("version,v", "Display version information")
+            ("non_consensus_indexs",boost::program_options::value<std::vector<std::string>>()->composing()->multitoken(),"add non consensus index")
             ;
 
       bpo::variables_map options;
-
       auto witness_plug = node->register_plugin<witness_plugin::witness_plugin>();
       auto history_plug = node->register_plugin<account_history::account_history_plugin>();
 
@@ -198,6 +200,10 @@ int main(int argc, char** argv) {
         return 1;
       }
 
+      if (options.count("non_consensus_indexs")){
+          auto non_consensus_plug = node->register_plugin<non_consensus::non_consensus_plugin>();
+      }
+      
       if( options.count("help") )
       {
          std::cout << app_options << "\n";
