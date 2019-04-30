@@ -17,7 +17,7 @@ namespace graphene { namespace chain {
        void_result do_evaluate(const operation_type& op);
        object_id_type do_apply(const operation_type& op);
 
-       const platform_object* platform_obj = nullptr;
+       const account_statistics_object* platform_ant = nullptr;
    };
 
    class advertising_update_evaluator : public evaluator < advertising_update_evaluator >

@@ -1139,7 +1139,7 @@ void database_fixture::create_license(account_uid_type platform,
     flat_set<fc::ecc::private_key> sign_keys)
 {
     try {
-        const platform_object& platform_obj = db.get_platform_by_owner(platform);
+        const account_statistics_object& platform_obj = db.get_account_statistics_by_uid(platform);
         license_create_operation create_op;
         create_op.license_lid = platform_obj.last_license_sequence + 1;
         create_op.platform = platform;
@@ -1522,7 +1522,7 @@ void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_ke
                                           uint32_t                       unit_time)                                      
 {
     try {
-        const platform_object& platform_obj = db.get_platform_by_owner(platform);
+        const account_statistics_object& platform_obj = db.get_account_statistics_by_uid(platform);
 
         advertising_create_operation create_op;
         create_op.platform = platform;

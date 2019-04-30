@@ -1285,9 +1285,9 @@ void_result license_create_evaluator::do_evaluate(const operation_type& op)
     FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
 
     d.get_platform_by_owner(op.platform); // make sure pid exists
-    platform_obj = &d.get_platform_by_owner(op.platform);
+    platform_ant = &d.get_account_statistics_by_uid(op.platform);
 
-    FC_ASSERT((platform_obj->last_license_sequence + 1) == op.license_lid, "license id ${pid} is invalid.", ("pid", op.license_lid));
+    FC_ASSERT((platform_ant->last_license_sequence + 1) == op.license_lid, "license id ${pid} is invalid.", ("pid", op.license_lid));
 
     const auto& licenses = d.get_index_type<license_index>().indices().get<by_license_lid>();
     auto itr = licenses.find(std::make_tuple(op.platform, op.license_lid));
@@ -1301,7 +1301,7 @@ object_id_type license_create_evaluator::do_apply(const operation_type& op)
 {try {
     database& d = db();
 
-    d.modify(*platform_obj, [&](platform_object& s) {
+    d.modify(*platform_ant, [&](account_statistics_object& s) {
         s.last_license_sequence += 1;
     });
 

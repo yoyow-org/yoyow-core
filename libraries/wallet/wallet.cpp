@@ -2441,9 +2441,10 @@ signed_transaction account_cancel_auth_platform(string account,
            account_uid_type platform_uid = get_account_uid(platform);
            fc::optional<platform_object> platform_obj = _remote_db->get_platform_by_account(platform_uid);
            FC_ASSERT(platform_obj.valid(), "platform doesn`t exsit. ");
+           const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
 
            license_create_operation create_op;
-           create_op.license_lid = platform_obj->last_license_sequence + 1;
+           create_op.license_lid = plat_account_statistics.last_license_sequence + 1;
            create_op.platform = platform_uid;
            create_op.type = license_type;
            create_op.hash_value = hash_value;
@@ -2903,7 +2904,7 @@ signed_transaction account_cancel_auth_platform(string account,
            const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
            advertising_create_operation create_op;
            create_op.platform = platform_uid;
-           create_op.advertising_aid = platform_obj->last_advertising_sequence + 1;
+           create_op.advertising_aid = plat_account_statistics.last_advertising_sequence + 1;
            create_op.description = description;
            create_op.unit_price = asset_obj->amount_from_string(unit_price).amount;
            create_op.unit_time = unit_time;

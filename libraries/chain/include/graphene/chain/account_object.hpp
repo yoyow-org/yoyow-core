@@ -220,6 +220,8 @@ namespace graphene { namespace chain {
          * Record the last create custom vote number
          */
          custom_vote_vid_type last_custom_vote_sequence = 0; 
+         advertising_aid_type last_advertising_sequence = 0;
+         license_lid_type     last_license_sequence = 0;
          /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds
@@ -848,6 +850,8 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (platform_pledge_release_block_number)
                     (last_post_sequence)
                     (last_custom_vote_sequence)
+                    (last_advertising_sequence)
+                    (last_license_sequence)
                   )
 
 FC_REFLECT_DERIVED(graphene::chain::account_auth_platform_object,

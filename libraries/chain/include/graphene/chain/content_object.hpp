@@ -51,8 +51,6 @@ namespace graphene { namespace chain {
          fc::time_point_sec  average_pledge_last_update;
          uint32_t            average_pledge_next_update_block;
 
-         advertising_aid_type                   last_advertising_sequence = 0;
-         license_lid_type                       last_license_sequence = 0;
          map<time_point_sec, share_type>        vote_profits;
          map<uint32_t, Platform_Period_Profits> period_profits;
 
@@ -624,7 +622,6 @@ FC_REFLECT_DERIVED( graphene::chain::platform_object,
                     (graphene::db::object),
                     (owner)(name)(sequence)(is_valid)(total_votes)(url)
                     (pledge)(pledge_last_update)(average_pledge)(average_pledge_last_update)(average_pledge_next_update_block)
-                    (last_advertising_sequence)(last_license_sequence)
                     (vote_profits)(period_profits)
                     (extra_data)
                     (create_time)(last_update_time)
