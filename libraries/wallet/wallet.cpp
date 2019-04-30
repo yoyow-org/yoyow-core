@@ -2503,10 +2503,10 @@ signed_transaction account_cancel_auth_platform(string account,
                extension_.forward_price = asset_obj->amount_from_string(*(exts.forward_price)).amount;
            if (exts.receiptors.valid())
            {
-               map<account_uid_type, Recerptor_Parameter> maps_receiptors;
+               map<account_uid_type, Receiptor_Parameter> maps_receiptors;
                for (auto itor = (*exts.receiptors).begin(); itor != (*exts.receiptors).end(); itor++)
                {
-                   Recerptor_Parameter para;
+                   Receiptor_Parameter para;
                    para.cur_ratio = uint16_t(itor->second.cur_ratio * GRAPHENE_1_PERCENT);
                    para.to_buyout = itor->second.to_buyout;
                    para.buyout_ratio = uint16_t(itor->second.buyout_ratio * GRAPHENE_1_PERCENT);

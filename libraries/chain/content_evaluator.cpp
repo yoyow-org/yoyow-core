@@ -669,24 +669,24 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                } 
                else {
                    if (o.platform == o.poster){
-                       obj.receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT, false, 0, 0 }));
+                       obj.receiptors.insert(make_pair(o.poster, Receiptor_Parameter{ GRAPHENE_100_PERCENT, false, 0, 0 }));
                    }
                    else
                    {
-                       obj.receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-                       obj.receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                       obj.receiptors.insert(make_pair(o.platform, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                       obj.receiptors.insert(make_pair(o.poster, Receiptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
                    }
                }      
             }
             else
             {
                 if (o.platform == o.poster){
-                    obj.receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT, false, 0, 0 }));
+                    obj.receiptors.insert(make_pair(o.poster, Receiptor_Parameter{ GRAPHENE_100_PERCENT, false, 0, 0 }));
                 }
                 else
                 {
-                    obj.receiptors.insert(make_pair(o.platform, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-                    obj.receiptors.insert(make_pair(o.poster, Recerptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                    obj.receiptors.insert(make_pair(o.platform, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                    obj.receiptors.insert(make_pair(o.poster, Receiptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
                 }
             }
       } );
@@ -1236,7 +1236,7 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
 		database& d = db();
 		const post_object& post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);
 		auto iter = post.receiptors.find(op.receiptor_account_uid);
-		Recerptor_Parameter para = iter->second;
+		Receiptor_Parameter para = iter->second;
         if (auth_object) // signed by platform , then add auth cur_used
         {
             d.modify(*auth_object, [&](account_auth_platform_object& obj)
@@ -1272,7 +1272,7 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
                 buy_receiptor->second.cur_ratio += para.buyout_ratio;
             }
             else
-                p.receiptors.insert(make_pair(op.from_account_uid, Recerptor_Parameter{ para.buyout_ratio, false, 0, 0 }));
+                p.receiptors.insert(make_pair(op.from_account_uid, Receiptor_Parameter{ para.buyout_ratio, false, 0, 0 }));
 		});
 
 		return void_result();

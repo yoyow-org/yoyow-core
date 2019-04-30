@@ -265,7 +265,7 @@ namespace graphene { namespace chain {
          time_point_sec create_time;
          time_point_sec last_update_time;
 
-		 map<account_uid_type, Recerptor_Parameter> receiptors; //receiptors of the post
+		 map<account_uid_type, Receiptor_Parameter> receiptors; //receiptors of the post
 		 optional<share_type>                       forward_price;
          optional<license_lid_type>                 license_lid;
          uint32_t                                   permission_flags = 0xFF;

@@ -132,20 +132,20 @@ namespace graphene { namespace chain {
     *
     *  @return n/a
     */
-   class Recerptor_Parameter
+   class Receiptor_Parameter
    {
    public:
 	   uint16_t          cur_ratio;
 	   bool              to_buyout;
-	   uint16_t          buyout_ratio;
-	   share_type        buyout_price;
+	   uint16_t          buyout_ratio = 0;
+	   share_type        buyout_price = 0;
        time_point_sec    buyout_expiration = time_point_sec::maximum();
        extensions_type   extensions;
 
 
-       Recerptor_Parameter(){}
+       Receiptor_Parameter(){}
 
-       Recerptor_Parameter(uint16_t       cur_ratio_,
+       Receiptor_Parameter(uint16_t       cur_ratio_,
                            bool           to_buyout_,
                            uint16_t       buyout_ratio_,
                            share_type     buyout_price_,
@@ -156,11 +156,18 @@ namespace graphene { namespace chain {
 
 	   void validate()const
 	   {
-		   if (to_buyout)
-			   FC_ASSERT(buyout_ratio <= cur_ratio, "buyout_ratio must be less than cur_ratio");
+           if (to_buyout){
+               FC_ASSERT(buyout_price > 0, "if buyout, buyout_price must be > 0. ");
+               FC_ASSERT(buyout_ratio > 0, "if buyout, buyout_ratio must be > 0. ");
+               FC_ASSERT(buyout_ratio <= cur_ratio, "buyout_ratio must be less than cur_ratio");
+           }
+           else{
+               FC_ASSERT(buyout_price == 0, "if not to buyout, buyout_price must be == 0. ");
+               FC_ASSERT(buyout_ratio == 0, "if not to buyout, buyout_ratio must be == 0. ");
+           }
 	   }
 
-       bool operator == (const Recerptor_Parameter& r1) const
+       bool operator == (const Receiptor_Parameter& r1) const
        {
            return (cur_ratio == r1.cur_ratio) &&
                   (to_buyout == r1.to_buyout) && 
@@ -188,7 +195,7 @@ namespace graphene { namespace chain {
 		   optional<share_type>                                   forward_price;
            optional<license_lid_type>                             license_lid;
            optional<uint32_t>                                     permission_flags = 0xFF;
-           optional<map<account_uid_type, Recerptor_Parameter> >  receiptors;
+           optional<map<account_uid_type, Receiptor_Parameter> >  receiptors;
 	   };
 
       struct fee_parameters_type {
@@ -526,7 +533,7 @@ FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(platform)(
 FC_REFLECT(graphene::chain::reward_proxy_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::reward_proxy_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
-FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(extensions))
+FC_REFLECT(graphene::chain::Receiptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(extensions))
 
 FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(extensions))

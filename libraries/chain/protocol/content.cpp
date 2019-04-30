@@ -161,7 +161,7 @@ void post_operation::validate()const
 
        if (ext.receiptors.valid())
        {
-           const map<account_uid_type, Recerptor_Parameter>& receiptor = *(ext.receiptors);
+           const map<account_uid_type, Receiptor_Parameter>& receiptor = *(ext.receiptors);
            FC_ASSERT(receiptor.size() >= 1 && receiptor.size() <= 5, "receiptors` size must be >= 1 and <= 5");
 
            if (platform == poster){

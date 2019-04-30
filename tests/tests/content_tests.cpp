@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(update_post_test)
       update_post({ u_1001_private_key, u_9000_private_key }, u_9000_id, u_1001_id, 1, "", "", "", "", ext);
 
       auto post_obj = db.get_post_by_platform(u_9000_id, u_1001_id, 1);
-      Recerptor_Parameter parameter = post_obj.receiptors[u_1001_id];
+      Receiptor_Parameter parameter = post_obj.receiptors[u_1001_id];
 
       BOOST_CHECK(*(post_obj.forward_price) == 100 * prec);
       BOOST_CHECK(parameter.to_buyout == true);
@@ -817,10 +817,10 @@ BOOST_AUTO_TEST_CASE(post_test)
                                                                              account_auth_platform_object::Platform_Permission_Post);
         sign_keys1.insert(u_9000_private_key);
 
-        map<account_uid_type, Recerptor_Parameter> receiptors;
-        receiptors.insert(std::make_pair(u_9000_id, Recerptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0}));
-        receiptors.insert(std::make_pair(u_1000_id, Recerptor_Parameter{ 5000 , false, 0 , 0}));
-        receiptors.insert(std::make_pair(u_2000_id, Recerptor_Parameter{ 2500, false, 0, 0 }));
+        map<account_uid_type, Receiptor_Parameter> receiptors;
+        receiptors.insert(std::make_pair(u_9000_id, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0}));
+        receiptors.insert(std::make_pair(u_1000_id, Receiptor_Parameter{ 5000 , false, 0 , 0}));
+        receiptors.insert(std::make_pair(u_2000_id, Receiptor_Parameter{ 2500, false, 0, 0 }));
 
         post_operation::ext extension;
         extension.post_type = post_operation::Post_Type_Post;
@@ -848,14 +848,14 @@ BOOST_AUTO_TEST_CASE(post_test)
                                              post_object::Post_Permission_Comment |
                                              post_object::Post_Permission_Reward);
         BOOST_CHECK(post.receiptors.find(u_9000_id) != post.receiptors.end());
-        Recerptor_Parameter r9 = post.receiptors.find(u_9000_id)->second;
-        BOOST_CHECK(r9 == Recerptor_Parameter(GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0));
+        Receiptor_Parameter r9 = post.receiptors.find(u_9000_id)->second;
+        BOOST_CHECK(r9 == Receiptor_Parameter(GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0));
         BOOST_CHECK(post.receiptors.find(u_1000_id) != post.receiptors.end());
-        Recerptor_Parameter r1 = post.receiptors.find(u_1000_id)->second;
-        BOOST_CHECK(r1 == Recerptor_Parameter(5000, false, 0, 0));
+        Receiptor_Parameter r1 = post.receiptors.find(u_1000_id)->second;
+        BOOST_CHECK(r1 == Receiptor_Parameter(5000, false, 0, 0));
         BOOST_CHECK(post.receiptors.find(u_2000_id) != post.receiptors.end());
-        Recerptor_Parameter r2 = post.receiptors.find(u_2000_id)->second;
-        BOOST_CHECK(r2 == Recerptor_Parameter(2500, false, 0, 0));
+        Receiptor_Parameter r2 = post.receiptors.find(u_2000_id)->second;
+        BOOST_CHECK(r2 == Receiptor_Parameter(2500, false, 0, 0));
         
     }
     catch (fc::exception& e) {
