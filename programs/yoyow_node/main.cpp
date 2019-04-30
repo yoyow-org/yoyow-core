@@ -185,6 +185,7 @@ int main(int argc, char** argv) {
       bpo::variables_map options;
       auto witness_plug = node->register_plugin<witness_plugin::witness_plugin>();
       auto history_plug = node->register_plugin<account_history::account_history_plugin>();
+      auto non_consensus_plug = node->register_plugin<non_consensus::non_consensus_plugin>();
 
       try
       {
@@ -198,10 +199,6 @@ int main(int argc, char** argv) {
       {
         std::cerr << "Error parsing command line: " << e.what() << "\n";
         return 1;
-      }
-
-      if (options.count("non_consensus_indexs")){
-          auto non_consensus_plug = node->register_plugin<non_consensus::non_consensus_plugin>();
       }
       
       if( options.count("help") )
