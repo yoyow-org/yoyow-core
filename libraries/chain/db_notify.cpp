@@ -45,7 +45,13 @@ struct get_impacted_account_uid_visitor
           _impacted.insert( *(op.origin_platform) );
       if( op.origin_poster.valid() )
           _impacted.insert( *(op.origin_poster) );
-
+      if (op.extensions.valid()){
+          if (op.extensions->value.receiptors.valid()){
+              auto receiptors = *(op.extensions->value.receiptors);
+              for (auto iter : receiptors)
+                  _impacted.insert(iter.first);
+          }
+      }
    }
 
    void operator()( const post_update_operation& op )

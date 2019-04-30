@@ -174,12 +174,10 @@ int main(int argc, char** argv) {
    try {
       bpo::options_description app_options("Yoyow Node");
       bpo::options_description cfg_options("Yoyow Node");
-      std::set<std::string> non_consensus_indexs;
       app_options.add_options()
             ("help,h", "Print this help message and exit.")
             ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("yoyow_node_data_dir"), "Directory containing databases, configuration file, etc.")
             ("version,v", "Display version information")
-            ("non_consensus_indexs",boost::program_options::value<std::vector<std::string>>()->composing()->multitoken(),"add non consensus index")
             ;
 
       bpo::variables_map options;

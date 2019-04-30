@@ -160,7 +160,7 @@ void non_consensus_plugin::plugin_set_program_options(
                                                         boost::program_options::options_description& cfg
                                                         )
 {
-   cli.add_options();
-   cfg.add(cli);
+    cli.add_options()("non_consensus_indexs", boost::program_options::value<std::vector<std::string>>()->composing()->multitoken(), "add non consensus index");
+    cfg.add(cli);
 }
 } }
