@@ -297,8 +297,10 @@ namespace graphene { namespace chain {
               if (ext.receiptor.valid() )
                   a.insert(*(ext.receiptor));
 		  }
-          else
-              a.insert(poster);    // Requires authors to change the permissions
+          else{
+              a.insert(poster); 
+              a.insert(platform); 
+          }
       }
    };
 
