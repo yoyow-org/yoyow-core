@@ -181,16 +181,6 @@ void database::update_witness_schedule()
          ++pledge_itr;
       }
 
-      //update by_pledge_witness_pay_per_block
-      share_type witness_pay_by_pledge = 0;
-      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-      if (pledge_added > 0)
-         witness_pay_by_pledge = get_witness_pay_by_pledge(gpo, dpo, pledge_added);    
-      modify(dpo, [&](dynamic_global_property_object& _dpo)
-      {
-         _dpo.by_pledge_witness_pay_per_block = witness_pay_by_pledge;
-      });
-
       // update by_pledge_schedule
       if( pledge_added > 0 )
       {
@@ -224,6 +214,16 @@ void database::update_witness_schedule()
       // update active_witnesses
       modify(gpo, [&]( global_property_object& gp ){
          gp.active_witnesses.swap( new_witnesses );
+      });
+
+      //update by_pledge_witness_pay_per_block
+      share_type witness_pay_by_pledge = 0;
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (pledge_added > 0)
+         witness_pay_by_pledge = get_witness_pay_by_pledge(gpo, dpo, pledge_added);
+      modify(dpo, [&](dynamic_global_property_object& _dpo)
+      {
+         _dpo.by_pledge_witness_pay_per_block = witness_pay_by_pledge;
       });
 
       // update current_shuffled_witnesses

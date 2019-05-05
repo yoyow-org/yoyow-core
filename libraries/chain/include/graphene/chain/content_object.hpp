@@ -398,7 +398,7 @@ namespace graphene { namespace chain {
            receiptor_details.emplace(uid, detail);
         }
      }
-     void insert_receiptor(account_uid_type uid, asset reward = asset())
+     void insert_receiptor(account_uid_type uid, asset reward)
      {
         if (receiptor_details.count(uid))
         {
