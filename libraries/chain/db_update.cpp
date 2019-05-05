@@ -355,7 +355,7 @@ void database::update_reduce_witness_csaf()
     }
 }
 
-std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
+std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
 database::get_effective_csaf(const active_post_object& active_post)
 {
    const global_property_object& gpo = get_global_properties();
@@ -376,7 +376,7 @@ database::get_effective_csaf(const active_post_object& active_post)
       return ((end - begin) * slope / GRAPHENE_100_PERCENT).to_uint64();
    };
    
-   vector<std::tuple<score_id_type, share_type, bool>> effective_csaf_container;
+   set<std::tuple<score_id_type, share_type, bool>> effective_csaf_container;
 
    const auto& index = get_index_type<score_index>().indices().get<by_period_sequence>();
    auto itr = index.lower_bound(std::make_tuple(
@@ -427,7 +427,7 @@ database::get_effective_csaf(const active_post_object& active_post)
       total_effective_csaf = total_effective_csaf + effective_casf;
       
       //bool approve = (score_obj.csaf * score_obj.score * params.casf_modulus / (5 * GRAPHENE_100_PERCENT)) >= 0;
-      effective_csaf_container.emplace_back(std::make_tuple(itr->id, effective_casf, itr->score >= 0));
+      effective_csaf_container.emplace(std::make_tuple(itr->id, effective_casf, itr->score >= 0));
 
       ++itr;
    }
@@ -1637,7 +1637,7 @@ void database::process_content_platform_awards()
 
              if (post.score_settlement)
                 continue;
-             //result <vector<score account id, effective csaf for the score, is or not approve>, total effective csaf to award>
+             //result <set<score id, effective csaf for the score, is or not approve>, total effective csaf to award>
              auto result = get_effective_csaf(*(std::get<0>(*itr)));
              uint128_t total_award_csaf = (uint128_t)std::get<1>(result).value;
              share_type actual_score_earned = 0;
