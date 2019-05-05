@@ -153,14 +153,14 @@ void post_operation::validate()const
        FC_ASSERT(ext.post_type.valid(), "post_operation`s extension post_type shouldn`t be null. ");
        FC_ASSERT(*(ext.post_type) >= Post_Type::Post_Type_Post && *(ext.post_type) < Post_Type::Post_Type_Default, 
                  "post_operation`s extension post_type is invalid");
+       
        if (*(ext.post_type) == Post_Type::Post_Type_Comment
            || *(ext.post_type) == Post_Type::Post_Type_forward
-           || *(ext.post_type) == Post_Type::Post_Type_forward_And_Modify){
-           
+           || *(ext.post_type) == Post_Type::Post_Type_forward_And_Modify)
            FC_ASSERT(origin_post_pid.valid() && origin_poster.valid() && origin_platform.valid(),
                "${type} post operation must include origin_post_pid, origin_poster and origin_platform", ("type", *(ext.post_type)));
+       if (*(ext.post_type) == Post_Type::Post_Type_Comment)
            FC_ASSERT(*(origin_platform) == platform, "platform should be origin_platform. ");
-       }
 
        if (ext.receiptors.valid())
        {
