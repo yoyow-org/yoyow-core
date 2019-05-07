@@ -18,17 +18,17 @@ struct custom_vote_create_operation : public base_operation
 
    fee_type                   fee;
 
-   account_uid_type           custom_vote_creater;
-   custom_vote_vid_type       vote_vid;
-   string                     title;
-   string                     description;  
-   time_point_sec             vote_expired_time;
-   asset_aid_type             vote_asset_id;
-   share_type                 required_asset_amount;
-   uint8_t                    minimum_selected_items;
-   uint8_t                    maximum_selected_items;
+   account_uid_type           custom_vote_creater;   //the custom vote`s creater account_uid
+   custom_vote_vid_type       vote_vid;              //the custom vote`s vid
+   string                     title;                 //the custom`s title
+   string                     description;           //the custom`s description
+   time_point_sec             vote_expired_time;     //the expiration time of this custom vote
+   asset_aid_type             vote_asset_id;         //the asset`s id allowed to join in this custom
+   share_type                 required_asset_amount; //the min amount of asset that can join in this custom
+   uint8_t                    minimum_selected_items;//the least options should be voted
+   uint8_t                    maximum_selected_items;//the most options should be voted
 
-   std::vector<string>        options;
+   std::vector<string>        options;    //the list of options for this custom vote
    extensions_type            extensions;
 
    account_uid_type fee_payer_uid()const { return custom_vote_creater; }
@@ -52,10 +52,10 @@ struct custom_vote_cast_operation : public base_operation
 
    fee_type                     fee;
 
-   account_uid_type             voter;
-   account_uid_type             custom_vote_creater; 
-   custom_vote_vid_type         custom_vote_vid;
-   std::set<uint8_t>            vote_result;
+   account_uid_type             voter;               //the voter account_uid
+   account_uid_type             custom_vote_creater; //the custom vote`s creater account
+   custom_vote_vid_type         custom_vote_vid;     //the custom vote`s vid
+   std::set<uint8_t>            vote_result;         //the selected options for this vote
 
    extensions_type              extensions;
 
