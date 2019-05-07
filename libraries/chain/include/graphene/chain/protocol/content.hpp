@@ -135,11 +135,11 @@ namespace graphene { namespace chain {
    class Receiptor_Parameter
    {
    public:
-	   uint16_t          cur_ratio;
-	   bool              to_buyout;
-	   uint16_t          buyout_ratio = 0;
-	   share_type        buyout_price = 0;
-       time_point_sec    buyout_expiration = time_point_sec::maximum();
+	   uint16_t          cur_ratio;        //the receiptor`s current ratio of the post
+	   bool              to_buyout;        //is to sell receiptor`s ratio
+	   uint16_t          buyout_ratio = 0; //the ratio to sell
+	   share_type        buyout_price = 0; //the price of the ratio for sell
+       time_point_sec    buyout_expiration = time_point_sec::maximum(); //the expiration time for receiptor`s sell order
        extensions_type   extensions;
 
 
@@ -191,11 +191,11 @@ namespace graphene { namespace chain {
 
 	   struct ext
 	   {
-           optional<uint8_t>                                      post_type = Post_Type_Post;
-		   optional<share_type>                                   forward_price;
-           optional<license_lid_type>                             license_lid;
-           optional<uint32_t>                                     permission_flags = 0xFF;
-           optional<map<account_uid_type, Receiptor_Parameter> >  receiptors;
+           optional<uint8_t>                                      post_type = Post_Type_Post; // post`s type
+		   optional<share_type>                                   forward_price;              // the price of forward this post
+           optional<license_lid_type>                             license_lid;                // the license`s id of this post
+           optional<uint32_t>                                     permission_flags = 0xFF;    // permissions of this post
+           optional<map<account_uid_type, Receiptor_Parameter> >  receiptors;                 // map of receiptor`s parameters
 	   };
 
       struct fee_parameters_type {
@@ -246,14 +246,14 @@ namespace graphene { namespace chain {
    {
 	   struct ext
 	   {
-		   optional<share_type>           forward_price;
-		   optional<account_uid_type>     receiptor;
-		   optional<bool>                 to_buyout;
-		   optional<uint16_t>             buyout_ratio;
-		   optional<share_type>           buyout_price;
-           optional<time_point_sec>       buyout_expiration;
-           optional<license_lid_type>     license_lid;
-           optional<uint32_t>             permission_flags;
+		   optional<share_type>           forward_price;     //the post`s forward price for update
+		   optional<account_uid_type>     receiptor;         //the receiptor account for update his parameter
+		   optional<bool>                 to_buyout;         //buyout or not the receiptor`s ratio
+		   optional<uint16_t>             buyout_ratio;      //if buyout, the buyout ratio of the receiptor for sell
+		   optional<share_type>           buyout_price;      //buyout price for sell the buyout ratio
+           optional<time_point_sec>       buyout_expiration; //the expiration time for this buyout order
+           optional<license_lid_type>     license_lid;       //the post`s license`s id for update
+           optional<uint32_t>             permission_flags;  //the post`s permissions for update
 	   };
 
       struct fee_parameters_type {
@@ -325,12 +325,12 @@ namespace graphene { namespace chain {
 
 	   fee_type                     fee;
 
-	   account_uid_type             from_account_uid;//from account
-	   account_uid_type             platform;
-	   account_uid_type             poster;
-	   post_pid_type                post_pid; //post id
-	   int8_t                       score;
-       share_type                   csaf;
+	   account_uid_type             from_account_uid; //from account`s uid
+	   account_uid_type             platform;         //platform account`s uid
+	   account_uid_type             poster;           //poster account`s uid
+	   post_pid_type                post_pid;         //post`s pid
+	   int8_t                       score;            //the score for post. range [-5,5]
+       share_type                   csaf;             //the integration of yoyow for post
 
 	   extensions_type              extensions;
 
@@ -364,11 +364,11 @@ namespace graphene { namespace chain {
 
 	   fee_type                     fee;
 
-	   account_uid_type             from_account_uid;//from account
-	   account_uid_type             platform;
-	   account_uid_type             poster;
-	   post_pid_type                post_pid; //post id
-	   asset                        amount;
+	   account_uid_type             from_account_uid; //from account`s uid
+	   account_uid_type             platform;         //platform account`s uid
+	   account_uid_type             poster;           //poster account`s uid
+	   post_pid_type                post_pid;         //post`s pid
+	   asset                        amount;           //the asset reward for the post
 
 	   extensions_type              extensions;
 
@@ -402,11 +402,11 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
-       account_uid_type             from_account_uid;//from account
-       account_uid_type             platform;
-       account_uid_type             poster;
-       post_pid_type                post_pid; //post id
-       share_type                   amount;
+       account_uid_type             from_account_uid;  //from account`s uid
+       account_uid_type             platform;          //platform account`s uid
+       account_uid_type             poster;            //poster account`s uid
+       post_pid_type                post_pid;          //post`s pid
+       share_type                   amount;            //amount of YOYO reward for the post proxy by platform
 
        extensions_type              extensions;
 
@@ -442,11 +442,11 @@ namespace graphene { namespace chain {
 
 	   fee_type                     fee;
 
-	   account_uid_type             from_account_uid;//from account
-	   account_uid_type             platform;
-	   account_uid_type             poster;
-	   post_pid_type                post_pid; //post id
-	   account_uid_type             receiptor_account_uid;
+	   account_uid_type             from_account_uid;      //from account`s uid
+	   account_uid_type             platform;              //platform account`s uid
+	   account_uid_type             poster;                //poster account`s uid
+	   post_pid_type                post_pid;              //post`s pid
+	   account_uid_type             receiptor_account_uid; //the receiptor account`s uid. to buy the receiptor`s sell order.
 
 	   extensions_type              extensions;
 
@@ -480,13 +480,13 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
-       license_lid_type             license_lid;
-       account_uid_type             platform = 0;
-       uint8_t                      type;
-       string                       hash_value;
-       string                       extra_data = "{}"; 
-       string                       title;
-       string                       body;
+       license_lid_type             license_lid;       //the license`s lid
+       account_uid_type             platform = 0;      //the platform account who create this license
+       uint8_t                      type;              //the type of the license
+       string                       hash_value;        //license`s hash
+       string                       extra_data = "{}"; //license`s extra datas
+       string                       title;             //the title of the license
+       string                       body;              //the body of the license
 
        extensions_type              extensions;
 

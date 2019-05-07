@@ -231,9 +231,9 @@ namespace graphene { namespace chain {
    {
 	   struct extension_parameter
 	   {
-		   optional<share_type> limit_for_platform;
-           optional<uint32_t>   permission_flags;
-           optional<memo_data>  memo;
+		   optional<share_type> limit_for_platform;  //the max prepaid that platform can used authorized by account
+           optional<uint32_t>   permission_flags;    //permissions for platform authorized by account
+           optional<memo_data>  memo;                //memo message for this operation
 	   };
 
       struct fee_parameters_type
