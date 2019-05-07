@@ -501,7 +501,7 @@ namespace graphene { namespace chain {
          void clear_unnecessary_objects();//advertisng order, custom vote and cast custom vote
          void update_reduce_witness_csaf();//only execute once for HARDFORK_0_4_BLOCKNUM
 
-         std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
+         std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
             get_effective_csaf(const active_post_object& active_post);
 		     void clear_expired_scores();
          void update_maintenance_flag( bool new_maintenance_flag );
