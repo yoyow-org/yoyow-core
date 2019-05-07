@@ -38,31 +38,31 @@ namespace graphene { namespace chain {
 
 	 struct content_parameter_extension_type
 	 {
-      uint32_t    content_award_interval              = GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;
-      uint32_t    platform_award_interval             = GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;
-      share_type  max_csaf_per_approval               = GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;
-      uint32_t    approval_expiration                 = GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;
-      share_type  min_effective_csaf                  = GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;
-      share_type  total_content_award_amount          = GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;
-      share_type  total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;
-      share_type  total_platform_voted_award_amount	  = GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;
-      share_type  platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;
-      uint32_t    platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;
+      uint32_t    content_award_interval              = GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;///< interval in seconds between content awards
+      uint32_t    platform_award_interval             = GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;///< interval in seconds between platform vote awards
+      share_type  max_csaf_per_approval               = GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;///< score behavior spend csaf must less than or equal to this number
+      uint32_t    approval_expiration                 = GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;///< maximum lifetime in seconds for score, after same account can again score for same post 
+      share_type  min_effective_csaf                  = GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;///< minimum csaf required for post in content awards 
+      share_type  total_content_award_amount          = GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;///< total content award amount, per year 
+      share_type  total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;///< total platform award content amount, per year
+      share_type  total_platform_voted_award_amount	  = GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;///< total platform vote award amount, per year
+      share_type  platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;///< minimum votes required for platform in platform vote awards
+      uint32_t    platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;///< minimum votes rank required for platform in platform vote awards
       
-      uint32_t    platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;
-      uint32_t    casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;
-      uint32_t    post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;
-      uint32_t    approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;
-      uint32_t    approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;
-      uint32_t    approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;
-      uint32_t    receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;
-      uint32_t    disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;
+      uint32_t    platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;///< in platform vote awards, average allocation of this part, remaining awards distribute to platform by votes
+      uint32_t    casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;///< compute effective csaf modulus
+      uint32_t    post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;///< if current time greater than this time, post can't get post award
+      uint32_t    approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;///< the minimum percentage of csaf, when you compute the effective csaf
+      uint32_t    approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;///< the first percentage of csaf, when you compute the effective csaf
+      uint32_t    approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;///< the second percentage of csaf, when you compute the effective csaf, greater than the first percentage
+      uint32_t    receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;///< when post of disapprove more than approve, receiptor award multiply this number, this number must less than 100%
+      uint32_t    disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;///< when post of disapprove more than approve, scorer award multiply this number, this number must more than 100%
                
-      uint32_t    advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;
-      share_type  advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;
-      uint32_t    custom_vote_effective_time          = GRAPHENE_DEFAULT_CUSTOM_VOTE_EFFECTIVE_TIME;
+      uint32_t    advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;///< fee rate of advertising order price
+      share_type  advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;///< confirm advertising order minimum fee,that return to capital pool
+      uint32_t    custom_vote_effective_time          = GRAPHENE_DEFAULT_CUSTOM_VOTE_EFFECTIVE_TIME;///< custom vote effective time, if more than this time, clear custom vote object
 
-      uint64_t    min_witness_block_produce_pledge    = GRAPHENE_DEFAULT_MIN_WITNESS_BLOCK_PRODUCE_PLEDGE;
+      uint64_t    min_witness_block_produce_pledge    = GRAPHENE_DEFAULT_MIN_WITNESS_BLOCK_PRODUCE_PLEDGE;///< pos, witness pledge must greater this number, can produce block
 	 };
 
    struct chain_parameters

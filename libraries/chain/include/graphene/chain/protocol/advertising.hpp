@@ -19,9 +19,13 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
+       // The advertising aid
        advertising_aid_type         advertising_aid;
+       // The platform account that advertising belong to
        account_uid_type             platform;
+       // Unit time for advertising sale
        uint32_t                     unit_time;
+       // Selling price for per unit time of advertising 
        share_type                   unit_price;
        string                       description;
 
@@ -48,12 +52,17 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
+       // The platform account that advertising belong to
        account_uid_type             platform;
+       // The advertising aid
        advertising_aid_type         advertising_aid;
 
        optional<string>             description;
+       // Selling price for per unit time of advertising 
        optional<share_type>         unit_price;
+       // Unit time for advertising sale
        optional<uint32_t>           unit_time;
+       // Advertising status, is selling or not selling
        optional<bool>               on_sell;
 
        extensions_type              extensions;
@@ -78,11 +87,18 @@ namespace graphene { namespace chain {
        };
 
        fee_type                     fee;
+       // The advertising order id
        advertising_order_oid_type   advertising_order_oid;
+
+       // Account that buy advertising
        account_uid_type             from_account;
+       // The platform account that advertising belong to
        account_uid_type             platform;
+       // The advertising aid
        advertising_aid_type         advertising_aid;
+       // Advertising order start time
        time_point_sec               start_time;
+       // Number of advertising unit
        uint32_t                     buy_number;
 
        string                       extra_data;
@@ -111,9 +127,13 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
+       // The platform account that confirm advertising order
        account_uid_type             platform;
+       // The advertising aid
        advertising_aid_type         advertising_aid;
+       // The advertising order id
        advertising_order_oid_type   advertising_order_oid;
+       // Advertising order confirm status, accepted or refused
        bool                         isconfirm;
 
        extensions_type              extensions;
@@ -139,9 +159,13 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
+       // Account that ransom advertising order
        account_uid_type             from_account;
+       // The platform account that advertising belong to
        account_uid_type             platform;
+       // The advertising aid
        advertising_aid_type         advertising_aid;
+       // The advertising order id
        advertising_order_oid_type   advertising_order_oid;
 
        extensions_type              extensions;
