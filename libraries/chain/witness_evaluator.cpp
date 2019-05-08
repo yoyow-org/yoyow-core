@@ -95,14 +95,14 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
          s.releasing_witness_pledge -= op.pledge.amount;
       else
       {
+         if (dpo.reduce_witness_csaf)
+             s.update_coin_seconds_earned(csaf_window, block_time, true);
          s.total_witness_pledge = op.pledge.amount;
          if( s.releasing_witness_pledge > 0 )
          {
             s.releasing_witness_pledge = 0;
             s.witness_pledge_release_block_number = -1;
          }
-         if (dpo.reduce_witness_csaf)
-             s.update_coin_seconds_earned(csaf_window, block_time, true);
       }
    });
 
@@ -207,14 +207,14 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
                s.releasing_witness_pledge -= delta;
             else
             {
+               if (dpo.reduce_witness_csaf)
+                   s.update_coin_seconds_earned(csaf_window, block_time, true);
                s.total_witness_pledge = op.new_pledge->amount;
                if( s.releasing_witness_pledge > 0 )
                {
                   s.releasing_witness_pledge = 0;
                   s.witness_pledge_release_block_number = -1;
                }
-               if (dpo.reduce_witness_csaf)
-                   s.update_coin_seconds_earned(csaf_window, block_time, true);
             }
          });
       }
@@ -549,6 +549,8 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       auto block_time = d.head_block_time();
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify( *account_stats, [&]( account_statistics_object& s ) {
+         if (dpo.reduce_witness_csaf)
+             s.update_coin_seconds_earned(csaf_window, block_time, true);
          if( from_releasing > 0 )
          {
             s.releasing_witness_pledge -= from_releasing;
@@ -558,8 +560,6 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          s.total_witness_pledge -= total;
          s.witness_last_reported_block_num = reporting_block_num;
          s.witness_total_reported += 1;
-         if (dpo.reduce_witness_csaf)
-             s.update_coin_seconds_earned(csaf_window, block_time, true);
       });
 
       d.modify(dpo, [&](dynamic_global_property_object& _dpo) {

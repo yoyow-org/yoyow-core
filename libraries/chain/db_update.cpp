@@ -504,11 +504,11 @@ void database::release_witness_pledges()
    while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
    {
       modify( *itr, [&](account_statistics_object& s) {
-         s.total_witness_pledge -= s.releasing_witness_pledge;
-         s.releasing_witness_pledge = 0;
-         s.witness_pledge_release_block_number = -1;
-         if (dpo.reduce_witness_csaf)
-             s.update_coin_seconds_earned(csaf_window, head_block_time(), true);
+          if (dpo.reduce_witness_csaf)
+              s.update_coin_seconds_earned(csaf_window, head_block_time(), true);
+          s.total_witness_pledge -= s.releasing_witness_pledge;
+          s.releasing_witness_pledge = 0;
+          s.witness_pledge_release_block_number = -1;
       });
       itr = idx.begin();
    }
