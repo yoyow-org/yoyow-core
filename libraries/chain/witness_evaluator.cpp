@@ -87,7 +87,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
    const uint64_t csaf_window = global_params.csaf_accumulate_window;
    auto block_time = d.head_block_time();
-   bool reduce_witness = block_time > HARDFORK_0_4_TIME;
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
 
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.last_witness_sequence += 1;
@@ -101,12 +101,11 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
             s.releasing_witness_pledge = 0;
             s.witness_pledge_release_block_number = -1;
          }
-         if (reduce_witness)
+         if (dpo.reduce_witness_csaf)
              s.update_coin_seconds_earned(csaf_window, block_time, true);
       }
    });
 
-   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
    d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
       _dpo.total_witness_pledge += op.pledge.amount;
    });
@@ -202,7 +201,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       {
           const uint64_t csaf_window = global_params.csaf_accumulate_window;
           auto block_time = d.head_block_time();
-          bool reduce_witness = block_time > HARDFORK_0_4_TIME;
+          const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
          d.modify( *account_stats, [&](account_statistics_object& s) {
             if( s.releasing_witness_pledge > delta )
                s.releasing_witness_pledge -= delta;
@@ -214,7 +213,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
                   s.releasing_witness_pledge = 0;
                   s.witness_pledge_release_block_number = -1;
                }
-               if (reduce_witness)
+               if (dpo.reduce_witness_csaf)
                    s.update_coin_seconds_earned(csaf_window, block_time, true);
             }
          });
@@ -548,7 +547,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       // update account stats object
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
       auto block_time = d.head_block_time();
-      bool reduce_witness = block_time > HARDFORK_0_4_TIME;
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify( *account_stats, [&]( account_statistics_object& s ) {
          if( from_releasing > 0 )
          {
@@ -559,11 +558,10 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          s.total_witness_pledge -= total;
          s.witness_last_reported_block_num = reporting_block_num;
          s.witness_total_reported += 1;
-         if (reduce_witness)
+         if (dpo.reduce_witness_csaf)
              s.update_coin_seconds_earned(csaf_window, block_time, true);
       });
 
-      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
          _dpo.total_witness_pledge -= total;
       });
