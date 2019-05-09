@@ -673,8 +673,8 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                    }
                    else
                    {
-                       obj.receiptors.insert(make_pair(o.platform, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-                       obj.receiptors.insert(make_pair(o.poster, Receiptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                       obj.receiptors.insert(make_pair(o.platform, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, false, 0, 0 }));
+                       obj.receiptors.insert(make_pair(o.poster, Receiptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, false, 0, 0 }));
                    }
                }      
             }
@@ -685,8 +685,8 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                 }
                 else
                 {
-                    obj.receiptors.insert(make_pair(o.platform, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
-                    obj.receiptors.insert(make_pair(o.poster, Receiptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0 }));
+                    obj.receiptors.insert(make_pair(o.platform, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, false, 0, 0 }));
+                    obj.receiptors.insert(make_pair(o.poster, Receiptor_Parameter{ GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, false, 0, 0 }));
                 }
             }
       } );
@@ -740,10 +740,10 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
                if (ext_para->receiptor == op.poster)
                {
                    if (op.poster == op.platform)
-                      FC_ASSERT(iter->second.cur_ratio >= (*(ext_para->buyout_ratio) + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO + GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO),
+                      FC_ASSERT(iter->second.cur_ratio >= (*(ext_para->buyout_ratio) + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO + GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO),
                        "the ratio ${r} of poster ${p} will less than min ratio.",
                        ("r", (iter->second.cur_ratio - *(ext_para->buyout_ratio)))("p", *(ext_para->receiptor)));
-                   FC_ASSERT(iter->second.cur_ratio >= (*(ext_para->buyout_ratio) + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO),
+                   FC_ASSERT(iter->second.cur_ratio >= (*(ext_para->buyout_ratio) + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO),
                        "the ratio ${r} of poster ${p} will less than min ratio.",
                        ("r", (iter->second.cur_ratio - *(ext_para->buyout_ratio)))("p", *(ext_para->receiptor)));
                }
@@ -1188,11 +1188,11 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
         if (op.receiptor_account_uid == post.poster)
         {
             if (post.poster == post.platform)
-               FC_ASSERT(iter->second.cur_ratio >= (iter->second.buyout_ratio + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO + GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO),
+               FC_ASSERT(iter->second.cur_ratio >= (iter->second.buyout_ratio + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO + GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO),
                 "the ratio ${r} of poster ${p} will less than min ratio.",
                 ("r", (iter->second.cur_ratio - iter->second.buyout_ratio))("p", post.poster));
             else
-               FC_ASSERT(iter->second.cur_ratio >= (iter->second.buyout_ratio + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO),
+               FC_ASSERT(iter->second.cur_ratio >= (iter->second.buyout_ratio + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO),
                 "the ratio ${r} of poster ${p} will less than min ratio.",
                 ("r", (iter->second.cur_ratio - iter->second.buyout_ratio))("p", post.poster));
         }

@@ -170,16 +170,16 @@ void post_operation::validate()const
            if (platform == poster){
                auto itor = receiptor.find(platform);
                FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
-               FC_ASSERT(itor->second.cur_ratio >= GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO,
-                   "platform`s ratio must be ${n}%", ("n", (GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO) / 100));
+               FC_ASSERT(itor->second.cur_ratio >= GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO,
+                   "platform`s ratio must be ${n}%", ("n", (GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO) / 100));
            }
            else{
                auto itor = receiptor.find(platform);
                FC_ASSERT(itor != receiptor.end(), "platform must be included by receiptors");
-               FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO / 100));
+               FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO / 100));
                auto itor_poster = receiptor.find(poster);
                FC_ASSERT(itor_poster != receiptor.end(), "poster must be included by receiptors");
-               FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster`s ratio must be >= ${n}%", ("n", GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO / 100));
+               FC_ASSERT(itor_poster->second.cur_ratio >= GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO, "poster`s ratio must be >= ${n}%", ("n", GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO / 100));
            }
            
            uint32_t total = 0;
@@ -218,11 +218,11 @@ void post_update_operation::validate()const
 
            if (ext.buyout_ratio.valid()){
                if (poster == platform && ext.receiptor == poster)
-                   FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO)
-                   , "buyout_ratio is more than max limit ${n}. ", ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO - GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO)/100));
+                   FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO - GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO)
+                   , "buyout_ratio is more than max limit ${n}. ", ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO - GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO)/100));
                else
-                   FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), 
-                   "buyout_ratio is more than max limit ${n}. ", ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO)/100));
+                   FC_ASSERT(*ext.buyout_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO), 
+                   "buyout_ratio is more than max limit ${n}. ", ("n", (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO)/100));
            }
 
            if (ext.buyout_price.valid())

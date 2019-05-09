@@ -1589,7 +1589,7 @@ void database::process_content_platform_awards()
           {
              share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
                 total_effective_csaf_amount.value).to_uint64();
-             share_type score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECERPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
+             share_type score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
              share_type receiptor_earned = 0;
              if (std::get<2>(*itr) >= 0)
                 receiptor_earned = post_earned - score_earned;
@@ -1612,7 +1612,7 @@ void database::process_content_platform_awards()
              //platform earned from content
              share_type award_only_from_platform;
              if (post.poster == post.platform)
-                award_only_from_platform = ((uint128_t)receiptor_earned.value * GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO /
+                award_only_from_platform = ((uint128_t)receiptor_earned.value * GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO /
                 GRAPHENE_100_PERCENT).to_uint64();
              else
                 award_only_from_platform = temp;

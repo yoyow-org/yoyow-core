@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       uint128_t award_average = (uint128_t)10000000000000 * 300 / (86400 * 365);
 
       uint128_t post_earned = award_average;
-      uint128_t score_earned = post_earned * GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO / GRAPHENE_100_PERCENT;
+      uint128_t score_earned = post_earned * GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO / GRAPHENE_100_PERCENT;
       uint128_t receiptor_earned = post_earned - score_earned;
       uint64_t  poster_earned = (receiptor_earned * 7500 / 10000).convert_to<uint64_t>();
       auto poster_act = db.get_account_statistics_by_uid(u_1001_id);
@@ -818,7 +818,7 @@ BOOST_AUTO_TEST_CASE(post_test)
         sign_keys1.insert(u_9000_private_key);
 
         map<account_uid_type, Receiptor_Parameter> receiptors;
-        receiptors.insert(std::make_pair(u_9000_id, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0}));
+        receiptors.insert(std::make_pair(u_9000_id, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, false, 0, 0}));
         receiptors.insert(std::make_pair(u_1000_id, Receiptor_Parameter{ 5000 , false, 0 , 0}));
         receiptors.insert(std::make_pair(u_2000_id, Receiptor_Parameter{ 2500, false, 0, 0 }));
 
@@ -849,7 +849,7 @@ BOOST_AUTO_TEST_CASE(post_test)
                                              post_object::Post_Permission_Reward);
         BOOST_CHECK(post.receiptors.find(u_9000_id) != post.receiptors.end());
         Receiptor_Parameter r9 = post.receiptors.find(u_9000_id)->second;
-        BOOST_CHECK(r9 == Receiptor_Parameter(GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, false, 0, 0));
+        BOOST_CHECK(r9 == Receiptor_Parameter(GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, false, 0, 0));
         BOOST_CHECK(post.receiptors.find(u_1000_id) != post.receiptors.end());
         Receiptor_Parameter r1 = post.receiptors.find(u_1000_id)->second;
         BOOST_CHECK(r1 == Receiptor_Parameter(5000, false, 0, 0));

@@ -337,9 +337,9 @@
 #define GRAPHENE_RECEIPTOR_AWARD_THRESHOLD               (75 * GRAPHENE_1_PERCENT)
 
 
-#define GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the ratio of platform`s recerpts from post_object 2500 means 25.00%
-#define GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the min ratio of poster`s recerpts from post_object 2500 means 25.00%
-#define GRAPHENE_DEFAULT_SCORE_RECERPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the ratio of score`s recerpts from post_object 2500 means 25.00%
+#define GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the ratio of platform`s receipt from post_object 2500 means 25.00%
+#define GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the min ratio of poster`s receipt from post_object 2500 means 25.00%
+#define GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO (GRAPHENE_1_PERCENT*uint32_t(25)) //the ratio of score`s receipt from post_object 2500 means 25.00%
 #define GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID (uint64_t(-1)>>1)
 
 #define GRAPHENE_ADVERTISING_CONFIRM_TIME (uint32_t(60*60*24*7)) //remaining time that platform confirm advertising_buy

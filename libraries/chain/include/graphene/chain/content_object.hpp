@@ -275,9 +275,9 @@ namespace graphene { namespace chain {
 			 auto itor = receiptors.find(platform);
 			 FC_ASSERT(itor != receiptors.end(), "platform must be included by receiptors");
              if (poster == platform)
-                 FC_ASSERT(itor->second.cur_ratio >= GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO, "poster and platform ratio must be more than ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECERPTS_RATIO / 100));
+                 FC_ASSERT(itor->second.cur_ratio >= GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO, "poster and platform ratio must be more than ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO / 100));
              else
-                 FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO/100));
+                 FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO/100));
 			 uint32_t total = 0;
 			 for (auto iter : receiptors)
 			 {
