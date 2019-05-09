@@ -705,6 +705,13 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
        FC_ASSERT(op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid() || op.extensions.valid(), "Should change something");
        if (op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid())
        {
+           account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
+           if (sign_account == op.platform){
+               const account_auth_platform_object& auth_object = d.get_account_auth_platform_object_by_account_platform(op.poster, sign_account);
+               FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
+                   "the post permission of platform ${p} authorized by account ${a} is invalid. ",
+                   ("p", op.platform)("a", op.poster));
+           }
            FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
            FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
        }
