@@ -704,12 +704,15 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
    const account_statistics_object* account_stats = &d.get_account_statistics_by_uid( op.poster );
    if (d.head_block_time() >= HARDFORK_0_4_TIME){
        FC_ASSERT(op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid() || op.extensions.valid(), "Should change something");
-       bool is_update_content = op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid();
-       const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, op.platform);
-       if (auth_object && is_update_content)
-           FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
-           "the post permission of platform ${p} authorized by account ${a} is invalid. ",
-           ("p", op.platform)("a", op.poster));
+       account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
+       if (sign_account != op.poster){
+           bool is_update_content = op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid();
+           const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, op.platform);
+           if (auth_object && is_update_content)
+               FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
+               "the post permission of platform ${p} authorized by account ${a} is invalid. ",
+               ("p", op.platform)("a", op.poster));
+       }
 
        FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
        FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
