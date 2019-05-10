@@ -470,10 +470,12 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
        if (sign_account != op.poster)
            auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
 
-       if (auth_object && ext_para->post_type == post_operation::Post_Type::Post_Type_Post)
+       if (auth_object && ext_para->post_type == post_operation::Post_Type::Post_Type_Post){
+           FC_ASSERT(auth_object->is_active == true, "account_auth_platform_object is not active. ");
            FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
                "the post permission of platform ${p} authorized by account ${a} is invalid. ",
                ("p", op.platform)("a", op.poster));
+       }
 
        if (ext_para->post_type == post_operation::Post_Type::Post_Type_Comment)
        {
@@ -486,10 +488,12 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
            FC_ASSERT((poster_account->can_reply),
                "poster ${uid} is not allowed to reply.",
                ("uid", op.poster));
-           if (auth_object)
+           if (auth_object){
+               FC_ASSERT(auth_object->is_active == true, "account_auth_platform_object is not active. ");
                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Comment) > 0,
                    "the comment permission of platform ${p} authorized by account ${a} is invalid. ",
                    ("p", op.platform)("a", op.poster));
+           }  
        }
        if (ext_para->post_type == post_operation::Post_Type::Post_Type_forward
            || ext_para->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
@@ -507,10 +511,13 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                "post ${p} is not allowed to forward, forward price is 0. ",
                ("p", op.origin_post_pid));
 
-           if (auth_object)
+           if (auth_object){
+               FC_ASSERT(auth_object->is_active == true, "account_auth_platform_object is not active. ");
                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
                    "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
                    ("p", op.platform)("a", op.poster));
+           }
+               
            FC_ASSERT(account_stats->prepaid >= *(origin_post->forward_price),
                "Insufficient balance: unable to forward, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
                ("c", (account_stats->prepaid))("a", op.poster)("n", *(origin_post->forward_price)));
@@ -706,15 +713,16 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
        if (op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid())
        {
            account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
-           if (sign_account == op.platform){
-               const account_auth_platform_object& auth_object = d.get_account_auth_platform_object_by_account_platform(op.poster, sign_account);
+           if (sign_account == op.platform && op.platform != op.poster){
+               const account_auth_platform_object auth_object = d.get_account_auth_platform_object_by_account_platform(op.poster, sign_account);
+               FC_ASSERT(auth_object.is_active == true, "account_auth_platform_object is not active. ");
                FC_ASSERT((auth_object.permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
                    "the post permission of platform ${p} authorized by account ${a} is invalid. ",
                    ("p", op.platform)("a", op.poster));
            }
-           FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
-           FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
        }
+       FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
+       FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
    }
    else{
        FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
@@ -832,6 +840,7 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
         if (sign_account != 0 && sign_account != op.from_account_uid){
             auto auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
             if (auth_object){
+                FC_ASSERT(auth_object->is_active == true, "account_auth_platform_object is not active. ");
                 FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Liked) > 0,
                     "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
                     ("p", sign_account)("a", op.from_account_uid));
@@ -1055,7 +1064,7 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
         FC_ASSERT(op.platform == sign_account, "reward_proxy must signed by platform. ");
         auth_object = &d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
-
+        FC_ASSERT(auth_object->is_active == true, "account_auth_platform_object is not active. ");
         FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Reward) > 0,
             "the reward permisson of platform ${p} authorized by account ${a} is invalid. ",
             ("p", op.platform)("a", op.poster));  
@@ -1217,6 +1226,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
             auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
         
         if (auth_object){
+            FC_ASSERT(auth_object->is_active == true, "account_auth_platform_object is not active. ");
             FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
                 "the buyout permisson of platform ${p} authorized by account ${a} is invalid. ",
                 ("p", op.platform)("a", op.from_account_uid));
