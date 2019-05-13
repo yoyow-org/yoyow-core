@@ -574,9 +574,9 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             {
                obj.prepaid += temp.convert_to<int64_t>();
             });
-            receiptors.emplace(iter.first, temp);
+            receiptors.emplace(iter.first, temp.convert_to<int64_t>());
          }
-         receiptors.emplace(origin_post->platform, surplus);
+         receiptors.emplace(origin_post->platform, surplus.convert_to<int64_t>());
          d.modify(d.get_account_statistics_by_uid(origin_post->platform), [&](account_statistics_object& obj)
          {
             obj.prepaid += surplus.convert_to<int64_t>();
@@ -585,7 +585,6 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
          const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
          if (dpo.content_award_enable)
          {
-            const active_post_object* active_post = nullptr;
             const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
             auto apt_itr = apt_idx.find(std::make_tuple(o.platform, o.poster, dpo.current_active_post_sequence, o.post_pid));
             if (apt_itr != apt_idx.end())
@@ -857,17 +856,6 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
 
         FC_ASSERT(d.find_score(op.platform, op.poster, op.post_pid, op.from_account_uid)==nullptr, "only score a post once");
 
-        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-        if (dpo.content_award_enable)
-        {
-            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
-            if (apt_itr != apt_idx.end())
-            {
-                active_post = &(*apt_itr);
-            }
-        }
-
 		return void_result();
 	}FC_CAPTURE_AND_RETHROW((op))
 }
@@ -896,9 +884,11 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
 
         if (dpo.content_award_enable)
         {
-            if (active_post)
+            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
+            if (apt_itr != apt_idx.end())
             {
-                d.modify(*active_post, [&](active_post_object& s) {
+                d.modify(*apt_itr, [&](active_post_object& s) {
                     s.total_csaf += op.csaf;
                 });
             }
@@ -959,17 +949,6 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
 				      ("f", op.from_account_uid)("c", from_balance.amount)("n", op.amount.amount));
 		}
 
-        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-        if (dpo.content_award_enable)
-        {
-            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
-            if (apt_itr != apt_idx.end())
-            {
-                active_post = &(*apt_itr);
-            }
-        }	
-
 		return void_result();
 	}FC_CAPTURE_AND_RETHROW((op))
 }
@@ -983,36 +962,9 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 		d.adjust_balance(*from_account, -op.amount);
 
 		const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
-        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-        if (dpo.content_award_enable)
-        {
-            if (active_post)
-            {
-                d.modify(*active_post, [&](active_post_object& s) {
-                    if (s.total_rewards.find(op.amount.asset_id) != s.total_rewards.end())
-                        s.total_rewards.at(op.amount.asset_id) += op.amount.amount;
-                    else
-                        s.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
-                });
-            }
-            else
-            {
-                time_point_sec expiration_time = post->create_time;
-                if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
-                {
-                    active_post = &d.create<active_post_object>([&](active_post_object& obj)
-                    {
-                        obj.platform = op.platform;
-                        obj.poster = op.poster;
-                        obj.post_pid = op.post_pid;
-                        obj.total_csaf = 0;
-                        obj.period_sequence = dpo.current_active_post_sequence;
-                        obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
-                    });
-                }
-            }
-        }     
+        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();     
 
+        flat_map<account_uid_type, asset> receiptors;
 		uint128_t amount(op.amount.amount.value);
 		uint128_t surplus = amount;
 		asset ast(share_type(0), op.amount.asset_id);
@@ -1024,16 +976,11 @@ void_result reward_evaluator::do_apply(const operation_type& op)
 			ast.amount = temp.convert_to<int64_t>();
 			surplus -= temp;
 			d.adjust_balance(iter.first, ast);
-            if (active_post && dpo.content_award_enable)
-            {
-                d.modify(*active_post, [&](active_post_object& obj)
-                {
-                    obj.insert_receiptor(iter.first, ast);
-                });
-            }
+            receiptors.emplace(iter.first, ast);
 		}
         ast.amount = surplus.convert_to<int64_t>();
 		d.adjust_balance(post->platform, ast);
+        receiptors.emplace(post->platform, ast);
 
         const platform_object* plat_obj = d.find_platform_by_owner(post->platform);
         if (plat_obj){
@@ -1042,13 +989,42 @@ void_result reward_evaluator::do_apply(const operation_type& op)
                 obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), ast, 0, 0, 0);
             });
         }
-        
-        if (active_post && dpo.content_award_enable)
+
+        if (dpo.content_award_enable)
         {
-            d.modify(*active_post, [&](active_post_object& obj)
+            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
+            if (apt_itr != apt_idx.end())
             {
-                obj.insert_receiptor(post->platform, ast);
-            });
+                d.modify(*apt_itr, [&](active_post_object& s) {
+                    if (s.total_rewards.find(op.amount.asset_id) != s.total_rewards.end())
+                        s.total_rewards.at(op.amount.asset_id) += op.amount.amount;
+                    else
+                        s.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
+
+                    for (const auto& p : receiptors)
+                        s.insert_receiptor(p.first, p.second);
+                });
+            }
+            else
+            {
+                time_point_sec expiration_time = post->create_time;
+                if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+                {
+                    d.create<active_post_object>([&](active_post_object& obj)
+                    {
+                        obj.platform = op.platform;
+                        obj.poster = op.poster;
+                        obj.post_pid = op.post_pid;
+                        obj.total_csaf = 0;
+                        obj.period_sequence = dpo.current_active_post_sequence;
+                        obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
+
+                        for (const auto& p : receiptors)
+                            obj.insert_receiptor(p.first, p.second);
+                    });
+                }
+            }
         }
 
 		return void_result();
@@ -1082,17 +1058,6 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
                       "Insufficient balance: unable to reward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
                       ("c", usable_prepaid)("p", sign_account)("a", op.from_account_uid)("n", op.amount));
         }   
-
-        const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-        if (dpo.content_award_enable)
-        {
-            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
-            if (apt_itr != apt_idx.end())
-            {
-                active_post = &(*apt_itr);
-            }
-        }
         
         return void_result();
     }FC_CAPTURE_AND_RETHROW((op))
@@ -1114,35 +1079,8 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
 
         const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-        if (dpo.content_award_enable)
-        {
-            if (active_post)
-            {
-                d.modify(*active_post, [&](active_post_object& s) {
-                    if (s.total_rewards.find(GRAPHENE_CORE_ASSET_AID) != s.total_rewards.end())
-                        s.total_rewards.at(GRAPHENE_CORE_ASSET_AID) += op.amount;
-                    else
-                        s.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
-                });
-            }
-            else
-            {
-                time_point_sec expiration_time = post->create_time;
-                if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
-                {
-                    active_post = &d.create<active_post_object>([&](active_post_object& obj)
-                    {
-                        obj.platform = op.platform;
-                        obj.poster = op.poster;
-                        obj.post_pid = op.post_pid;
-                        obj.total_csaf = 0;
-                        obj.period_sequence = dpo.current_active_post_sequence;
-                        obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
-                    });
-                }
-            }
-        }
 
+        flat_map<account_uid_type, asset> receiptors;
         uint128_t amount(op.amount.value);
         uint128_t surplus = amount;
         for (auto iter : post->receiptors)
@@ -1155,18 +1093,13 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
             {
                 obj.prepaid += temp.convert_to<int64_t>();
             });
-            if (active_post && dpo.content_award_enable)
-            {
-                d.modify(*active_post, [&](active_post_object& obj)
-                {
-                    obj.insert_receiptor(iter.first, asset(temp.convert_to<int64_t>()));
-                });
-            }
+            receiptors.emplace(iter.first, asset(temp.convert_to<int64_t>()));
         }
         d.modify(d.get_account_statistics_by_uid(post->platform), [&](account_statistics_object& obj)
         {
             obj.prepaid += surplus.convert_to<int64_t>();
         });
+        receiptors.emplace(post->platform, asset(surplus.convert_to<int64_t>()));
 
         const platform_object* plat_obj = d.find_platform_by_owner(post->platform);
         if (plat_obj){
@@ -1175,13 +1108,40 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
                 obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(surplus.convert_to<int64_t>()), 0, 0, 0);
             });
         }
-        
-        if (active_post && dpo.content_award_enable)
+
+        if (dpo.content_award_enable)
         {
-            d.modify(*active_post, [&](active_post_object& obj)
+            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+            auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
+            if (apt_itr != apt_idx.end())
             {
-                obj.insert_receiptor(post->platform, asset(surplus.convert_to<int64_t>()));
-            });
+                d.modify(*apt_itr, [&](active_post_object& s) {
+                    if (s.total_rewards.find(GRAPHENE_CORE_ASSET_AID) != s.total_rewards.end())
+                        s.total_rewards.at(GRAPHENE_CORE_ASSET_AID) += op.amount;
+                    else
+                        s.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
+                    for (const auto& p : receiptors)
+                        s.insert_receiptor(p.first, p.second);
+                });
+            }
+            else
+            {
+                time_point_sec expiration_time = post->create_time;
+                if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+                {
+                    d.create<active_post_object>([&](active_post_object& obj)
+                    {
+                        obj.platform = op.platform;
+                        obj.poster = op.poster;
+                        obj.post_pid = op.post_pid;
+                        obj.total_csaf = 0;
+                        obj.period_sequence = dpo.current_active_post_sequence;
+                        obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
+                        for (const auto& p : receiptors)
+                            obj.insert_receiptor(p.first, p.second);
+                    });
+                }
+            }
         }
 
         return void_result();
