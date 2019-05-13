@@ -1500,7 +1500,8 @@ signed_transaction account_auth_platform(string account,
                                                                      account_auth_platform_object::Platform_Permission_Buyout |
                                                                      account_auth_platform_object::Platform_Permission_Comment |
                                                                      account_auth_platform_object::Platform_Permission_Reward |
-                                                                     account_auth_platform_object::Platform_Permission_Post,
+                                                                     account_auth_platform_object::Platform_Permission_Post |
+                                                                     account_auth_platform_object::Platform_Permission_Content_Update,
                                          bool csaf_fee = true,
                                          bool broadcast = false)
 {

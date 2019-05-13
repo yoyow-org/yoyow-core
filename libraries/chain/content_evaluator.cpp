@@ -702,6 +702,7 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
    d.get_platform_by_owner( op.platform ); // make sure pid exists
    const account_object* poster_account = &d.get_account_by_uid( op.poster );
    const account_statistics_object* account_stats = &d.get_account_statistics_by_uid( op.poster );
+   account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
 
    if (d.head_block_time() >= HARDFORK_0_4_TIME){
        FC_ASSERT(op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid() || op.extensions.valid(), "Should change something");
@@ -711,11 +712,10 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
            FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
        }
        
-       account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
        if (sign_account != op.poster){
            const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
            if (is_update_content && auth_object)
-               FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
+               FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
                "the post permission of platform ${p} authorized by account ${a} is invalid. ",
                ("p", op.platform)("a", op.poster));
        }
@@ -734,35 +734,60 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
        ext_para = &op.extensions->value;
        if (ext_para->receiptor.valid())
        {
-           d.get_account_by_uid(*(ext_para->receiptor));
-           account_uid_type sign_account = sigs.real_secondary_uid(*(ext_para->receiptor), 1);
+           account_uid_type receiptor_uid = *(ext_para->receiptor);
+           d.get_account_by_uid(receiptor_uid);
+           account_uid_type sign_account_receiptor = sigs.real_secondary_uid(receiptor_uid, 1);
+           if (sign_account_receiptor != receiptor_uid){
+               const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(receiptor_uid, sign_account_receiptor);
+               if (auth_object){
+                   FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
+                       "the post permission of platform ${p} authorized by account ${a} is invalid. ",
+                       ("p", op.platform)("a", op.poster));
+               }
+           }
+           
            if (sign_account == op.platform){
                FC_ASSERT(op.platform == op.poster, "platform receiptor ratio can`t change. ");
-               FC_ASSERT(op.platform == *(ext_para->receiptor), "platform receiptor ratio can`t change. ");
+               FC_ASSERT(op.platform == receiptor_uid, "platform receiptor ratio can`t change. ");
            }
 
-           auto iter = post->receiptors.find(*(ext_para->receiptor));
-           FC_ASSERT(iter != post->receiptors.end(), "receiptor:${r} not found.", ("r", *(ext_para->receiptor)));
+           auto iter = post->receiptors.find(receiptor_uid);
+           FC_ASSERT(iter != post->receiptors.end(), "receiptor:${r} not found.", ("r", receiptor_uid));
            if (ext_para->buyout_ratio.valid())
            {
                FC_ASSERT(iter->second.cur_ratio >= *(ext_para->buyout_ratio),
                    "the ratio ${r} of receiptor ${p} is less than sell ${sp} .",
-                   ("r", iter->second.cur_ratio)("p", *(ext_para->receiptor))("sp", *(ext_para->buyout_ratio)));
+                   ("r", iter->second.cur_ratio)("p", receiptor_uid)("sp", *(ext_para->buyout_ratio)));
                if (ext_para->receiptor == op.poster)
                {
                    if (op.poster == op.platform)
                       FC_ASSERT(iter->second.cur_ratio >= (*(ext_para->buyout_ratio) + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO + GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO),
                        "the ratio ${r} of poster ${p} will less than min ratio.",
-                       ("r", (iter->second.cur_ratio - *(ext_para->buyout_ratio)))("p", *(ext_para->receiptor)));
+                       ("r", (iter->second.cur_ratio - *(ext_para->buyout_ratio)))("p", receiptor_uid));
                    FC_ASSERT(iter->second.cur_ratio >= (*(ext_para->buyout_ratio) + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO),
                        "the ratio ${r} of poster ${p} will less than min ratio.",
-                       ("r", (iter->second.cur_ratio - *(ext_para->buyout_ratio)))("p", *(ext_para->receiptor)));
+                       ("r", (iter->second.cur_ratio - *(ext_para->buyout_ratio)))("p", receiptor_uid));
                }
            }
        }
-
-       if (ext_para->license_lid.valid())
-           d.get_license_by_platform(op.platform, *(ext_para->license_lid)); // make sure license exist
+       if (ext_para->forward_price.valid() || ext_para->permission_flags.valid() || ext_para->license_lid.valid()){
+           if (sign_account != op.poster){
+               const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
+               if (auth_object){
+                   if (ext_para->forward_price.valid())
+                       FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
+                       "the post permission of platform ${p} authorized by account ${a} is invalid. ",
+                       ("p", op.platform)("a", op.poster));
+                   if (ext_para->permission_flags.valid() || ext_para->license_lid.valid())
+                       FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
+                       "the post permission of platform ${p} authorized by account ${a} is invalid. ",
+                       ("p", op.platform)("a", op.poster));
+               }
+           }
+           if (ext_para->license_lid.valid()){
+               d.get_license_by_platform(op.platform, *(ext_para->license_lid)); // make sure license exist
+           }
+       }
    }
 
    return void_result();

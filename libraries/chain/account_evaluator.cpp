@@ -368,7 +368,8 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
                    account_auth_platform_object::Platform_Permission_Comment |
                    account_auth_platform_object::Platform_Permission_Reward |
                    account_auth_platform_object::Platform_Permission_Transfer |
-                   account_auth_platform_object::Platform_Permission_Post;
+                   account_auth_platform_object::Platform_Permission_Post |
+                   account_auth_platform_object::Platform_Permission_Content_Update;
            });
        }
        else{
@@ -388,7 +389,8 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
                    account_auth_platform_object::Platform_Permission_Comment |
                    account_auth_platform_object::Platform_Permission_Reward |
                    account_auth_platform_object::Platform_Permission_Transfer |
-                   account_auth_platform_object::Platform_Permission_Post;
+                   account_auth_platform_object::Platform_Permission_Post |
+                   account_auth_platform_object::Platform_Permission_Content_Update;
                if (ext_para->memo.valid())
                    obj.memo = *(ext_para->memo);
            });

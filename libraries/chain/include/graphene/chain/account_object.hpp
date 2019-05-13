@@ -718,13 +718,14 @@ namespace graphene { namespace chain {
    public:
        enum Platform_Auth_Permission
        {
-           Platform_Permission_Forward  = 1,   //allow forward 
-           Platform_Permission_Liked    = 2,   //allow liked or scored
-           Platform_Permission_Buyout   = 4,   //allow buyout
-           Platform_Permission_Comment  = 8,   //allow comment
-           Platform_Permission_Reward   = 16,  //allow reward
-           Platform_Permission_Transfer = 32,  //allow transfer
-           Platform_Permission_Post     = 64,  //allow post
+           Platform_Permission_Forward  = 1,        //allow forward 
+           Platform_Permission_Liked    = 2,        //allow liked or scored
+           Platform_Permission_Buyout   = 4,        //allow buyout
+           Platform_Permission_Comment  = 8,        //allow comment
+           Platform_Permission_Reward   = 16,       //allow reward
+           Platform_Permission_Transfer = 32,       //allow transfer
+           Platform_Permission_Post     = 64,       //allow post
+           Platform_Permission_Content_Update = 128 //allow content update
        };
 
        static const uint8_t space_id = implementation_ids;
@@ -742,7 +743,8 @@ namespace graphene { namespace chain {
                                         account_auth_platform_object::Platform_Permission_Comment |
                                         account_auth_platform_object::Platform_Permission_Reward |
                                         account_auth_platform_object::Platform_Permission_Transfer |
-                                        account_auth_platform_object::Platform_Permission_Post;
+                                        account_auth_platform_object::Platform_Permission_Post |
+                                        account_auth_platform_object::Platform_Permission_Content_Update;
        optional<memo_data>    memo;
 
        share_type get_auth_platform_usable_prepaid(share_type account_prepaid) const{

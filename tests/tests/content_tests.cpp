@@ -168,7 +168,8 @@ BOOST_AUTO_TEST_CASE(update_post_test)
                                                                                        account_auth_platform_object::Platform_Permission_Buyout |
                                                                                        account_auth_platform_object::Platform_Permission_Comment |
                                                                                        account_auth_platform_object::Platform_Permission_Reward |
-                                                                                       account_auth_platform_object::Platform_Permission_Post);
+                                                                                       account_auth_platform_object::Platform_Permission_Post |
+                                                                                       account_auth_platform_object::Platform_Permission_Content_Update);
       create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", {u_9000_private_key});
 
       post_operation::ext extensions;
@@ -241,7 +242,8 @@ BOOST_AUTO_TEST_CASE(score_test)
                                                                                         account_auth_platform_object::Platform_Permission_Buyout |
                                                                                         account_auth_platform_object::Platform_Permission_Comment |
                                                                                         account_auth_platform_object::Platform_Permission_Reward |
-                                                                                        account_auth_platform_object::Platform_Permission_Post);
+                                                                                        account_auth_platform_object::Platform_Permission_Post |
+                                                                                        account_auth_platform_object::Platform_Permission_Content_Update);
 
       post_operation::ext extensions;
       extensions.license_lid = 1;
@@ -312,7 +314,8 @@ BOOST_AUTO_TEST_CASE(reward_test)
                                                                                         account_auth_platform_object::Platform_Permission_Buyout |
                                                                                         account_auth_platform_object::Platform_Permission_Comment |
                                                                                         account_auth_platform_object::Platform_Permission_Reward |
-                                                                                        account_auth_platform_object::Platform_Permission_Post);
+                                                                                        account_auth_platform_object::Platform_Permission_Post | 
+                                                                                        account_auth_platform_object::Platform_Permission_Content_Update);
 
       post_operation::ext extensions;
       extensions.license_lid = 1;
@@ -414,7 +417,8 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
                                                                                         account_auth_platform_object::Platform_Permission_Buyout |
                                                                                         account_auth_platform_object::Platform_Permission_Comment |
                                                                                         account_auth_platform_object::Platform_Permission_Reward |
-                                                                                        account_auth_platform_object::Platform_Permission_Post);
+                                                                                        account_auth_platform_object::Platform_Permission_Post |
+                                                                                        account_auth_platform_object::Platform_Permission_Content_Update);
 
       post_operation::ext extensions;
       extensions.license_lid = 1;
@@ -690,7 +694,8 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
                                                                                          account_auth_platform_object::Platform_Permission_Comment |
                                                                                          account_auth_platform_object::Platform_Permission_Reward |
                                                                                          account_auth_platform_object::Platform_Permission_Transfer |
-                                                                                         account_auth_platform_object::Platform_Permission_Post);
+                                                                                         account_auth_platform_object::Platform_Permission_Post |
+                                                                                         account_auth_platform_object::Platform_Permission_Content_Update);
         transfer_extension({u_2000_private_key}, u_2000_id, u_2000_id, _core(10000), "", true, false);
         transfer_extension({u_9000_private_key}, u_2000_id, u_9000_id, _core(1000), "", false, true);
         const account_statistics_object& ant2000 = db.get_account_statistics_by_uid(u_2000_id);
@@ -728,7 +733,8 @@ BOOST_AUTO_TEST_CASE(account_auth_platform_test)
                                                                              account_auth_platform_object::Platform_Permission_Comment |
                                                                              account_auth_platform_object::Platform_Permission_Reward |
                                                                              account_auth_platform_object::Platform_Permission_Transfer |
-                                                                             account_auth_platform_object::Platform_Permission_Post);
+                                                                             account_auth_platform_object::Platform_Permission_Post |
+                                                                             account_auth_platform_object::Platform_Permission_Content_Update);
 
         const account_auth_platform_object& ant1000 = db.get_account_auth_platform_object_by_account_platform(u_1000_id, u_9000_id);
         BOOST_CHECK(ant1000.max_limit == 1000 * prec);
@@ -739,6 +745,7 @@ BOOST_AUTO_TEST_CASE(account_auth_platform_test)
         BOOST_CHECK(ant1000.permission_flags & account_auth_platform_object::Platform_Permission_Reward);
         BOOST_CHECK(ant1000.permission_flags & account_auth_platform_object::Platform_Permission_Transfer);
         BOOST_CHECK(ant1000.permission_flags & account_auth_platform_object::Platform_Permission_Post);
+        BOOST_CHECK(ant1000.permission_flags & account_auth_platform_object::Platform_Permission_Content_Update);
 
 
         account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 6000 * prec, 0);
@@ -752,6 +759,7 @@ BOOST_AUTO_TEST_CASE(account_auth_platform_test)
         BOOST_CHECK((ant10001.permission_flags & account_auth_platform_object::Platform_Permission_Reward)==0);
         BOOST_CHECK((ant10001.permission_flags & account_auth_platform_object::Platform_Permission_Transfer) == 0);
         BOOST_CHECK((ant10001.permission_flags & account_auth_platform_object::Platform_Permission_Post) == 0);
+        BOOST_CHECK((ant10001.permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) == 0);
     }
     catch (fc::exception& e) {
         edump((e.to_detail_string()));
@@ -814,7 +822,8 @@ BOOST_AUTO_TEST_CASE(post_test)
                                                                              account_auth_platform_object::Platform_Permission_Buyout |
                                                                              account_auth_platform_object::Platform_Permission_Comment |
                                                                              account_auth_platform_object::Platform_Permission_Reward |
-                                                                             account_auth_platform_object::Platform_Permission_Post);
+                                                                             account_auth_platform_object::Platform_Permission_Post |
+                                                                             account_auth_platform_object::Platform_Permission_Content_Update);
         sign_keys1.insert(u_9000_private_key);
 
         map<account_uid_type, Receiptor_Parameter> receiptors;
@@ -895,13 +904,15 @@ BOOST_AUTO_TEST_CASE(comment_test)
                                                                              account_auth_platform_object::Platform_Permission_Buyout |
                                                                              account_auth_platform_object::Platform_Permission_Comment |
                                                                              account_auth_platform_object::Platform_Permission_Reward |
-                                                                             account_auth_platform_object::Platform_Permission_Post);
+                                                                             account_auth_platform_object::Platform_Permission_Post | 
+                                                                             account_auth_platform_object::Platform_Permission_Content_Update);
         account_auth_platform(sign_keys2, u_2000_id, u_9000_id, 1000 * prec, account_auth_platform_object::Platform_Permission_Forward |
                                                                              account_auth_platform_object::Platform_Permission_Liked |
                                                                              account_auth_platform_object::Platform_Permission_Buyout |
                                                                              account_auth_platform_object::Platform_Permission_Comment |
                                                                              account_auth_platform_object::Platform_Permission_Reward |
-                                                                             account_auth_platform_object::Platform_Permission_Post);
+                                                                             account_auth_platform_object::Platform_Permission_Post |
+                                                                             account_auth_platform_object::Platform_Permission_Content_Update);
         sign_keys1.insert(u_9000_private_key);
         sign_keys2.insert(u_9000_private_key);
 
@@ -992,13 +1003,15 @@ BOOST_AUTO_TEST_CASE(forward_test)
                                                                                account_auth_platform_object::Platform_Permission_Buyout |
                                                                                account_auth_platform_object::Platform_Permission_Comment |
                                                                                account_auth_platform_object::Platform_Permission_Reward |
-                                                                               account_auth_platform_object::Platform_Permission_Post);
+                                                                               account_auth_platform_object::Platform_Permission_Post | 
+                                                                               account_auth_platform_object::Platform_Permission_Content_Update);
         account_auth_platform(sign_keys_2, u_2000_id, u_9001_id, 10000 * prec, account_auth_platform_object::Platform_Permission_Forward |
                                                                                account_auth_platform_object::Platform_Permission_Liked |
                                                                                account_auth_platform_object::Platform_Permission_Buyout |
                                                                                account_auth_platform_object::Platform_Permission_Comment |
                                                                                account_auth_platform_object::Platform_Permission_Reward |
-                                                                               account_auth_platform_object::Platform_Permission_Post);
+                                                                               account_auth_platform_object::Platform_Permission_Post | 
+                                                                               account_auth_platform_object::Platform_Permission_Content_Update);
         sign_keys_1.insert(u_9000_private_key);
         sign_keys_2.insert(u_9001_private_key);
         bool do_by_platform = true; // modify to false , change to do_by_account
@@ -1113,13 +1126,15 @@ BOOST_AUTO_TEST_CASE(buyout_test)
                                                                                account_auth_platform_object::Platform_Permission_Buyout |
                                                                                account_auth_platform_object::Platform_Permission_Comment |
                                                                                account_auth_platform_object::Platform_Permission_Reward |
-                                                                               account_auth_platform_object::Platform_Permission_Post);
+                                                                               account_auth_platform_object::Platform_Permission_Post | 
+                                                                               account_auth_platform_object::Platform_Permission_Content_Update);
         account_auth_platform(sign_keys_2, u_2000_id, u_9000_id, 10000 * prec, account_auth_platform_object::Platform_Permission_Forward |
                                                                                account_auth_platform_object::Platform_Permission_Liked |
                                                                                account_auth_platform_object::Platform_Permission_Buyout |
                                                                                account_auth_platform_object::Platform_Permission_Comment |
                                                                                account_auth_platform_object::Platform_Permission_Reward |
-                                                                               account_auth_platform_object::Platform_Permission_Post);
+                                                                               account_auth_platform_object::Platform_Permission_Post |
+                                                                               account_auth_platform_object::Platform_Permission_Content_Update);
         sign_keys_1.insert(u_9000_private_key);
         sign_keys_2.insert(u_9000_private_key);
         bool do_by_platform = true; // modify to false , change to do_by_account
