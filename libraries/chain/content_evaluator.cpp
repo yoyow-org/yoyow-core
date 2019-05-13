@@ -530,17 +530,6 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                d.get_account_by_uid(iter_receiptor.first);
            }
        }
-
-       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-       if (dpo.content_award_enable)
-       {
-           const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-           auto apt_itr = apt_idx.find(std::make_tuple(op.platform, op.poster, dpo.current_active_post_sequence, op.post_pid));
-           if (apt_itr != apt_idx.end())
-           {
-               active_post = &(*apt_itr);
-           }
-       }
    }
 
    return void_result();
@@ -572,34 +561,9 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             obj.prepaid -= forwardprice;
          });
 
-         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-         if (dpo.content_award_enable)
-         {
-            if (!active_post)
-            {
-               time_point_sec expiration_time = origin_post->create_time;
-               expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration;
-               if (expiration_time >= d.head_block_time())
-               {
-                  active_post = &d.create<active_post_object>([&](active_post_object& obj)
-                  {
-                     obj.platform = *o.origin_platform;
-                     obj.poster = *o.origin_poster;
-                     obj.post_pid = *o.origin_post_pid;
-                     obj.period_sequence = dpo.current_active_post_sequence;
-                  });
-               }
-            }
-            if (active_post){
-               d.modify(*active_post, [&](active_post_object& obj)
-               {
-                  obj.forward_award += forwardprice.value;
-               });
-            }
-         }
-
          uint128_t amount(forwardprice.value);
          uint128_t surplus = amount;
+         flat_map<account_uid_type, share_type> receiptors;
          for (auto iter : origin_post->receiptors)
          {
             if (iter.first == origin_post->platform)
@@ -610,18 +574,48 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             {
                obj.prepaid += temp.convert_to<int64_t>();
             });
-            if (active_post && dpo.content_award_enable)
-            {
-               d.modify(*active_post, [&](active_post_object& obj)
-               {
-                  obj.insert_receiptor(iter.first, 0, temp.convert_to<int64_t>());
-               });
-            }
+            receiptors.emplace(iter.first, temp);
          }
+         receiptors.emplace(origin_post->platform, surplus);
          d.modify(d.get_account_statistics_by_uid(origin_post->platform), [&](account_statistics_object& obj)
          {
             obj.prepaid += surplus.convert_to<int64_t>();
          });
+
+         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+         if (dpo.content_award_enable)
+         {
+            const active_post_object* active_post = nullptr;
+            const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
+            auto apt_itr = apt_idx.find(std::make_tuple(o.platform, o.poster, dpo.current_active_post_sequence, o.post_pid));
+            if (apt_itr != apt_idx.end())
+            {
+               d.modify(*apt_itr, [&](active_post_object& obj)
+               {
+                  obj.forward_award += forwardprice.value;
+                  for (const auto& p : receiptors)
+                     obj.insert_receiptor(p.first, 0, p.second);
+               });
+            }
+            else
+            {
+               time_point_sec expiration_time = origin_post->create_time;
+               expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration;
+               if (expiration_time >= d.head_block_time())
+               {
+                  d.create<active_post_object>([&](active_post_object& obj)
+                  {
+                     obj.platform = *o.origin_platform;
+                     obj.poster = *o.origin_poster;
+                     obj.post_pid = *o.origin_post_pid;
+                     obj.period_sequence = dpo.current_active_post_sequence;
+                     obj.forward_award += forwardprice.value;
+                     for (const auto& p : receiptors)
+                      obj.insert_receiptor(p.first, 0, p.second);
+                  });
+               }
+            }
+         }
 
          const platform_object* plat_obj = d.find_platform_by_owner(origin_post->platform);
          if (plat_obj){
@@ -629,14 +623,6 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
              {
                  obj.add_period_profits(dpo.current_active_post_sequence, d.get_active_post_periods(), asset(), surplus.convert_to<int64_t>(), 0, 0);
              });
-         }
-        
-         if (active_post && dpo.content_award_enable)
-         {
-            d.modify(*active_post, [&](active_post_object& obj)
-            {
-               obj.insert_receiptor(origin_post->platform, 0, surplus.convert_to<int64_t>());
-            });
          }
       }
 
