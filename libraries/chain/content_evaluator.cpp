@@ -473,7 +473,7 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
        if (auth_object && ext_para->post_type == post_operation::Post_Type::Post_Type_Post)
            FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Post) > 0,
                "the post permission of platform ${p} authorized by account ${a} is invalid. ",
-               ("p", op.platform)("a", op.poster));
+               ("p", auth_object->platform)("a", op.poster));
 
        if (ext_para->post_type == post_operation::Post_Type::Post_Type_Comment)
        {
@@ -489,7 +489,7 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
            if (auth_object)
                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Comment) > 0,
                    "the comment permission of platform ${p} authorized by account ${a} is invalid. ",
-                   ("p", op.platform)("a", op.poster)); 
+                   ("p", auth_object->platform)("a", op.poster));
        }
        if (ext_para->post_type == post_operation::Post_Type::Post_Type_forward
            || ext_para->post_type == post_operation::Post_Type::Post_Type_forward_And_Modify)
@@ -509,8 +509,8 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 
            if (auth_object)
                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
-                   "the proxy_post of platform ${p} authorized by account ${a} is invalid. ",
-                   ("p", op.platform)("a", op.poster));
+                   "the forward permission of platform ${p} authorized by account ${a} is invalid. ",
+                   ("p", auth_object->platform)("a", op.poster));
                
            FC_ASSERT(account_stats->prepaid >= *(origin_post->forward_price),
                "Insufficient balance: unable to forward, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
@@ -586,7 +586,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
          if (dpo.content_award_enable)
          {
             const auto& apt_idx = d.get_index_type<active_post_index>().indices().get<by_post_pid>();
-            auto apt_itr = apt_idx.find(std::make_tuple(o.platform, o.poster, dpo.current_active_post_sequence, o.post_pid));
+            auto apt_itr = apt_idx.find(std::make_tuple(*o.origin_platform, *o.origin_poster, dpo.current_active_post_sequence, *o.origin_post_pid));
             if (apt_itr != apt_idx.end())
             {
                d.modify(*apt_itr, [&](active_post_object& obj)
@@ -690,8 +690,8 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
    account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
 
    if (d.head_block_time() >= HARDFORK_0_4_TIME){
-       FC_ASSERT(op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid() || op.extensions.valid(), "Should change something");
        bool is_update_content = op.hash_value.valid() || op.extra_data.valid() || op.title.valid() || op.body.valid();
+       FC_ASSERT(is_update_content || op.extensions.valid(), "Should change something");
        if (is_update_content){
            FC_ASSERT((poster_account != nullptr && poster_account->can_post), "poster ${uid} is not allowed to post.", ("uid", op.poster));
            FC_ASSERT((account_stats != nullptr && account_stats->last_post_sequence >= op.post_pid), "post_pid ${pid} is invalid.", ("pid", op.post_pid));
@@ -701,8 +701,8 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
            const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
            if (is_update_content && auth_object)
                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
-               "the post permission of platform ${p} authorized by account ${a} is invalid. ",
-               ("p", op.platform)("a", op.poster));
+               "the content update permission of platform ${p} authorized by account ${a} is invalid. ",
+               ("p", auth_object->platform)("a", op.poster));
        }
    }
    else{
@@ -726,14 +726,9 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
                const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(receiptor_uid, sign_account_receiptor);
                if (auth_object){
                    FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
-                       "the post permission of platform ${p} authorized by account ${a} is invalid. ",
-                       ("p", op.platform)("a", op.poster));
+                       "the buyout permission of platform ${p} authorized by account ${a} is invalid. ",
+                       ("p", auth_object->platform)("a", receiptor_uid));
                }
-           }
-           
-           if (sign_account == op.platform){
-               FC_ASSERT(op.platform == op.poster, "platform receiptor ratio can`t change. ");
-               FC_ASSERT(op.platform == receiptor_uid, "platform receiptor ratio can`t change. ");
            }
 
            auto iter = post->receiptors.find(receiptor_uid);
@@ -761,12 +756,12 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
                if (auth_object){
                    if (ext_para->forward_price.valid())
                        FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
-                       "the post permission of platform ${p} authorized by account ${a} is invalid. ",
-                       ("p", op.platform)("a", op.poster));
+                       "the forward permission of platform ${p} authorized by account ${a} is invalid. ",
+                       ("p", auth_object->platform)("a", op.poster));
                    if (ext_para->permission_flags.valid() || ext_para->license_lid.valid())
                        FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
-                       "the post permission of platform ${p} authorized by account ${a} is invalid. ",
-                       ("p", op.platform)("a", op.poster));
+                       "the content update permission of platform ${p} authorized by account ${a} is invalid. ",
+                       ("p", auth_object->platform)("a", op.poster));
                }
            }
            if (ext_para->license_lid.valid()){
@@ -848,7 +843,7 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
             if (auth_object)
                 FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Liked) > 0,
                     "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
-                    ("p", sign_account)("a", op.from_account_uid));
+                    ("p", auth_object->platform)("a", op.from_account_uid));
         }
 		FC_ASSERT(account_stats->csaf >= op.csaf,
                   "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less than needed [${n}]",
@@ -1047,7 +1042,7 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
         auth_object = &d.get_account_auth_platform_object_by_account_platform(op.from_account_uid, op.platform);
         FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Reward) > 0,
             "the reward permisson of platform ${p} authorized by account ${a} is invalid. ",
-            ("p", op.platform)("a", op.poster));  
+            ("p", auth_object->platform)("a", op.from_account_uid));
         FC_ASSERT(account_stats->prepaid >= op.amount, 
                   "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", op.amount));
@@ -1192,7 +1187,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
         if (auth_object){
             FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
                 "the buyout permisson of platform ${p} authorized by account ${a} is invalid. ",
-                ("p", op.platform)("a", op.from_account_uid));
+                ("p", auth_object->platform)("a", op.from_account_uid));
 
             if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
             {
