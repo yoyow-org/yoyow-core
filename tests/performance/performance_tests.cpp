@@ -183,6 +183,94 @@ BOOST_AUTO_TEST_CASE(post_performance_test)
     wlog("Create ${aps} accounts/s over ${total}ms",
         ("aps", (cycles * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
 }
+
+BOOST_AUTO_TEST_CASE(content_performance_test)
+{
+   try{
+      ACTORS((1000)(1001));
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+      transfer(committee_account, u_1001_id, _core(10000));
+      add_csaf_for_account(u_1001_id, 10000);
+
+      //create post
+      flat_set<fc::ecc::private_key> sign_keys;
+      sign_keys.insert(u_1001_private_key);
+      create_platform(u_1001_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+      create_license(u_1001_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
+
+      flat_set<fc::ecc::private_key> sign_keys1;
+      sign_keys1.insert(u_1000_private_key);
+      account_auth_platform(sign_keys1, u_1000_id, u_1001_id, 1000 * prec, 255);
+
+      map<account_uid_type, Receiptor_Parameter> receiptors;
+      receiptors.insert(std::make_pair(u_1001_id, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, false, 0, 0 }));
+      receiptors.insert(std::make_pair(u_1000_id, Receiptor_Parameter{ 7500, false, 0, 0 }));
+      post_operation::ext extension;
+      extension.post_type = post_operation::Post_Type_Post;
+      extension.forward_price = 10000 * prec;
+      extension.receiptors = receiptors;
+      extension.license_lid = 1;
+      extension.permission_flags = 31;
+
+      create_post({ u_1000_private_key, u_1001_private_key }, u_1001_id, u_1000_id, "6666666", "document name",
+         "document body", "extra", optional<account_uid_type>(), optional<account_uid_type>(),
+         optional<post_pid_type>(), extension);
+
+      const uint64_t cycles = 200000;
+      uint64_t total_time = 0;
+      std::vector<signed_transaction> transactions;
+      transactions.reserve(cycles);
+
+      //score test
+      {
+         flat_map<account_uid_type, fc::ecc::private_key> score_map;
+         actor(1003, cycles, score_map);
+
+         score_create_operation score_op;
+         score_op.platform = u_1001_id;
+         score_op.poster = u_1000_id;
+         score_op.post_pid = 1;
+         score_op.score = 5;
+         score_op.csaf = 20;
+
+         for (const auto& a : score_map)
+         {
+            score_op.from_account_uid = a.first;
+            signed_transaction tx;
+            tx.operations.push_back(score_op);
+            set_operation_fees(tx, db.current_fee_schedule());
+            test::set_expiration(db, tx);
+            tx.validate();
+            transactions.push_back(tx);
+            tx.operations.clear();
+            add_csaf_for_account(a.first, 10000);
+            account_auth_platform({ a.second }, a.first, u_1001_id, 1000 * prec, 255);
+         }
+
+         auto start = fc::time_point::now();
+         for (uint32_t i = 0; i < cycles; ++i)
+         {
+            auto result = db.apply_transaction(transactions[i]);
+         }
+         auto end = fc::time_point::now();
+         auto elapsed = end - start;
+         total_time += elapsed.count();
+         wlog("Create ${aps} score/s over ${total}ms",
+            ("aps", (cycles * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
+      }
+      //reward
+      {
+
+      }
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 /*
 BOOST_AUTO_TEST_CASE( transfer_benchmark )
 {
