@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(post_performance_test)
         ("aps", (cycles * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
 }
 
-BOOST_AUTO_TEST_CASE(content_performance_test)
+BOOST_AUTO_TEST_CASE(post_performance_test_2)
 {
    try{
       ACTORS((1000)(1001));
@@ -223,11 +223,11 @@ BOOST_AUTO_TEST_CASE(content_performance_test)
       std::vector<signed_transaction> transactions;
       transactions.reserve(cycles);
 
+      flat_map<account_uid_type, fc::ecc::private_key> account_map;
+      actor(1003, cycles, account_map);
+
       //score test
       {
-         flat_map<account_uid_type, fc::ecc::private_key> score_map;
-         actor(1003, cycles, score_map);
-
          score_create_operation score_op;
          score_op.platform = u_1001_id;
          score_op.poster = u_1000_id;
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE(content_performance_test)
          score_op.score = 5;
          score_op.csaf = 20;
 
-         for (const auto& a : score_map)
+         for (const auto& a : account_map)
          {
             score_op.from_account_uid = a.first;
             signed_transaction tx;
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(content_performance_test)
             transactions.push_back(tx);
             tx.operations.clear();
             add_csaf_for_account(a.first, 10000);
-            account_auth_platform({ a.second }, a.first, u_1001_id, 1000 * prec, 255);
+            account_manage(a.first, { true, true, true });
          }
 
          auto start = fc::time_point::now();
@@ -257,11 +257,45 @@ BOOST_AUTO_TEST_CASE(content_performance_test)
          auto end = fc::time_point::now();
          auto elapsed = end - start;
          total_time += elapsed.count();
+         //result: Create 2712 score/s over 73743ms
          wlog("Create ${aps} score/s over ${total}ms",
             ("aps", (cycles * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
+
       }
+
+      transactions.clear();
+
       //reward
       {
+         reward_operation reward_op;
+         reward_op.platform = u_1001_id;
+         reward_op.poster = u_1000_id;
+         reward_op.post_pid = 1;
+         reward_op.amount = asset(100000);
+         for (const auto& a : account_map)
+         {
+            reward_op.from_account_uid = a.first;
+            signed_transaction tx;
+            tx.operations.push_back(reward_op);
+            set_operation_fees(tx, db.current_fee_schedule());
+            test::set_expiration(db, tx);
+            tx.validate();
+            transactions.push_back(tx);
+            tx.operations.clear();
+            transfer(committee_account, a.first, _core(100));
+         }
+
+         auto start = fc::time_point::now();
+         for (uint32_t i = 0; i < cycles; ++i)
+         {
+            auto result = db.apply_transaction(transactions[i]);
+         }
+         auto end = fc::time_point::now();
+         auto elapsed = end - start;
+         total_time += elapsed.count();
+         //result: 2639 reward/s over 75761ms
+         wlog("${aps} reward/s over ${total}ms",
+            ("aps", (cycles * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
 
       }
    }
