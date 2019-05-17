@@ -305,23 +305,49 @@ BOOST_AUTO_TEST_CASE(post_performance_test_2)
    }
 }
 
-/*
+
 BOOST_AUTO_TEST_CASE( transfer_benchmark )
 {
-   fc::ecc::private_key nathan_key = fc::ecc::private_key::generate();
-   const key_object& key = register_key(nathan_key.get_public_key());
-   const auto& committee_account = account_id_type()(db);
-   auto start = fc::time_point::now();
-   for( uint32_t i = 0; i < 1000*1000; ++i )
-   {
-      const auto& a = create_account("a"+fc::to_string(i), key.id);
-      transfer( committee_account, a, asset(1000) );
+   try{
+      flat_map<account_uid_type, fc::ecc::private_key> account_map;
+      actor(1003, 200000, account_map);
+
+      const uint64_t cycles = 200000;
+      std::vector<signed_transaction> transactions;
+      transactions.reserve(cycles);
+
+      transfer_operation trans_op;
+      trans_op.from = committee_account;
+      trans_op.amount = asset(1000);
+
+      for (const auto& a : account_map)
+      {
+         trans_op.to = a.first;
+         signed_transaction tx;
+         tx.operations.push_back(trans_op);
+         set_operation_fees(tx, db.current_fee_schedule());
+         test::set_expiration(db, tx);
+         tx.validate();
+         transactions.push_back(tx);
+         tx.operations.clear();
+      }
+      auto start = fc::time_point::now();
+      for (uint32_t i = 0; i < cycles; ++i)
+      {
+         auto result = db.apply_transaction(transactions[i]);
+      }
+      auto end = fc::time_point::now();
+      auto elapsed = end - start;
+      //result: 3035 transfer/s over 65881ms
+      wlog("${aps} transfer/s over ${total}ms",
+         ("aps", (cycles * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
    }
-   auto end = fc::time_point::now();
-   auto elapsed = end - start;
-   wdump( (elapsed) );
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
 }
-*/
+
 
 // See https://bitshares.org/blog/2015/06/08/measuring-performance/
 // (note this is not the original test mentioned in the above post, but was
