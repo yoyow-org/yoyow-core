@@ -296,14 +296,14 @@ struct database_fixture {
       const voting_opinion_type opinion
       );
 
-   void database_fixture::create_platform(account_uid_type owner_account,
+   void create_platform(account_uid_type owner_account,
       string name,
       asset pledge_amount,
       string url,
       string extra_data,
       flat_set<fc::ecc::private_key> sign_keys);
 
-   void database_fixture::update_platform_votes(account_uid_type voting_account,
+   void update_platform_votes(account_uid_type voting_account,
       flat_set<account_uid_type> platforms_to_add,
       flat_set<account_uid_type> platforms_to_remove,
       flat_set<fc::ecc::private_key> sign_keys
@@ -316,21 +316,21 @@ struct database_fixture {
       asset amount,
       flat_set<fc::ecc::private_key> sign_keys);
 
-   void database_fixture::reward_post_proxy_by_platform(account_uid_type from_account,
+   void reward_post_proxy_by_platform(account_uid_type from_account,
       account_uid_type platform,
       account_uid_type poster,
       post_pid_type    post_pid,
       uint64_t         amount,
       flat_set<fc::ecc::private_key> sign_keys);
 
-   void database_fixture::buyout_post(account_uid_type from_account,
+   void buyout_post(account_uid_type from_account,
       account_uid_type platform,
       account_uid_type poster,
       post_pid_type    post_pid,
       account_uid_type receiptor_account,
       flat_set<fc::ecc::private_key> sign_keys);
 
-   void database_fixture::create_license(account_uid_type platform,
+   void create_license(account_uid_type platform,
       uint8_t license_type,
       string  hash_value,
       string  title,
@@ -405,7 +405,7 @@ struct database_fixture {
 
 
    void account_manage(account_uid_type account, account_manage_operation::opt options);
-   void database_fixture::account_manage(account_uid_type executor,
+   void account_manage(account_uid_type executor,
       account_uid_type account,
       account_manage_operation::opt options
       );
@@ -449,7 +449,7 @@ struct database_fixture {
                            advertising_aid_type           advertising_aoid,
                            advertising_order_oid_type     advertising_order_oid);
 
-   void database_fixture::create_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
+   void create_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type create_account,
       custom_vote_vid_type  custom_vote_vid,
       string           title,
@@ -461,7 +461,7 @@ struct database_fixture {
       uint8_t          maximum_selected_items,
       vector<string>   options);
 
-   void database_fixture::cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
+   void cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type      voter,
       account_uid_type      custom_vote_creater,
       custom_vote_vid_type  custom_vote_vid,
