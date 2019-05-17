@@ -36,24 +36,26 @@
 #include "../common/database_fixture.hpp"
 
 using namespace graphene::chain;
+using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( performance_tests, database_fixture )
 
 BOOST_AUTO_TEST_CASE( sigcheck_benchmark )
 {
-   fc::ecc::private_key nathan_key = fc::ecc::private_key::generate();
-   auto digest = fc::sha256::hash("hello");
-   auto sig = nathan_key.sign_compact( digest );
-   auto start = fc::time_point::now();
-   for( uint32_t i = 0; i < 100000; ++i )
-      auto pub = fc::ecc::public_key( sig, digest );
-   auto end = fc::time_point::now();
-   auto elapsed = end-start;
-   wdump( ((100000.0*1000000.0) / elapsed.count()) );
+   //fc::ecc::private_key nathan_key = fc::ecc::private_key::generate();
+   //auto digest = fc::sha256::hash("hello");
+   //auto sig = nathan_key.sign_compact( digest );
+   //auto start = fc::time_point::now();
+   //for( uint32_t i = 0; i < 100000; ++i )
+   //   auto pub = fc::ecc::public_key( sig, digest );
+   //auto end = fc::time_point::now();
+   //auto elapsed = end-start;
+   //wdump( ((100000.0*1000000.0) / elapsed.count()) );
 }
 
 BOOST_AUTO_TEST_CASE(post_performance_test)
 {
+    try{
     ACTORS((1000)(9000));
     const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
     auto _core = [&](int64_t x) -> asset
@@ -77,22 +79,14 @@ BOOST_AUTO_TEST_CASE(post_performance_test)
                                                                          account_auth_platform_object::Platform_Permission_Post |
                                                                          account_auth_platform_object::Platform_Permission_Content_Update);
 
-    const uint64_t cycles = 200000;
+    const uint64_t cycles = 20000;
     uint64_t total_time = 0;
-    std::vector<account_id_type> accounts;
-    accounts.reserve(cycles + 1);
-    std::vector<asset_id_type> assets;
-    assets.reserve(cycles);
     std::vector<signed_transaction> transactions;
     transactions.reserve(cycles);
 
-    map<account_uid_type, Receiptor_Parameter> receiptors;
-    receiptors.insert(std::make_pair(u_9000_id, Receiptor_Parameter{ GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, false, 0, 0 }));
-    receiptors.insert(std::make_pair(u_1000_id, Receiptor_Parameter{ 7500, false, 0, 0 }));
     post_operation::ext extension;
     extension.post_type = post_operation::Post_Type_Post;
-    extension.forward_price = 10000*prec;
-    extension.receiptors = receiptors;
+    extension.forward_price = 10*prec;
     extension.license_lid = 1;
     extension.permission_flags = post_object::Post_Permission_Forward |
                                  post_object::Post_Permission_Liked |
@@ -102,7 +96,6 @@ BOOST_AUTO_TEST_CASE(post_performance_test)
 
     const account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(u_1000_id);
     post_operation create_op;
-    create_op.post_pid = poster_account_statistics.last_post_sequence + i;
     create_op.platform = u_9000_id;
     create_op.poster = u_1000_id;
     create_op.hash_value = "6666666";
@@ -113,13 +106,13 @@ BOOST_AUTO_TEST_CASE(post_performance_test)
     create_op.extensions->value = extension;
 
     for (uint32_t i = 0; i < cycles; ++i){
+        create_op.post_pid = poster_account_statistics.last_post_sequence + i + 1;
         signed_transaction tx;
         tx.operations.push_back(create_op);
         set_operation_fees(tx, db.current_fee_schedule());
         test::set_expiration(db, tx);
         tx.validate();
         transactions.push_back(tx);
-        tx.operations.clear();
     }
 
     auto start = fc::time_point::now();
@@ -133,55 +126,222 @@ BOOST_AUTO_TEST_CASE(post_performance_test)
     wlog("Create ${aps} post/s over ${total}ms",
         ("aps", (cycles * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
 
-    //comment post test
-
-    const fc::ecc::private_key nathan_key = fc::ecc::private_key::generate();
-    const fc::ecc::public_key  nathan_pub = nathan_key.get_public_key();
-
-    
-    uint64_t total_time = 0;
-    uint64_t total_count = 0;
-    std::vector<account_id_type> accounts;
-    accounts.reserve(cycles + 1);
-    std::vector<asset_id_type> assets;
-    assets.reserve(cycles);
-
-    std::vector<signed_transaction> transactions;
-    transactions.reserve(cycles);
-
-    //post test
-    account_reg_info reginfo;
-
-    account_create_operation aco;
-    aco.name = "a1";
-    aco.reg_info = reginfo;
-    aco.owner = authority(1, public_key_type(nathan_pub), 1);
-    aco.active = authority(1, public_key_type(nathan_pub), 1);
-    aco.secondary = authority(1, public_key_type(nathan_pub), 1);
-
-    aco.fee = db.current_fee_schedule().calculate_fee(aco);
-    //trx.clear();
-    test::set_expiration(db, trx);
-    for (uint32_t i = 0; i < cycles; ++i)
-    {
-        aco.name = "a" + fc::to_string(i);
-        trx.operations.push_back(aco);
-        transactions.push_back(trx);
-        trx.operations.clear();
-        ++total_count;
     }
-
-    auto start = fc::time_point::now();
-    for (uint32_t i = 0; i < cycles; ++i)
-    {
-        auto result = db.apply_transaction(transactions[i], ~0);
-        accounts[i] = result.operation_results[0].get<object_id_type>();
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
     }
-    auto end = fc::time_point::now();
-    auto elapsed = end - start;
-    total_time += elapsed.count();
-    wlog("Create ${aps} accounts/s over ${total}ms",
-        ("aps", (cycles * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
+}
+
+BOOST_AUTO_TEST_CASE(comment_performance_test)
+{
+    try{
+        //comment post test
+        ACTORS((1000)(9000));
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+        auto _core = [&](int64_t x) -> asset
+        {  return asset(x*prec);    };
+        transfer(committee_account, u_9000_id, _core(10000));
+        add_csaf_for_account(u_9000_id, 10000);
+
+        // post
+        flat_set<fc::ecc::private_key> sign_keys;
+        sign_keys.insert(u_9000_private_key);
+        create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+        create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
+
+        flat_set<fc::ecc::private_key> sign_keys1;
+        sign_keys1.insert(u_1000_private_key);
+        account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 1000 * prec, account_auth_platform_object::Platform_Permission_Forward |
+            account_auth_platform_object::Platform_Permission_Liked |
+            account_auth_platform_object::Platform_Permission_Buyout |
+            account_auth_platform_object::Platform_Permission_Comment |
+            account_auth_platform_object::Platform_Permission_Reward |
+            account_auth_platform_object::Platform_Permission_Post |
+            account_auth_platform_object::Platform_Permission_Content_Update);
+
+        post_operation::ext extension;
+        extension.post_type = post_operation::Post_Type_Post;
+        extension.forward_price = 10 * prec;
+        extension.license_lid = 1;
+        extension.permission_flags = post_object::Post_Permission_Forward |
+            post_object::Post_Permission_Liked |
+            post_object::Post_Permission_Buyout |
+            post_object::Post_Permission_Comment |
+            post_object::Post_Permission_Reward;
+
+        create_post(sign_keys1, u_9000_id, u_1000_id, "6666666", "document name", "document body", "extra", optional<account_uid_type>(), optional<account_uid_type>(), optional<post_pid_type>(), extension);
+
+        const uint64_t cycles = 20000;
+        uint64_t total_time = 0;
+        std::vector<signed_transaction> transactions;
+        transactions.reserve(cycles);
+        const fc::ecc::private_key nathan_key = fc::ecc::private_key::generate();
+        const fc::ecc::public_key  nathan_pub = nathan_key.get_public_key();
+        std::vector<account_uid_type> accounts;
+        accounts.reserve(cycles + 1);
+
+        for (uint32_t i = 0; i < cycles; ++i){
+            account_uid_type uid = graphene::chain::calc_account_uid(10101 + i);
+            accounts.push_back(create_account(uid, "a" + fc::to_string(i), nathan_pub).uid);
+            account_manage(accounts[i], account_manage_operation::opt{ true, true, true });
+            add_csaf_for_account(accounts[i], 1000);
+            //transfer(committee_account, accounts[i], _core(200));
+            //transfer_extension({ nathan_key }, accounts[i], accounts[i], _core(100), "", true, false);
+            account_auth_platform({ nathan_key }, accounts[i], u_9000_id, 1000 * prec, account_auth_platform_object::Platform_Permission_Forward |
+                account_auth_platform_object::Platform_Permission_Liked |
+                account_auth_platform_object::Platform_Permission_Buyout |
+                account_auth_platform_object::Platform_Permission_Comment |
+                account_auth_platform_object::Platform_Permission_Reward |
+                account_auth_platform_object::Platform_Permission_Post |
+                account_auth_platform_object::Platform_Permission_Content_Update);
+        }
+
+        extension.post_type = post_operation::Post_Type_Comment;
+        for (uint32_t i = 0; i < cycles; ++i){
+            const account_statistics_object& comment_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
+            post_operation comment_op;
+            comment_op.platform = u_9000_id;
+            comment_op.poster = accounts[i];
+            comment_op.post_pid = comment_account_statistics.last_post_sequence + 1;
+            comment_op.hash_value = "6666666";
+            comment_op.extra_data = "extra";
+            comment_op.title = "comment name";
+            comment_op.body = "comment body";
+            comment_op.origin_platform = u_9000_id;
+            comment_op.origin_poster = u_1000_id;
+            comment_op.origin_post_pid = 1;
+            comment_op.extensions = graphene::chain::extension<post_operation::ext>();
+            comment_op.extensions->value = extension;
+
+            signed_transaction tx;
+            tx.operations.push_back(comment_op);
+            set_operation_fees(tx, db.current_fee_schedule());
+            test::set_expiration(db, tx);
+            tx.validate();
+            transactions.push_back(tx);
+        }
+
+        auto start2 = fc::time_point::now();
+        for (uint32_t i = 0; i < cycles; ++i)
+        {
+            auto result = db.apply_transaction(transactions[i]);
+        }
+        auto end2 = fc::time_point::now();
+        auto elapsed2 = end2 - start2;
+        total_time += elapsed2.count();
+        wlog("Comment ${aps} post/s over ${total}ms",
+            ("aps", (cycles * 1000000) / elapsed2.count())("total", elapsed2.count() / 1000));
+    }
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(forward_performance_test)
+{
+    try{
+        ACTORS((1000)(9000));
+        const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+        auto _core = [&](int64_t x) -> asset
+        {  return asset(x*prec);    };
+        transfer(committee_account, u_9000_id, _core(10000));
+        add_csaf_for_account(u_9000_id, 10000);
+
+        // post
+        flat_set<fc::ecc::private_key> sign_keys;
+        sign_keys.insert(u_9000_private_key);
+        create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+        create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
+
+        flat_set<fc::ecc::private_key> sign_keys1;
+        sign_keys1.insert(u_1000_private_key);
+        account_auth_platform(sign_keys1, u_1000_id, u_9000_id, 1000 * prec, account_auth_platform_object::Platform_Permission_Forward |
+            account_auth_platform_object::Platform_Permission_Liked |
+            account_auth_platform_object::Platform_Permission_Buyout |
+            account_auth_platform_object::Platform_Permission_Comment |
+            account_auth_platform_object::Platform_Permission_Reward |
+            account_auth_platform_object::Platform_Permission_Post |
+            account_auth_platform_object::Platform_Permission_Content_Update);
+
+        post_operation::ext extension;
+        extension.post_type = post_operation::Post_Type_Post;
+        extension.forward_price = 10 * prec;
+        extension.license_lid = 1;
+        extension.permission_flags = post_object::Post_Permission_Forward |
+            post_object::Post_Permission_Liked |
+            post_object::Post_Permission_Buyout |
+            post_object::Post_Permission_Comment |
+            post_object::Post_Permission_Reward;
+
+        create_post(sign_keys1, u_9000_id, u_1000_id, "6666666", "document name", "document body", "extra", optional<account_uid_type>(), optional<account_uid_type>(), optional<post_pid_type>(), extension);
+
+        const uint64_t cycles = 20000;
+        uint64_t total_time = 0;
+        std::vector<signed_transaction> transactions;
+        transactions.reserve(cycles);
+        const fc::ecc::private_key nathan_key = fc::ecc::private_key::generate();
+        const fc::ecc::public_key  nathan_pub = nathan_key.get_public_key();
+        std::vector<account_uid_type> accounts;
+        accounts.reserve(cycles + 1);
+        for (uint32_t i = 0; i < cycles; ++i){
+            account_uid_type uid = graphene::chain::calc_account_uid(10101 + i);
+            accounts.push_back(create_account(uid, "a" + fc::to_string(i), nathan_pub).uid);
+            //account_manage(accounts[i], account_manage_operation::opt{ true, true, true });
+            add_csaf_for_account(accounts[i], 1000);
+            transfer(committee_account, accounts[i], _core(200));
+            transfer_extension({ nathan_key }, accounts[i], accounts[i], _core(100), "", true, false);
+            account_auth_platform({ nathan_key }, accounts[i], u_9000_id, 1000 * prec, account_auth_platform_object::Platform_Permission_Forward |
+                account_auth_platform_object::Platform_Permission_Liked |
+                account_auth_platform_object::Platform_Permission_Buyout |
+                account_auth_platform_object::Platform_Permission_Comment |
+                account_auth_platform_object::Platform_Permission_Reward |
+                account_auth_platform_object::Platform_Permission_Post |
+                account_auth_platform_object::Platform_Permission_Content_Update);
+        }
+
+        //forward post test
+        extension.post_type = post_operation::Post_Type_forward;
+        for (uint32_t i = 0; i < cycles; ++i){
+            const account_statistics_object& forward_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
+            post_operation forward_op;
+            forward_op.platform = u_9000_id;
+            forward_op.poster = accounts[i];
+            forward_op.post_pid = forward_account_statistics.last_post_sequence + 1;
+            forward_op.hash_value = "6666666";
+            forward_op.extra_data = "extra";
+            forward_op.title = "forward_op name";
+            forward_op.body = "forward_op body";
+            forward_op.origin_platform = u_9000_id;
+            forward_op.origin_poster = u_1000_id;
+            forward_op.origin_post_pid = 1;
+            forward_op.extensions = graphene::chain::extension<post_operation::ext>();
+            forward_op.extensions->value = extension;
+
+            signed_transaction tx;
+            tx.operations.push_back(forward_op);
+            set_operation_fees(tx, db.current_fee_schedule());
+            test::set_expiration(db, tx);
+            tx.validate();
+            transactions.push_back(tx);
+        }
+
+        auto start3 = fc::time_point::now();
+        for (uint32_t i = 0; i < cycles; ++i)
+        {
+            auto result = db.apply_transaction(transactions[i]);
+        }
+        auto end3 = fc::time_point::now();
+        auto elapsed3 = end3 - start3;
+        total_time += elapsed3.count();
+        wlog("Forward ${aps} post/s over ${total}ms",
+            ("aps", (cycles * 1000000) / elapsed3.count())("total", elapsed3.count() / 1000));
+    }
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(post_performance_test_2)
@@ -513,5 +673,11 @@ BOOST_AUTO_TEST_SUITE_END()
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]) {
    std::srand(time(NULL));
    std::cout << "Random number generator seeded to " << time(NULL) << std::endl;
+   const char* genesis_timestamp_str = getenv("GRAPHENE_TESTING_GENESIS_TIMESTAMP");
+   if (genesis_timestamp_str != nullptr)
+   {
+       GRAPHENE_TESTING_GENESIS_TIMESTAMP = std::stoul(genesis_timestamp_str);
+   }
+   std::cout << "GRAPHENE_TESTING_GENESIS_TIMESTAMP is " << GRAPHENE_TESTING_GENESIS_TIMESTAMP << std::endl;
    return nullptr;
 }
