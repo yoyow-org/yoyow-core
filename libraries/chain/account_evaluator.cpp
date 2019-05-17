@@ -107,6 +107,11 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.referrer_by_platform = platform == nullptr ? 0 : platform->sequence;
          obj.create_time          = d.head_block_time();
          obj.last_update_time     = d.head_block_time();
+         if (d.head_block_time() >= HARDFORK_0_4_TIME){
+             //After hardfork_0_4_time, make account_object can_rate and can_reply by default
+             obj.can_rate = true;
+             obj.can_reply = true;
+         }
 
          obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.uid;}).id;
    });
