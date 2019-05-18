@@ -95,7 +95,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
    //TODO review
    database& d = db();
    const platform_object* platform = d.find_platform_by_owner(o.reg_info.referrer);
-
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
    const auto& new_acnt_object = d.create<account_object>( [&]( account_object& obj ){
          obj.uid                  = o.uid;
          obj.name                 = o.name;
@@ -107,7 +107,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.referrer_by_platform = platform == nullptr ? 0 : platform->sequence;
          obj.create_time          = d.head_block_time();
          obj.last_update_time     = d.head_block_time();
-         if (d.head_block_time() >= HARDFORK_0_4_TIME){
+         if (dpo.enabled_hardfork_04) {
              //After hardfork_0_4_time, make account_object can_rate and can_reply by default
              obj.can_rate = true;
              obj.can_reply = true;

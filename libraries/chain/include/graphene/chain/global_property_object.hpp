@@ -91,7 +91,7 @@ namespace graphene { namespace chain {
 
          bool                            content_award_enable = false;
          share_type                      total_witness_pledge = 0;
-         bool                            reduce_witness_csaf  = false;
+         bool                            enabled_hardfork_04 = false;
          share_type                      by_pledge_witness_pay_per_block = 0;
          /**
           *  Every time a block is missed this increases by
@@ -166,7 +166,7 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
 										(current_active_post_sequence)
                     (content_award_enable)
                     (total_witness_pledge)
-                    (reduce_witness_csaf)
+                    (enabled_hardfork_04)
                     (by_pledge_witness_pay_per_block)
                   )
 

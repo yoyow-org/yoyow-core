@@ -548,12 +548,12 @@ void database::_apply_block( const signed_block& next_block )
    clear_unnecessary_objects();
 
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   if (head_block_time() >= HARDFORK_0_4_TIME && !dpo.reduce_witness_csaf)
+   if (head_block_time() >= HARDFORK_0_4_TIME && !dpo.enabled_hardfork_04)
    {
       update_reduce_witness_csaf();
       modify(dpo, [&](dynamic_global_property_object& dp)
       {
-         dp.reduce_witness_csaf = true;
+         dp.enabled_hardfork_04 = true;
       });
       
       //modify default value, can_reply,can_rate default to true

@@ -481,11 +481,11 @@ void database::clear_expired_csaf_leases()
    while( itr != idx.end() && itr->expiration <= head_time )
    {
       modify( get_account_statistics_by_uid( itr->from ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.reduce_witness_csaf);
+         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
          s.core_leased_out -= itr->amount;
       });
       modify( get_account_statistics_by_uid( itr->to ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.reduce_witness_csaf);
+         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
          s.core_leased_in -= itr->amount;
       });
       remove( *itr );
@@ -516,7 +516,7 @@ void database::release_witness_pledges()
    while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
    {
       modify( *itr, [&](account_statistics_object& s) {
-          if (dpo.reduce_witness_csaf)
+          if (dpo.enabled_hardfork_04)
               s.update_coin_seconds_earned(csaf_window, head_block_time(), true);
           s.total_witness_pledge -= s.releasing_witness_pledge;
           s.releasing_witness_pledge = 0;

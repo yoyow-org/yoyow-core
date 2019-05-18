@@ -135,11 +135,11 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
       
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify( *from_stats, [&](account_statistics_object& s) {
-          s.update_coin_seconds_earned(csaf_window, head_time, dpo.reduce_witness_csaf);
+          s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
           s.core_leased_out += delta;
       });
       d.modify( *to_stats, [&](account_statistics_object& s) {
-          s.update_coin_seconds_earned(csaf_window, head_time, dpo.reduce_witness_csaf);
+          s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
           s.core_leased_in += delta;
       });
    }
