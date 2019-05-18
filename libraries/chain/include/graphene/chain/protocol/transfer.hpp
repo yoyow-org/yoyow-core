@@ -81,13 +81,13 @@ namespace graphene { namespace chain {
                   ( extensions->value.from_balance.valid() &&
                     extensions->value.from_balance->amount > 0 ) );
       }
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority if transfer from balance
          if( some_from_balance() )
             a.insert( from );
       }
-      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need secondary authority if not transfer from balance
          // note: this means that owner authority is not enough nor needed
@@ -130,6 +130,11 @@ namespace graphene { namespace chain {
       account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
+	  void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const      
+	  {
+	  	if(enabled_hardfork)
+			a.insert(issuer);
+	  }
    };
 
 }} // graphene::chain

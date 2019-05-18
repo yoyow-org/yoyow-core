@@ -639,6 +639,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
                             get_owner_by_uid,
                             get_active_by_uid,
                             get_secondary_by_uid,
+                            get_dynamic_global_properties().enabled_hardfork_04,
                             chain_parameters.max_authority_depth );
    }
 

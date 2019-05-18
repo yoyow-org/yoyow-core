@@ -139,9 +139,9 @@ namespace graphene { namespace chain {
       void get_required_authorities( vector<authority>& )const{}
       void get_required_active_authorities( flat_set<account_id_type>& )const{}
       void get_required_owner_authorities( flat_set<account_id_type>& )const{}
-      void get_required_owner_uid_authorities( flat_set<account_uid_type>& )const{}
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& )const{}
-      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& )const{}
+      void get_required_owner_uid_authorities( flat_set<account_uid_type>&,bool )const{}
+      void get_required_active_uid_authorities( flat_set<account_uid_type>&,bool )const{}
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>&,bool )const{}
       void validate()const{}
 
       static uint64_t calculate_data_fee( uint64_t bytes, uint64_t price_per_kbyte );

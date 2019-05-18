@@ -34,7 +34,7 @@ namespace graphene { namespace chain {
        account_uid_type fee_payer_uid()const { return platform; }
        void             validate()const;
        share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
        {
            a.insert(platform);    // Requires platform to change the permissions
        }
@@ -70,7 +70,7 @@ namespace graphene { namespace chain {
        account_uid_type fee_payer_uid()const { return platform; }
        void             validate()const;
        share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
        {
            a.insert(platform);    // Requires platform to change the permissions
        }
@@ -109,7 +109,7 @@ namespace graphene { namespace chain {
        account_uid_type fee_payer_uid()const { return from_account; }
        void             validate()const;
        share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
        {
           a.insert(from_account);    // Requires platform to change the permissions
        }
@@ -141,7 +141,7 @@ namespace graphene { namespace chain {
        account_uid_type fee_payer_uid()const { return platform; }
        void             validate()const;
        share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
        {
            a.insert(platform);    // Requires platform to change the permissions
        }
@@ -173,7 +173,7 @@ namespace graphene { namespace chain {
        account_uid_type fee_payer_uid()const { return from_account; }
        void             validate()const;
        share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
        {
            a.insert(from_account);    // Requires from_account to ransom 
        }

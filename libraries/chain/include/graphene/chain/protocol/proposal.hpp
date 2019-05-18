@@ -83,6 +83,11 @@ namespace graphene { namespace chain {
        account_uid_type fee_payer_uid()const { return fee_paying_account; }
        void            validate()const;
        share_type      calculate_fee(const fee_parameters_type& k)const;
+	   void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const      
+	  {
+	  	if(enabled_hardfork)
+			a.insert(fee_paying_account);
+	  }
    };
 
    /**
@@ -127,9 +132,9 @@ namespace graphene { namespace chain {
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_authorities( vector<authority>& )const;
-      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& )const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& )const;
-      void get_required_owner_uid_authorities( flat_set<account_uid_type>& )const;
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& ,bool)const;
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& ,bool)const;
+      void get_required_owner_uid_authorities( flat_set<account_uid_type>& ,bool)const;
    };
 
    /**
@@ -154,6 +159,11 @@ namespace graphene { namespace chain {
 
       account_uid_type fee_payer_uid()const { return fee_paying_account; }
       void       validate()const;
+	  void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const      
+	  {
+	  	if(enabled_hardfork)
+			a.insert(fee_paying_account);
+	  }
    };
    ///@}
    

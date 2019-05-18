@@ -34,7 +34,7 @@ struct custom_vote_create_operation : public base_operation
    account_uid_type fee_payer_uid()const { return custom_vote_creater; }
    void             validate()const;
    share_type       calculate_fee(const fee_parameters_type& k)const;
-   void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+   void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
    {
       a.insert(custom_vote_creater);
    }
@@ -62,7 +62,7 @@ struct custom_vote_cast_operation : public base_operation
    account_uid_type fee_payer_uid()const { return voter; }
    void             validate()const;
    share_type       calculate_fee(const fee_parameters_type& k)const;
-   void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+   void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
    {
       a.insert(voter);  
    }

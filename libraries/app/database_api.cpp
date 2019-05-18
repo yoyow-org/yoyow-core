@@ -2173,6 +2173,7 @@ std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_se
                                        [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).owner); },
                                        [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).active); },
                                        [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).secondary); },
+                                       _db.get_dynamic_global_properties().enabled_hardfork_04,
                                        _db.get_global_properties().parameters.max_authority_depth );
    wdump((std::get<0>(result))(std::get<1>(result))(std::get<2>(result)));
    return std::make_pair( std::make_pair( std::get<0>(result), std::get<1>(result) ), std::get<2>(result) );
@@ -2211,6 +2212,7 @@ set<public_key_type> database_api_impl::get_potential_signatures( const signed_t
             result.insert(k);
          return &auth;
       },
+      _db.get_dynamic_global_properties().enabled_hardfork_04,
       _db.get_global_properties().parameters.max_authority_depth
    );
 
@@ -2229,6 +2231,7 @@ bool database_api_impl::verify_authority( const signed_transaction& trx )const
                          [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).owner); },
                          [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).active); },
                          [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).secondary); },
+                         _db.get_dynamic_global_properties().enabled_hardfork_04,
                           _db.get_global_properties().parameters.max_authority_depth );
    return true;
 }
