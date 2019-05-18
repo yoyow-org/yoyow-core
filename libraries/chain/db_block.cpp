@@ -555,6 +555,9 @@ void database::_apply_block( const signed_block& next_block )
       {
          dp.reduce_witness_csaf = true;
       });
+      
+      //modify default value, can_reply,can_rate default to true
+      update_account_permission();
    }       
 
    //dlog("before update_witness_schedule");

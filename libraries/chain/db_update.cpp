@@ -355,6 +355,18 @@ void database::update_reduce_witness_csaf()
     }
 }
 
+void database::update_account_permission()
+{
+   const auto& account_idx = get_index_type<account_index>().indices();
+   for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
+   {
+      modify(*itr, [&](account_object& a) {
+         a.can_reply = true;
+         a.can_rate = true;
+      });
+   }
+}
+
 std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
 database::get_effective_csaf(const active_post_object& active_post)
 {
