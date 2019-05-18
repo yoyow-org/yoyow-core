@@ -115,7 +115,8 @@ namespace graphene { namespace chain {
       void get_required_uid_authorities( flat_set<account_uid_type>& owner_uids,
                                          flat_set<account_uid_type>& active_uids,
                                          flat_set<account_uid_type>& secondary_uids,
-                                         vector<authority>& other )const;
+                                         vector<authority>& other,
+                                         bool enabled_hardfork)const;
 
    };
 

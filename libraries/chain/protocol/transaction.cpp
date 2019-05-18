@@ -490,7 +490,7 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
    vector<authority> other;
    vector<authority> required;
 
-   get_required_uid_authorities( required_owner_uids, required_active_uids, required_secondary_uids, other );
+   get_required_uid_authorities( required_owner_uids, required_active_uids, required_secondary_uids, other, enabled_hardfork);
 
    required.reserve( required_owner_uids.size() + required_active_uids.size() + required_secondary_uids.size() + other.size() );
    // the order should be same as in verify_authority(...), changing the order requires a hard fork
@@ -542,6 +542,7 @@ signed_information signed_transaction::verify_authority(
    const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
    const std::function<const authority*(account_uid_type)>& get_active_by_uid,
    const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
+   bool enabled_hardfork,
    uint32_t max_recursion )const
 { try {
    return graphene::chain::verify_authority( operations,
@@ -549,6 +550,7 @@ signed_information signed_transaction::verify_authority(
                                       get_owner_by_uid,
                                       get_active_by_uid,
                                       get_secondary_by_uid,
+									  enabled_hardfork,
                                       max_recursion );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
