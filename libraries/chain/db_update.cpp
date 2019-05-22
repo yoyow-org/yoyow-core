@@ -1543,10 +1543,9 @@ void database::process_content_platform_awards()
 			return;
 		}
 
-    const auto& core_asset = get_core_asset();
-    const auto& core_dyn_data = core_asset.dynamic_data(*this);
-    bool can_award = (core_asset.options.max_supply - core_dyn_data.current_supply) >= 
-       (params.total_content_award_amount + params.total_platform_content_award_amount);
+    share_type actual_awards = 0;
+
+    bool can_award = dpo.budget_pool >= (params.total_content_award_amount + params.total_platform_content_award_amount);
     if (can_award)
     { 
        share_type total_csaf_amount = 0;
@@ -1589,7 +1588,6 @@ void database::process_content_platform_awards()
           ++apt_itr;
        }
 
-       share_type actual_awards = 0;
        if (params.total_content_award_amount > 0 && total_effective_csaf_amount > 0)
        {
           //compute per period award amount 
@@ -1732,14 +1730,6 @@ void database::process_content_platform_awards()
              }
           }
        }
-
-       if (actual_awards > 0)
-       {
-          modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
-          {
-             dyn.current_supply += actual_awards;
-          });
-       }
     }
 
 		modify(dpo, [&](dynamic_global_property_object& _dpo)
@@ -1747,6 +1737,9 @@ void database::process_content_platform_awards()
       _dpo.last_content_award_time = block_time;
       _dpo.next_content_award_time = block_time + params.content_award_interval;
 			++_dpo.current_active_post_sequence;
+
+      if (actual_awards > 0)
+         _dpo.budget_pool -= actual_awards;
 		});
 
 		clear_active_post();
@@ -1764,10 +1757,8 @@ void database::process_platform_voted_awards()
 
 		if (params.total_platform_voted_award_amount > 0 && params.platform_award_interval > 0)
     {
-       const auto& core_asset = get_core_asset();
-       const auto& core_dyn_data = core_asset.dynamic_data(*this);
-       bool can_award = (core_asset.options.max_supply - core_dyn_data.current_supply) >=
-          params.total_platform_voted_award_amount;
+       share_type actual_awards = 0;
+       bool can_award = dpo.budget_pool >= params.total_platform_voted_award_amount;
        if (dpo.next_platform_voted_award_time > time_point_sec(0) && can_award)
        {
           flat_map<account_uid_type, uint64_t> platforms;
@@ -1797,7 +1788,7 @@ void database::process_platform_voted_awards()
              flat_map<account_uid_type, share_type> platform_award;
              for (const auto& p : platforms)
                 platform_award.emplace(p.first, platform_average_award_basic);
-             share_type actual_awards = platform_average_award_basic * platforms.size();
+             actual_awards = platform_average_award_basic * platforms.size();
             
              if (total_votes > 0)
              {
@@ -1821,11 +1812,6 @@ void database::process_platform_voted_awards()
                    pla.vote_profits.emplace(block_time, p.second);
                 });
              }
-
-             modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
-             {
-                dyn.current_supply += actual_awards;
-             });
           }
        }
 
@@ -1833,6 +1819,9 @@ void database::process_platform_voted_awards()
        {
           _dpo.last_platform_voted_award_time = block_time;
           _dpo.next_platform_voted_award_time = block_time + params.platform_award_interval;
+
+          if (actual_awards > 0)
+             _dpo.budget_pool -= actual_awards;
        });
 
 		}

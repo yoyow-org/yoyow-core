@@ -232,6 +232,11 @@ void committee_updatable_content_parameters::validate()const
                "advertising confirmed fee rate should be in range 0-100%");
    if (min_witness_block_produce_pledge.valid())
       FC_ASSERT(*min_witness_block_produce_pledge > 0, "min witness block produce pledge must be positive");
+
+   if (content_award_interval.valid())
+      FC_ASSERT(*content_award_interval <= 86400*365, "content award interval must be less than or equal to one year");
+   if (platform_award_interval.valid())
+      FC_ASSERT(*platform_award_interval <= 86400*365, "platform award interval must be less than or equal to one year");
 }
 
 void committee_proposal_create_operation::validate()const
