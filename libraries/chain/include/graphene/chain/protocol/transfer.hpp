@@ -49,6 +49,8 @@ namespace graphene { namespace chain {
          optional< asset > from_prepaid;
          optional< asset > to_balance;
          optional< asset > to_prepaid;
+
+         optional<account_uid_type>   sign_platform;    // sign by platform account
       };
 
       struct fee_parameters_type {
@@ -144,6 +146,6 @@ FC_REFLECT( graphene::chain::transfer_operation::fee_parameters_type,
 FC_REFLECT( graphene::chain::override_transfer_operation::fee_parameters_type,
             (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 
-FC_REFLECT( graphene::chain::transfer_operation::ext, (from_balance)(from_prepaid)(to_balance)(to_prepaid) )
+            FC_REFLECT(graphene::chain::transfer_operation::ext, (from_balance)(from_prepaid)(to_balance)(to_prepaid)(sign_platform))
 FC_REFLECT( graphene::chain::transfer_operation, (fee)(from)(to)(amount)(memo)(extensions) )
 FC_REFLECT( graphene::chain::override_transfer_operation, (fee)(issuer)(from)(to)(amount)(memo)(extensions) )

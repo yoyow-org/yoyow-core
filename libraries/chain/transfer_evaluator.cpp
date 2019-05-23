@@ -51,7 +51,7 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
            if (auth_object){   //transfer by platform,
                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Transfer) > 0,
                    "the transfer permisson of platform ${p} authorized by account ${a} is invalid. ",
-                   ("a", (op.from))("p", sign_account));
+                   ("a", (op.from))("p", auth_object->platform));
                FC_ASSERT(account_stats.prepaid >= op.amount.amount,
                    "Insufficient balance: unable to transfer, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
                    ("c", (account_stats.prepaid))("a", op.from)("n", op.amount.amount));
@@ -61,6 +61,12 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
                    FC_ASSERT(usable_prepaid >= op.amount.amount,
                        "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
                        ("c", usable_prepaid)("p", sign_account)("a", op.from)("n", op.amount.amount));
+               }
+               if (d.head_block_time() > HARDFORK_0_4_TIME){
+                   FC_ASSERT(op.extensions.valid(), "op.extension must be exist.");
+                   FC_ASSERT(op.extensions->value.sign_platform.valid(), "sign_platform must be valid.");
+                   FC_ASSERT(*(op.extensions->value.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+                       ("a", (op.from))("p", *(op.extensions->value.sign_platform)));
                }
            }
        }

@@ -196,6 +196,7 @@ namespace graphene { namespace chain {
            optional<license_lid_type>                             license_lid;                // the license`s id of this post
            optional<uint32_t>                                     permission_flags = 0xFF;    // permissions of this post
            optional<map<account_uid_type, Receiptor_Parameter> >  receiptors;                 // map of receiptor`s parameters
+           optional<account_uid_type>                             sign_platform;              // sign by platform account
 	   };
 
       struct fee_parameters_type {
@@ -254,6 +255,7 @@ namespace graphene { namespace chain {
            optional<time_point_sec>       buyout_expiration; //the expiration time for this buyout order
            optional<license_lid_type>     license_lid;       //the post`s license`s id for update
            optional<uint32_t>             permission_flags;  //the post`s permissions for update
+           optional<account_uid_type>     sign_platform;     // sign by platform account
 	   };
 
       struct fee_parameters_type {
@@ -331,6 +333,7 @@ namespace graphene { namespace chain {
 	   post_pid_type                post_pid;         //post`s pid
 	   int8_t                       score;            //the score for post. range [-5,5]
        share_type                   csaf;             //the integration of yoyow for post
+       optional<account_uid_type>   sign_platform;    // sign by platform account
 
 	   extensions_type              extensions;
 
@@ -407,6 +410,7 @@ namespace graphene { namespace chain {
        account_uid_type             poster;            //poster account`s uid
        post_pid_type                post_pid;          //post`s pid
        share_type                   amount;            //amount of YOYO reward for the post proxy by platform
+       optional<account_uid_type>   sign_platform;     // sign by platform account
 
        extensions_type              extensions;
 
@@ -447,6 +451,7 @@ namespace graphene { namespace chain {
 	   account_uid_type             poster;                //poster account`s uid
 	   post_pid_type                post_pid;              //post`s pid
 	   account_uid_type             receiptor_account_uid; //the receiptor account`s uid. to buy the receiptor`s sell order.
+       optional<account_uid_type>   sign_platform;         // sign by platform account
 
 	   extensions_type              extensions;
 
@@ -509,8 +514,8 @@ FC_REFLECT(graphene::chain::platform_update_operation, (fee)(account)(new_pledge
 FC_REFLECT( graphene::chain::platform_vote_update_operation::fee_parameters_type, (basic_fee)(price_per_platform)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT(graphene::chain::platform_vote_update_operation, (fee)(voter)(platform_to_add)(platform_to_remove)(extensions) )
 
-FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(license_lid)(permission_flags)(receiptors))
-FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(license_lid)(permission_flags))
+FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(license_lid)(permission_flags)(receiptors)(sign_platform))
+FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(license_lid)(permission_flags)(sign_platform))
 
 FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::post_operation,
@@ -527,18 +532,18 @@ FC_REFLECT( graphene::chain::post_update_operation,
             (extensions) )
 
 FC_REFLECT(graphene::chain::score_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(extensions))
+FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(sign_platform)(extensions))
 
 FC_REFLECT(graphene::chain::reward_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
 FC_REFLECT(graphene::chain::reward_proxy_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::reward_proxy_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
+FC_REFLECT(graphene::chain::reward_proxy_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(sign_platform)(extensions))
 
 FC_REFLECT(graphene::chain::Receiptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(extensions))
 
 FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(extensions))
+FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(sign_platform)(extensions))
 
 FC_REFLECT(graphene::chain::license_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::license_create_operation, (fee)(license_lid)(platform)(type)(hash_value)(extra_data)(title)(body)(extensions))

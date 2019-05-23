@@ -75,6 +75,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
          //const account_object* poster_account;
          const post_object*    post = nullptr;
          const post_update_operation::ext* ext_para = nullptr;
+         const account_auth_platform_object* auth_object = nullptr;
    };
 
    class score_create_evaluator : public evaluator<score_create_evaluator>
@@ -84,6 +85,8 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
 
 	   void_result do_evaluate(const operation_type& o);
 	   object_id_type do_apply(const operation_type& o);
+
+       const account_auth_platform_object* auth_object = nullptr;
    };
 
    class reward_evaluator : public evaluator<reward_evaluator>

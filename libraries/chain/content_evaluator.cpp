@@ -524,6 +524,13 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
                    ("c", (usable_prepaid))("p", sign_account)("a", op.poster)("n", *(origin_post->forward_price)));
            }
        }
+       
+       if (auth_object){
+           FC_ASSERT(ext_para->sign_platform.valid(), "sign_platform must be exist. ");
+           FC_ASSERT(*(ext_para->sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+               ("a", (op.poster))("p", *(ext_para->sign_platform)));
+       }
+       
        d.get_license_by_platform(op.platform, *(ext_para->license_lid)); // make sure license exist
        if (ext_para->receiptors.valid()){
            for (auto iter_receiptor : *(ext_para->receiptors)){
@@ -698,7 +705,7 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
        }
        
        if (sign_account != op.poster){
-           const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
+           auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
            if (is_update_content && auth_object)
                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
                "the content update permission of platform ${p} authorized by account ${a} is invalid. ",
@@ -767,6 +774,12 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
            if (ext_para->license_lid.valid()){
                d.get_license_by_platform(op.platform, *(ext_para->license_lid)); // make sure license exist
            }
+       }
+
+       if (auth_object){
+           FC_ASSERT(ext_para->sign_platform.valid(), "sign_platform must be exist. ");
+           FC_ASSERT(*(ext_para->sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+               ("a", (op.poster))("p", *(ext_para->sign_platform)));
        }
    }
 
@@ -839,11 +852,15 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
         const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
         if (sign_account != 0 && sign_account != op.from_account_uid){
-            auto auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
-            if (auth_object)
+            auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
+            if (auth_object){
                 FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Liked) > 0,
                     "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
                     ("p", auth_object->platform)("a", op.from_account_uid));
+                FC_ASSERT(op.sign_platform.valid(), "sign_platform must be exist. ");
+                FC_ASSERT(*(op.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+                    ("a", (op.from_account_uid))("p", *(op.sign_platform)));
+            }  
         }
 		FC_ASSERT(account_stats->csaf >= op.csaf,
                   "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less than needed [${n}]",
@@ -1043,6 +1060,10 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
         FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Reward) > 0,
             "the reward permisson of platform ${p} authorized by account ${a} is invalid. ",
             ("p", auth_object->platform)("a", op.from_account_uid));
+        FC_ASSERT(op.sign_platform.valid(), "sign_platform must be exist. ");
+        FC_ASSERT(*(op.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+            ("a", (op.from_account_uid))("p", *(op.sign_platform)));
+
         FC_ASSERT(account_stats->prepaid >= op.amount, 
                   "Insufficient balance: unable to reward, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
                   ("c", (account_stats->prepaid))("a", op.from_account_uid)("n", op.amount));
