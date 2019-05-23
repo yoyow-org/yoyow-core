@@ -181,6 +181,8 @@ struct post_update_ext
     optional<uint32_t>                  buyout_expiration;
     optional<license_lid_type>          license_lid;
     optional<uint32_t>                  permission_flags;
+    optional<string>                    content_sign_platform;
+    optional<string>                    receiptor_sign_platform;
 };
 
 struct receiptor_ext
@@ -202,6 +204,7 @@ struct post_create_ext
                                 post_object::Post_Permission_Buyout |
                                 post_object::Post_Permission_Comment |
                                 post_object::Post_Permission_Reward;
+    optional<string> sign_platform;
 };
 
 namespace detail {
@@ -703,6 +706,7 @@ class wallet_api
                                             string amount,
                                             string asset_symbol,
                                             string memo,
+                                            optional<string> sign_platform,
                                             bool isfrom_balance = true,
                                             bool isto_balance = true,
                                             bool csaf_fee = true,
@@ -1374,6 +1378,7 @@ class wallet_api
                                       post_pid_type    post_pid,
                                       int8_t           score,
                                       string           csaf,
+                                      optional<string> sign_platform,
                                       bool csaf_fee = true,
                                       bool broadcast = false);
 
@@ -1416,6 +1421,7 @@ class wallet_api
                                                        string           poster,
                                                        post_pid_type    post_pid,
                                                        string           amount,
+                                                       optional<string> sign_platform,
                                                        bool csaf_fee = true,
                                                        bool broadcast = false);
 
@@ -1436,6 +1442,7 @@ class wallet_api
                                      string           poster,
                                      post_pid_type    post_pid,
                                      string           receiptor_account,
+                                     optional<string> sign_platform,
                                      bool csaf_fee = true,
                                      bool broadcast = false);
 
@@ -1740,6 +1747,8 @@ FC_REFLECT(graphene::wallet::post_update_ext,
           (buyout_expiration)
           (license_lid)
           (permission_flags)
+          (content_sign_platform)
+          (receiptor_sign_platform)
           )
 
 FC_REFLECT(graphene::wallet::receiptor_ext,
@@ -1755,6 +1764,7 @@ FC_REFLECT(graphene::wallet::post_create_ext,
           (receiptors)
           (license_lid)
           (permission_flags)
+          (sign_platform)
           )
 
 FC_REFLECT( graphene::wallet::operation_detail, 

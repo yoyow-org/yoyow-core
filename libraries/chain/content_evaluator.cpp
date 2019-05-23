@@ -530,6 +530,9 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
            FC_ASSERT(*(ext_para->sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
                ("a", (op.poster))("p", *(ext_para->sign_platform)));
        }
+       else{
+           FC_ASSERT(!(ext_para->sign_platform.valid()), "sign_platform shouldn`t be valid.");
+       }
        
        d.get_license_by_platform(op.platform, *(ext_para->license_lid)); // make sure license exist
        if (ext_para->receiptors.valid()){
@@ -705,11 +708,11 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
        }
        
        if (sign_account != op.poster){
-           auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
-           if (is_update_content && auth_object)
-               FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
+           poster_auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
+           if (is_update_content && poster_auth_object)
+               FC_ASSERT((poster_auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
                "the content update permission of platform ${p} authorized by account ${a} is invalid. ",
-               ("p", auth_object->platform)("a", op.poster));
+               ("p", poster_auth_object->platform)("a", op.poster));
        }
    }
    else{
@@ -730,11 +733,17 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
            d.get_account_by_uid(receiptor_uid);
            account_uid_type sign_account_receiptor = sigs.real_secondary_uid(receiptor_uid, 1);
            if (sign_account_receiptor != receiptor_uid){
-               const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(receiptor_uid, sign_account_receiptor);
-               if (auth_object){
-                   FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
+               auto receiptor_auth_object = d.find_account_auth_platform_object_by_account_platform(receiptor_uid, sign_account_receiptor);
+               if (receiptor_auth_object){
+                   FC_ASSERT((receiptor_auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Buyout) > 0,
                        "the buyout permission of platform ${p} authorized by account ${a} is invalid. ",
-                       ("p", auth_object->platform)("a", receiptor_uid));
+                       ("p", receiptor_auth_object->platform)("a", receiptor_uid));
+                   FC_ASSERT(ext_para->receiptor_sign_platform.valid(), "receiptor_sign_platform must be exist. ");
+                   FC_ASSERT(*(ext_para->receiptor_sign_platform) == receiptor_auth_object->platform, "receiptor_sign_platform ${p} must be authorized by account ${a}",
+                       ("a", (receiptor_uid))("p", *(ext_para->receiptor_sign_platform)));
+               }
+               else{
+                   FC_ASSERT(!(ext_para->receiptor_sign_platform.valid()), "receiptor_sign_platform shouldn`t be valid.");
                }
            }
 
@@ -757,29 +766,33 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
                }
            }
        }
+       else{
+           FC_ASSERT(!(ext_para->receiptor_sign_platform.valid()), "receiptor_sign_platform shouldn`t be valid.");
+       }
+
        if (ext_para->forward_price.valid() || ext_para->permission_flags.valid() || ext_para->license_lid.valid()){
-           if (sign_account != op.poster){
-               const account_auth_platform_object* auth_object = d.find_account_auth_platform_object_by_account_platform(op.poster, sign_account);
-               if (auth_object){
-                   if (ext_para->forward_price.valid())
-                       FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
-                       "the forward permission of platform ${p} authorized by account ${a} is invalid. ",
-                       ("p", auth_object->platform)("a", op.poster));
-                   if (ext_para->permission_flags.valid() || ext_para->license_lid.valid())
-                       FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
-                       "the content update permission of platform ${p} authorized by account ${a} is invalid. ",
-                       ("p", auth_object->platform)("a", op.poster));
-               }
+           if (poster_auth_object){
+               if (ext_para->forward_price.valid())
+                   FC_ASSERT((poster_auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Forward) > 0,
+                   "the forward permission of platform ${p} authorized by account ${a} is invalid. ",
+                   ("p", poster_auth_object->platform)("a", op.poster));
+               if (ext_para->permission_flags.valid() || ext_para->license_lid.valid())
+                   FC_ASSERT((poster_auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Content_Update) > 0,
+                   "the content update permission of platform ${p} authorized by account ${a} is invalid. ",
+                   ("p", poster_auth_object->platform)("a", op.poster));
            }
            if (ext_para->license_lid.valid()){
                d.get_license_by_platform(op.platform, *(ext_para->license_lid)); // make sure license exist
            }
        }
 
-       if (auth_object){
-           FC_ASSERT(ext_para->sign_platform.valid(), "sign_platform must be exist. ");
-           FC_ASSERT(*(ext_para->sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
-               ("a", (op.poster))("p", *(ext_para->sign_platform)));
+       if (poster_auth_object){
+           FC_ASSERT(ext_para->content_sign_platform.valid(), "content_sign_platform must be exist. ");
+           FC_ASSERT(*(ext_para->content_sign_platform) == poster_auth_object->platform, "content_sign_platform ${p} must be authorized by account ${a}",
+               ("a", (op.poster))("p", *(ext_para->content_sign_platform)));
+       }
+       else{
+           FC_ASSERT(!(ext_para->content_sign_platform.valid()), "content_sign_platform shouldn`t be valid.");
        }
    }
 
@@ -861,6 +874,9 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
                 FC_ASSERT(*(op.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
                     ("a", (op.from_account_uid))("p", *(op.sign_platform)));
             }  
+            else{
+                FC_ASSERT(!(op.sign_platform.valid()), "sign_platform shouldn`t be valid.");
+            }
         }
 		FC_ASSERT(account_stats->csaf >= op.csaf,
                   "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less than needed [${n}]",
@@ -1217,6 +1233,12 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
                     "Insufficient balance: unable to buyout, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
                     ("c", usable_prepaid)("p", sign_account)("a", op.from_account_uid)("n", iter->second.buyout_price));
             }
+            FC_ASSERT(op.sign_platform.valid(), "sign_platform must be exist. ");
+            FC_ASSERT(*(op.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+                ("a", (op.from_account_uid))("p", *(op.sign_platform)));
+        }
+        else{
+            FC_ASSERT(!(op.sign_platform.valid()), "sign_platform shouldn`t be valid.");
         }
         
         FC_ASSERT(account_stats->prepaid >= iter->second.buyout_price, 

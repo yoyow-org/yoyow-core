@@ -75,7 +75,7 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
          //const account_object* poster_account;
          const post_object*    post = nullptr;
          const post_update_operation::ext* ext_para = nullptr;
-         const account_auth_platform_object* auth_object = nullptr;
+         const account_auth_platform_object* poster_auth_object = nullptr;
    };
 
    class score_create_evaluator : public evaluator<score_create_evaluator>

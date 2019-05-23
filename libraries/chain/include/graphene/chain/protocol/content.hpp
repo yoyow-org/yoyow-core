@@ -247,15 +247,16 @@ namespace graphene { namespace chain {
    {
 	   struct ext
 	   {
-		   optional<share_type>           forward_price;     //the post`s forward price for update
-		   optional<account_uid_type>     receiptor;         //the receiptor account for update his parameter
-		   optional<bool>                 to_buyout;         //buyout or not the receiptor`s ratio
-		   optional<uint16_t>             buyout_ratio;      //if buyout, the buyout ratio of the receiptor for sell
-		   optional<share_type>           buyout_price;      //buyout price for sell the buyout ratio
+           optional<share_type>           forward_price;     //the post`s forward price for update
+           optional<account_uid_type>     receiptor;         //the receiptor account for update his parameter
+           optional<bool>                 to_buyout;         //buyout or not the receiptor`s ratio
+           optional<uint16_t>             buyout_ratio;      //if buyout, the buyout ratio of the receiptor for sell
+           optional<share_type>           buyout_price;      //buyout price for sell the buyout ratio
            optional<time_point_sec>       buyout_expiration; //the expiration time for this buyout order
            optional<license_lid_type>     license_lid;       //the post`s license`s id for update
            optional<uint32_t>             permission_flags;  //the post`s permissions for update
-           optional<account_uid_type>     sign_platform;     // sign by platform account
+           optional<account_uid_type>     content_sign_platform;   // sign by platform account
+           optional<account_uid_type>     receiptor_sign_platform; // sign by platform account
 	   };
 
       struct fee_parameters_type {
@@ -515,7 +516,8 @@ FC_REFLECT( graphene::chain::platform_vote_update_operation::fee_parameters_type
 FC_REFLECT(graphene::chain::platform_vote_update_operation, (fee)(voter)(platform_to_add)(platform_to_remove)(extensions) )
 
 FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(license_lid)(permission_flags)(receiptors)(sign_platform))
-FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(license_lid)(permission_flags)(sign_platform))
+FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)
+                                                        (license_lid)(permission_flags)(content_sign_platform)(receiptor_sign_platform))
 
 FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::post_operation,

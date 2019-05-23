@@ -2015,7 +2015,7 @@ signed_transaction account_cancel_auth_platform(string account,
    } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(csaf_fee)(broadcast) ) }
 
    signed_transaction transfer_extension(string from, string to, string amount,
-                               string asset_symbol, string memo, bool isfrom_balance = true, bool isto_balance = true, bool csaf_fee = true, bool broadcast = false)
+                               string asset_symbol, string memo, optional<string> sign_platform , bool isfrom_balance = true, bool isto_balance = true, bool csaf_fee = true, bool broadcast = false)
    {
        try {
            FC_ASSERT(!self.is_locked(), "Should unlock first");
@@ -2035,6 +2035,10 @@ signed_transaction account_cancel_auth_platform(string account,
                xfer_op.extensions->value.to_balance = asset_obj->amount_from_string(amount);
            else
                xfer_op.extensions->value.to_prepaid = asset_obj->amount_from_string(amount);
+
+           if (sign_platform.valid()){
+               xfer_op.extensions->value.sign_platform = get_account_uid(*sign_platform);
+           }
 
            xfer_op.from = from_account.uid;
            xfer_op.to = to_account.uid;
@@ -2317,6 +2321,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                    post_pid_type    post_pid,
                                    int8_t           score,
                                    string           csaf,
+                                   optional<string> sign_platform,
                                    bool csaf_fee = true,
                                    bool broadcast = false)
    {
@@ -2331,6 +2336,9 @@ signed_transaction account_cancel_auth_platform(string account,
            create_op.post_pid = post_pid;
            create_op.score = score;
            create_op.csaf = asset_obj->amount_from_string(csaf).amount;
+           if (sign_platform.valid()){
+               create_op.sign_platform = get_account_uid(*sign_platform);
+           }
 
            signed_transaction tx;
            tx.operations.push_back(create_op);
@@ -2376,6 +2384,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                                     string           poster,
                                                     post_pid_type    post_pid,
                                                     string           amount,
+                                                    optional<string> sign_platform,
                                                     bool csaf_fee = true,
                                                     bool broadcast = false)
    {
@@ -2390,6 +2399,9 @@ signed_transaction account_cancel_auth_platform(string account,
            reward_op.poster = get_account_uid(poster);
            reward_op.post_pid = post_pid;
            reward_op.amount = asset_obj->amount_from_string(amount).amount;
+           if (sign_platform.valid()){
+               reward_op.sign_platform = get_account_uid(*sign_platform);
+           }
 
            signed_transaction tx;
            tx.operations.push_back(reward_op);
@@ -2405,6 +2417,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                   string           poster,
                                   post_pid_type    post_pid,
                                   string           receiptor_account,
+                                  optional<string> sign_platform,
                                   bool csaf_fee = true,
                                   bool broadcast = false)
    {
@@ -2417,6 +2430,9 @@ signed_transaction account_cancel_auth_platform(string account,
            buyout_op.poster = get_account_uid(poster);
            buyout_op.post_pid = post_pid;
            buyout_op.receiptor_account_uid = get_account_uid(receiptor_account);
+           if (sign_platform.valid()){
+               buyout_op.sign_platform = get_account_uid(*sign_platform);
+           }
 
            signed_transaction tx;
            tx.operations.push_back(buyout_op);
@@ -2521,6 +2537,8 @@ signed_transaction account_cancel_auth_platform(string account,
                extension_.license_lid = exts.license_lid;
            if (exts.permission_flags)
                extension_.permission_flags = exts.permission_flags;
+           if (exts.sign_platform.valid())
+               extension_.sign_platform = get_account_uid(*(exts.sign_platform));
            create_op.extensions = graphene::chain::extension<post_operation::ext>();
            create_op.extensions->value = extension_;
 
@@ -2580,6 +2598,10 @@ signed_transaction account_cancel_auth_platform(string account,
                update_op.extensions->value.license_lid = ext.license_lid;
            if (ext.permission_flags.valid())
                update_op.extensions->value.permission_flags = ext.permission_flags;
+           if (ext.content_sign_platform.valid())
+               update_op.extensions->value.content_sign_platform = get_account_uid(*(ext.content_sign_platform));
+           if (ext.receiptor_sign_platform.valid())
+               update_op.extensions->value.receiptor_sign_platform = get_account_uid(*(ext.receiptor_sign_platform));
 
            signed_transaction tx;
            tx.operations.push_back(update_op);
@@ -3871,9 +3893,9 @@ signed_transaction wallet_api::transfer(string from, string to, string amount,
 }
 
 signed_transaction wallet_api::transfer_extension(string from, string to, string amount,
-    string asset_symbol, string memo, bool isfrom_balance, bool isto_balance, bool csaf_fee, bool broadcast)
+    string asset_symbol, string memo, optional<string> sign_platform, bool isfrom_balance, bool isto_balance, bool csaf_fee, bool broadcast)
 {
-    return my->transfer_extension(from, to, amount, asset_symbol, memo, isfrom_balance, isto_balance, csaf_fee, broadcast);
+    return my->transfer_extension(from, to, amount, asset_symbol, memo, sign_platform, isfrom_balance, isto_balance, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::override_transfer(string from, string to, string amount,
@@ -4261,10 +4283,11 @@ signed_transaction wallet_api::score_a_post(string         from_account,
                                             post_pid_type  post_pid,
                                             int8_t         score,
                                             string         csaf,
+                                            optional<string> sign_platform,
                                             bool           csaf_fee,
                                             bool           broadcast)
 {
-    return my->score_a_post(from_account, platform, poster, post_pid, score, csaf, csaf_fee, broadcast);
+    return my->score_a_post(from_account, platform, poster, post_pid, score, csaf, sign_platform, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::reward_post(string           from_account,
@@ -4284,10 +4307,11 @@ signed_transaction wallet_api::reward_post_proxy_by_platform(string           fr
                                                              string           poster,
                                                              post_pid_type    post_pid,
                                                              string           amount,
+                                                             optional<string> sign_platform,
                                                              bool             csaf_fee,
                                                              bool             broadcast)
 {
-    return my->reward_post_proxy_by_platform(from_account, platform, poster, post_pid, amount, csaf_fee, broadcast);
+    return my->reward_post_proxy_by_platform(from_account, platform, poster, post_pid, amount, sign_platform, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::buyout_post(string           from_account,
@@ -4295,10 +4319,11 @@ signed_transaction wallet_api::buyout_post(string           from_account,
                                            string           poster,
                                            post_pid_type    post_pid,
                                            string           receiptor_account,
+                                           optional<string> sign_platform,
                                            bool             csaf_fee,
                                            bool             broadcast)
 {
-    return my->buyout_post(from_account, platform, poster, post_pid, receiptor_account, csaf_fee, broadcast);
+    return my->buyout_post(from_account, platform, poster, post_pid, receiptor_account, sign_platform, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::create_license(string           platform,

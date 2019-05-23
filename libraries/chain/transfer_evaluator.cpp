@@ -69,6 +69,11 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
                        ("a", (op.from))("p", *(op.extensions->value.sign_platform)));
                }
            }
+           else{
+               if (d.head_block_time() > HARDFORK_0_4_TIME && op.extensions.valid()){
+                   FC_ASSERT(!(op.extensions->value.sign_platform.valid()), "sign_platform shouldn`t be valid.");
+               }
+           }
        }
    }
 
