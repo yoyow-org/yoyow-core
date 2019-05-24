@@ -41,9 +41,9 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
    validate_authorized_asset( d, *from_account, transfer_asset_object, "'from' " );
    validate_authorized_asset( d, *to_account,   transfer_asset_object, "'to' " );
 
+   account_uid_type sign_account = sigs.real_secondary_uid(op.from, 1);
    if (!op.some_from_balance())
    {
-       account_uid_type sign_account = sigs.real_secondary_uid(op.from, 1);
        if (sign_account != op.from)
        {
            const auto& account_stats = d.get_account_statistics_by_uid(op.from);
@@ -62,18 +62,21 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
                        "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
                        ("c", usable_prepaid)("p", sign_account)("a", op.from)("n", op.amount.amount));
                }
-               if (d.head_block_time() > HARDFORK_0_4_TIME){
-                   FC_ASSERT(op.extensions.valid(), "op.extension must be exist.");
-                   FC_ASSERT(op.extensions->value.sign_platform.valid(), "sign_platform must be valid.");
-                   FC_ASSERT(*(op.extensions->value.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
-                       ("a", (op.from))("p", *(op.extensions->value.sign_platform)));
-               }
            }
-           else{
-               if (d.head_block_time() > HARDFORK_0_4_TIME && op.extensions.valid()){
-                   FC_ASSERT(!(op.extensions->value.sign_platform.valid()), "sign_platform shouldn`t be valid.");
-               }
-           }
+       }
+   }
+
+   if (auth_object){
+       if (d.head_block_time() > HARDFORK_0_4_TIME){
+           FC_ASSERT(op.extensions.valid(), "op.extension must be exist.");
+           FC_ASSERT(op.extensions->value.sign_platform.valid(), "sign_platform must be valid.");
+           FC_ASSERT(*(op.extensions->value.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+               ("a", (op.from))("p", *(op.extensions->value.sign_platform)));
+       }
+   }
+   else{
+       if (d.head_block_time() > HARDFORK_0_4_TIME && op.extensions.valid()){
+           FC_ASSERT(!(op.extensions->value.sign_platform.valid()), "sign_platform shouldn`t be valid.");
        }
    }
 

@@ -866,17 +866,17 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
         account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
         if (sign_account != 0 && sign_account != op.from_account_uid){
             auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
-            if (auth_object){
-                FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Liked) > 0,
-                    "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
-                    ("p", auth_object->platform)("a", op.from_account_uid));
-                FC_ASSERT(op.sign_platform.valid(), "sign_platform must be exist. ");
-                FC_ASSERT(*(op.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
-                    ("a", (op.from_account_uid))("p", *(op.sign_platform)));
-            }  
-            else{
-                FC_ASSERT(!(op.sign_platform.valid()), "sign_platform shouldn`t be valid.");
-            }
+        }
+        if (auth_object){
+            FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Liked) > 0,
+                "the liked permisson of platform ${p} authorized by account ${a} is invalid. ",
+                ("p", auth_object->platform)("a", op.from_account_uid));
+            FC_ASSERT(op.sign_platform.valid(), "sign_platform must be exist. ");
+            FC_ASSERT(*(op.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+                ("a", (op.from_account_uid))("p", *(op.sign_platform)));
+        }
+        else{
+            FC_ASSERT(!(op.sign_platform.valid()), "sign_platform shouldn`t be valid.");
         }
 		FC_ASSERT(account_stats->csaf >= op.csaf,
                   "Insufficient csaf: unable to score, because account: ${f} `s member points [${c}] is less than needed [${n}]",

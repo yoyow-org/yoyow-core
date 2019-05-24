@@ -1090,6 +1090,9 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
 
            if (pv.min_witness_block_produce_pledge.valid())
               v.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
+
+		   if (pv.content_award_skip_slots.valid())
+              v.content_award_skip_slots = *pv.content_award_skip_slots;
 				});
 			}
 
@@ -1737,12 +1740,20 @@ void database::process_content_platform_awards()
       _dpo.last_content_award_time = block_time;
       _dpo.next_content_award_time = block_time + params.content_award_interval;
 			++_dpo.current_active_post_sequence;
+			_dpo.content_award_done = true;
 
       if (actual_awards > 0)
          _dpo.budget_pool -= actual_awards;
 		});
 
 		clear_active_post();
+	}
+	else if(dpo.content_award_done)
+	{
+		modify(dpo, [&](dynamic_global_property_object& _dpo)
+		{
+			_dpo.content_award_done = false;
+		});
 	}
 }
 

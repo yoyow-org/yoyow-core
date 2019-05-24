@@ -63,6 +63,7 @@ namespace graphene { namespace chain {
       uint32_t    custom_vote_effective_time          = GRAPHENE_DEFAULT_CUSTOM_VOTE_EFFECTIVE_TIME;///< custom vote effective time, if more than this time, clear custom vote object
 
       uint64_t    min_witness_block_produce_pledge    = GRAPHENE_DEFAULT_MIN_WITNESS_BLOCK_PRODUCE_PLEDGE;///< pos, witness pledge must greater this number, can produce block
+      uint8_t		content_award_skip_slots		  = 0;
 	 };
 
    struct chain_parameters
@@ -164,7 +165,8 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
       (advertising_confirmed_fee_rate)
       (advertising_confirmed_min_fee)
       (custom_vote_effective_time)
-      (min_witness_block_produce_pledge))
+      (min_witness_block_produce_pledge)
+      (content_award_skip_slots))
 
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)

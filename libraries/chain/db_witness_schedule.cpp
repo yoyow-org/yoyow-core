@@ -62,6 +62,10 @@ fc::time_point_sec database::get_slot_time(uint32_t slot_num)const
    if( dpo.dynamic_flags & dynamic_global_property_object::maintenance_flag )
       slot_num += gpo.parameters.maintenance_skip_slots;
 
+   if(dpo.content_award_done)
+   	slot_num += gpo.parameters.get_award_params().content_award_skip_slots;
+   	
+
    // "slot 0" is head_slot_time
    // "slot 1" is head_slot_time,
    //   plus maint interval if head block is a maint block
