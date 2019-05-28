@@ -509,6 +509,255 @@ BOOST_AUTO_TEST_CASE( transfer_benchmark )
 }
 
 
+BOOST_AUTO_TEST_CASE(content_award_performance_test_1)
+{
+   try{
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      const uint64_t score_count = 10000;
+      flat_map<account_uid_type, fc::ecc::private_key> score_map;
+      int cycle = 20;
+      for (int i = 0; i < cycle; ++i)
+      {
+         actor(1003+i*score_count, score_count, score_map);
+         generate_blocks(4);
+      }
+
+      //actor(500000, cycles, score_map);
+
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
+      int current_block_num = db.head_block_num();
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num + 5, voting_opinion_type::opinion_for, current_block_num + 5, current_block_num+5);
+      for (int i = 1; i < 5; ++i)
+      committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+      generate_blocks(5);
+
+      //1 platform, 1 post/per platform, 20 0000 scores/per post
+      ACTORS((300000)(400001));
+
+      transfer(committee_account, u_300000_id, _core(100000));
+      create_platform(u_300000_id, "platform", _core(10000), "www.123456789.com", "", { u_300000_private_key });
+      create_license(u_300000_id, 6, "999999999", "license title", "license body", "extra", { u_300000_private_key });
+
+      post_operation::ext extensions;
+      extensions.license_lid = 1;
+      create_post({ u_400001_private_key, u_300000_private_key }, u_300000_id, u_400001_id, "", "", "", "",
+         optional<account_uid_type>(),
+         optional<account_uid_type>(),
+         optional<post_pid_type>(),
+         extensions);
+
+      int count = 0;
+      int block_num = 4000;
+      uint64_t gap = score_count  / 1000;
+      for (auto a : score_map)
+      {
+         ++count;
+         if (count == gap && block_num > 0)
+         {
+            generate_blocks(4);
+            count=0;
+            block_num -= 4;
+         }
+         score_a_post({ a.second }, a.first, u_300000_id, u_400001_id, 1, 5, 10);
+      }
+
+      generate_blocks(block_num + 999);
+      auto start = fc::time_point::now();
+      wlog("1 platform, 1 post/per platform, 20 0000 scores/per post, content award begin>>>>>>>>>>${num}", ("num", db.head_block_num()));
+      generate_block();
+      auto end = fc::time_point::now();
+      auto elapsed = end - start;
+      wlog("1 platform, 1 post/per platform, 20 0000 scores/per post, content award spend ${total}ms",
+         ("total", elapsed.count() / 1000));
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+BOOST_AUTO_TEST_CASE(content_award_performance_test_2)
+{
+   try{
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      const uint64_t score_count = 10000;
+
+      flat_map<account_uid_type, fc::ecc::private_key> score_map;
+      actor(1003, score_count, score_map);
+
+      generate_blocks(4);
+      actor(31003, score_count, score_map);
+
+      int current_block_num = db.head_block_num();
+
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num + 5, voting_opinion_type::opinion_for, current_block_num + 5, current_block_num+5);
+      for (int i = 1; i < 5; ++i)
+         committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+      generate_blocks(5);
+
+      const uint64_t post_count = 200;
+      flat_map<account_uid_type, fc::ecc::private_key> post_map;
+      actor(400002, post_count, post_map);
+
+      ACTORS((300001));
+
+      transfer(committee_account, u_300001_id, _core(20000));
+      create_platform(u_300001_id, "platform", _core(10000), "www.123456789.com", "", { u_300001_private_key });
+      create_license(u_300001_id, 6, "999999999", "license title", "license body", "extra", { u_300001_private_key });
+
+      post_operation::ext extensions;
+      extensions.license_lid = 1;
+
+      uint64_t gap = score_count * post_count / 1000;
+
+      int count = 0;
+      int block_num = 4000;
+      for (const auto& p : post_map)
+      {
+         create_post({ p.second, u_300001_private_key }, u_300001_id, p.first, "", "", "", "",
+            optional<account_uid_type>(),
+            optional<account_uid_type>(),
+            optional<post_pid_type>(),
+            extensions);
+
+         for (auto a : score_map)
+         {
+            ++count;
+            if (count == gap && block_num > 0)
+            {
+               generate_blocks(4);
+               count = 0;
+               block_num -= 4;
+            }
+            score_a_post({ a.second }, a.first, u_300001_id, p.first, 1, 5, 10);
+         }
+      }
+
+      generate_blocks(block_num + 999);
+      wlog("1 platform, 20 0000 post/per platform, 20 0000 score/per post, content award test begin------${num}", ("num", db.head_block_num()));
+      auto start = fc::time_point::now();
+      generate_block();
+      auto end = fc::time_point::now();
+      auto elapsed = end - start;
+      wlog("1 platform, 20 0000 post/per platform, 20 0000 score/per post, content award spend ${total}ms",
+         ("total", elapsed.count() / 1000));
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+BOOST_AUTO_TEST_CASE(content_award_performance_test_3)
+{
+   try{
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      const uint64_t score_count = 5000;
+
+      flat_map<account_uid_type, fc::ecc::private_key> score_map;
+      actor(1003, score_count, score_map);
+
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 5, voting_opinion_type::opinion_for, 5, 5);
+      for (int i = 1; i < 5; ++i)
+         committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
+      generate_blocks(4);
+
+      const uint64_t post_count = 20;
+      flat_map<account_uid_type, fc::ecc::private_key> post_map;
+      actor(400002, post_count, post_map);
+
+      //10000 platforms, 20 0000 posts/per platform, 20 0000 scores/per post
+      const uint64_t platform_count = 20;
+
+      flat_map<account_uid_type, fc::ecc::private_key> platform_map;
+      actor(700000, platform_count, platform_map);
+
+      uint64_t gap = score_count * post_count * platform_count / 1000;
+
+      int i = 0;
+      int count = 0;
+      int block_num = 4000;
+      for (const auto& p : platform_map)
+      {
+         i++;
+         transfer(committee_account, p.first, _core(100000));
+         create_platform(p.first, "platform", _core(10000), "www.123456789.com", "", { p.second });
+         create_license(p.first, 6, "999999999", "license title", "license body", "extra", { p.second });
+
+         post_operation::ext extensions;
+         extensions.license_lid = 1;
+
+         for (const auto& a : post_map)
+         {
+            create_post({ a.second, p.second }, p.first, a.first, "", "", "", "",
+               optional<account_uid_type>(),
+               optional<account_uid_type>(),
+               optional<post_pid_type>(),
+               extensions);
+         }
+      }
+      
+      generate_blocks(99);
+
+      const auto& post_idx = db.get_index_type<post_index>().indices().get<by_id>();
+      auto itr = post_idx.begin();
+      while (itr != post_idx.end())
+      {
+         for (auto s : score_map)
+         {
+            ++count;
+            if (count == gap && block_num > 0)
+            {
+               generate_blocks(4);
+               count = 0;
+               block_num -= 4;
+            }
+            score_a_post({ s.second }, s.first, itr->platform, itr->poster,itr->post_pid, 5, 10);
+         }
+         itr++;
+      }
+
+      generate_blocks(block_num + 900);
+
+      wlog("10000 platforms, 20 0000 posts/per platform, 20 0000 scores/per post, content award begin........,${num}",("num", db.head_block_num()));
+      auto start = fc::time_point::now();
+      generate_block();
+      auto end = fc::time_point::now();
+      auto elapsed = end - start;
+      wlog("10000 platforms, 20 0000 posts/per platform, 20 0000 scores/per post, content award spend ${total}ms",
+         ("total", elapsed.count() / 1000));
+
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+
 // See https://bitshares.org/blog/2015/06/08/measuring-performance/
 // (note this is not the original test mentioned in the above post, but was
 //  recreated later according to the description)

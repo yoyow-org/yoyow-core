@@ -1591,6 +1591,8 @@ void database::process_content_platform_awards()
           ++apt_itr;
        }
 
+       std::map<account_uid_type, share_type> adjust_balance_map;
+
        if (params.total_content_award_amount > 0 && total_effective_csaf_amount > 0)
        {
           //compute per period award amount 
@@ -1617,12 +1619,15 @@ void database::process_content_platform_awards()
                 if (r.first == post.platform)
                    continue;
                 share_type to_add = ((uint128_t)receiptor_earned.value * r.second.cur_ratio / GRAPHENE_100_PERCENT).to_uint64();
-                adjust_balance(r.first, asset(to_add));
+                
+                ///adjust_balance(r.first, asset(to_add));
+                adjust_balance_map[r.first] += to_add;
                 receiptor.emplace(r.first, to_add);
                 temp -= to_add;
              }
+             adjust_balance_map[post.platform] += temp;
              receiptor.emplace(post.platform, temp);
-             //platform earned from content
+             
              share_type award_only_from_platform;
              if (post.poster == post.platform)
                 award_only_from_platform = ((uint128_t)receiptor_earned.value * GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO /
@@ -1638,8 +1643,6 @@ void database::process_content_platform_awards()
              {
                 platform_receiptor_award.emplace(post.platform, std::make_pair(temp, award_only_from_platform));
              }
-             //adjust_balance(post.platform, asset(temp));
-             actual_awards += receiptor_earned;
 
              modify(*(std::get<0>(*itr)), [&](active_post_object& act)
              {
@@ -1669,9 +1672,9 @@ void database::process_content_platform_awards()
                 {
                    obj.profits = to_add;
                 });
-                adjust_balance(score_obj.from_account_uid, asset(to_add));
+                ///adjust_balance(score_obj.from_account_uid, asset(to_add));
+                adjust_balance_map[score_obj.from_account_uid] += to_add;
                 actual_score_earned += to_add;
-                actual_awards += to_add;
              }
 
              modify(*(std::get<0>(*itr)), [&](active_post_object& act)
@@ -1687,7 +1690,7 @@ void database::process_content_platform_awards()
 
           for (const auto& p : platform_receiptor_award)
           {
-             adjust_balance(p.first, asset(p.second.first));
+             ///adjust_balance(p.first, asset(p.second.first));
              if (auto platform = find_platform_by_owner(p.first))
              {
                 modify(*platform, [&](platform_object& pla)
@@ -1715,8 +1718,8 @@ void database::process_content_platform_awards()
           {
              share_type to_add = (content_platform_award_amount_per_period * p.second.value /
                 total_csaf_amount.value).to_uint64();
-             adjust_balance(p.first, asset(to_add));
-             actual_awards += to_add;
+             ///adjust_balance(p.first, asset(to_add));
+             adjust_balance_map[p.first] += to_add;
 
              if (auto platform = find_platform_by_owner(p.first))
              {
@@ -1732,6 +1735,12 @@ void database::process_content_platform_awards()
                 });
              }
           }
+       }
+
+       for (const auto& a : adjust_balance_map)
+       {
+          actual_awards += a.second;
+          adjust_balance(a.first, asset(a.second));
        }
     }
 
