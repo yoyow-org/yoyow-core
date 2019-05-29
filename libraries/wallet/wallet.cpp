@@ -1979,7 +1979,20 @@ signed_transaction account_cancel_auth_platform(string account,
 
       return tx;
    }
-
+   
+   transaction_id_type broadcast_transaction( signed_transaction tx )
+   {
+      try {
+         _remote_net_broadcast->broadcast_transaction( tx );
+      }
+      catch (const fc::exception& e)
+      {
+         elog("Caught exception while broadcasting tx ${id}:  ${e}", ("id", tx.id().str())("e", e.to_detail_string()) );
+         throw;
+      }
+      return tx.id();
+   }
+   
    signed_transaction transfer(string from, string to, string amount,
                                string asset_symbol, string memo, bool csaf_fee = true, bool broadcast = false)
    { try {
@@ -4107,6 +4120,21 @@ signed_transaction wallet_api::collect_csaf_with_time(string from,
    return my->collect_csaf(from, to, amount, asset_symbol, time, csaf_fee, broadcast);
 }
 
+string wallet_api::compute_available_csaf(string account_name_or_uid)
+{
+   account_uid_type uid = my->get_account_uid( account_name_or_uid );
+   vector<account_uid_type> uids( 1, uid );
+   full_account_query_options opt = { true, true, false, false, false, false, false, false, false, false, false, false, false };
+   const auto& results = my->_remote_db->get_full_accounts_by_uid( uids, opt );
+   auto& account = results.at( uid );
+   const auto& global_params = my->get_global_properties().parameters;
+   auto csaf = account.statistics.compute_coin_seconds_earned( global_params.csaf_accumulate_window, time_point_sec(time_point::now()) ).first;
+   auto ao = my->get_asset( GRAPHENE_CORE_ASSET_AID );
+   auto s1 = global_params.max_csaf_per_account - account.statistics.csaf;
+   auto s2 = (csaf / global_params.csaf_rate).to_uint64();
+   return ao.amount_to_string(s1 > s2 ? s2 : s1);
+}
+
 signed_transaction wallet_api::update_witness_votes(string voting_account,
                                           flat_set<string> witnesses_to_add,
                                           flat_set<string> witnesses_to_remove,
@@ -4158,6 +4186,11 @@ void wallet_api::set_wallet_filename(string wallet_filename)
 signed_transaction wallet_api::sign_transaction(signed_transaction tx, bool broadcast /* = false */)
 { try {
    return my->sign_transaction( tx, broadcast);
+} FC_CAPTURE_AND_RETHROW( (tx) ) }
+
+transaction_id_type wallet_api::broadcast_transaction(signed_transaction tx)
+{ try {
+   return my->broadcast_transaction( tx );
 } FC_CAPTURE_AND_RETHROW( (tx) ) }
 
 operation wallet_api::get_prototype_operation(string operation_name)

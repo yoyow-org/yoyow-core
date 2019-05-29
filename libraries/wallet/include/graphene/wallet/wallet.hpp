@@ -1043,6 +1043,8 @@ class wallet_api
                                       fc::time_point_sec time,
                                       bool csaf_fee = true,
                                       bool broadcast = false);
+									  
+      string compute_available_csaf(string account_name_or_uid);
 
 
       /** Returns information about the given platform.
@@ -1273,6 +1275,8 @@ class wallet_api
        * @return the signed version of the transaction
        */
       signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false);
+	  
+	  transaction_id_type broadcast_transaction( signed_transaction tx );
 
       /** Returns an uninitialized object representing a given blockchain operation.
        *
@@ -1833,6 +1837,7 @@ FC_API( graphene::wallet::wallet_api,
         (collect_witness_pay)
         (collect_csaf)
         (collect_csaf_with_time)
+		(compute_available_csaf)
         (get_platform)
         (list_platforms)
         (get_platform_count)
@@ -1858,6 +1863,7 @@ FC_API( graphene::wallet::wallet_api,
         (save_wallet_file)
         (serialize_transaction)
         (sign_transaction)
+		(broadcast_transaction)
         (get_prototype_operation)
         //(dbg_make_uia)
         //(dbg_push_blocks)
