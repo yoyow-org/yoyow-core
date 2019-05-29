@@ -217,7 +217,7 @@ void database::initialize_indexes()
 
    add_index< primary_index<platform_index> >();
    add_index< primary_index<post_index> >();
-	 add_index< primary_index<active_post_index> >();
+   add_index< primary_index<active_post_index> >();
 
    add_index< primary_index<committee_member_index> >();
    add_index< primary_index<committee_proposal_index> >();

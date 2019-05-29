@@ -79,11 +79,11 @@ namespace graphene { namespace chain {
 
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
-      share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
+      share_type        calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
       {
          // Necessary balance of authority
-         a.insert( account );
+         a.insert(account);
       }
    };
 
@@ -135,46 +135,46 @@ namespace graphene { namespace chain {
    class Receiptor_Parameter
    {
    public:
-	   uint16_t          cur_ratio;        //the receiptor`s current ratio of the post
-	   bool              to_buyout;        //is to sell receiptor`s ratio
-	   uint16_t          buyout_ratio = 0; //the ratio to sell
-	   share_type        buyout_price = 0; //the price of the ratio for sell
-       time_point_sec    buyout_expiration = time_point_sec::maximum(); //the expiration time for receiptor`s sell order
-       extensions_type   extensions;
+      uint16_t          cur_ratio;        //the receiptor`s current ratio of the post
+      bool              to_buyout;        //is to sell receiptor`s ratio
+      uint16_t          buyout_ratio = 0; //the ratio to sell
+      share_type        buyout_price = 0; //the price of the ratio for sell
+      time_point_sec    buyout_expiration = time_point_sec::maximum(); //the expiration time for receiptor`s sell order
+      extensions_type   extensions;
 
 
-       Receiptor_Parameter(){}
+      Receiptor_Parameter(){}
 
-       Receiptor_Parameter(uint16_t       cur_ratio_,
-                           bool           to_buyout_,
-                           uint16_t       buyout_ratio_,
-                           share_type     buyout_price_,
-                           time_point_sec buyout_expiration_ = time_point_sec::maximum()) :
-        cur_ratio(cur_ratio_), to_buyout(to_buyout_), buyout_ratio(buyout_ratio_), buyout_price(buyout_price_), buyout_expiration(buyout_expiration_)
+      Receiptor_Parameter(uint16_t       cur_ratio_,
+         bool           to_buyout_,
+         uint16_t       buyout_ratio_,
+         share_type     buyout_price_,
+         time_point_sec buyout_expiration_ = time_point_sec::maximum()) :
+         cur_ratio(cur_ratio_), to_buyout(to_buyout_), buyout_ratio(buyout_ratio_), buyout_price(buyout_price_), buyout_expiration(buyout_expiration_)
+      {
+      }
+
+       void validate()const
        {
+          if (to_buyout){
+             FC_ASSERT(buyout_price > 0, "if buyout, buyout_price must be > 0. ");
+             FC_ASSERT(buyout_ratio > 0, "if buyout, buyout_ratio must be > 0. ");
+             FC_ASSERT(buyout_ratio <= cur_ratio, "buyout_ratio must be less than cur_ratio");
+          }
+          else{
+             FC_ASSERT(buyout_price == 0, "if not to buyout, buyout_price must be == 0. ");
+             FC_ASSERT(buyout_ratio == 0, "if not to buyout, buyout_ratio must be == 0. ");
+          }
        }
 
-	   void validate()const
-	   {
-           if (to_buyout){
-               FC_ASSERT(buyout_price > 0, "if buyout, buyout_price must be > 0. ");
-               FC_ASSERT(buyout_ratio > 0, "if buyout, buyout_ratio must be > 0. ");
-               FC_ASSERT(buyout_ratio <= cur_ratio, "buyout_ratio must be less than cur_ratio");
-           }
-           else{
-               FC_ASSERT(buyout_price == 0, "if not to buyout, buyout_price must be == 0. ");
-               FC_ASSERT(buyout_ratio == 0, "if not to buyout, buyout_ratio must be == 0. ");
-           }
-	   }
-
-       bool operator == (const Receiptor_Parameter& r1) const
-       {
-           return (cur_ratio == r1.cur_ratio) &&
-                  (to_buyout == r1.to_buyout) && 
-                  (buyout_price == r1.buyout_price) && 
-                  (buyout_ratio == r1.buyout_ratio) &&
-                  (buyout_expiration == r1.buyout_expiration);
-       }
+      bool operator == (const Receiptor_Parameter& r1) const
+      {
+         return (cur_ratio == r1.cur_ratio) &&
+            (to_buyout == r1.to_buyout) &&
+            (buyout_price == r1.buyout_price) &&
+            (buyout_ratio == r1.buyout_ratio) &&
+            (buyout_expiration == r1.buyout_expiration);
+      }
    };
 
    struct post_operation : public base_operation
@@ -189,15 +189,15 @@ namespace graphene { namespace chain {
 		   Post_Type_Default
 	   };
 
-	   struct ext
-	   {
-           optional<uint8_t>                                      post_type = Post_Type_Post; // post`s type
-		   optional<share_type>                                   forward_price;              // the price of forward this post
-           optional<license_lid_type>                             license_lid;                // the license`s id of this post
-           optional<uint32_t>                                     permission_flags = 0xFF;    // permissions of this post
-           optional<map<account_uid_type, Receiptor_Parameter> >  receiptors;                 // map of receiptor`s parameters
-           optional<account_uid_type>                             sign_platform;              // sign by platform account
-	   };
+      struct ext
+      {
+         optional<uint8_t>                                      post_type = Post_Type_Post; // post`s type
+         optional<share_type>                                   forward_price;              // the price of forward this post
+         optional<license_lid_type>                             license_lid;                // the license`s id of this post
+         optional<uint32_t>                                     permission_flags = 0xFF;    // permissions of this post
+         optional<map<account_uid_type, Receiptor_Parameter> >  receiptors;                 // map of receiptor`s parameters
+         optional<account_uid_type>                             sign_platform;              // sign by platform account
+      };
 
       struct fee_parameters_type {
          uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -245,19 +245,19 @@ namespace graphene { namespace chain {
     */
    struct post_update_operation : public base_operation
    {
-	   struct ext
-	   {
-           optional<share_type>           forward_price;     //the post`s forward price for update
-           optional<account_uid_type>     receiptor;         //the receiptor account for update his parameter
-           optional<bool>                 to_buyout;         //buyout or not the receiptor`s ratio
-           optional<uint16_t>             buyout_ratio;      //if buyout, the buyout ratio of the receiptor for sell
-           optional<share_type>           buyout_price;      //buyout price for sell the buyout ratio
-           optional<time_point_sec>       buyout_expiration; //the expiration time for this buyout order
-           optional<license_lid_type>     license_lid;       //the post`s license`s id for update
-           optional<uint32_t>             permission_flags;  //the post`s permissions for update
-           optional<account_uid_type>     content_sign_platform;   // sign by platform account
-           optional<account_uid_type>     receiptor_sign_platform; // sign by platform account
-	   };
+      struct ext
+      {
+         optional<share_type>           forward_price;     //the post`s forward price for update
+         optional<account_uid_type>     receiptor;         //the receiptor account for update his parameter
+         optional<bool>                 to_buyout;         //buyout or not the receiptor`s ratio
+         optional<uint16_t>             buyout_ratio;      //if buyout, the buyout ratio of the receiptor for sell
+         optional<share_type>           buyout_price;      //buyout price for sell the buyout ratio
+         optional<time_point_sec>       buyout_expiration; //the expiration time for this buyout order
+         optional<license_lid_type>     license_lid;       //the post`s license`s id for update
+         optional<uint32_t>             permission_flags;  //the post`s permissions for update
+         optional<account_uid_type>     content_sign_platform;   // sign by platform account
+         optional<account_uid_type>     receiptor_sign_platform; // sign by platform account
+      };
 
       struct fee_parameters_type {
          uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -285,25 +285,25 @@ namespace graphene { namespace chain {
       share_type      calculate_fee(const fee_parameters_type& k)const;
       void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
-          if (hash_value.valid() || extra_data.valid() || title.valid() || body.valid()){
-              a.insert(platform);  // Requires platform to change the permissions
-              a.insert(poster);    // Requires authors to change the permissions
-          }
-			  
-		  if (extensions.valid())
-		  {
-              const post_update_operation::ext& ext = extensions->value;
-              if (ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()){
-                  a.insert(platform);
-                  a.insert(poster);
-              }
-              if (ext.receiptor.valid() )
-                  a.insert(*(ext.receiptor));
-		  }
-          else{
-              a.insert(poster); 
-              a.insert(platform); 
-          }
+         if (hash_value.valid() || extra_data.valid() || title.valid() || body.valid()){
+            a.insert(platform);  // Requires platform to change the permissions
+            a.insert(poster);    // Requires authors to change the permissions
+         }
+
+         if (extensions.valid())
+         {
+            const post_update_operation::ext& ext = extensions->value;
+            if (ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()){
+               a.insert(platform);
+               a.insert(poster);
+            }
+            if (ext.receiptor.valid())
+               a.insert(*(ext.receiptor));
+         }
+         else{
+            a.insert(poster);
+            a.insert(platform);
+         }
       }
    };
 
@@ -326,25 +326,25 @@ namespace graphene { namespace chain {
 		   extensions_type   extensions;
 	   };
 
-	   fee_type                     fee;
+      fee_type                     fee;
 
-	   account_uid_type             from_account_uid; //from account`s uid
-	   account_uid_type             platform;         //platform account`s uid
-	   account_uid_type             poster;           //poster account`s uid
-	   post_pid_type                post_pid;         //post`s pid
-	   int8_t                       score;            //the score for post. range [-5,5]
-       share_type                   csaf;             //the integration of yoyow for post
-       optional<account_uid_type>   sign_platform;    // sign by platform account
+      account_uid_type             from_account_uid; //from account`s uid
+      account_uid_type             platform;         //platform account`s uid
+      account_uid_type             poster;           //poster account`s uid
+      post_pid_type                post_pid;         //post`s pid
+      int8_t                       score;            //the score for post. range [-5,5]
+      share_type                   csaf;             //the integration of yoyow for post
+      optional<account_uid_type>   sign_platform;    // sign by platform account
 
-	   extensions_type              extensions;
+      extensions_type              extensions;
 
 	   account_uid_type fee_payer_uid()const { return from_account_uid; }
 	   void             validate()const;
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
-	   void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
-	   {
-           a.insert(from_account_uid);  // Requires platform to change the permissions
-	   }
+      void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
+      {
+         a.insert(from_account_uid);  // Requires platform to change the permissions
+      }
    };
 
    /**

@@ -542,8 +542,8 @@ void database::_apply_block( const signed_block& next_block )
    update_committee();
    adjust_budgets();
 
-	 process_content_platform_awards();
-	 process_platform_voted_awards();
+   process_content_platform_awards();
+   process_platform_voted_awards();
 
    clear_unnecessary_objects();
 
