@@ -42,16 +42,16 @@ class proposal_object : public abstract_object<proposal_object>
       static const uint8_t space_id = protocol_ids;
       static const uint8_t type_id = proposal_object_type;
 
-      time_point_sec                expiration_time;
-      optional<time_point_sec>      review_period_time;
-      transaction                   proposed_transaction;
+      time_point_sec                 expiration_time;
+      optional<time_point_sec>       review_period_time;
+      transaction                    proposed_transaction;
       flat_set<account_uid_type>     required_secondary_approvals;
       flat_set<account_uid_type>     available_secondary_approvals;
       flat_set<account_uid_type>     required_active_approvals;
       flat_set<account_uid_type>     available_active_approvals;
       flat_set<account_uid_type>     required_owner_approvals;
       flat_set<account_uid_type>     available_owner_approvals;
-      flat_set<public_key_type>     available_key_approvals;
+      flat_set<public_key_type>      available_key_approvals;
 
       std::pair<bool, signed_information> is_authorized_to_execute(database& db)const;
 };

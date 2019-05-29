@@ -156,7 +156,7 @@ struct database_fixture {
    public_key_type committee_key;
    account_uid_type committee_account = GRAPHENE_COMMITTEE_ACCOUNT_UID;
    fc::ecc::private_key private_key = fc::ecc::private_key::generate();
-   fc::ecc::private_key init_account_priv_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")) );
+   fc::ecc::private_key init_account_priv_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")));
    public_key_type init_account_pub_key;
 
    optional<fc::temp_directory> data_dir;
@@ -168,12 +168,12 @@ struct database_fixture {
 
    static fc::ecc::private_key generate_private_key(string seed);
    string generate_anon_acct_name();
-   static void verify_asset_supplies( const database& db );
-   void verify_account_history_plugin_index( )const;
+   static void verify_asset_supplies(const database& db);
+   void verify_account_history_plugin_index()const;
    void open_database();
    signed_block generate_block(uint32_t skip = ~0,
-                               const fc::ecc::private_key& key = generate_private_key("null_key"),
-                               int miss_blocks = 0);
+      const fc::ecc::private_key& key = generate_private_key("null_key"),
+      int miss_blocks = 0);
 
    /**
     * @brief Generates block_count blocks
@@ -208,21 +208,21 @@ struct database_fixture {
       public_key_type key = public_key_type()
       );
 
-   const asset_object& get_asset( const string& symbol )const;
-   const account_object& get_account( const string& name )const;
+   const asset_object& get_asset(const string& symbol)const;
+   const account_object& get_account(const string& name)const;
 
-   const asset_object& create_user_issued_asset( const string& name );
-   const asset_object& create_user_issued_asset( const string& name,
-                                                 const account_object& issuer,
-                                                 uint16_t flags );
-   void issue_uia( const account_object& recipient, asset amount );
-   void issue_uia( account_uid_type recipient_id, asset amount );
+   const asset_object& create_user_issued_asset(const string& name);
+   const asset_object& create_user_issued_asset(const string& name,
+      const account_object& issuer,
+      uint16_t flags);
+   void issue_uia(const account_object& recipient, asset amount);
+   void issue_uia(account_uid_type recipient_id, asset amount);
 
    const account_object& create_account(
       const uint32_t seed,
       const string& name,
       const public_key_type& key = public_key_type()
-   );
+      );
    const account_object& create_account(
       const account_uid_type uid,
       const string& name,
@@ -247,36 +247,36 @@ struct database_fixture {
       uint8_t referrer_percent = 100
       );
 
-   const committee_member_object& create_committee_member( const account_object& owner );
+   const committee_member_object& create_committee_member(const account_object& owner);
    const witness_object& create_witness(account_uid_type owner,
-                                        const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
+      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
    const witness_object& create_witness(const account_object& owner,
-                                        const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
-//   const worker_object& create_worker(account_id_type owner, const share_type daily_pay = 1000, const fc::microseconds& duration = fc::days(2));
-   uint64_t fund( const account_object& account, const asset& amount = asset(500000) );
-   digest_type digest( const transaction& tx );
-   void sign( signed_transaction& trx, const fc::ecc::private_key& key );
-//   const limit_order_object* create_sell_order( account_uid_type user, const asset& amount, const asset& recv );
-//   const limit_order_object* create_sell_order( const account_object& user, const asset& amount, const asset& recv );
-//   asset cancel_limit_order( const limit_order_object& order );
-   void transfer( account_uid_type from, account_uid_type to, const asset& amount, const asset& fee = asset() );
-   void transfer( const account_object& from, const account_object& to, const asset& amount, const asset& fee = asset() );
+      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
+   //   const worker_object& create_worker(account_id_type owner, const share_type daily_pay = 1000, const fc::microseconds& duration = fc::days(2));
+   uint64_t fund(const account_object& account, const asset& amount = asset(500000));
+   digest_type digest(const transaction& tx);
+   void sign(signed_transaction& trx, const fc::ecc::private_key& key);
+   //   const limit_order_object* create_sell_order( account_uid_type user, const asset& amount, const asset& recv );
+   //   const limit_order_object* create_sell_order( const account_object& user, const asset& amount, const asset& recv );
+   //   asset cancel_limit_order( const limit_order_object& order );
+   void transfer(account_uid_type from, account_uid_type to, const asset& amount, const asset& fee = asset());
+   void transfer(const account_object& from, const account_object& to, const asset& amount, const asset& fee = asset());
    void enable_fees();
-   void change_fees( const flat_set< fee_parameters >& new_params, uint32_t new_scale = 0 );
+   void change_fees(const flat_set< fee_parameters >& new_params, uint32_t new_scale = 0);
    //TODO:lifetime member
-   void upgrade_to_lifetime_member( account_uid_type account );
-   void upgrade_to_lifetime_member( const account_object& account );
+   void upgrade_to_lifetime_member(account_uid_type account);
+   void upgrade_to_lifetime_member(const account_object& account);
    //TODO:annual member
-   void upgrade_to_annual_member( account_uid_type account );
-   void upgrade_to_annual_member( const account_object& account );
-   void print_market( const string& syma, const string& symb )const;
-   string pretty( const asset& a )const;
-//   void print_limit_order( const limit_order_object& cur )const;
+   void upgrade_to_annual_member(account_uid_type account);
+   void upgrade_to_annual_member(const account_object& account);
+   void print_market(const string& syma, const string& symb)const;
+   string pretty(const asset& a)const;
+   //   void print_limit_order( const limit_order_object& cur )const;
    // TODO: market
-   void print_joint_market( const string& syma, const string& symb )const;
-   int64_t get_balance( account_uid_type account, asset_aid_type a )const;
-   int64_t get_balance( const account_object& account, const asset_object& a )const;
-   vector< operation_history_object > get_operation_history( account_uid_type account_id )const;
+   void print_joint_market(const string& syma, const string& symb)const;
+   int64_t get_balance(account_uid_type account, asset_aid_type a)const;
+   int64_t get_balance(const account_object& account, const asset_object& a)const;
+   vector< operation_history_object > get_operation_history(account_uid_type account_id)const;
 
    //content test add
    void add_csaf_for_account(account_uid_type account, share_type csaf);
@@ -345,63 +345,63 @@ struct database_fixture {
    }
 
    void transfer_extension(flat_set<fc::ecc::private_key> sign_keys,
-                           account_uid_type from,
-                           account_uid_type to,
-                           asset            amount,
-                           string           memo,
-                           bool             isfrom_balance = true,
-                           bool             isto_balance = true);
+      account_uid_type from,
+      account_uid_type to,
+      asset            amount,
+      string           memo,
+      bool             isfrom_balance = true,
+      bool             isto_balance = true);
 
    void account_auth_platform(flat_set<fc::ecc::private_key> sign_keys,
-                              account_uid_type account,
-                              account_uid_type platform_owner,
-                              share_type       limit_for_platform = 0,
-                              uint32_t         permission_flags = 0xFFFFFFFF);
+      account_uid_type account,
+      account_uid_type platform_owner,
+      share_type       limit_for_platform = 0,
+      uint32_t         permission_flags = 0xFFFFFFFF);
 
    void create_post(flat_set<fc::ecc::private_key> sign_keys,
-                    account_uid_type           platform,
-                    account_uid_type           poster,
-                    string                     hash_value,
-                    string                     title,
-                    string                     body,
-                    string                     extra_data,
-                    optional<account_uid_type> origin_platform,
-                    optional<account_uid_type> origin_poster,
-                    optional<post_pid_type>    origin_post_pid,
-                    post_operation::ext  exts = post_operation::ext());
+      account_uid_type           platform,
+      account_uid_type           poster,
+      string                     hash_value,
+      string                     title,
+      string                     body,
+      string                     extra_data,
+      optional<account_uid_type> origin_platform,
+      optional<account_uid_type> origin_poster,
+      optional<post_pid_type>    origin_post_pid,
+      post_operation::ext  exts = post_operation::ext());
 
    void update_post(flat_set<fc::ecc::private_key> sign_keys,
-                    account_uid_type              platform,
-                    account_uid_type              poster,
-                    post_pid_type                 post_pid,
-                    optional<string>              hash_value,
-                    optional<string>              title,
-                    optional<string>              body,
-                    optional<string>              extra_data,
-                    optional<post_update_operation::ext> ext = post_update_operation::ext());
+      account_uid_type              platform,
+      account_uid_type              poster,
+      post_pid_type                 post_pid,
+      optional<string>              hash_value,
+      optional<string>              title,
+      optional<string>              body,
+      optional<string>              extra_data,
+      optional<post_update_operation::ext> ext = post_update_operation::ext());
 
    void score_a_post(flat_set<fc::ecc::private_key> sign_keys,
-                     account_uid_type from_account,
-                     account_uid_type platform,
-                     account_uid_type poster,
-                     post_pid_type    post_pid,
-                     int8_t           score,
-                     share_type       csaf);
+      account_uid_type from_account,
+      account_uid_type platform,
+      account_uid_type poster,
+      post_pid_type    post_pid,
+      int8_t           score,
+      share_type       csaf);
 
    void buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
-                        account_uid_type      account,
-                        account_uid_type      platform,
-                        advertising_aid_type  advertising_aid,
-                        time_point_sec        start_time,
-                        uint32_t              buy_number,
-                        string                extra_data,
-                        string                memo);
+      account_uid_type      account,
+      account_uid_type      platform,
+      advertising_aid_type  advertising_aid,
+      time_point_sec        start_time,
+      uint32_t              buy_number,
+      string                extra_data,
+      string                memo);
 
    void confirm_advertising(flat_set<fc::ecc::private_key> sign_keys,
-                            account_uid_type               platform,
-                            advertising_aid_type           advertising_aid,
-                            advertising_order_oid_type     advertising_order_oid,
-                            bool                           comfirm);
+      account_uid_type               platform,
+      advertising_aid_type           advertising_aid,
+      advertising_order_oid_type     advertising_order_oid,
+      bool                           comfirm);
 
 
    void account_manage(account_uid_type account, account_manage_operation::opt options);
@@ -415,7 +415,7 @@ struct database_fixture {
 
    void actor(uint32_t start, uint32_t limit, flat_map<account_uid_type, fc::ecc::private_key>& map)
    {
-      while(limit > 0)
+      while (limit > 0)
       {
          account_uid_type uid = graphene::chain::calc_account_uid(start);
          fc::ecc::private_key pri_key = generate_private_key(BOOST_PP_STRINGIZE(start));
@@ -429,25 +429,25 @@ struct database_fixture {
       }
    }
 
-   void create_advertising(flat_set<fc::ecc::private_key> sign_keys, 
-                           account_uid_type               platform, 
-                           string                         description, 
-                           share_type                     unit_price, 
-                           uint32_t                       unit_time);
+   void create_advertising(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type               platform,
+      string                         description,
+      share_type                     unit_price,
+      uint32_t                       unit_time);
 
    void update_advertising(flat_set<fc::ecc::private_key> sign_keys,
-                           account_uid_type               platform,
-                           advertising_aid_type           advertising_aid,
-                           optional<string>               description,
-                           optional<share_type>           unit_price,
-                           optional<uint32_t>             unit_time,
-                           optional<bool>                 on_sell);
+      account_uid_type               platform,
+      advertising_aid_type           advertising_aid,
+      optional<string>               description,
+      optional<share_type>           unit_price,
+      optional<uint32_t>             unit_time,
+      optional<bool>                 on_sell);
 
    void ransom_advertising(flat_set<fc::ecc::private_key> sign_keys,
-                           account_uid_type               platform,
-                           account_uid_type               from_account,
-                           advertising_aid_type           advertising_aoid,
-                           advertising_order_oid_type     advertising_order_oid);
+      account_uid_type               platform,
+      account_uid_type               from_account,
+      advertising_aid_type           advertising_aoid,
+      advertising_order_oid_type     advertising_order_oid);
 
    void create_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type create_account,

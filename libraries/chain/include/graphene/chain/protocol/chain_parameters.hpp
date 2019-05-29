@@ -45,7 +45,7 @@ namespace graphene { namespace chain {
       share_type  min_effective_csaf                  = GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;///< minimum csaf required for post in content awards 
       share_type  total_content_award_amount          = GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;///< total content award amount, per year 
       share_type  total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;///< total platform award content amount, per year
-      share_type  total_platform_voted_award_amount	  = GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;///< total platform vote award amount, per year
+      share_type  total_platform_voted_award_amount	= GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;///< total platform vote award amount, per year
       share_type  platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;///< minimum votes required for platform in platform vote awards
       uint32_t    platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;///< minimum votes rank required for platform in platform vote awards
       
@@ -144,29 +144,29 @@ namespace graphene { namespace chain {
 
 } }  // graphene::chain
 FC_REFLECT(	graphene::chain::content_parameter_extension_type, 
-			(content_award_interval)
-			(platform_award_interval)
-			(max_csaf_per_approval)
-			(approval_expiration)
-			(min_effective_csaf)
-			(total_content_award_amount)
-			(total_platform_content_award_amount)
-			(total_platform_voted_award_amount)
-			(platform_award_min_votes)
-			(platform_award_requested_rank)           
-      (platform_award_basic_rate)
-      (casf_modulus)
-      (post_award_expiration)
-      (approval_casf_min_weight)
-      (approval_casf_first_rate)
-      (approval_casf_second_rate)
-      (receiptor_award_modulus)
-      (disapprove_award_modulus)
-      (advertising_confirmed_fee_rate)
-      (advertising_confirmed_min_fee)
-      (custom_vote_effective_time)
-      (min_witness_block_produce_pledge)
-      (content_award_skip_slots))
+   (content_award_interval)
+   (platform_award_interval)
+   (max_csaf_per_approval)
+   (approval_expiration)
+   (min_effective_csaf)
+   (total_content_award_amount)
+   (total_platform_content_award_amount)
+   (total_platform_voted_award_amount)
+   (platform_award_min_votes)
+   (platform_award_requested_rank)
+   (platform_award_basic_rate)
+   (casf_modulus)
+   (post_award_expiration)
+   (approval_casf_min_weight)
+   (approval_casf_first_rate)
+   (approval_casf_second_rate)
+   (receiptor_award_modulus)
+   (disapprove_award_modulus)
+   (advertising_confirmed_fee_rate)
+   (advertising_confirmed_min_fee)
+   (custom_vote_effective_time)
+   (min_witness_block_produce_pledge)
+   (content_award_skip_slots))
 
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)

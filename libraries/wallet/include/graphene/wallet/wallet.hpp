@@ -139,7 +139,7 @@ struct wallet_data
    map<string, vector<string> > pending_account_registrations;
    map<string, string> pending_witness_registrations;
 
-   key_label_index_type                                              labeled_keys;
+   key_label_index_type      labeled_keys;
 
    string                    ws_server = "ws://localhost:8090";
    string                    ws_user;
@@ -311,7 +311,7 @@ class wallet_api
        * @param start the sequence number where to start looping back throw the history, set 0 for most recent
        * @returns a list of \c operation_history_objects
        */
-     vector<operation_detail>  get_relative_account_history(string account, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const;
+      vector<operation_detail>  get_relative_account_history(string account, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const;
 
       /** Returns the block chain's slowly-changing settings.
        * This object contains all of the properties of the blockchain that are fixed
@@ -557,7 +557,7 @@ class wallet_api
       * @param n a number
       * @return an account uid
       */
-     uint64_t calculate_account_uid(uint64_t n)const;
+      uint64_t calculate_account_uid(uint64_t n)const;
 
      /**
       * Derive any number of *possible* owner keys from a given brain key.
@@ -571,7 +571,7 @@ class wallet_api
       * @param number_of_desired_keys  Number of desired keys
       * @return A list of keys that are deterministically derived from the brainkey
       */
-     vector<brain_key_info> derive_owner_keys_from_brain_key(string brain_key, int number_of_desired_keys = 1) const;
+      vector<brain_key_info> derive_owner_keys_from_brain_key(string brain_key, int number_of_desired_keys = 1) const;
 
      /**
       * Determine whether a textual representation of a public key
@@ -580,7 +580,7 @@ class wallet_api
       * @param public_key Public key
       * @return Whether a public key is known
       */
-     bool is_public_key_registered(string public_key) const;
+      bool is_public_key_registered(string public_key) const;
 
       /** Converts a signed_transaction in JSON form to its binary representation.
        *
@@ -1275,8 +1275,8 @@ class wallet_api
        * @return the signed version of the transaction
        */
       signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false);
-	  
-	  transaction_id_type broadcast_transaction( signed_transaction tx );
+     
+      transaction_id_type broadcast_transaction( signed_transaction tx );
 
       /** Returns an uninitialized object representing a given blockchain operation.
        *
@@ -1837,7 +1837,7 @@ FC_API( graphene::wallet::wallet_api,
         (collect_witness_pay)
         (collect_csaf)
         (collect_csaf_with_time)
-		(compute_available_csaf)
+        (compute_available_csaf)
         (get_platform)
         (list_platforms)
         (get_platform_count)
@@ -1863,7 +1863,7 @@ FC_API( graphene::wallet::wallet_api,
         (save_wallet_file)
         (serialize_transaction)
         (sign_transaction)
-		(broadcast_transaction)
+        (broadcast_transaction)
         (get_prototype_operation)
         //(dbg_make_uia)
         //(dbg_push_blocks)

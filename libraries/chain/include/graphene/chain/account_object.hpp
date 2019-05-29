@@ -716,44 +716,44 @@ namespace graphene { namespace chain {
    class account_auth_platform_object : public graphene::db::abstract_object<account_auth_platform_object>
    {
    public:
-       enum Platform_Auth_Permission
-       {
-           Platform_Permission_Forward  = 1,        //allow forward 
-           Platform_Permission_Liked    = 2,        //allow liked or scored
-           Platform_Permission_Buyout   = 4,        //allow buyout
-           Platform_Permission_Comment  = 8,        //allow comment
-           Platform_Permission_Reward   = 16,       //allow reward
-           Platform_Permission_Transfer = 32,       //allow transfer
-           Platform_Permission_Post     = 64,       //allow post
-           Platform_Permission_Content_Update = 128 //allow content update
-       };
+      enum Platform_Auth_Permission
+      {
+         Platform_Permission_Forward        = 1,        //allow forward 
+         Platform_Permission_Liked          = 2,        //allow liked or scored
+         Platform_Permission_Buyout         = 4,        //allow buyout
+         Platform_Permission_Comment        = 8,        //allow comment
+         Platform_Permission_Reward         = 16,       //allow reward
+         Platform_Permission_Transfer       = 32,       //allow transfer
+         Platform_Permission_Post           = 64,       //allow post
+         Platform_Permission_Content_Update = 128 //allow content update
+      };
 
-       static const uint8_t space_id = implementation_ids;
-       static const uint8_t type_id = impl_account_auth_platform_object_type;
+      static const uint8_t space_id = implementation_ids;
+      static const uint8_t type_id = impl_account_auth_platform_object_type;
 
-       account_uid_type  account;
-       account_uid_type  platform;
+      account_uid_type  account;
+      account_uid_type  platform;
 
-       share_type    max_limit = 0;   //max limit prepaid for platform
-       share_type    cur_used = 0;    //current prepaid used by platform 
-       bool          is_active = true;
-       uint32_t      permission_flags = account_auth_platform_object::Platform_Permission_Forward |
-                                        account_auth_platform_object::Platform_Permission_Liked |
-                                        account_auth_platform_object::Platform_Permission_Buyout |
-                                        account_auth_platform_object::Platform_Permission_Comment |
-                                        account_auth_platform_object::Platform_Permission_Reward |
-                                        account_auth_platform_object::Platform_Permission_Transfer |
-                                        account_auth_platform_object::Platform_Permission_Post |
-                                        account_auth_platform_object::Platform_Permission_Content_Update;
-       optional<memo_data>    memo;
+      share_type    max_limit = 0;   //max limit prepaid for platform
+      share_type    cur_used = 0;    //current prepaid used by platform 
+      bool          is_active = true;
+      uint32_t      permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+                                       account_auth_platform_object::Platform_Permission_Liked |
+                                       account_auth_platform_object::Platform_Permission_Buyout |
+                                       account_auth_platform_object::Platform_Permission_Comment |
+                                       account_auth_platform_object::Platform_Permission_Reward |
+                                       account_auth_platform_object::Platform_Permission_Transfer |
+                                       account_auth_platform_object::Platform_Permission_Post |
+                                       account_auth_platform_object::Platform_Permission_Content_Update;
+      optional<memo_data>    memo;
 
-       share_type get_auth_platform_usable_prepaid(share_type account_prepaid) const{
-           share_type usable_prepaid = 0;
-           FC_ASSERT(max_limit >= cur_used);
-           share_type amount = max_limit - cur_used;
-           usable_prepaid = account_prepaid >= amount ? amount : account_prepaid;
-           return usable_prepaid;
-       };
+      share_type get_auth_platform_usable_prepaid(share_type account_prepaid) const{
+         share_type usable_prepaid = 0;
+         FC_ASSERT(max_limit >= cur_used);
+         share_type amount = max_limit - cur_used;
+         usable_prepaid = account_prepaid >= amount ? amount : account_prepaid;
+         return usable_prepaid;
+      };
    };
 
    struct by_account_uid{};
@@ -763,15 +763,15 @@ namespace graphene { namespace chain {
 
    typedef multi_index_container<
        account_auth_platform_object,
-	   indexed_by<
+	    indexed_by<
 	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-          ordered_unique< tag<by_account_platform>,
+         ordered_unique< tag<by_account_platform>,
                                  composite_key< 
                                  account_auth_platform_object,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >>
                                  >,
-          ordered_unique< tag<by_platform_account>,
+         ordered_unique< tag<by_platform_account>,
                                  composite_key< 
                                  account_auth_platform_object,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >,

@@ -158,7 +158,7 @@ namespace graphene { namespace chain {
       committee_proposal_object_type,
       proposal_object_type,
       operation_history_object_type,
-	  active_post_object_type,
+      active_post_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -180,7 +180,7 @@ namespace graphene { namespace chain {
       impl_chain_property_object_type,
       impl_witness_schedule_object_type,
       impl_platform_vote_object_type,
-	    impl_score_object_type,
+      impl_score_object_type,
       impl_license_object_type,
       impl_advertising_object_type,
       impl_advertising_order_object_type,
@@ -216,7 +216,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, committee_proposal_object_type, committee_proposal_object>    committee_proposal_id_type;
    typedef object_id< protocol_ids, proposal_object_type,           proposal_object>              proposal_id_type;
    typedef object_id< protocol_ids, operation_history_object_type,  operation_history_object>     operation_history_id_type;
-   typedef object_id< protocol_ids, active_post_object_type,		active_post_object>			  active_post_id_type;
+   typedef object_id< protocol_ids, active_post_object_type,      active_post_object>           active_post_id_type;
 
    // implementation types
    class global_property_object;
