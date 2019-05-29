@@ -250,7 +250,7 @@
 #define GRAPHENE_RECENTLY_MISSED_COUNT_INCREMENT             4
 #define GRAPHENE_RECENTLY_MISSED_COUNT_DECREMENT             3
 
-#define GRAPHENE_CURRENT_DB_VERSION                          "YYW1.1"
+#define GRAPHENE_CURRENT_DB_VERSION                          "YYW1.2"
 
 #define GRAPHENE_IRREVERSIBLE_THRESHOLD                      (75 * GRAPHENE_1_PERCENT)
 
