@@ -94,19 +94,22 @@ void proposal_update_operation::get_required_authorities( vector<authority>& o )
       o.emplace_back( std::move(auth) );
 }
 
-void proposal_update_operation::get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+void proposal_update_operation::get_required_secondary_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
 {
    for( const auto& i : secondary_approvals_to_add )    a.insert(i);
    for( const auto& i : secondary_approvals_to_remove ) a.insert(i);
 }
 
-void proposal_update_operation::get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+void proposal_update_operation::get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
 {
    for( const auto& i : active_approvals_to_add )    a.insert(i);
    for( const auto& i : active_approvals_to_remove ) a.insert(i);
+
+   if(enabled_hardfork)
+		a.insert(fee_paying_account);
 }
 
-void proposal_update_operation::get_required_owner_uid_authorities( flat_set<account_uid_type>& a )const
+void proposal_update_operation::get_required_owner_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
 {
    for( const auto& i : owner_approvals_to_add )    a.insert(i);
    for( const auto& i : owner_approvals_to_remove ) a.insert(i);

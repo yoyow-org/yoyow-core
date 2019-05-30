@@ -44,6 +44,7 @@ std::pair<bool, signed_information> proposal_object::is_authorized_to_execute(da
                        [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).owner); },
                        [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).active); },
                        [&]( account_uid_type uid ){ return &(db.get_account_by_uid(uid).secondary); },
+                       db.get_dynamic_global_properties().enabled_hardfork_04,
                        db.get_global_properties().parameters.max_authority_depth,
                        true, /* allow committeee */
                        available_owner_approvals,

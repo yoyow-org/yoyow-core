@@ -26,7 +26,8 @@ namespace graphene { namespace chain {
          {
              flat_map<asset_aid_type, share_type>   rewards_profits;
              share_type                             foward_profits    = 0;
-             share_type                             post_profits      = 0;
+             share_type                             post_profits      = 0; //if poster and platform is the same account , include post,platform and buyout profits from content
+             share_type                             post_profits_by_platform = 0;//only platform from content
              share_type                             platform_profits  = 0;
          };
          
@@ -50,8 +51,6 @@ namespace graphene { namespace chain {
          fc::time_point_sec  average_pledge_last_update;
          uint32_t            average_pledge_next_update_block;
 
-         advertising_aid_type                   last_advertising_sequence = 0;
-         license_lid_type                       last_license_sequence = 0;
          map<time_point_sec, share_type>        vote_profits;
          map<uint32_t, Platform_Period_Profits> period_profits;
 
@@ -67,7 +66,8 @@ namespace graphene { namespace chain {
                                  asset      reward_profit = asset(),
                                  share_type forward_profit = 0,
                                  share_type post_profit = 0,
-                                 share_type platform_profit = 0
+                                 share_type platform_profit = 0,
+                                 share_type post_profit_by_platform = 0
                                  )
          {
              auto iter = period_profits.find(period);
@@ -83,6 +83,7 @@ namespace graphene { namespace chain {
                  iter->second.foward_profits   += forward_profit;
                  iter->second.post_profits     += post_profit;
                  iter->second.platform_profits += platform_profit;
+                 iter->second.post_profits_by_platform += post_profit_by_platform;
              }
              else
              {
@@ -94,6 +95,7 @@ namespace graphene { namespace chain {
                  profits.foward_profits   = forward_profit;
                  profits.post_profits     = post_profit;
                  profits.platform_profits = platform_profit;
+                 profits.post_profits_by_platform = post_profit_by_platform;
                  period_profits.emplace(period, profits);
              }
          }
@@ -261,28 +263,32 @@ namespace graphene { namespace chain {
          time_point_sec create_time;
          time_point_sec last_update_time;
 
-		 map<account_uid_type, Recerptor_Parameter> receiptors; //receiptors of the post
-		 optional<share_type>                       forward_price;
+         map<account_uid_type, Receiptor_Parameter> receiptors; //receiptors of the post
+         optional<share_type>                       forward_price;
          optional<license_lid_type>                 license_lid;
          uint32_t                                   permission_flags = 0xFF;
          bool                                       score_settlement = false;
 
          post_id_type get_id()const { return id; }
-		 void receiptors_validate()const
-		 {
-			 auto itor = receiptors.find(platform);
-			 FC_ASSERT(itor != receiptors.end(), "platform must be included by receiptors");
-			 FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO, "platform`s ratio must be 30%");  
-			 uint32_t total = 0;
-			 for (auto iter : receiptors)
-			 {
-                 FC_ASSERT(iter.second.cur_ratio <= (GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "The cur_ratio of receiptor should less then 70%");
-				 total += iter.second.cur_ratio;
-				 if (iter.second.to_buyout)
-					 FC_ASSERT(iter.second.cur_ratio >= iter.second.buyout_ratio, "buyout_ratio must less then cur_ratio");
-			 }
-             FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
-		 }
+         void receiptors_validate()const
+         {
+            auto itor = receiptors.find(platform);
+            FC_ASSERT(itor != receiptors.end(), "platform must be included by receiptors");
+            if (poster == platform)
+               FC_ASSERT(itor->second.cur_ratio >= GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO, "poster and platform ratio must be more than ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO + GRAPHENE_DEFAULT_POSTER_MIN_RECEIPTS_RATIO / 100));
+            else
+               FC_ASSERT(itor->second.cur_ratio == GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO, "platform`s ratio must be ${n}%", ("n", GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO / 100));
+            uint32_t total = 0;
+            for (auto iter : receiptors)
+            {
+               FC_ASSERT(iter.second.cur_ratio <= GRAPHENE_100_PERCENT, "The cur_ratio of receiptor should less than ${n}%",
+                  ("n", GRAPHENE_100_PERCENT / 100));
+               total += iter.second.cur_ratio;
+               if (iter.second.to_buyout)
+                  FC_ASSERT(iter.second.cur_ratio >= iter.second.buyout_ratio, "buyout_ratio must less than cur_ratio");
+            }
+            FC_ASSERT(total == GRAPHENE_100_PERCENT, "The sum of receiptors` ratio must be 100%");
+         }
    };
 
 
@@ -349,66 +355,73 @@ namespace graphene { namespace chain {
 	 class active_post_object : public graphene::db::abstract_object < active_post_object >
 	 {
 	 public:
-		 static const uint8_t space_id	= protocol_ids;
-		 static const uint8_t type_id		= active_post_object_type;
+       static const uint8_t space_id = protocol_ids;
+       static const uint8_t type_id = active_post_object_type;
 
-         struct receiptor_detail
-         {
-            share_type  forward;
-            share_type  post_award;
-            flat_map<asset_aid_type, share_type> rewards;   
-         };
+       struct receiptor_detail
+       {
+          share_type  forward;
+          share_type  post_award;
+          flat_map<asset_aid_type, share_type> rewards;
+       };
 
-		 /// The platform's pid.
-		 account_uid_type                       platform;
-		 /// The poster's uid.
-		 account_uid_type                       poster;
-		 /// The post's pid.
-		 post_pid_type                          post_pid;
-		 /// approvals of a post, csaf.
-		 share_type                             total_csaf;
-		 /// rewards of a post.
-		 flat_map<asset_aid_type, share_type>   total_rewards;
-		 /// period sequence of a post.
-		 uint64_t                               period_sequence;
+       /// The platform's pid.
+       account_uid_type                       platform;
+       /// The poster's uid.
+       account_uid_type                       poster;
+       /// The post's pid.
+       post_pid_type                          post_pid;
+       /// approvals of a post, csaf.
+       share_type                             total_csaf;
+       /// rewards of a post.
+       flat_map<asset_aid_type, share_type>   total_rewards;
+       /// period sequence of a post.
+       uint64_t                               period_sequence;
 
-     bool                                   positive_win;
-     share_type                             post_award;
-     share_type                             forward_award;
-     flat_map<account_uid_type, receiptor_detail> receiptor_details;
+       bool                                   positive_win;
+       share_type                             post_award;
+       share_type                             forward_award;
+       flat_map<account_uid_type, receiptor_detail> receiptor_details;
 
-     void insert_receiptor(account_uid_type uid, share_type post_award = 0, share_type forward = 0)
-     {
-        if (receiptor_details.count(uid))
-        {
-           receiptor_details.at(uid).forward += forward;
-           receiptor_details.at(uid).post_award += post_award;
-        }
-        else
-        {
-           receiptor_detail detail;
-           detail.forward = forward;
-           detail.post_award = post_award;
-           receiptor_details.emplace(uid, detail);
-        }
-     }
-     void insert_receiptor(account_uid_type uid, asset reward = asset())
-     {
-        if (receiptor_details.count(uid))
-        {
-           if (receiptor_details.at(uid).rewards.count(reward.asset_id))
-              receiptor_details.at(uid).rewards.at(reward.asset_id) += reward.amount;
-           else
-              receiptor_details.at(uid).rewards.emplace(reward.asset_id, reward.amount);
-        }
-        else
-        {
-           receiptor_detail detail;
-           detail.rewards.emplace(reward.asset_id, reward.amount);
-           receiptor_details.emplace(uid, detail);
-        }
-     }
-	 };
+       void insert_receiptor(account_uid_type uid, share_type post_award = 0, share_type forward = 0)
+       {
+          if (receiptor_details.count(uid))
+          {
+             receiptor_details.at(uid).forward += forward;
+             receiptor_details.at(uid).post_award += post_award;
+          }
+          else
+          {
+             receiptor_detail detail;
+             detail.forward = forward;
+             detail.post_award = post_award;
+             receiptor_details.emplace(uid, detail);
+          }
+       }
+       void insert_receiptor(account_uid_type uid, asset reward)
+       {
+          if (receiptor_details.count(uid))
+          {
+             if (receiptor_details.at(uid).rewards.count(reward.asset_id))
+                receiptor_details.at(uid).rewards.at(reward.asset_id) += reward.amount;
+             else
+                receiptor_details.at(uid).rewards.emplace(reward.asset_id, reward.amount);
+          }
+          else
+          {
+             receiptor_detail detail;
+             detail.rewards.emplace(reward.asset_id, reward.amount);
+             receiptor_details.emplace(uid, detail);
+          }
+       }
+
+       bool is_get_profit()const {
+          if (post_award == 0 && forward_award == 0 && receiptor_details.size() == 0)
+             return false;
+          else
+             return true;
+       }
+    };
 
    struct by_poster{};
    struct by_platforms{};
@@ -419,42 +432,42 @@ namespace graphene { namespace chain {
 	 * @ingroup object_index
 	 */
 	 typedef multi_index_container <
-		 active_post_object,
-		 indexed_by<
-				ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-				ordered_unique< tag<by_post_pid>,
-				   composite_key<
-					    active_post_object,
-					    member< active_post_object, account_uid_type, &active_post_object::platform >,
-					    member< active_post_object, account_uid_type, &active_post_object::poster >,				    
-                        member< active_post_object, uint64_t,         &active_post_object::period_sequence >,
-                        member< active_post_object, post_pid_type,    &active_post_object::post_pid >
+       active_post_object,
+       indexed_by<
+          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+          ordered_unique< tag<by_post_pid>,
+             composite_key<
+                active_post_object,
+                member< active_post_object, account_uid_type, &active_post_object::platform >,
+                member< active_post_object, account_uid_type, &active_post_object::poster >,				    
+                member< active_post_object, uint64_t,         &active_post_object::period_sequence >,
+                member< active_post_object, post_pid_type,    &active_post_object::post_pid >
 				   >
 				>,
-                ordered_non_unique< tag<by_post>,
-				   composite_key<
-					    active_post_object,
-					    member< active_post_object, account_uid_type, &active_post_object::platform >,
-					    member< active_post_object, account_uid_type, &active_post_object::poster >,
-                        member< active_post_object, post_pid_type,    &active_post_object::post_pid >,
-                        member< active_post_object, uint64_t,         &active_post_object::period_sequence >
+          ordered_non_unique< tag<by_post>,
+             composite_key<
+                active_post_object,
+                member< active_post_object, account_uid_type, &active_post_object::platform >,
+                member< active_post_object, account_uid_type, &active_post_object::poster >,
+                member< active_post_object, post_pid_type,    &active_post_object::post_pid >,
+                member< active_post_object, uint64_t,         &active_post_object::period_sequence >
 				   >
 				>,
-        ordered_non_unique< tag<by_poster>,
-            composite_key<
-              active_post_object,
-              member< active_post_object, account_uid_type, &active_post_object::poster >,
-              member< active_post_object, uint64_t,         &active_post_object::period_sequence >
-           >
-        >,
-        ordered_non_unique< tag<by_platforms>,
-            composite_key<
-              active_post_object,
-              member< active_post_object, account_uid_type, &active_post_object::platform >,
-              member< active_post_object, uint64_t,         &active_post_object::period_sequence >
-           >
-        >,
-				ordered_non_unique< tag<by_period_sequence>, member<active_post_object, uint64_t, &active_post_object::period_sequence> >
+          ordered_non_unique< tag<by_poster>,
+             composite_key<
+                active_post_object,
+                member< active_post_object, account_uid_type, &active_post_object::poster >,
+                member< active_post_object, uint64_t,         &active_post_object::period_sequence >
+               >
+            >,
+          ordered_non_unique< tag<by_platforms>,
+             composite_key<
+                active_post_object,
+                member< active_post_object, account_uid_type, &active_post_object::platform >,
+                member< active_post_object, uint64_t,         &active_post_object::period_sequence >
+               >
+            >,
+          ordered_non_unique< tag<by_period_sequence>, member<active_post_object, uint64_t, &active_post_object::period_sequence> >
 		 >
 	 > active_post_multi_index_type;
 
@@ -471,19 +484,19 @@ namespace graphene { namespace chain {
    class score_object : public graphene::db::abstract_object<score_object>
    {
    public:
-	   static const uint8_t space_id = implementation_ids;
-	   static const uint8_t type_id = impl_score_object_type;
+      static const uint8_t space_id = implementation_ids;
+      static const uint8_t type_id = impl_score_object_type;
 
-	   account_uid_type    from_account_uid;
-       account_uid_type    platform;
-       account_uid_type    poster;
-	   post_pid_type       post_pid;
-	   int8_t              score;
-	   share_type          csaf;
-       uint64_t            period_sequence;
-       share_type          profits;
+      account_uid_type    from_account_uid;
+      account_uid_type    platform;
+      account_uid_type    poster;
+      post_pid_type       post_pid;
+      int8_t              score;
+      share_type          csaf;
+      uint64_t            period_sequence;
+      share_type          profits;
 
-	   time_point_sec      create_time;
+      time_point_sec      create_time;
    };
 
    struct by_from_account_uid{};
@@ -498,14 +511,15 @@ namespace graphene { namespace chain {
    typedef multi_index_container<
 	   score_object,
 	   indexed_by<
-	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-		  ordered_non_unique< tag<by_from_account_uid>, 
-                                 composite_key< 
-                                     score_object,
-                                     member< score_object, account_uid_type, &score_object::from_account_uid >,
-                                     member< score_object, uint64_t,         &score_object::period_sequence >>
+         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+         ordered_unique< tag<by_from_account_uid>, 
+                              composite_key< 
+                                  score_object,
+                                  member< score_object, account_uid_type, &score_object::from_account_uid >,
+                                  member< score_object, uint64_t,         &score_object::period_sequence >,
+                                  member< object,       object_id_type,   &object::id >>
                                  >,
-          ordered_unique< tag<by_post_pid>, 
+         ordered_unique< tag<by_post_pid>, 
                               composite_key<
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::platform >,
@@ -513,7 +527,7 @@ namespace graphene { namespace chain {
                                   member< score_object, post_pid_type,    &score_object::post_pid >,
                                   member< score_object, account_uid_type, &score_object::from_account_uid >
                               > >,
-          ordered_unique< tag<by_posts_pids>, 
+         ordered_unique< tag<by_posts_pids>, 
                               composite_key<
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::platform >,
@@ -521,7 +535,7 @@ namespace graphene { namespace chain {
                                   member< score_object, post_pid_type,    &score_object::post_pid >,
                                   member< object,       object_id_type,   &object::id >
                               > >,
-          ordered_unique< tag<by_period_sequence>, 
+         ordered_unique< tag<by_period_sequence>, 
                               composite_key<
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::platform >,
@@ -554,19 +568,19 @@ namespace graphene { namespace chain {
    class license_object : public graphene::db::abstract_object<license_object>
    {
    public:
-       static const uint8_t space_id = implementation_ids;
-       static const uint8_t type_id = impl_license_object_type;
+      static const uint8_t space_id = implementation_ids;
+      static const uint8_t type_id = impl_license_object_type;
 
-       license_lid_type             license_lid;
-       account_uid_type             platform;
-       uint8_t                      license_type;
-	   
-	   string                       hash_value;
-	   string                       extra_data;
-	   string                       title;
-	   string                       body;
+      license_lid_type             license_lid;
+      account_uid_type             platform;
+      uint8_t                      license_type;
 
-	   time_point_sec               create_time;
+      string                       hash_value;
+      string                       extra_data;
+      string                       title;
+      string                       body;
+
+      time_point_sec               create_time;
    };
 
    struct by_license_lid{};
@@ -577,21 +591,21 @@ namespace graphene { namespace chain {
    * @ingroup object_index
    */
    typedef multi_index_container<
-       license_object,
+      license_object,
 	   indexed_by<
 	   ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-       ordered_unique< tag<by_license_lid>,
+      ordered_unique< tag<by_license_lid>,
 	                   composite_key<
                                    license_object,
                                    member< license_object, account_uid_type, &license_object::platform >,
                                    member< license_object, license_lid_type, &license_object::license_lid >
 								   >> ,
-       ordered_unique< tag<by_platform>, 
+      ordered_unique< tag<by_platform>, 
                        composite_key<license_object,
                                    member< license_object, account_uid_type, &license_object::platform>,
                                    member< object,         object_id_type,   &object::id >
                                    >>,
-       ordered_non_unique< tag<by_license_type>, member< license_object, uint8_t, &license_object::license_type> >
+      ordered_non_unique< tag<by_license_type>, member< license_object, uint8_t, &license_object::license_type> >
 	   >
     > license_multi_index_type;
 
@@ -602,13 +616,12 @@ namespace graphene { namespace chain {
 }}
 
 FC_REFLECT( graphene::chain::platform_object::Platform_Period_Profits,
-                    (rewards_profits)(foward_profits)(post_profits)(platform_profits))
+                    (rewards_profits)(foward_profits)(post_profits)(post_profits_by_platform)(platform_profits))
 
 FC_REFLECT_DERIVED( graphene::chain::platform_object,
                     (graphene::db::object),
                     (owner)(name)(sequence)(is_valid)(total_votes)(url)
                     (pledge)(pledge_last_update)(average_pledge)(average_pledge_last_update)(average_pledge_next_update_block)
-                    (last_advertising_sequence)(last_license_sequence)
                     (vote_profits)(period_profits)
                     (extra_data)
                     (create_time)(last_update_time)
@@ -629,7 +642,7 @@ FC_REFLECT_DERIVED( graphene::chain::post_object,
                   )
 
 FC_REFLECT( graphene::chain::active_post_object::receiptor_detail,
-                   (forward)(post_award)(rewards))
+                    (forward)(post_award)(rewards))
 
 FC_REFLECT_DERIVED( graphene::chain::active_post_object,
 										(graphene::db::object),
@@ -638,10 +651,10 @@ FC_REFLECT_DERIVED( graphene::chain::active_post_object,
 									)
 
 FC_REFLECT_DERIVED(graphene::chain::score_object,
-					(graphene::db::object),
-          (from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(period_sequence)(profits)(create_time)
-					)
+					     (graphene::db::object),
+                    (from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(period_sequence)(profits)(create_time)
+					   )
 
 FC_REFLECT_DERIVED(graphene::chain::license_object,
                     (graphene::db::object), (license_lid)(platform)(license_type)(hash_value)(extra_data)(title)(body)(create_time)
-					)
+					   )

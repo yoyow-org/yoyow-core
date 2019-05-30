@@ -115,7 +115,8 @@ namespace graphene { namespace chain {
       void get_required_uid_authorities( flat_set<account_uid_type>& owner_uids,
                                          flat_set<account_uid_type>& active_uids,
                                          flat_set<account_uid_type>& secondary_uids,
-                                         vector<authority>& other )const;
+                                         vector<authority>& other,
+                                         bool enabled_hardfork)const;
 
    };
 
@@ -146,7 +147,7 @@ namespace graphene { namespace chain {
          while (root.pub_keys.empty() && root.children.size() == 1 && depth)
          {
             root = *(root.children.begin());
-            depth--;
+            --depth;
          }
          return root.uid;
       }
@@ -160,7 +161,7 @@ namespace graphene { namespace chain {
          while (root.pub_keys.empty() && root.children.size() == 1 && depth)
          {
             root = *(root.children.begin());
-            depth--;
+            --depth;
          }
          return root.uid;
       }
@@ -174,7 +175,7 @@ namespace graphene { namespace chain {
          while (root.pub_keys.empty() && root.children.size() == 1 && depth)
          {
             root = *(root.children.begin());
-            depth--;
+            --depth;
          }
          return root.uid;
       }
@@ -212,6 +213,7 @@ namespace graphene { namespace chain {
          const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
          const std::function<const authority*(account_uid_type)>& get_active_by_uid,
          const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
+         bool	  enabled_hardfork,
          uint32_t max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH
          )const;
 
@@ -220,6 +222,7 @@ namespace graphene { namespace chain {
          const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
          const std::function<const authority*(account_uid_type)>& get_active_by_uid,
          const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
+         bool	  enabled_hardfork,
          uint32_t max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH )const;
 
       /**
@@ -250,6 +253,7 @@ signed_information verify_authority(const vector<operation>& ops, const flat_map
                        const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
                        const std::function<const authority*(account_uid_type)>& get_active_by_uid,
                        const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
+                       bool	  enabled_hardfork,
                        uint32_t max_recursion_depth = GRAPHENE_MAX_SIG_CHECK_DEPTH,
                        bool allow_committe = false,
                        const flat_set<account_uid_type>& owner_uid_approvals = flat_set<account_uid_type>(),

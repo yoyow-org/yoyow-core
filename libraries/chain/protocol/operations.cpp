@@ -50,20 +50,22 @@ struct operation_get_required_uid_auth
    flat_set<account_uid_type>& active_uids;
    flat_set<account_uid_type>& secondary_uids;
    vector<authority>&          other;
+   bool	  enabled_hardfork;
 
 
    operation_get_required_uid_auth( flat_set<account_uid_type>& own,
      flat_set<account_uid_type>& a,
      flat_set<account_uid_type>& s,
-     vector<authority>&  oth ):owner_uids(own),active_uids(a),secondary_uids(s),other(oth){}
+     vector<authority>&  oth,
+     bool enabled):owner_uids(own),active_uids(a),secondary_uids(s),other(oth),enabled_hardfork(enabled){}
 
    template<typename T>
    void do_get_basic(const T& v)const
    {
-      v.get_required_owner_uid_authorities( owner_uids );
-      v.get_required_active_uid_authorities( active_uids );
-      v.get_required_secondary_uid_authorities( secondary_uids );
-      v.get_required_authorities( other );
+      v.get_required_owner_uid_authorities( owner_uids,enabled_hardfork );
+      v.get_required_active_uid_authorities( active_uids,enabled_hardfork);
+      v.get_required_secondary_uid_authorities( secondary_uids,enabled_hardfork );
+      v.get_required_authorities( other);
    }
 
    template<typename T>
@@ -148,9 +150,10 @@ void operation_get_required_uid_authorities( const operation& op,
                                          flat_set<account_uid_type>& owner_uids,
                                          flat_set<account_uid_type>& active_uids,
                                          flat_set<account_uid_type>& secondary_uids,
-                                         vector<authority>&  other )
+                                         vector<authority>&  other,
+                                         bool	  enabled_hardfork)
 {
-   op.visit( operation_get_required_uid_auth( owner_uids, active_uids, secondary_uids, other ) );
+   op.visit( operation_get_required_uid_auth( owner_uids, active_uids, secondary_uids, other,enabled_hardfork) );
 }
 
 void validate_account_uid( const account_uid_type uid, const string& object_name )

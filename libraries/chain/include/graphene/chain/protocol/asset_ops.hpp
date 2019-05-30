@@ -128,6 +128,11 @@ namespace graphene { namespace chain {
       account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
       share_type      calculate_fee( const fee_parameters_type& k )const;
+	  void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const      
+	  {
+	  	if(enabled_hardfork)
+			a.insert(issuer);
+	  }
    };
 
    /**
@@ -165,6 +170,11 @@ namespace graphene { namespace chain {
       account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
+	  void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const      
+	  {
+	  	if(enabled_hardfork)
+			a.insert(issuer);
+	  }
    };
 
    /**
@@ -193,6 +203,11 @@ namespace graphene { namespace chain {
       account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
+	  void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const      
+	  {
+	  	if(enabled_hardfork)
+			a.insert(issuer);
+	  }
    };
 
    /**
@@ -217,6 +232,11 @@ namespace graphene { namespace chain {
 
       account_uid_type fee_payer_uid()const { return payer; }
       void            validate()const;
+	  void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const      
+	  {
+	  	if(enabled_hardfork)
+			a.insert(payer);
+	  }
    };
 
    /**
@@ -238,6 +258,11 @@ namespace graphene { namespace chain {
 
       account_uid_type fee_payer_uid()const { return issuer; }
       void            validate()const;
+	  void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const      
+	  {
+	  	if(enabled_hardfork)
+			a.insert(issuer);
+	  }
    };
 
 

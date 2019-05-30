@@ -1500,41 +1500,42 @@ signed_transaction account_auth_platform(string account,
                                                                      account_auth_platform_object::Platform_Permission_Buyout |
                                                                      account_auth_platform_object::Platform_Permission_Comment |
                                                                      account_auth_platform_object::Platform_Permission_Reward |
-                                                                     account_auth_platform_object::Platform_Permission_Post,
+                                                                     account_auth_platform_object::Platform_Permission_Post |
+                                                                     account_auth_platform_object::Platform_Permission_Content_Update,
                                          bool csaf_fee = true,
                                          bool broadcast = false)
 {
    try {
-       fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
-       FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+      fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+      FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
-      account_object user = get_account( account );
-      account_object platform_account = get_account( platform_owner );
-      auto pa = _remote_db->get_platform_by_account( platform_account.uid );
-      FC_ASSERT( pa.valid(), "Account ${platform_owner} is not a platform", ("platform_owner",platform_owner) );
+      account_object user = get_account(account);
+      account_object platform_account = get_account(platform_owner);
+      auto pa = _remote_db->get_platform_by_account(platform_account.uid);
+      FC_ASSERT(pa.valid(), "Account ${platform_owner} is not a platform", ("platform_owner", platform_owner));
       account_auth_platform_operation op;
       op.uid = user.uid;
       op.platform = pa->owner;
 
-	  account_auth_platform_operation::extension_parameter ext;
+      account_auth_platform_operation::extension_parameter ext;
       ext.limit_for_platform = asset_obj->amount_from_string(limit_for_platform).amount;
       ext.permission_flags = permission_flags;
       if (memo.size())
       {
-          ext.memo = memo_data();
-          ext.memo->from = user.memo_key;
-          ext.memo->to = platform_account.memo_key;
-          ext.memo->set_message(get_private_key(user.memo_key),platform_account.memo_key, memo);
+         ext.memo = memo_data();
+         ext.memo->from = user.memo_key;
+         ext.memo->to = platform_account.memo_key;
+         ext.memo->set_message(get_private_key(user.memo_key), platform_account.memo_key, memo);
       }
       op.extensions = extension<account_auth_platform_operation::extension_parameter>();
-	  op.extensions->value = ext;
+      op.extensions->value = ext;
 
       signed_transaction tx;
-      tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      tx.operations.push_back(op);
+      set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
-      return sign_transaction( tx, broadcast );
+      return sign_transaction(tx, broadcast);
    } FC_CAPTURE_AND_RETHROW((account)(platform_owner)(limit_for_platform)(permission_flags)(csaf_fee)(broadcast))
 }
 
@@ -1685,7 +1686,7 @@ signed_transaction account_cancel_auth_platform(string account,
                                    bool csaf_fee,
                                    bool broadcast /* = false */)
    { try {
-      FC_ASSERT( !self.is_locked(), "Should unlock first" );
+      FC_ASSERT(!self.is_locked(), "Should unlock first");
       fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
       FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
 
@@ -1701,7 +1702,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(cc_op);
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -1978,7 +1979,20 @@ signed_transaction account_cancel_auth_platform(string account,
 
       return tx;
    }
-
+   
+   transaction_id_type broadcast_transaction( signed_transaction tx )
+   {
+      try {
+         _remote_net_broadcast->broadcast_transaction( tx );
+      }
+      catch (const fc::exception& e)
+      {
+         elog("Caught exception while broadcasting tx ${id}:  ${e}", ("id", tx.id().str())("e", e.to_detail_string()) );
+         throw;
+      }
+      return tx.id();
+   }
+   
    signed_transaction transfer(string from, string to, string amount,
                                string asset_symbol, string memo, bool csaf_fee = true, bool broadcast = false)
    { try {
@@ -2014,47 +2028,51 @@ signed_transaction account_cancel_auth_platform(string account,
    } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(csaf_fee)(broadcast) ) }
 
    signed_transaction transfer_extension(string from, string to, string amount,
-                               string asset_symbol, string memo, bool isfrom_balance = true, bool isto_balance = true, bool csaf_fee = true, bool broadcast = false)
+                               string asset_symbol, string memo, optional<string> sign_platform , bool isfrom_balance = true, bool isto_balance = true, bool csaf_fee = true, bool broadcast = false)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
-           fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
-           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
 
-           account_object from_account = get_account(from);
-           account_object to_account = get_account(to);
+         account_object from_account = get_account(from);
+         account_object to_account = get_account(to);
 
-           transfer_operation xfer_op;
-           xfer_op.extensions = extension< transfer_operation::ext >();
-           if (isfrom_balance)
-               xfer_op.extensions->value.from_balance = asset_obj->amount_from_string(amount);
-           else
-               xfer_op.extensions->value.from_prepaid = asset_obj->amount_from_string(amount);
-           if (isto_balance)
-               xfer_op.extensions->value.to_balance = asset_obj->amount_from_string(amount);
-           else
-               xfer_op.extensions->value.to_prepaid = asset_obj->amount_from_string(amount);
+         transfer_operation xfer_op;
+         xfer_op.extensions = extension< transfer_operation::ext >();
+         if (isfrom_balance)
+            xfer_op.extensions->value.from_balance = asset_obj->amount_from_string(amount);
+         else
+            xfer_op.extensions->value.from_prepaid = asset_obj->amount_from_string(amount);
+         if (isto_balance)
+            xfer_op.extensions->value.to_balance = asset_obj->amount_from_string(amount);
+         else
+            xfer_op.extensions->value.to_prepaid = asset_obj->amount_from_string(amount);
 
-           xfer_op.from = from_account.uid;
-           xfer_op.to = to_account.uid;
-           xfer_op.amount = asset_obj->amount_from_string(amount);
+         if (sign_platform.valid()){
+            xfer_op.extensions->value.sign_platform = get_account_uid(*sign_platform);
+         }
 
-           if (memo.size())
-           {
-               xfer_op.memo = memo_data();
-               xfer_op.memo->from = from_account.memo_key;
-               xfer_op.memo->to = to_account.memo_key;
-               xfer_op.memo->set_message(get_private_key(from_account.memo_key),
-                   to_account.memo_key, memo);
-           }
+         xfer_op.from = from_account.uid;
+         xfer_op.to = to_account.uid;
+         xfer_op.amount = asset_obj->amount_from_string(amount);
 
-           signed_transaction tx;
-           tx.operations.push_back(xfer_op);
-           set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         if (memo.size())
+         {
+            xfer_op.memo = memo_data();
+            xfer_op.memo->from = from_account.memo_key;
+            xfer_op.memo->to = to_account.memo_key;
+            xfer_op.memo->set_message(get_private_key(from_account.memo_key),
+               to_account.memo_key, memo);
+         }
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from)(to)(amount)(asset_symbol)(memo)(isfrom_balance)(isto_balance)(csaf_fee)(broadcast))
+         signed_transaction tx;
+         tx.operations.push_back(xfer_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((from)(to)(amount)(asset_symbol)(memo)(isfrom_balance)(isto_balance)(csaf_fee)(broadcast))
    }
 
    signed_transaction override_transfer(string from, string to, string amount,
@@ -2316,28 +2334,32 @@ signed_transaction account_cancel_auth_platform(string account,
                                    post_pid_type    post_pid,
                                    int8_t           score,
                                    string           csaf,
+                                   optional<string> sign_platform,
                                    bool csaf_fee = true,
                                    bool broadcast = false)
    {
-       try {
-           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
-           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+      try {
+         fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
-           score_create_operation create_op;
-           create_op.from_account_uid = get_account_uid(from_account);
-           create_op.platform = get_account_uid(platform);
-           create_op.poster = get_account_uid(poster);
-           create_op.post_pid = post_pid;
-           create_op.score = score;
-           create_op.csaf = asset_obj->amount_from_string(csaf).amount;
+         score_create_operation create_op;
+         create_op.from_account_uid = get_account_uid(from_account);
+         create_op.platform = get_account_uid(platform);
+         create_op.poster = get_account_uid(poster);
+         create_op.post_pid = post_pid;
+         create_op.score = score;
+         create_op.csaf = asset_obj->amount_from_string(csaf).amount;
+         if (sign_platform.valid()){
+            create_op.sign_platform = get_account_uid(*sign_platform);
+         }
 
-           signed_transaction tx;
-           tx.operations.push_back(create_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(create_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(score)(csaf)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(score)(csaf)(csaf_fee)(broadcast))
    }
 
    signed_transaction reward_post(string           from_account,
@@ -2349,25 +2371,25 @@ signed_transaction account_cancel_auth_platform(string account,
                                   bool csaf_fee = true,
                                   bool broadcast = false)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
-           fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
-           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
 
-           reward_operation reward_op;
-           reward_op.from_account_uid = get_account_uid(from_account);
-           reward_op.platform = get_account_uid(platform);
-           reward_op.poster = get_account_uid(poster);
-           reward_op.post_pid = post_pid;
-           reward_op.amount = asset_obj->amount_from_string(amount);
+         reward_operation reward_op;
+         reward_op.from_account_uid = get_account_uid(from_account);
+         reward_op.platform = get_account_uid(platform);
+         reward_op.poster = get_account_uid(poster);
+         reward_op.post_pid = post_pid;
+         reward_op.amount = asset_obj->amount_from_string(amount);
 
-           signed_transaction tx;
-           tx.operations.push_back(reward_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(reward_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(asset_symbol)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(asset_symbol)(csaf_fee)(broadcast))
    }
 
    signed_transaction reward_post_proxy_by_platform(string           from_account,
@@ -2375,28 +2397,32 @@ signed_transaction account_cancel_auth_platform(string account,
                                                     string           poster,
                                                     post_pid_type    post_pid,
                                                     string           amount,
+                                                    optional<string> sign_platform,
                                                     bool csaf_fee = true,
                                                     bool broadcast = false)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
-           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
-           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
-           reward_proxy_operation reward_op;
-           reward_op.from_account_uid = get_account_uid(from_account);
-           reward_op.platform = get_account_uid(platform);
-           reward_op.poster = get_account_uid(poster);
-           reward_op.post_pid = post_pid;
-           reward_op.amount = asset_obj->amount_from_string(amount).amount;
+         reward_proxy_operation reward_op;
+         reward_op.from_account_uid = get_account_uid(from_account);
+         reward_op.platform = get_account_uid(platform);
+         reward_op.poster = get_account_uid(poster);
+         reward_op.post_pid = post_pid;
+         reward_op.amount = asset_obj->amount_from_string(amount).amount;
+         if (sign_platform.valid()){
+            reward_op.sign_platform = get_account_uid(*sign_platform);
+         }
 
-           signed_transaction tx;
-           tx.operations.push_back(reward_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(reward_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(csaf_fee)(broadcast))
    }
 
    signed_transaction buyout_post(string           from_account,
@@ -2404,26 +2430,30 @@ signed_transaction account_cancel_auth_platform(string account,
                                   string           poster,
                                   post_pid_type    post_pid,
                                   string           receiptor_account,
+                                  optional<string> sign_platform,
                                   bool csaf_fee = true,
                                   bool broadcast = false)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
 
-           buyout_operation buyout_op;
-           buyout_op.from_account_uid = get_account_uid(from_account);
-           buyout_op.platform = get_account_uid(platform);
-           buyout_op.poster = get_account_uid(poster);
-           buyout_op.post_pid = post_pid;
-           buyout_op.receiptor_account_uid = get_account_uid(receiptor_account);
+         buyout_operation buyout_op;
+         buyout_op.from_account_uid = get_account_uid(from_account);
+         buyout_op.platform = get_account_uid(platform);
+         buyout_op.poster = get_account_uid(poster);
+         buyout_op.post_pid = post_pid;
+         buyout_op.receiptor_account_uid = get_account_uid(receiptor_account);
+         if (sign_platform.valid()){
+            buyout_op.sign_platform = get_account_uid(*sign_platform);
+         }
 
-           signed_transaction tx;
-           tx.operations.push_back(buyout_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(buyout_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(csaf_fee)(broadcast))
    }
 
    signed_transaction create_license(string           platform,
@@ -2435,29 +2465,30 @@ signed_transaction account_cancel_auth_platform(string account,
                                      bool csaf_fee = true,
                                      bool broadcast = false)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
 
-           account_uid_type platform_uid = get_account_uid(platform);
-           fc::optional<platform_object> platform_obj = _remote_db->get_platform_by_account(platform_uid);
-           FC_ASSERT(platform_obj.valid(), "platform doesn`t exsit. ");
+         account_uid_type platform_uid = get_account_uid(platform);
+         fc::optional<platform_object> platform_obj = _remote_db->get_platform_by_account(platform_uid);
+         FC_ASSERT(platform_obj.valid(), "platform doesn`t exsit. ");
+         const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
 
-           license_create_operation create_op;
-           create_op.license_lid = platform_obj->last_license_sequence + 1;
-           create_op.platform = platform_uid;
-           create_op.type = license_type;
-           create_op.hash_value = hash_value;
-           create_op.extra_data = extra_data;
-           create_op.title = title;
-           create_op.body = body;
+         license_create_operation create_op;
+         create_op.license_lid = plat_account_statistics.last_license_sequence + 1;
+         create_op.platform = platform_uid;
+         create_op.type = license_type;
+         create_op.hash_value = hash_value;
+         create_op.extra_data = extra_data;
+         create_op.title = title;
+         create_op.body = body;
 
-           signed_transaction tx;
-           tx.operations.push_back(create_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(create_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(csaf_fee)(broadcast))
    }
 
    signed_transaction create_post(string           platform,
@@ -2473,62 +2504,64 @@ signed_transaction account_cancel_auth_platform(string account,
                                   bool csaf_fee = true,
                                   bool broadcast = false)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
-           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
-           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
-           account_uid_type poster_uid = get_account_uid(poster);
-           const account_statistics_object& poster_account_statistics = _remote_db->get_account_statistics_by_uid(poster_uid);
-           post_operation create_op;
-           create_op.post_pid = poster_account_statistics.last_post_sequence + 1;
-           create_op.platform = get_account_uid(platform);
-           create_op.poster = poster_uid;
-           if (!origin_platform.empty())
-               create_op.origin_platform = get_account_uid(origin_platform);
-           if (!origin_poster.empty())
-               create_op.origin_poster = get_account_uid(origin_poster);
-           if (!origin_post_pid.empty())
-               create_op.origin_post_pid = fc::to_uint64(fc::string(origin_post_pid));
-           
-           create_op.hash_value = hash_value;
-           create_op.extra_data = extra_data;
-           create_op.title = title;
-           create_op.body = body;
+         account_uid_type poster_uid = get_account_uid(poster);
+         const account_statistics_object& poster_account_statistics = _remote_db->get_account_statistics_by_uid(poster_uid);
+         post_operation create_op;
+         create_op.post_pid = poster_account_statistics.last_post_sequence + 1;
+         create_op.platform = get_account_uid(platform);
+         create_op.poster = poster_uid;
+         if (!origin_platform.empty())
+            create_op.origin_platform = get_account_uid(origin_platform);
+         if (!origin_poster.empty())
+            create_op.origin_poster = get_account_uid(origin_poster);
+         if (!origin_post_pid.empty())
+            create_op.origin_post_pid = fc::to_uint64(fc::string(origin_post_pid));
 
-           post_operation::ext extension_;
-           if (exts.post_type)
-               extension_.post_type = exts.post_type;
-           if (exts.forward_price.valid())
-               extension_.forward_price = asset_obj->amount_from_string(*(exts.forward_price)).amount;
-           if (exts.receiptors.valid())
-           {
-               map<account_uid_type, Recerptor_Parameter> maps_receiptors;
-               for (auto itor = (*exts.receiptors).begin(); itor != (*exts.receiptors).end(); itor++)
-               {
-                   Recerptor_Parameter para;
-                   para.cur_ratio = uint16_t(itor->second.cur_ratio * GRAPHENE_1_PERCENT);
-                   para.to_buyout = itor->second.to_buyout;
-                   para.buyout_ratio = uint16_t(itor->second.buyout_ratio * GRAPHENE_1_PERCENT);
-                   para.buyout_price = asset_obj->amount_from_string(itor->second.buyout_price).amount;
-                   maps_receiptors.insert(std::make_pair(itor->first, para));
-               }
-               extension_.receiptors = maps_receiptors;
-           }  
-           if (exts.license_lid.valid())
-               extension_.license_lid = exts.license_lid;
-           if (exts.permission_flags)
-               extension_.permission_flags = exts.permission_flags;
-           create_op.extensions = graphene::chain::extension<post_operation::ext>();
-           create_op.extensions->value = extension_;
+         create_op.hash_value = hash_value;
+         create_op.extra_data = extra_data;
+         create_op.title = title;
+         create_op.body = body;
 
-           signed_transaction tx;
-           tx.operations.push_back(create_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         post_operation::ext extension_;
+         if (exts.post_type)
+            extension_.post_type = exts.post_type;
+         if (exts.forward_price.valid())
+            extension_.forward_price = asset_obj->amount_from_string(*(exts.forward_price)).amount;
+         if (exts.receiptors.valid())
+         {
+            map<account_uid_type, Receiptor_Parameter> maps_receiptors;
+            for (auto itor = (*exts.receiptors).begin(); itor != (*exts.receiptors).end(); itor++)
+            {
+               Receiptor_Parameter para;
+               para.cur_ratio = uint16_t(itor->second.cur_ratio * GRAPHENE_1_PERCENT);
+               para.to_buyout = itor->second.to_buyout;
+               para.buyout_ratio = uint16_t(itor->second.buyout_ratio * GRAPHENE_1_PERCENT);
+               para.buyout_price = asset_obj->amount_from_string(itor->second.buyout_price).amount;
+               maps_receiptors.insert(std::make_pair(itor->first, para));
+            }
+            extension_.receiptors = maps_receiptors;
+         }
+         if (exts.license_lid.valid())
+            extension_.license_lid = exts.license_lid;
+         if (exts.permission_flags)
+            extension_.permission_flags = exts.permission_flags;
+         if (exts.sign_platform.valid())
+            extension_.sign_platform = get_account_uid(*(exts.sign_platform));
+         create_op.extensions = graphene::chain::extension<post_operation::ext>();
+         create_op.extensions->value = extension_;
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(poster)(hash_value)(title)(body)(extra_data)(origin_platform)(origin_poster)(origin_post_pid)(exts)(csaf_fee)(broadcast))
+         signed_transaction tx;
+         tx.operations.push_back(create_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((platform)(poster)(hash_value)(title)(body)(extra_data)(origin_platform)(origin_poster)(origin_post_pid)(exts)(csaf_fee)(broadcast))
    }
 
    signed_transaction update_post(string           platform,
@@ -2542,50 +2575,54 @@ signed_transaction account_cancel_auth_platform(string account,
                                   bool csaf_fee = true,
                                   bool broadcast = false)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
-           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
-           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
-           post_update_operation update_op;
-           update_op.post_pid = fc::to_uint64(fc::string(post_pid));
-           update_op.platform = get_account_uid(platform);
-           update_op.poster = get_account_uid(poster);
+         post_update_operation update_op;
+         update_op.post_pid = fc::to_uint64(fc::string(post_pid));
+         update_op.platform = get_account_uid(platform);
+         update_op.poster = get_account_uid(poster);
 
-           if (!hash_value.empty())
-               update_op.hash_value = hash_value;
-           if (!extra_data.empty())
-               update_op.extra_data = extra_data;
-           if (!title.empty())
-               update_op.title = title;
-           if (!body.empty())
-               update_op.body = body;
+         if (!hash_value.empty())
+            update_op.hash_value = hash_value;
+         if (!extra_data.empty())
+            update_op.extra_data = extra_data;
+         if (!title.empty())
+            update_op.title = title;
+         if (!body.empty())
+            update_op.body = body;
 
-           update_op.extensions = graphene::chain::extension<post_update_operation::ext>();
-           if (ext.forward_price.valid())
-               update_op.extensions->value.forward_price = asset_obj->amount_from_string(*(ext.forward_price)).amount;
-           if (ext.receiptor.valid())
-               update_op.extensions->value.receiptor = get_account_uid(*(ext.receiptor));
-           if (ext.to_buyout.valid())
-               update_op.extensions->value.to_buyout = ext.to_buyout;
-           if (ext.buyout_ratio.valid())
-               update_op.extensions->value.buyout_ratio = uint16_t((*(ext.buyout_ratio))* GRAPHENE_1_PERCENT);
-           if (ext.buyout_price.valid())
-               update_op.extensions->value.buyout_price = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
-           if (ext.buyout_expiration.valid())
-               update_op.extensions->value.buyout_expiration = time_point_sec(*(ext.buyout_expiration));
-           if (ext.license_lid.valid())
-               update_op.extensions->value.license_lid = ext.license_lid;
-           if (ext.permission_flags.valid())
-               update_op.extensions->value.permission_flags = ext.permission_flags;
+         update_op.extensions = graphene::chain::extension<post_update_operation::ext>();
+         if (ext.forward_price.valid())
+            update_op.extensions->value.forward_price = asset_obj->amount_from_string(*(ext.forward_price)).amount;
+         if (ext.receiptor.valid())
+            update_op.extensions->value.receiptor = get_account_uid(*(ext.receiptor));
+         if (ext.to_buyout.valid())
+            update_op.extensions->value.to_buyout = ext.to_buyout;
+         if (ext.buyout_ratio.valid())
+            update_op.extensions->value.buyout_ratio = uint16_t((*(ext.buyout_ratio))* GRAPHENE_1_PERCENT);
+         if (ext.buyout_price.valid())
+            update_op.extensions->value.buyout_price = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
+         if (ext.buyout_expiration.valid())
+            update_op.extensions->value.buyout_expiration = time_point_sec(*(ext.buyout_expiration));
+         if (ext.license_lid.valid())
+            update_op.extensions->value.license_lid = ext.license_lid;
+         if (ext.permission_flags.valid())
+            update_op.extensions->value.permission_flags = ext.permission_flags;
+         if (ext.content_sign_platform.valid())
+            update_op.extensions->value.content_sign_platform = get_account_uid(*(ext.content_sign_platform));
+         if (ext.receiptor_sign_platform.valid())
+            update_op.extensions->value.receiptor_sign_platform = get_account_uid(*(ext.receiptor_sign_platform));
 
-           signed_transaction tx;
-           tx.operations.push_back(update_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(update_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext)(csaf_fee)(broadcast))
    }
 
    signed_transaction account_manage(string executor,
@@ -2595,21 +2632,21 @@ signed_transaction account_cancel_auth_platform(string account,
                                      bool broadcast = false
                                      )
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
 
-           account_manage_operation manage_op;
-           manage_op.account = get_account_uid(account);
-           manage_op.executor = get_account_uid(executor);
-           manage_op.options.value = options;
+         account_manage_operation manage_op;
+         manage_op.account = get_account_uid(account);
+         manage_op.executor = get_account_uid(executor);
+         manage_op.options.value = options;
 
-           signed_transaction tx;
-           tx.operations.push_back(manage_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(manage_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((executor)(account)(options)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((executor)(account)(options)(csaf_fee)(broadcast))
    }
 
    signed_transaction buy_advertising(string               account,
@@ -2643,10 +2680,10 @@ signed_transaction account_cancel_auth_platform(string account,
          account_object platform_account = get_account(platform);
          if (memo.size())
          {
-             buy_op.memo = memo_data();
-             buy_op.memo->from = user.memo_key;
-             buy_op.memo->to = platform_account.memo_key;
-             buy_op.memo->set_message(get_private_key(user.memo_key), platform_account.memo_key, memo);
+            buy_op.memo = memo_data();
+            buy_op.memo->from = user.memo_key;
+            buy_op.memo->to = platform_account.memo_key;
+            buy_op.memo->set_message(get_private_key(user.memo_key), platform_account.memo_key, memo);
          }
 
          signed_transaction tx;
@@ -2662,7 +2699,7 @@ signed_transaction account_cancel_auth_platform(string account,
    signed_transaction confirm_advertising(string              platform,
                                           advertising_aid_type        advertising_aid,
                                           advertising_order_oid_type  advertising_order_oid,
-                                          bool                comfirm,
+                                          bool                confirm,
                                           bool                csaf_fee = true,
                                           bool                broadcast = false
                                          )
@@ -2674,7 +2711,7 @@ signed_transaction account_cancel_auth_platform(string account,
          confirm_op.platform = get_account_uid(platform);
          confirm_op.advertising_aid = advertising_aid;
          confirm_op.advertising_order_oid = advertising_order_oid;
-         confirm_op.iscomfirm = comfirm;
+         confirm_op.isconfirm = confirm;
 
          signed_transaction tx;
          tx.operations.push_back(confirm_op);
@@ -2683,24 +2720,24 @@ signed_transaction account_cancel_auth_platform(string account,
 
          return sign_transaction(tx, broadcast);
 
-      } FC_CAPTURE_AND_RETHROW((platform)(advertising_aid)(advertising_order_oid)(comfirm)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((platform)(advertising_aid)(advertising_order_oid)(confirm)(csaf_fee)(broadcast))
    }
 
    post_object get_post(string platform_owner,
                         string poster_uid,
                         string post_pid)
    {
-       try {
-           post_pid_type postid = fc::to_uint64(fc::string(post_pid));
-           account_uid_type platform = get_account_uid(platform_owner);
-           account_uid_type poster = get_account_uid(poster_uid);
-           fc::optional<post_object> post = _remote_db->get_post(platform, poster, postid);
-           if (post)
-              return *post;
-           else
-              FC_THROW("poster: ${poster} don't publish post: ${post} in platform: ${platform}", 
-              ("poster", poster_uid)("post", post_pid)("platform", platform_owner));
-       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(post_pid))
+      try {
+         post_pid_type postid = fc::to_uint64(fc::string(post_pid));
+         account_uid_type platform = get_account_uid(platform_owner);
+         account_uid_type poster = get_account_uid(poster_uid);
+         fc::optional<post_object> post = _remote_db->get_post(platform, poster, postid);
+         if (post)
+            return *post;
+         else
+            FC_THROW("poster: ${poster} don't publish post: ${post} in platform: ${platform}",
+            ("poster", poster_uid)("post", post_pid)("platform", platform_owner));
+      } FC_CAPTURE_AND_RETHROW((platform_owner)(poster_uid)(post_pid))
    }
 
    vector<post_object> get_posts_by_platform_poster(string           platform_owner,
@@ -2710,17 +2747,40 @@ signed_transaction account_cancel_auth_platform(string account,
                                                     object_id_type   lower_bound_post,
                                                     uint32_t         limit)
    {
-       try {
-           account_uid_type platform = get_account_uid(platform_owner);
-           if (poster.valid()){
+      try {
+         account_uid_type platform = get_account_uid(platform_owner);
+         if (poster.valid()){
+            account_uid_type poster_uid = get_account_uid(*poster);
+            return _remote_db->get_posts_by_platform_poster(platform, poster_uid, std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+         }
+         else{
+            return _remote_db->get_posts_by_platform_poster(platform, optional<account_uid_type>(), std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+         }
+
+      } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(begin_time_range)(end_time_range)(lower_bound_post)(limit))
+   }
+
+   uint64_t get_posts_count(optional<string> platform, optional<string> poster)
+   {
+      try {
+
+         if (platform.valid()) {
+            account_uid_type platform_uid = get_account_uid(*platform);
+            if (poster.valid()) {
                account_uid_type poster_uid = get_account_uid(*poster);
-               return _remote_db->get_posts_by_platform_poster(platform, poster_uid, std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
-           }
-           else{
-               return _remote_db->get_posts_by_platform_poster(platform, optional<account_uid_type>(), std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
-           }
-           
-       } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(begin_time_range)(end_time_range)(lower_bound_post)(limit))
+               return _remote_db->get_posts_count(platform_uid, poster_uid);
+            }
+            else
+               return _remote_db->get_posts_count(platform_uid, optional<account_uid_type>());
+         }
+         else {
+            if (poster.valid())
+               FC_THROW("platform should be valid when poster is valid");
+            else
+               return _remote_db->get_posts_count(optional<account_uid_type>(), optional<account_uid_type>());
+         }
+
+      } FC_CAPTURE_AND_RETHROW((platform)(poster))
    }
 
    score_object get_score(string platform,
@@ -2728,18 +2788,29 @@ signed_transaction account_cancel_auth_platform(string account,
                           string post_pid,
                           string from_account)
    {
-       try {
-           post_pid_type postid = fc::to_uint64(fc::string(post_pid));
-           account_uid_type platform_uid = get_account_uid(platform);
-           account_uid_type poster = get_account_uid(poster_uid);
-           account_uid_type from_uid = get_account_uid(from_account);
-           fc::optional<score_object> score = _remote_db->get_score(platform_uid, poster, postid, from_uid);
-           if (score)
-              return *score;
-           else
-              FC_THROW("score that form account : ${from_account} for post£º${post} created by poster: ${poster} in platform: ${platform} not found", 
-              ("from_account", from_account)("post", post_pid)("poster", poster_uid)("platform", platform));
-       } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(from_account))
+      try {
+         post_pid_type postid = fc::to_uint64(fc::string(post_pid));
+         account_uid_type platform_uid = get_account_uid(platform);
+         account_uid_type poster = get_account_uid(poster_uid);
+         account_uid_type from_uid = get_account_uid(from_account);
+         fc::optional<score_object> score = _remote_db->get_score(platform_uid, poster, postid, from_uid);
+         if (score)
+            return *score;
+         else
+            FC_THROW("score that form account ${from_account} for post ${post} created by poster ${poster} in platform ${platform} not found",
+            ("from_account", from_account)("post", post_pid)("poster", poster_uid)("platform", platform));
+      } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(from_account))
+   }
+
+   vector<score_object> get_scores_by_uid(string   scorer,
+                                          uint32_t period,
+                                          object_id_type lower_bound_score,
+                                          uint32_t limit)
+   {
+      try {
+         account_uid_type scorer_uid = get_account_uid(scorer);
+         return _remote_db->get_scores_by_uid(scorer_uid, period, lower_bound_score, limit);
+      } FC_CAPTURE_AND_RETHROW((scorer)(period)(lower_bound_score)(limit))
    }
 
    vector<score_object> list_scores(string   platform,
@@ -2749,82 +2820,87 @@ signed_transaction account_cancel_auth_platform(string account,
                                     uint32_t       limit,
                                     bool           list_cur_period)
    {
-       try {
-           post_pid_type postid = fc::to_uint64(fc::string(post_pid));
-           account_uid_type platform_uid = get_account_uid(platform);
-           account_uid_type poster = get_account_uid(poster_uid);
-           return _remote_db->list_scores(platform_uid, poster, postid, lower_bound_score, limit, list_cur_period);
-       } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(lower_bound_score)(limit)(list_cur_period))
+      try {
+         post_pid_type postid = fc::to_uint64(fc::string(post_pid));
+         account_uid_type platform_uid = get_account_uid(platform);
+         account_uid_type poster = get_account_uid(poster_uid);
+         return _remote_db->list_scores(platform_uid, poster, postid, lower_bound_score, limit, list_cur_period);
+      } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(lower_bound_score)(limit)(list_cur_period))
    }
 
    license_object get_license(string platform,
                               string license_lid)
    {
-       try {
-           account_uid_type platform_uid = get_account_uid(platform);
-           license_lid_type lid = fc::to_uint64(fc::string(license_lid));
-           fc::optional<license_object> license = _remote_db->get_license(platform_uid, lid);
-           if (license)
-              return *license;
-           else
-              FC_THROW("license: ${license} not found in platform: ${platform}",("license", license_lid)("platform", platform));
-       } FC_CAPTURE_AND_RETHROW((platform)(license_lid))
+      try {
+         account_uid_type platform_uid = get_account_uid(platform);
+         license_lid_type lid = fc::to_uint64(fc::string(license_lid));
+         fc::optional<license_object> license = _remote_db->get_license(platform_uid, lid);
+         if (license)
+            return *license;
+         else
+            FC_THROW("license: ${license} not found in platform: ${platform}", ("license", license_lid)("platform", platform));
+      } FC_CAPTURE_AND_RETHROW((platform)(license_lid))
    }
 
    vector<license_object> list_licenses(string platform, object_id_type lower_bound_license, uint32_t limit)
    {
-       try {
-           account_uid_type platform_uid = get_account_uid(platform);
-           return _remote_db->list_licenses(platform_uid, lower_bound_license, limit);
-       } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_license)(limit))
+      try {
+         account_uid_type platform_uid = get_account_uid(platform);
+         return _remote_db->list_licenses(platform_uid, lower_bound_license, limit);
+      } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_license)(limit))
    }
 
    vector<advertising_object> list_advertisings(string platform, string lower_bound_advertising, uint32_t limit)
    {
-       try {
-           account_uid_type platform_uid = get_account_uid(platform);
-           advertising_aid_type lower_advertising_aid = fc::to_uint64(fc::string(lower_bound_advertising));
-           return _remote_db->list_advertisings(platform_uid, lower_advertising_aid, limit);
-       } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_advertising)(limit))
+      try {
+         account_uid_type platform_uid = get_account_uid(platform);
+         advertising_aid_type lower_advertising_aid = fc::to_uint64(fc::string(lower_bound_advertising));
+         return _remote_db->list_advertisings(platform_uid, lower_advertising_aid, limit);
+      } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_advertising)(limit))
    }
 
    vector<active_post_object> get_post_profits_detail(uint32_t         begin_period,
                                                       uint32_t         end_period,
                                                       string           platform,
                                                       string           poster,
-                                                      string           post_pid,
-                                                      object_id_type   lower_bound_active, 
-                                                      uint32_t         limit)
+                                                      string           post_pid)
    {
-       try {
-           FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
-           account_uid_type platform_uid = get_account_uid(platform);
-           account_uid_type poster_uid = get_account_uid(poster);
-           post_pid_type postid = fc::to_uint64(fc::string(post_pid));
-           return _remote_db->get_post_profits_detail(begin_period, end_period, platform_uid, poster_uid, postid);
-       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(poster)(post_pid)(lower_bound_active)(limit))
+      try {
+         FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
+         FC_ASSERT(end_period - begin_period <= 100);
+         account_uid_type platform_uid = get_account_uid(platform);
+         account_uid_type poster_uid = get_account_uid(poster);
+         post_pid_type postid = fc::to_uint64(fc::string(post_pid));
+         return _remote_db->get_post_profits_detail(begin_period, end_period, platform_uid, poster_uid, postid);
+      } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(poster)(post_pid))
    }
 
    vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
                                                                      uint32_t         end_period,
-                                                                     string           platform)
+                                                                     string           platform,
+                                                                     uint32_t         lower_bound_index,
+                                                                     uint32_t         limit)
    {
-       try {
-           FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
-           account_uid_type platform_uid = get_account_uid(platform);
-           return _remote_db->get_platform_profits_detail(begin_period, end_period, platform_uid);
-       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform))
+      try {
+         FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
+         FC_ASSERT(end_period - begin_period <= 100);
+         account_uid_type platform_uid = get_account_uid(platform);
+         return _remote_db->get_platform_profits_detail(begin_period, end_period, platform_uid, lower_bound_index, limit);
+      } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(platform)(lower_bound_index)(limit))
    }
 
    vector<Poster_Period_Profit_Detail> get_poster_profits_detail(uint32_t         begin_period,
                                                                  uint32_t         end_period,
-                                                                 string           poster)
+                                                                 string           poster,
+                                                                 uint32_t         lower_bound_index,
+                                                                 uint32_t         limit)
    {
-       try {
-           FC_ASSERT(begin_period <= end_period, "begin_period should be less then end_period.");
-           account_uid_type poster_uid = get_account_uid(poster);
-           return _remote_db->get_poster_profits_detail(begin_period, end_period, poster_uid);
-       } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(poster))
+      try {
+         FC_ASSERT(begin_period <= end_period, "begin_period should be less than end_period.");
+         FC_ASSERT(end_period - begin_period <= 100);
+         account_uid_type poster_uid = get_account_uid(poster);
+         return _remote_db->get_poster_profits_detail(begin_period, end_period, poster_uid, lower_bound_index, limit);
+      } FC_CAPTURE_AND_RETHROW((begin_period)(end_period)(poster)(lower_bound_index)(limit))
    }
 
    share_type get_score_profit(string account, uint32_t period)
@@ -2839,11 +2915,11 @@ signed_transaction account_cancel_auth_platform(string account,
 
    account_statistics_object get_account_statistics(string account)
    {
-       try {
-           account_uid_type account_uid = get_account_uid(account);
-           account_statistics_object plat_account_statistics = _remote_db->get_account_statistics_by_uid(account_uid);
-           return plat_account_statistics;
-       } FC_CAPTURE_AND_RETHROW((account))
+      try {
+         account_uid_type account_uid = get_account_uid(account);
+         account_statistics_object plat_account_statistics = _remote_db->get_account_statistics_by_uid(account_uid);
+         return plat_account_statistics;
+      } FC_CAPTURE_AND_RETHROW((account))
    }
 
    signed_transaction create_advertising(string           platform,
@@ -2853,29 +2929,29 @@ signed_transaction account_cancel_auth_platform(string account,
                                          bool             csaf_fee,
                                          bool             broadcast)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
-           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
-           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
-           account_uid_type platform_uid = get_account_uid(platform);
-           fc::optional<platform_object> platform_obj = _remote_db->get_platform_by_account(platform_uid);
-           FC_ASSERT(platform_obj.valid(), "platform doesn`t exsit. ");
-           const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
-           advertising_create_operation create_op;
-           create_op.platform = platform_uid;
-           create_op.advertising_aid = platform_obj->last_advertising_sequence + 1;
-           create_op.description = description;
-           create_op.unit_price = asset_obj->amount_from_string(unit_price).amount;
-           create_op.unit_time = unit_time;
+         account_uid_type platform_uid = get_account_uid(platform);
+         fc::optional<platform_object> platform_obj = _remote_db->get_platform_by_account(platform_uid);
+         FC_ASSERT(platform_obj.valid(), "platform doesn`t exsit. ");
+         const account_statistics_object& plat_account_statistics = _remote_db->get_account_statistics_by_uid(platform_uid);
+         advertising_create_operation create_op;
+         create_op.platform = platform_uid;
+         create_op.advertising_aid = plat_account_statistics.last_advertising_sequence + 1;
+         create_op.description = description;
+         create_op.unit_price = asset_obj->amount_from_string(unit_price).amount;
+         create_op.unit_time = unit_time;
 
-           signed_transaction tx;
-           tx.operations.push_back(create_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(create_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(description)(unit_price)(unit_time)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((platform)(description)(unit_price)(unit_time)(csaf_fee)(broadcast))
    }
 
    signed_transaction update_advertising(string                     platform,
@@ -2887,31 +2963,31 @@ signed_transaction account_cancel_auth_platform(string account,
                                          bool                       csaf_fee,
                                          bool                       broadcast)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
-           fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
-           FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", GRAPHENE_CORE_ASSET_AID));
 
-           account_uid_type platform_uid = get_account_uid(platform);
-           advertising_update_operation update_op;
-           update_op.platform = platform_uid;
-           update_op.advertising_aid = advertising_aid;
-           if (description.valid())
-               update_op.description = *description;
-           if (unit_price.valid())
-               update_op.unit_price = asset_obj->amount_from_string(*unit_price).amount;
-           if (unit_time.valid())
-               update_op.unit_time = *unit_time;
-           if (on_sell.valid())
-               update_op.on_sell = *on_sell;
+         account_uid_type platform_uid = get_account_uid(platform);
+         advertising_update_operation update_op;
+         update_op.platform = platform_uid;
+         update_op.advertising_aid = advertising_aid;
+         if (description.valid())
+            update_op.description = *description;
+         if (unit_price.valid())
+            update_op.unit_price = asset_obj->amount_from_string(*unit_price).amount;
+         if (unit_time.valid())
+            update_op.unit_time = *unit_time;
+         if (on_sell.valid())
+            update_op.on_sell = *on_sell;
 
-           signed_transaction tx;
-           tx.operations.push_back(update_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(update_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(advertising_aid)(description)(unit_price)(unit_time)(on_sell)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((platform)(advertising_aid)(description)(unit_price)(unit_time)(on_sell)(csaf_fee)(broadcast))
    }
 
    signed_transaction ransom_advertising(string           platform,
@@ -2921,24 +2997,24 @@ signed_transaction account_cancel_auth_platform(string account,
                                          bool             csaf_fee,
                                          bool             broadcast)
    {
-       try {
-           FC_ASSERT(!self.is_locked(), "Should unlock first");
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
 
-           account_uid_type platform_uid = get_account_uid(platform);
-           account_uid_type from_account_uid = get_account_uid(from_account);
-           advertising_ransom_operation ransom_op;
-           ransom_op.platform = platform_uid;
-           ransom_op.from_account = from_account_uid;
-           ransom_op.advertising_aid = advertising_aid;
-           ransom_op.advertising_order_oid = advertising_order_oid;
+         account_uid_type platform_uid = get_account_uid(platform);
+         account_uid_type from_account_uid = get_account_uid(from_account);
+         advertising_ransom_operation ransom_op;
+         ransom_op.platform = platform_uid;
+         ransom_op.from_account = from_account_uid;
+         ransom_op.advertising_aid = advertising_aid;
+         ransom_op.advertising_order_oid = advertising_order_oid;
 
-           signed_transaction tx;
-           tx.operations.push_back(ransom_op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-           tx.validate();
+         signed_transaction tx;
+         tx.operations.push_back(ransom_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
 
-           return sign_transaction(tx, broadcast);
-       } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_aid)(advertising_order_oid)(csaf_fee)(broadcast))
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((platform)(from_account)(advertising_aid)(advertising_order_oid)(csaf_fee)(broadcast))
    }
 
    signed_transaction create_custom_vote(string           create_account,
@@ -2956,7 +3032,6 @@ signed_transaction account_cancel_auth_platform(string account,
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
 
-        
          account_uid_type creater = get_account_uid(create_account);
          const account_statistics_object& creater_statistics = _remote_db->get_account_statistics_by_uid(creater);
 
@@ -3009,26 +3084,32 @@ signed_transaction account_cancel_auth_platform(string account,
       } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creater)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
    }
 
+   uint64_t get_account_auth_platform_count(string platform)
+   {
+      try {
+         account_uid_type platform_uid = get_account_uid(platform);
+         return _remote_db->get_account_auth_platform_count(platform_uid);
+      } FC_CAPTURE_AND_RETHROW((platform))
+   }
+
    vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
-                                                                               string   lower_bound_account,
+                                                                               account_uid_type   lower_bound_account,
                                                                                uint32_t limit)
    {
-       try {
-           account_uid_type platform_uid = get_account_uid(platform);
-           account_uid_type lower_bound_account_uid = get_account_uid(lower_bound_account);
-           return _remote_db->list_account_auth_platform_by_platform(platform_uid, lower_bound_account_uid, limit);
-       } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_account)(limit))
+      try {
+         account_uid_type platform_uid = get_account_uid(platform);
+         return _remote_db->list_account_auth_platform_by_platform(platform_uid, lower_bound_account, limit);
+      } FC_CAPTURE_AND_RETHROW((platform)(lower_bound_account)(limit))
    }
 
    vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
-                                                                              string   lower_bound_platform,
+                                                                              account_uid_type   lower_bound_platform,
                                                                               uint32_t limit)
    {
-       try {
-           account_uid_type account_uid = get_account_uid(account);
-           account_uid_type lower_bound_platform_uid = get_account_uid(lower_bound_platform);
-           return _remote_db->list_account_auth_platform_by_account(account_uid, lower_bound_platform_uid, limit);
-       } FC_CAPTURE_AND_RETHROW((account)(lower_bound_platform)(limit))
+      try {
+         account_uid_type account_uid = get_account_uid(account);
+         return _remote_db->list_account_auth_platform_by_account(account_uid, lower_bound_platform, limit);
+      } FC_CAPTURE_AND_RETHROW((account)(lower_bound_platform)(limit))
    }
 
    signed_transaction approve_proposal(
@@ -3824,9 +3905,9 @@ signed_transaction wallet_api::transfer(string from, string to, string amount,
 }
 
 signed_transaction wallet_api::transfer_extension(string from, string to, string amount,
-    string asset_symbol, string memo, bool isfrom_balance, bool isto_balance, bool csaf_fee, bool broadcast)
+    string asset_symbol, string memo, optional<string> sign_platform, bool isfrom_balance, bool isto_balance, bool csaf_fee, bool broadcast)
 {
-    return my->transfer_extension(from, to, amount, asset_symbol, memo, isfrom_balance, isto_balance, csaf_fee, broadcast);
+   return my->transfer_extension(from, to, amount, asset_symbol, memo, sign_platform, isfrom_balance, isto_balance, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::override_transfer(string from, string to, string amount,
@@ -3975,7 +4056,7 @@ signed_transaction wallet_api::update_platform_votes(string voting_account,
 
 signed_transaction wallet_api::account_auth_platform(string account, string platform_owner, string memo, string limit_for_platform, uint32_t permission_flags, bool csaf_fee, bool broadcast)
 {
-    return my->account_auth_platform(account, platform_owner, memo, limit_for_platform, permission_flags, csaf_fee, broadcast);
+   return my->account_auth_platform(account, platform_owner, memo, limit_for_platform, permission_flags, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::account_cancel_auth_platform(string account, string platform_owner, bool csaf_fee, bool broadcast)
@@ -4038,6 +4119,21 @@ signed_transaction wallet_api::collect_csaf_with_time(string from,
    return my->collect_csaf(from, to, amount, asset_symbol, time, csaf_fee, broadcast);
 }
 
+string wallet_api::compute_available_csaf(string account_name_or_uid)
+{
+   account_uid_type uid = my->get_account_uid( account_name_or_uid );
+   vector<account_uid_type> uids( 1, uid );
+   full_account_query_options opt = { true, true, false, false, false, false, false, false, false, false, false, false, false };
+   const auto& results = my->_remote_db->get_full_accounts_by_uid( uids, opt );
+   auto& account = results.at( uid );
+   const auto& global_params = my->get_global_properties().parameters;
+   auto csaf = account.statistics.compute_coin_seconds_earned( global_params.csaf_accumulate_window, time_point_sec(time_point::now()) ).first;
+   auto ao = my->get_asset( GRAPHENE_CORE_ASSET_AID );
+   auto s1 = global_params.max_csaf_per_account - account.statistics.csaf;
+   auto s2 = (csaf / global_params.csaf_rate).to_uint64();
+   return ao.amount_to_string(s1 > s2 ? s2 : s1);
+}
+
 signed_transaction wallet_api::update_witness_votes(string voting_account,
                                           flat_set<string> witnesses_to_add,
                                           flat_set<string> witnesses_to_remove,
@@ -4089,6 +4185,11 @@ void wallet_api::set_wallet_filename(string wallet_filename)
 signed_transaction wallet_api::sign_transaction(signed_transaction tx, bool broadcast /* = false */)
 { try {
    return my->sign_transaction( tx, broadcast);
+} FC_CAPTURE_AND_RETHROW( (tx) ) }
+
+transaction_id_type wallet_api::broadcast_transaction(signed_transaction tx)
+{ try {
+   return my->broadcast_transaction( tx );
 } FC_CAPTURE_AND_RETHROW( (tx) ) }
 
 operation wallet_api::get_prototype_operation(string operation_name)
@@ -4178,7 +4279,7 @@ signed_transaction wallet_api::proposal_create(const string              fee_pay
                                                bool                      broadcast
                                                )
 {
-    return my->proposal_create(fee_paying_account, proposed_ops, expiration_time, review_period_seconds, csaf_fee, broadcast);
+   return my->proposal_create(fee_paying_account, proposed_ops, expiration_time, review_period_seconds, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::proposal_update(const string                      fee_paying_account,
@@ -4195,8 +4296,8 @@ signed_transaction wallet_api::proposal_update(const string                     
                                                bool                              broadcast
                                                )
 {
-    return my->proposal_update(fee_paying_account, proposal, secondary_approvals_to_add, secondary_approvals_to_remove, active_approvals_to_add,
-        active_approvals_to_remove, owner_approvals_to_add, owner_approvals_to_remove, key_approvals_to_add, key_approvals_to_remove, csaf_fee, broadcast);
+   return my->proposal_update(fee_paying_account, proposal, secondary_approvals_to_add, secondary_approvals_to_remove, active_approvals_to_add,
+      active_approvals_to_remove, owner_approvals_to_add, owner_approvals_to_remove, key_approvals_to_add, key_approvals_to_remove, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::proposal_delete(const string              fee_paying_account,
@@ -4205,7 +4306,7 @@ signed_transaction wallet_api::proposal_delete(const string              fee_pay
                                                bool                      broadcast
                                                )
 {
-    return my->proposal_delete(fee_paying_account, proposal, csaf_fee, broadcast);
+   return my->proposal_delete(fee_paying_account, proposal, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::score_a_post(string         from_account,
@@ -4214,10 +4315,11 @@ signed_transaction wallet_api::score_a_post(string         from_account,
                                             post_pid_type  post_pid,
                                             int8_t         score,
                                             string         csaf,
+                                            optional<string> sign_platform,
                                             bool           csaf_fee,
                                             bool           broadcast)
 {
-    return my->score_a_post(from_account, platform, poster, post_pid, score, csaf, csaf_fee, broadcast);
+   return my->score_a_post(from_account, platform, poster, post_pid, score, csaf, sign_platform, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::reward_post(string           from_account,
@@ -4229,7 +4331,7 @@ signed_transaction wallet_api::reward_post(string           from_account,
                                            bool             csaf_fee,
                                            bool             broadcast)
 {
-    return my->reward_post(from_account, platform, poster, post_pid, amount, asset_symbol, csaf_fee, broadcast);
+   return my->reward_post(from_account, platform, poster, post_pid, amount, asset_symbol, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::reward_post_proxy_by_platform(string           from_account,
@@ -4237,10 +4339,11 @@ signed_transaction wallet_api::reward_post_proxy_by_platform(string           fr
                                                              string           poster,
                                                              post_pid_type    post_pid,
                                                              string           amount,
+                                                             optional<string> sign_platform,
                                                              bool             csaf_fee,
                                                              bool             broadcast)
 {
-    return my->reward_post_proxy_by_platform(from_account, platform, poster, post_pid, amount, csaf_fee, broadcast);
+   return my->reward_post_proxy_by_platform(from_account, platform, poster, post_pid, amount, sign_platform, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::buyout_post(string           from_account,
@@ -4248,10 +4351,11 @@ signed_transaction wallet_api::buyout_post(string           from_account,
                                            string           poster,
                                            post_pid_type    post_pid,
                                            string           receiptor_account,
+                                           optional<string> sign_platform,
                                            bool             csaf_fee,
                                            bool             broadcast)
 {
-    return my->buyout_post(from_account, platform, poster, post_pid, receiptor_account, csaf_fee, broadcast);
+   return my->buyout_post(from_account, platform, poster, post_pid, receiptor_account, sign_platform, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::create_license(string           platform,
@@ -4263,7 +4367,7 @@ signed_transaction wallet_api::create_license(string           platform,
                                               bool             csaf_fee,
                                               bool             broadcast)
 {
-    return my->create_license(platform, license_type, hash_value, title, body, extra_data, csaf_fee, broadcast);
+   return my->create_license(platform, license_type, hash_value, title, body, extra_data, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::create_post(string              platform,
@@ -4279,7 +4383,7 @@ signed_transaction wallet_api::create_post(string              platform,
                                            bool                csaf_fee,
                                            bool                broadcast)
 {
-    return my->create_post(platform, poster, hash_value, title, body, extra_data, origin_platform, origin_poster, origin_post_pid, ext, csaf_fee, broadcast);
+   return my->create_post(platform, poster, hash_value, title, body, extra_data, origin_platform, origin_poster, origin_post_pid, ext, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::update_post(string                     platform,
@@ -4293,7 +4397,7 @@ signed_transaction wallet_api::update_post(string                     platform,
                                            bool                       csaf_fee,
                                            bool                       broadcast)
 {
-    return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, csaf_fee, broadcast);
+   return my->update_post(platform, poster, post_pid, hash_value, title, body, extra_data, ext, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::account_manage(string executor,
@@ -4303,7 +4407,7 @@ signed_transaction wallet_api::account_manage(string executor,
                                               bool broadcast
                                               )
 {
-    return my->account_manage(executor,account, options, csaf_fee, broadcast);
+   return my->account_manage(executor,account, options, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::buy_advertising(string               account,
@@ -4316,24 +4420,24 @@ signed_transaction wallet_api::buy_advertising(string               account,
                                                bool                 csaf_fee,
                                                bool                 broadcast)
 {
-    return my->buy_advertising(account, platform, advertising_aid, start_time, buy_number, extra_data, memo, csaf_fee, broadcast);
+   return my->buy_advertising(account, platform, advertising_aid, start_time, buy_number, extra_data, memo, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::confirm_advertising(string         platform,
                                                    advertising_aid_type         advertising_aid,
                                                    advertising_order_oid_type   advertising_order_oid,
-                                                   bool           comfirm,
+                                                   bool           confirm,
                                                    bool           csaf_fee,
                                                    bool           broadcast)
 {
-    return my->confirm_advertising(platform, advertising_aid, advertising_order_oid, comfirm, csaf_fee, broadcast);
+   return my->confirm_advertising(platform, advertising_aid, advertising_order_oid, confirm, csaf_fee, broadcast);
 }
 
 post_object wallet_api::get_post(string platform_owner,
                                  string poster_uid,
                                  string post_pid)
 {
-    return my->get_post(platform_owner, poster_uid, post_pid);
+   return my->get_post(platform_owner, poster_uid, post_pid);
 }
 
 vector<post_object> wallet_api::get_posts_by_platform_poster(string           platform_owner,
@@ -4343,9 +4447,14 @@ vector<post_object> wallet_api::get_posts_by_platform_poster(string           pl
                                                              object_id_type   lower_bound_post,
                                                              uint32_t         limit)
 {
-    time_point_sec  begin_time(begin_time_range);
-    time_point_sec  end_time(end_time_range);
-    return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, lower_bound_post, limit);
+   time_point_sec  begin_time(begin_time_range);
+   time_point_sec  end_time(end_time_range);
+   return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, lower_bound_post, limit);
+}
+
+uint64_t wallet_api::get_posts_count(optional<string> platform, optional<string> poster)
+{
+   return my->get_posts_count(platform, poster);
 }
 
 score_object wallet_api::get_score(string platform,
@@ -4353,7 +4462,15 @@ score_object wallet_api::get_score(string platform,
                                    string post_pid,
                                    string from_account)
 {
-    return my->get_score(platform, poster_uid, post_pid, from_account);
+   return my->get_score(platform, poster_uid, post_pid, from_account);
+}
+
+vector<score_object> wallet_api::get_scores_by_uid(string   scorer,
+                                       uint32_t period,
+                                       object_id_type lower_bound_score,
+                                       uint32_t limit)
+{
+   return my->get_scores_by_uid(scorer, period, lower_bound_score, limit);
 }
 
 vector<score_object> wallet_api::list_scores(string platform,
@@ -4363,58 +4480,60 @@ vector<score_object> wallet_api::list_scores(string platform,
                                              uint32_t       limit,
                                              bool           list_cur_period)
 {
-    return my->list_scores(platform, poster_uid, post_pid, lower_bound_score, limit, list_cur_period);
+   return my->list_scores(platform, poster_uid, post_pid, lower_bound_score, limit, list_cur_period);
 }
 
 license_object wallet_api::get_license(string platform,
                                        string license_lid)
 {
-    return my->get_license(platform, license_lid);
+   return my->get_license(platform, license_lid);
 }
 
 vector<license_object> wallet_api::list_licenses(string platform, object_id_type lower_bound_license, uint32_t limit)
 {
-    return my->list_licenses(platform, lower_bound_license, limit);
+   return my->list_licenses(platform, lower_bound_license, limit);
 }
 
 vector<advertising_object> wallet_api::list_advertisings(string platform, string lower_bound_advertising, uint32_t limit)
 {
-    return my->list_advertisings(platform, lower_bound_advertising, limit);
+   return my->list_advertisings(platform, lower_bound_advertising, limit);
 }
 
 vector<active_post_object> wallet_api::get_post_profits_detail(uint32_t         begin_period,
                                                                uint32_t         end_period,
                                                                string           platform,
                                                                string           poster,
-                                                               string           post_pid,
-                                                               object_id_type   lower_bound_active,
-                                                               uint32_t         limit)
+                                                               string           post_pid)
 {
-    return my->get_post_profits_detail(begin_period, end_period, platform, poster, post_pid, lower_bound_active, limit);
+   return my->get_post_profits_detail(begin_period, end_period, platform, poster, post_pid);
 }
 
 vector<Platform_Period_Profit_Detail> wallet_api::get_platform_profits_detail(uint32_t         begin_period,
                                                                               uint32_t         end_period,
-                                                                              string           platform)
+                                                                              string           platform,
+                                                                              uint32_t         lower_bound_index,
+                                                                              uint32_t         limit)
 {
-    return my->get_platform_profits_detail(begin_period, end_period, platform);
+   return my->get_platform_profits_detail(begin_period, end_period, platform, lower_bound_index, limit);
 }
 
 vector<Poster_Period_Profit_Detail> wallet_api::get_poster_profits_detail(uint32_t         begin_period,
                                                                           uint32_t         end_period,
-                                                                          string           poster)
+                                                                          string           poster,
+                                                                          uint32_t         lower_bound_index,
+                                                                          uint32_t         limit)
 {
-    return my->get_poster_profits_detail(begin_period, end_period, poster);
+   return my->get_poster_profits_detail(begin_period, end_period, poster, lower_bound_index, limit);
 }
 
 share_type wallet_api::get_score_profit(string account, uint32_t period)
 {
-    return my->get_score_profit(account, period);
+   return my->get_score_profit(account, period);
 }
 
 account_statistics_object wallet_api::get_account_statistics(string account)
 {
-    return my->get_account_statistics(account);
+   return my->get_account_statistics(account);
 }
 
 signed_transaction wallet_api::create_advertising(string           platform,
@@ -4424,7 +4543,7 @@ signed_transaction wallet_api::create_advertising(string           platform,
                                                   bool             csaf_fee,
                                                   bool             broadcast)
 {
-    return my->create_advertising(platform, description, unit_price, unit_time, csaf_fee, broadcast);
+   return my->create_advertising(platform, description, unit_price, unit_time, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::update_advertising(string                     platform,
@@ -4436,7 +4555,7 @@ signed_transaction wallet_api::update_advertising(string                     pla
                                                   bool                       csaf_fee,
                                                   bool                       broadcast)
 {
-    return my->update_advertising(platform, advertising_aid, description, unit_price, unit_time, on_sell, csaf_fee, broadcast);
+   return my->update_advertising(platform, advertising_aid, description, unit_price, unit_time, on_sell, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::ransom_advertising(string           platform,
@@ -4446,7 +4565,7 @@ signed_transaction wallet_api::ransom_advertising(string           platform,
                                                   bool             csaf_fee,
                                                   bool             broadcast)
 {
-    return my->ransom_advertising(platform, from_account, advertising_aid, advertising_order_oid, csaf_fee, broadcast);
+   return my->ransom_advertising(platform, from_account, advertising_aid, advertising_order_oid, csaf_fee, broadcast);
 }
 
 vector<advertising_order_object> wallet_api::list_advertising_orders_by_purchaser(string purchaser, object_id_type lower_bound_advertising_order, uint32_t limit)
@@ -4457,10 +4576,10 @@ vector<advertising_order_object> wallet_api::list_advertising_orders_by_purchase
 
 vector<advertising_order_object> wallet_api::list_advertising_orders_by_ads_aid(string platform, string advertising_aid, string lower_bound_advertising_order, uint32_t limit)
 {
-    account_uid_type platform_uid = my->get_account_uid(platform);
-    advertising_aid_type ad_aid = fc::to_uint64(fc::string(advertising_aid));
-    advertising_order_oid_type lower_order_oid = fc::to_uint64(fc::string(lower_bound_advertising_order));
-    return my->_remote_db->list_advertising_orders_by_ads_aid(platform_uid, ad_aid, lower_order_oid, limit);
+   account_uid_type platform_uid = my->get_account_uid(platform);
+   advertising_aid_type ad_aid = fc::to_uint64(fc::string(advertising_aid));
+   advertising_order_oid_type lower_order_oid = fc::to_uint64(fc::string(lower_bound_advertising_order));
+   return my->_remote_db->list_advertising_orders_by_ads_aid(platform_uid, ad_aid, lower_order_oid, limit);
 }
 
 signed_transaction wallet_api::create_custom_vote(string           create_account,
@@ -4492,7 +4611,7 @@ signed_transaction wallet_api::cast_custom_vote(string                voter,
 
 vector<custom_vote_object> wallet_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)
 {
-    return my->_remote_db->list_custom_votes(lowerbound, limit);
+   return my->_remote_db->list_custom_votes(lowerbound, limit);
 }
 
 vector<custom_vote_object> wallet_api::lookup_custom_votes(string creater, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)
@@ -4516,18 +4635,23 @@ vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_voter(stri
    return my->_remote_db->list_cast_custom_votes_by_voter(account, lower_bound_cast_custom_vote, limit);
 }
 
+uint64_t wallet_api::get_account_auth_platform_count(string platform)
+{
+   return my->get_account_auth_platform_count(platform);
+}
+
 vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_platform(string   platform,
-                                                                                        string   lower_bound_account,
+                                                                                        account_uid_type   lower_bound_account,
                                                                                         uint32_t limit)
 {
-    return my->list_account_auth_platform_by_platform(platform, lower_bound_account, limit);
+   return my->list_account_auth_platform_by_platform(platform, lower_bound_account, limit);
 }
 
 vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_account(string   account,
-                                                                                       string   lower_bound_platform,
+                                                                                       account_uid_type   lower_bound_platform,
                                                                                        uint32_t limit)
 {
-    return my->list_account_auth_platform_by_account(account, lower_bound_platform, limit);
+   return my->list_account_auth_platform_by_account(account, lower_bound_platform, limit);
 }
 
 signed_transaction wallet_api::approve_proposal(

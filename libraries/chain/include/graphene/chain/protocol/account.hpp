@@ -86,7 +86,7 @@ namespace graphene { namespace chain {
       void             validate()const;
       share_type       calculate_fee(const fee_parameters_type& )const;
 
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // registrar should be required anyway as it is the fee_payer_uid(),
          // but we insert it here because fee can be paid with secondary authority
@@ -129,7 +129,7 @@ namespace graphene { namespace chain {
       //use default
       //share_type      calculate_fee(const fee_parameters_type& )const;
 
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // executor should be required anyway as it is the fee_payer_uid(),
          // but we insert it here because fee can be paid with secondary authority
@@ -184,7 +184,6 @@ namespace graphene { namespace chain {
     */
    struct account_update_auth_operation : public base_operation
    {
-
       struct fee_parameters_type
       {
          uint64_t fee              = 1*GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -209,13 +208,13 @@ namespace graphene { namespace chain {
       void             validate()const;
       share_type       calculate_fee(const fee_parameters_type& )const;
 
-      void get_required_owner_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_owner_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // update of owner or active authority requires owner authority
          if( owner.valid() || active.valid() )
             a.insert( uid );
       }
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // update of other data requires active authority
          if( !( owner.valid() || active.valid() ) )
@@ -229,12 +228,12 @@ namespace graphene { namespace chain {
     */
    struct account_auth_platform_operation : public base_operation
    {
-	   struct extension_parameter
-	   {
-		   optional<share_type> limit_for_platform;
-           optional<uint32_t>   permission_flags;
-           optional<memo_data>  memo;
-	   };
+      struct extension_parameter
+      {
+         optional<share_type> limit_for_platform;  //the max prepaid that platform can used authorized by account
+         optional<uint32_t>   permission_flags;    //permissions for platform authorized by account
+         optional<memo_data>  memo;                //memo message for this operation
+      };
 
       struct fee_parameters_type
       {
@@ -253,7 +252,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return uid; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( uid );
@@ -283,7 +282,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return uid; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( uid );
@@ -314,7 +313,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return voter; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( voter );
@@ -345,7 +344,7 @@ namespace graphene { namespace chain {
       void              validate()const;
       //share_type        calculate_fee(const fee_parameters_type& k)const; // use default
 
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( account );
@@ -378,17 +377,17 @@ namespace graphene { namespace chain {
       void              validate()const;
       share_type        calculate_fee(const fee_parameters_type& k)const;
 
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
       {
          // need active authority if to remove any asset
-         if( !assets_to_remove.empty() )
-            a.insert( account );
+         if (!assets_to_remove.empty())
+            a.insert(account);
       }
-      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
       {
          // need secondary authority if only to add
-         if( assets_to_remove.empty() )
-            a.insert( account );
+         if (assets_to_remove.empty())
+            a.insert(account);
       }
    };
 
@@ -433,7 +432,12 @@ namespace graphene { namespace chain {
       extensions_type extensions;
 
       account_uid_type fee_payer_uid()const { return authorizing_account; }
-      void validate()const { FC_ASSERT( fee.amount >= 0 ); FC_ASSERT(new_listing < 0x4); }
+      void validate()const { FC_ASSERT(fee.amount >= 0); FC_ASSERT(new_listing < 0x4); }
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
+      {
+         if (enabled_hardfork)
+            a.insert(authorizing_account);
+      }
    };
 
 } } // graphene::chain

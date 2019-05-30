@@ -214,6 +214,15 @@ namespace graphene { namespace chain {
           * pointer to the last value of every object that was removed.
           */
          fc::signal<void(const vector<object_id_type>&, const vector<const object*>&, const flat_set<account_uid_type>&)>  removed_objects;
+      
+         /** this signal is emitted any time account balance adjust for update vote
+          */
+         fc::signal<void(const account_uid_type&,const asset& delta)>           balance_adjusted;
+      
+      
+         /** this signal is emitted any time to update non consensus index
+          */
+         fc::signal<void(const operation&)>                                     update_non_consensus_index;
 
          //////////////////// db_witness_schedule.cpp ////////////////////
 
@@ -256,6 +265,8 @@ namespace graphene { namespace chain {
          void update_witness_avg_pledge( const account_uid_type uid );
          void update_witness_avg_pledge( const witness_object& wit );
          void adjust_witness_votes( const witness_object& witness, share_type delta );
+      
+         void handle_non_consensus_index(const operation& op);
 
       private:
          void update_witness_schedule();
@@ -342,7 +353,8 @@ namespace graphene { namespace chain {
          const registrar_takeover_object* find_registrar_takeover_object( account_uid_type uid )const;
 
          const platform_object& get_platform_by_owner( account_uid_type owner )const;
-         const platform_object* find_platform_by_owner( account_uid_type owner )const;
+         const platform_object* find_platform_by_sequence( account_uid_type owner, uint32_t sequence )const;
+         const platform_object* find_platform_by_owner(account_uid_type owner)const;
          const platform_vote_object* find_platform_vote( account_uid_type voter_uid,
                                                         uint32_t         voter_sequence,
                                                         account_uid_type platform_owner,
@@ -357,7 +369,6 @@ namespace graphene { namespace chain {
 
          const license_object& get_license_by_platform(account_uid_type platform, license_lid_type license_lid)const;
          const license_object* find_license_by_platform(account_uid_type platform, license_lid_type license_lid)const;
-         const score_object& get_score(score_id_type sid)const;
          const score_object& get_score(account_uid_type platform,
                                        account_uid_type poster,
                                        post_pid_type post_pid,
@@ -482,16 +493,18 @@ namespace graphene { namespace chain {
          void update_global_dynamic_data( const signed_block& b );
          void update_undo_db_size();
          void update_signing_witness(const witness_object& signing_witness, const signed_block& new_block);
+         share_type get_witness_pay_by_pledge(const global_property_object& gpo, const dynamic_global_property_object& dpo, const uint16_t by_pledge_witness_count);
          void update_last_irreversible_block();
          void clear_expired_transactions();
          void clear_expired_proposals();
-		 void clear_active_post();
-         void clear_unnecessary_objects();//advertisng order, custom vote and cast custom vote
+         void clear_active_post();
+         void clear_unnecessary_objects();//advertising order, custom vote and cast custom vote
          void update_reduce_witness_csaf();//only execute once for HARDFORK_0_4_BLOCKNUM
+         void update_account_permission();
 
-         std::tuple<vector<std::tuple<score_id_type, share_type, bool>>, share_type>
-            get_effective_csaf(const active_post_object& active_post);
-		 void clear_expired_scores();
+         std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
+              get_effective_csaf(const active_post_object& active_post);
+         void clear_expired_scores();
          void update_maintenance_flag( bool new_maintenance_flag );
          void clear_expired_csaf_leases();
          void update_average_witness_pledges();
@@ -509,8 +522,8 @@ namespace graphene { namespace chain {
          void check_invariants();
          void release_platform_pledges();
          void clear_resigned_platform_votes();
-				 void process_content_platform_awards();
-				 void process_platform_voted_awards();
+         void process_content_platform_awards();
+         void process_platform_voted_awards();
 
          void update_platform_avg_pledge( const account_uid_type uid );
       public:

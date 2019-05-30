@@ -94,8 +94,8 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
 
    //TODO review
    database& d = db();
-   const platform_object* platform = d.find_platform_by_owner(o.reg_info.registrar);
-
+   const platform_object* platform = d.find_platform_by_owner(o.reg_info.referrer);
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
    const auto& new_acnt_object = d.create<account_object>( [&]( account_object& obj ){
          obj.uid                  = o.uid;
          obj.name                 = o.name;
@@ -104,9 +104,14 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.secondary            = o.secondary;
          obj.memo_key             = o.memo_key;
          obj.reg_info             = o.reg_info;
-         obj.register_by_platform = platform == nullptr ? false : true;
+         obj.referrer_by_platform = platform == nullptr ? 0 : platform->sequence;
          obj.create_time          = d.head_block_time();
          obj.last_update_time     = d.head_block_time();
+         if (dpo.enabled_hardfork_04) {
+             //After hardfork_0_4_time, make account_object can_rate and can_reply by default
+             obj.can_rate = true;
+             obj.can_reply = true;
+         }
 
          obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.uid;}).id;
    });
@@ -217,34 +222,26 @@ void_result account_update_key_evaluator::do_apply( const account_update_key_ope
 void account_update_auth_evaluator::do_update_auth_platform_object(const operation_type& o)
 {
    database& d = db();
-   vector<account_uid_type> add_platforms;
-   vector<account_uid_type> remove_platforms;
-
-   for (auto itr = o.secondary->account_uid_auths.begin(); itr != o.secondary->account_uid_auths.end(); itr++){
+   for (auto itr = o.secondary->account_uid_auths.begin(); itr != o.secondary->account_uid_auths.end(); ++itr){
       authority::account_uid_auth_type auth_type = itr->first;
-      if (!acnt->secondary.account_uid_auths.count(auth_type) && d.find_platform_by_owner(auth_type.uid))
-         add_platforms.emplace_back(auth_type.uid);
-   }
-   for (auto itr = acnt->secondary.account_uid_auths.begin(); itr != acnt->secondary.account_uid_auths.end(); itr++){
-      authority::account_uid_auth_type auth_type = itr->first;
-      if (!o.secondary->account_uid_auths.count(auth_type) && d.find_platform_by_owner(auth_type.uid))
-         remove_platforms.emplace_back(auth_type.uid);
-   }
-
-   for (auto itr : add_platforms){
-      const account_auth_platform_object* auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, itr);
-      if (auth_obj){
-         d.modify(*auth_obj, [&](account_auth_platform_object& a){
-            a.is_active = true;
-         });
+      if (!acnt->secondary.account_uid_auths.count(auth_type) && d.find_platform_by_owner(auth_type.uid)){
+         const account_auth_platform_object* auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, auth_type.uid);
+         if (auth_obj){
+            d.modify(*auth_obj, [&](account_auth_platform_object& a){
+               a.is_active = true;
+            });
+         }
       }
    }
-   for (auto itr : remove_platforms){
-      const account_auth_platform_object* auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, itr);
-      if (auth_obj){
-         d.modify(*auth_obj, [&](account_auth_platform_object& a){
-            a.is_active = false;
-         });
+   for (auto itr = acnt->secondary.account_uid_auths.begin(); itr != acnt->secondary.account_uid_auths.end(); ++itr){
+      authority::account_uid_auth_type auth_type = itr->first;
+      if (!o.secondary->account_uid_auths.count(auth_type) && d.find_platform_by_owner(auth_type.uid)){
+         const account_auth_platform_object* auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, auth_type.uid);
+         if (auth_obj){
+            d.modify(*auth_obj, [&](account_auth_platform_object& a){
+               a.is_active = false;
+            });
+         }
       }
    }
 }
@@ -254,14 +251,14 @@ void_result account_update_auth_evaluator::do_evaluate( const account_update_aut
    database& d = db();
    try
    {
-      if( o.owner )  verify_authority_accounts( d, *o.owner );
-      if( o.active ) verify_authority_accounts( d, *o.active );
-      if( o.secondary ) verify_authority_accounts( d, *o.secondary );
+      if (o.owner)  verify_authority_accounts(d, *o.owner);
+      if (o.active) verify_authority_accounts(d, *o.active);
+      if (o.secondary) verify_authority_accounts(d, *o.secondary);
    }
-   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_auth_max_auth_exceeded )
-   GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
+   GRAPHENE_RECODE_EXC(internal_verify_auth_max_auth_exceeded, account_update_auth_max_auth_exceeded)
+      GRAPHENE_RECODE_EXC(internal_verify_auth_account_not_found, account_update_auth_account_not_found)
 
-   acnt = &d.get_account_by_uid( o.uid );
+      acnt = &d.get_account_by_uid(o.uid);
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -273,14 +270,14 @@ void_result account_update_auth_evaluator::do_apply( const account_update_auth_o
    if (o.secondary)
       do_update_auth_platform_object(o);
 
-   d.modify( *acnt, [&](account_object& a){
-      if( o.owner )
+   d.modify(*acnt, [&](account_object& a){
+      if (o.owner)
          a.owner = *o.owner;
-      if( o.active )
+      if (o.active)
          a.active = *o.active;
-      if( o.secondary )
+      if (o.secondary)
          a.secondary = *o.secondary;
-      if( o.memo_key )
+      if (o.memo_key)
          a.memo_key = *o.memo_key;
       a.last_update_time = d.head_block_time();
    });
@@ -292,38 +289,40 @@ void_result account_auth_platform_evaluator::do_evaluate( const account_auth_pla
 { try {
    database& d = db();
 
-   FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME" );
+   FC_ASSERT(d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_auth_platform after HARDFORK_0_2_1_TIME");
 
    if (o.extensions.valid())
    {
-       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME);
-       ext_para = &o.extensions->value;
+      FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME);
+      FC_ASSERT(o.extensions->value.limit_for_platform.valid() || o.extensions->value.permission_flags.valid() || o.extensions->value.memo.valid(),
+         "accont_auth_platform_operation must change some thing");
+      ext_para = &o.extensions->value;
    }
-   acnt = &d.get_account_by_uid( o.uid );
+   acnt = &d.get_account_by_uid(o.uid);
 
    auto& ka = acnt->secondary.account_uid_auths;
-   auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
-   found = ( itr != ka.end() );
+   auto itr = ka.find(authority::account_uid_auth_type(o.platform, authority::secondary_auth));
+   found = (itr != ka.end());
    auth_object = d.find_account_auth_platform_object_by_account_platform(o.uid, o.platform);
    if (d.head_block_time() < HARDFORK_0_4_TIME)
-       FC_ASSERT(!(auth_object && found), "platform ${p} is already in secondary authority", ("p", o.platform));
+      FC_ASSERT(!found, "platform ${p} is already in secondary authority", ("p", o.platform));
    else
-       FC_ASSERT(ext_para, "account_auth_platform`s extension is invalid. ");
+      FC_ASSERT(ext_para, "account_auth_platform`s extension is invalid. ");
 
    authority auth = acnt->secondary;
-   authority::account_uid_auth_type auat( o.platform, authority::secondary_auth );
+   authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
    //auat.uid = o.platform;
    //auat.auth_type = authority::secondary_auth;
-   auth.add_authority( auat, acnt->secondary.weight_threshold );
+   auth.add_authority(auat, acnt->secondary.weight_threshold);
 
    try
    {
-      verify_authority_accounts( d, auth );
+      verify_authority_accounts(d, auth);
    }
-   GRAPHENE_RECODE_EXC( internal_verify_auth_max_auth_exceeded, account_update_auth_max_auth_exceeded )
-   GRAPHENE_RECODE_EXC( internal_verify_auth_account_not_found, account_update_auth_account_not_found )
+   GRAPHENE_RECODE_EXC(internal_verify_auth_max_auth_exceeded, account_update_auth_max_auth_exceeded)
+      GRAPHENE_RECODE_EXC(internal_verify_auth_account_not_found, account_update_auth_account_not_found)
 
-   return void_result();
+      return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 void_result account_auth_platform_evaluator::do_apply( const account_auth_platform_operation& o )
@@ -332,73 +331,75 @@ void_result account_auth_platform_evaluator::do_apply( const account_auth_platfo
 
    if (!found)
    {
-       authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
-       d.modify(*acnt, [&](account_object& a){
-           a.secondary.add_authority(auat, acnt->secondary.weight_threshold);
-           a.last_update_time = d.head_block_time();
-       });
+      authority::account_uid_auth_type auat(o.platform, authority::secondary_auth);
+      d.modify(*acnt, [&](account_object& a){
+         a.secondary.add_authority(auat, acnt->secondary.weight_threshold);
+         a.last_update_time = d.head_block_time();
+      });
    }
 
    if (auth_object)
    {
-       if (d.head_block_time() < HARDFORK_0_4_TIME){
-           if (!found){
-               d.modify(*auth_object, [&](account_auth_platform_object& a){
-                   a.is_active = true;
-               });
-           }
-       }
-       else{
-           d.modify(*auth_object, [&](account_auth_platform_object& a){
-               if (ext_para->limit_for_platform.valid())
-                   a.max_limit = *(ext_para->limit_for_platform);
-               if (ext_para->permission_flags.valid())
-                   a.permission_flags = *(ext_para->permission_flags);
-               if (ext_para->memo.valid())
-                   a.memo = *(ext_para->memo);
-               if (!found)
-                   a.is_active = true;
-           });
-       }
+      if (d.head_block_time() < HARDFORK_0_4_TIME){
+         if (!found){
+            d.modify(*auth_object, [&](account_auth_platform_object& a){
+               a.is_active = true;
+            });
+         }
+      }
+      else{
+         d.modify(*auth_object, [&](account_auth_platform_object& a){
+            if (ext_para->limit_for_platform.valid())
+               a.max_limit = *(ext_para->limit_for_platform);
+            if (ext_para->permission_flags.valid())
+               a.permission_flags = *(ext_para->permission_flags);
+            if (ext_para->memo.valid())
+               a.memo = *(ext_para->memo);
+            if (!found)
+               a.is_active = true;
+         });
+      }
    }
    else
    {
-       if (d.head_block_time() < HARDFORK_0_4_TIME){
-           d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
-               obj.account = o.uid;
-               obj.platform = o.platform;
+      if (d.head_block_time() < HARDFORK_0_4_TIME){
+         d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
+            obj.account = o.uid;
+            obj.platform = o.platform;
+            obj.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+            obj.permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+               account_auth_platform_object::Platform_Permission_Liked |
+               account_auth_platform_object::Platform_Permission_Buyout |
+               account_auth_platform_object::Platform_Permission_Comment |
+               account_auth_platform_object::Platform_Permission_Reward |
+               account_auth_platform_object::Platform_Permission_Transfer |
+               account_auth_platform_object::Platform_Permission_Post |
+               account_auth_platform_object::Platform_Permission_Content_Update;
+         });
+      }
+      else{
+         d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
+            obj.account = o.uid;
+            obj.platform = o.platform;
+            if (ext_para->limit_for_platform.valid())
+               obj.max_limit = *(ext_para->limit_for_platform);
+            else
                obj.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
+            if (ext_para->permission_flags.valid())
+               obj.permission_flags = *(ext_para->permission_flags);
+            else
                obj.permission_flags = account_auth_platform_object::Platform_Permission_Forward |
-                   account_auth_platform_object::Platform_Permission_Liked |
-                   account_auth_platform_object::Platform_Permission_Buyout |
-                   account_auth_platform_object::Platform_Permission_Comment |
-                   account_auth_platform_object::Platform_Permission_Reward |
-                   account_auth_platform_object::Platform_Permission_Transfer |
-                   account_auth_platform_object::Platform_Permission_Post;
-           });
-       }
-       else{
-           d.create<account_auth_platform_object>([&](account_auth_platform_object& obj){
-               obj.account = o.uid;
-               obj.platform = o.platform;
-               if (ext_para->limit_for_platform.valid())
-                   obj.max_limit = *(ext_para->limit_for_platform);
-               else
-                   obj.max_limit = GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID;
-               if (ext_para->permission_flags.valid())
-                   obj.permission_flags = *(ext_para->permission_flags);
-               else
-                   obj.permission_flags = account_auth_platform_object::Platform_Permission_Forward |
-                   account_auth_platform_object::Platform_Permission_Liked |
-                   account_auth_platform_object::Platform_Permission_Buyout |
-                   account_auth_platform_object::Platform_Permission_Comment |
-                   account_auth_platform_object::Platform_Permission_Reward |
-                   account_auth_platform_object::Platform_Permission_Transfer |
-                   account_auth_platform_object::Platform_Permission_Post;
-               if (ext_para->memo.valid())
-                   obj.memo = *(ext_para->memo);
-           });
-       }
+               account_auth_platform_object::Platform_Permission_Liked |
+               account_auth_platform_object::Platform_Permission_Buyout |
+               account_auth_platform_object::Platform_Permission_Comment |
+               account_auth_platform_object::Platform_Permission_Reward |
+               account_auth_platform_object::Platform_Permission_Transfer |
+               account_auth_platform_object::Platform_Permission_Post |
+               account_auth_platform_object::Platform_Permission_Content_Update;
+            if (ext_para->memo.valid())
+               obj.memo = *(ext_para->memo);
+         });
+      }
    }
 
    return void_result();
@@ -408,18 +409,18 @@ void_result account_cancel_auth_platform_evaluator::do_evaluate( const account_c
 { try {
    database& d = db();
 
-   FC_ASSERT( d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_cancel_auth_platform after HARDFORK_0_2_1_TIME" );
+   FC_ASSERT(d.head_block_time() >= HARDFORK_0_2_1_TIME, "Can only be account_cancel_auth_platform after HARDFORK_0_2_1_TIME");
 
-   acnt = &d.get_account_by_uid( o.uid );
+   acnt = &d.get_account_by_uid(o.uid);
    auto& ka = acnt->secondary.account_uid_auths;
-   auto itr = ka.find( authority::account_uid_auth_type( o.platform, authority::secondary_auth ) );
+   auto itr = ka.find(authority::account_uid_auth_type(o.platform, authority::secondary_auth));
    found = (itr != ka.end());
    if (d.head_block_time() < HARDFORK_0_4_TIME){
-       FC_ASSERT(found, "platform ${p} is not in secondary authority", ("p", o.platform));
-       auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, o.platform);
+      FC_ASSERT(found, "platform ${p} is not in secondary authority", ("p", o.platform));
+      auth_obj = d.find_account_auth_platform_object_by_account_platform(o.uid, o.platform);
    }
    else
-       auth_obj = &d.get_account_auth_platform_object_by_account_platform(o.uid, o.platform);
+      auth_obj = &d.get_account_auth_platform_object_by_account_platform(o.uid, o.platform);
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -429,23 +430,23 @@ void_result account_cancel_auth_platform_evaluator::do_apply( const account_canc
    database& d = db();
    auto& ka = acnt->secondary.account_uid_auths;
    if (d.head_block_time() < HARDFORK_0_4_TIME){
-       auto itr = ka.find(authority::account_uid_auth_type(o.platform, authority::secondary_auth));
-       d.modify(*acnt, [&](account_object& a){
-           a.secondary.account_uid_auths.erase(itr);
-           a.last_update_time = d.head_block_time();
-       });
-       if (auth_obj)
-           d.remove(*auth_obj);
+      auto itr = ka.find(authority::account_uid_auth_type(o.platform, authority::secondary_auth));
+      d.modify(*acnt, [&](account_object& a){
+         a.secondary.account_uid_auths.erase(itr);
+         a.last_update_time = d.head_block_time();
+      });
+      if (auth_obj)
+         d.remove(*auth_obj);
    }
    else{
-       if (found){
-           auto itr = ka.find(authority::account_uid_auth_type(o.platform, authority::secondary_auth));
-           d.modify(*acnt, [&](account_object& a){
-               a.secondary.account_uid_auths.erase(itr);
-               a.last_update_time = d.head_block_time();
-           });
-       }
-       d.remove(*auth_obj);
+      if (found){
+         auto itr = ka.find(authority::account_uid_auth_type(o.platform, authority::secondary_auth));
+         d.modify(*acnt, [&](account_object& a){
+            a.secondary.account_uid_auths.erase(itr);
+            a.last_update_time = d.head_block_time();
+         });
+      }
+      d.remove(*auth_obj);
    }
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

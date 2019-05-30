@@ -191,11 +191,11 @@ void committee_updatable_content_parameters::validate()const
    if (approval_casf_min_weight.valid() && approval_casf_first_rate.valid() && approval_casf_second_rate.valid())
    {
       FC_ASSERT(*approval_casf_min_weight >= 0 && *approval_casf_min_weight <= GRAPHENE_100_PERCENT,
-         "approval casf min weight must be positive");
+         "approval casf min weight must be be in range 0-100%");
       FC_ASSERT(*approval_casf_first_rate >= 0,
          "approval casf first rate must be positive");
       FC_ASSERT(*approval_casf_second_rate <= GRAPHENE_100_PERCENT,
-         "approval casf second rate must be positive");
+         "approval casf second rate must be not greater than 100%");
       FC_ASSERT(*approval_casf_second_rate > *approval_casf_first_rate,
          "approval casf second rate must greater than first rate");
    }
@@ -209,12 +209,12 @@ void committee_updatable_content_parameters::validate()const
    if (receiptor_award_modulus.valid() && disapprove_award_modulus.valid())
    {
       FC_ASSERT(*receiptor_award_modulus >= 0 && *receiptor_award_modulus <= GRAPHENE_100_PERCENT,
-         "receiptor award modulus must be positive");
+         "receiptor award modulus must be be in range 0-100%");
       FC_ASSERT(*disapprove_award_modulus > GRAPHENE_100_PERCENT,
-         "receiptor award modulus must be positive");
-      auto disapprove_extra_award = GRAPHENE_IRREVERSIBLE_THRESHOLD * (GRAPHENE_100_PERCENT - *receiptor_award_modulus);
-      auto receiptor_remaining_award = (GRAPHENE_100_PERCENT - GRAPHENE_IRREVERSIBLE_THRESHOLD)* (*disapprove_award_modulus - GRAPHENE_100_PERCENT);
-      FC_ASSERT(disapprove_extra_award >= receiptor_remaining_award,
+         "receiptor award modulus must be greater than 100%");
+      auto receiptor_remaining_award = GRAPHENE_RECEIPTOR_AWARD_THRESHOLD * (GRAPHENE_100_PERCENT - *receiptor_award_modulus);
+      auto disapprove_extra_award = (GRAPHENE_100_PERCENT - GRAPHENE_RECEIPTOR_AWARD_THRESHOLD)* (*disapprove_award_modulus - GRAPHENE_100_PERCENT);
+      FC_ASSERT(receiptor_remaining_award >= disapprove_extra_award,
          "extra award for disapprove should less than receiptor remaining award");
    }
    else if (!receiptor_award_modulus.valid() && !disapprove_award_modulus.valid())
@@ -230,6 +230,13 @@ void committee_updatable_content_parameters::validate()const
    if (advertising_confirmed_fee_rate.valid())
       FC_ASSERT(*advertising_confirmed_fee_rate > 0 && *advertising_confirmed_fee_rate < GRAPHENE_100_PERCENT, 
                "advertising confirmed fee rate should be in range 0-100%");
+   if (min_witness_block_produce_pledge.valid())
+      FC_ASSERT(*min_witness_block_produce_pledge > 0, "min witness block produce pledge must be positive");
+
+   if (content_award_interval.valid())
+      FC_ASSERT(*content_award_interval <= 86400*365, "content award interval must be less than or equal to one year");
+   if (platform_award_interval.valid())
+      FC_ASSERT(*platform_award_interval <= 86400*365, "platform award interval must be less than or equal to one year");
 }
 
 void committee_proposal_create_operation::validate()const

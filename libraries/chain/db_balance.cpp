@@ -134,34 +134,16 @@ void database::adjust_balance(account_uid_type account, asset delta )
          update_voter_effective_votes( *voter );
       }
       const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-      bool reduce_witness = head_block_num() > HARDFORK_0_4_BLOCKNUM;
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
       modify( account_stats, [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_block_time(), reduce_witness);
+         s.update_coin_seconds_earned(csaf_window, head_block_time(), dpo.enabled_hardfork_04);
          s.core_balance += delta.amount;
       });
    }
 
    //update custom vote
-   const auto& custom_vote_idx = get_index_type<custom_vote_index>().indices().get<by_creater>();
-
-   const auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-   auto cast_vote_itr = cast_vote_idx.lower_bound(account);
-
-   while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->voter == account)
-   {
-      auto custom_vote_itr = custom_vote_idx.find(std::make_tuple(cast_vote_itr->custom_vote_creater,cast_vote_itr->custom_vote_vid));
-      FC_ASSERT(custom_vote_itr != custom_vote_idx.end(), "custom vote {id} not found.",("id", cast_vote_itr->custom_vote_vid));     
-      if (head_block_time() <= custom_vote_itr->vote_expired_time)
-      {
-         modify(*custom_vote_itr, [&](custom_vote_object& obj)
-         {
-            for (const auto& v : cast_vote_itr->vote_result)
-               obj.vote_result.at(v) += delta.amount.value;
-         });
-      }
-      cast_vote_itr++; 
-   }
-
+   balance_adjusted(account,delta);
+   
 } FC_CAPTURE_AND_RETHROW( (account)(delta) ) }
 
 void database::deposit_witness_pay(const witness_object& wit, share_type amount)

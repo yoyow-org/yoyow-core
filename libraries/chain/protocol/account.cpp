@@ -226,10 +226,6 @@ void account_auth_platform_operation::validate()const
    validate_account_uid( uid, "target " );
    validate_non_special_account( uid );
    validate_account_uid( platform, "platform " );
-
-   if (extensions.valid())
-       FC_ASSERT(extensions->value.limit_for_platform.valid() || extensions->value.permission_flags.valid() || extensions->value.memo.valid(),
-                 "accont_auth_platform_operation must change some thing");
 }
 
 void account_cancel_auth_platform_operation::validate()const

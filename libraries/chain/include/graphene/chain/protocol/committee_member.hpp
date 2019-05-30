@@ -55,7 +55,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( account );
@@ -90,7 +90,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( account );
@@ -122,7 +122,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return voter; }
       void              validate()const;
       //share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( voter );
@@ -221,35 +221,38 @@ namespace graphene { namespace chain {
     */
    typedef extension<committee_updatable_parameters> committee_update_global_parameter_item_type;
 
-	 struct committee_updatable_content_parameters
-	 {
-		 optional< uint32_t			>			content_award_interval;
-		 optional< uint32_t			>			platform_award_interval;
-     optional< share_type		>			max_csaf_per_approval;
-		 optional< uint32_t			>			approval_expiration;
-		 optional< share_type		>			min_effective_csaf;
-		 optional< share_type		>			total_content_award_amount;
-		 optional< share_type		>			total_platform_content_award_amount;
-		 optional< share_type		>			total_platform_voted_award_amount;
-     optional< share_type		>			platform_award_min_votes;
-		 optional< uint32_t			>			platform_award_requested_rank;
+    struct committee_updatable_content_parameters
+    {
+       optional< uint32_t        >    content_award_interval;
+       optional< uint32_t        >    platform_award_interval;
+       optional< share_type      >    max_csaf_per_approval;
+       optional< uint32_t        >    approval_expiration;
+       optional< share_type      >    min_effective_csaf;
+       optional< share_type      >    total_content_award_amount;
+       optional< share_type      >    total_platform_content_award_amount;
+       optional< share_type      >    total_platform_voted_award_amount;
+       optional< share_type      >    platform_award_min_votes;
+       optional< uint32_t        >    platform_award_requested_rank;
 
-     optional< uint32_t     >     platform_award_basic_rate;
-     optional< uint32_t     >     casf_modulus;
-     optional< uint32_t     >     post_award_expiration;
-     optional< uint32_t     >     approval_casf_min_weight;
-     optional< uint32_t     >     approval_casf_first_rate;
-     optional< uint32_t     >     approval_casf_second_rate;
-     optional< uint32_t     >     receiptor_award_modulus;
-     optional< uint32_t     >     disapprove_award_modulus;
+       optional< uint32_t        >    platform_award_basic_rate;
+       optional< uint32_t        >    casf_modulus;
+       optional< uint32_t        >    post_award_expiration;
+       optional< uint32_t        >    approval_casf_min_weight;
+       optional< uint32_t        >    approval_casf_first_rate;
+       optional< uint32_t        >    approval_casf_second_rate;
+       optional< uint32_t        >    receiptor_award_modulus;
+       optional< uint32_t        >    disapprove_award_modulus;
 
-     optional< uint32_t     >     advertising_confirmed_fee_rate;
-     optional< share_type		>			advertising_confirmed_min_fee;
-     optional< uint32_t     >     custom_vote_effective_time;
+       optional< uint32_t        >    advertising_confirmed_fee_rate;
+       optional< share_type      >    advertising_confirmed_min_fee;
+       optional< uint32_t        >    custom_vote_effective_time;
+                                      
+       optional< uint64_t        >    min_witness_block_produce_pledge;
+       optional< uint8_t         >    content_award_skip_slots;
 
-     void validate()const;
-	 };
-	 typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
+       void validate()const;
+    };
+    typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
 
    /**
     * @ingroup operations
@@ -260,7 +263,7 @@ namespace graphene { namespace chain {
             committee_update_account_priviledge_item_type,
             committee_update_fee_schedule_item_type,
             committee_update_global_parameter_item_type,
-						committee_update_global_content_parameter_item_type
+                  committee_update_global_content_parameter_item_type
          > committee_proposal_item_type;
 
    /**
@@ -307,7 +310,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return proposer; }
       void              validate()const;
       share_type        calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( proposer );
@@ -341,7 +344,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
       //share_type        calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // need active authority
          a.insert( account );
@@ -409,16 +412,16 @@ FC_REFLECT( graphene::chain::committee_updatable_parameters,
             (platform_avg_pledge_update_interval)
           )
 FC_REFLECT(graphene::chain::committee_updatable_content_parameters, 
-						(content_award_interval)
-						(platform_award_interval)
-						(max_csaf_per_approval)
-						(approval_expiration)
-						(min_effective_csaf)
-						(total_content_award_amount)
-						(total_platform_content_award_amount)
-						(total_platform_voted_award_amount)
-						(platform_award_min_votes)
-						(platform_award_requested_rank)            
+            (content_award_interval)
+            (platform_award_interval)
+            (max_csaf_per_approval)
+            (approval_expiration)
+            (min_effective_csaf)
+            (total_content_award_amount)
+            (total_platform_content_award_amount)
+            (total_platform_voted_award_amount)
+            (platform_award_min_votes)
+            (platform_award_requested_rank)            
             (platform_award_basic_rate)
             (casf_modulus)
             (post_award_expiration)
@@ -429,7 +432,9 @@ FC_REFLECT(graphene::chain::committee_updatable_content_parameters,
             (disapprove_award_modulus)
             (advertising_confirmed_fee_rate)
             (advertising_confirmed_min_fee)
-            (custom_vote_effective_time))
+            (custom_vote_effective_time)
+            (min_witness_block_produce_pledge)
+            (content_award_skip_slots))
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )

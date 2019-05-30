@@ -70,48 +70,27 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
 
       d.get_account_by_uid(op.voter);//check custom voter account exist
        
-      custom_vote_obj = d.find_custom_vote_by_vid(op.custom_vote_creater, op.custom_vote_vid);
+      auto custom_vote_obj = d.find_custom_vote_by_vid(op.custom_vote_creater, op.custom_vote_vid);
       FC_ASSERT(custom_vote_obj != nullptr, "custom vote ${vid} not found.", ("id", op.custom_vote_vid));
       FC_ASSERT(d.head_block_time() <= custom_vote_obj->vote_expired_time, "custom vote already overdue");
       FC_ASSERT(op.vote_result.size() >= custom_vote_obj->minimum_selected_items && op.vote_result.size() <= custom_vote_obj->maximum_selected_items, 
          "vote options num is not in range ${min} - ${max}.", ("min", custom_vote_obj->minimum_selected_items)("max", custom_vote_obj->maximum_selected_items));
 
-      votes = d.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
+      auto votes = d.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
       FC_ASSERT(votes >= custom_vote_obj->required_asset_amount, "asset ${aid} balance less than required amount for vote ${amount}", 
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
-      
-      const auto& idx = d.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-      auto itr = idx.find(std::make_tuple(op.voter, op.custom_vote_creater, op.custom_vote_vid));
-      FC_ASSERT(itr == idx.end(), "account ${uid} already cast a vote for custom vote ${vid}", ("uid", op.voter)("vid", op.custom_vote_vid));
 
-      for (const auto& index : op.vote_result)
-      {
-         FC_ASSERT(index < custom_vote_obj->options.size(), "option ${item} is not existent", ("item", index));
-      }
+      auto last_index = *(op.vote_result.rbegin());
+      FC_ASSERT(last_index < custom_vote_obj->options.size(), "option ${item} is not existent", ("item", last_index));
          
       return void_result();
    }FC_CAPTURE_AND_RETHROW((op))
 }
 
-object_id_type custom_vote_cast_evaluator::do_apply(const operation_type& op)
+void_result custom_vote_cast_evaluator::do_apply(const operation_type& op)
 {
    try {
-      database& d = db();
-      const auto& cast_vote_obj = d.create<cast_custom_vote_object>([&](cast_custom_vote_object& obj)
-      {
-         obj.voter = op.voter;
-         obj.custom_vote_creater = op.custom_vote_creater;
-         obj.custom_vote_vid = op.custom_vote_vid;
-         obj.vote_result = op.vote_result;
-      });
-
-      d.modify(*custom_vote_obj, [&](custom_vote_object& obj) 
-      {
-         for (const auto& v : op.vote_result)
-            obj.vote_result.at(v) += votes.value;
-      });
-
-      return cast_vote_obj.id;
+      return void_result();
    } FC_CAPTURE_AND_RETHROW((op))
 }
 

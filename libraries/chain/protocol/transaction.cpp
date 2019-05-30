@@ -97,10 +97,11 @@ void transaction::set_reference_block( const block_id_type& reference_block )
 void transaction::get_required_uid_authorities( flat_set<account_uid_type>& owner_uids,
                                                 flat_set<account_uid_type>& active_uids,
                                                 flat_set<account_uid_type>& secondary_uids,
-                                                vector<authority>& other )const
+                                                vector<authority>& other ,
+                                                bool	  enabled_hardfork)const
 {
    for( const auto& op : operations )
-      operation_get_required_uid_authorities( op, owner_uids, active_uids, secondary_uids, other );
+      operation_get_required_uid_authorities( op, owner_uids, active_uids, secondary_uids, other,enabled_hardfork );
 }
 
 const std::function<const authority*(account_uid_type)> null_by_uid = []( account_uid_type uid ){ return nullptr; };
@@ -311,6 +312,7 @@ signed_information verify_authority( const vector<operation>& ops, const flat_ma
                           const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_active_by_uid,
                           const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
+                          bool	  enabled_hardfork,
                           uint32_t max_recursion_depth,
                           bool allow_committe,
                           const flat_set<account_uid_type>& owner_uid_approvals,
@@ -323,7 +325,7 @@ signed_information verify_authority( const vector<operation>& ops, const flat_ma
    vector<authority> other;
 
    for( const auto& op : ops )
-      operation_get_required_uid_authorities( op, required_owner_uids, required_active_uids, required_secondary_uids, other );
+      operation_get_required_uid_authorities( op, required_owner_uids, required_active_uids, required_secondary_uids, other,enabled_hardfork);
 
    if( !allow_committe )
       GRAPHENE_ASSERT( required_active_uids.find(GRAPHENE_COMMITTEE_ACCOUNT_UID) == required_active_uids.end(),
@@ -479,6 +481,7 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
    const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
    const std::function<const authority*(account_uid_type)>& get_active_by_uid,
    const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
+   bool	  enabled_hardfork,
    uint32_t max_recursion_depth )const
 {
    flat_set<account_uid_type> required_owner_uids;
@@ -487,7 +490,7 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
    vector<authority> other;
    vector<authority> required;
 
-   get_required_uid_authorities( required_owner_uids, required_active_uids, required_secondary_uids, other );
+   get_required_uid_authorities( required_owner_uids, required_active_uids, required_secondary_uids, other, enabled_hardfork);
 
    required.reserve( required_owner_uids.size() + required_active_uids.size() + required_secondary_uids.size() + other.size() );
    // the order should be same as in verify_authority(...), changing the order requires a hard fork
@@ -539,6 +542,7 @@ signed_information signed_transaction::verify_authority(
    const std::function<const authority*(account_uid_type)>& get_owner_by_uid,
    const std::function<const authority*(account_uid_type)>& get_active_by_uid,
    const std::function<const authority*(account_uid_type)>& get_secondary_by_uid,
+   bool enabled_hardfork,
    uint32_t max_recursion )const
 { try {
    return graphene::chain::verify_authority( operations,
@@ -546,6 +550,7 @@ signed_information signed_transaction::verify_authority(
                                       get_owner_by_uid,
                                       get_active_by_uid,
                                       get_secondary_by_uid,
+									  enabled_hardfork,
                                       max_recursion );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 

@@ -180,7 +180,7 @@ namespace detail {
          else
          {
             vector<string> seeds = {
-               "seed01.yoyow.org:2018"  // yoyow mainnet
+                "seed01.yoyow.org:2018"  // yoyow mainnet
             };
 
             for( const string& endpoint_string : seeds )

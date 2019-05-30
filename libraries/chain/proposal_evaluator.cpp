@@ -54,7 +54,8 @@ void_result proposal_create_evaluator::do_evaluate(const proposal_create_operati
                                              required_owner,
                                              tmp_active,
                                              tmp_secondary,
-                                             other);
+                                             other,
+                                             d.get_dynamic_global_properties().enabled_hardfork_04);
 
    std::set_difference(tmp_active.begin(), tmp_active.end(),
                        required_owner.begin(), required_owner.end(),

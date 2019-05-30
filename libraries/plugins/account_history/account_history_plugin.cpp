@@ -126,7 +126,7 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
       // get the set of accounts this operation applies to
       flat_set<account_uid_type> impacted_uids;
       vector<authority> other;
-      operation_get_required_uid_authorities( op.op, impacted_uids, impacted_uids, impacted_uids, other );
+      operation_get_required_uid_authorities( op.op, impacted_uids, impacted_uids, impacted_uids, other,true);
 
       graphene::chain::operation_get_impacted_account_uids( op.op, impacted_uids );
 

@@ -220,6 +220,8 @@ namespace graphene { namespace chain {
          * Record the last create custom vote number
          */
          custom_vote_vid_type last_custom_vote_sequence = 0; 
+         advertising_aid_type last_advertising_sequence = 0;
+         license_lid_type     last_license_sequence = 0;
          /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds
@@ -288,7 +290,7 @@ namespace graphene { namespace chain {
           */
          time_point_sec membership_expiration_date;
 
-         bool             register_by_platform = false;
+         uint32_t         referrer_by_platform = 0;  //if referrered by platform, == platform.sequence
          ///The account that paid the fee to register this account. Receives a percentage of referral rewards.
          account_uid_type registrar;
          /// The account credited as referring this account. Receives a percentage of referral rewards.
@@ -714,42 +716,44 @@ namespace graphene { namespace chain {
    class account_auth_platform_object : public graphene::db::abstract_object<account_auth_platform_object>
    {
    public:
-       enum Platform_Auth_Permission
-       {
-           Platform_Permission_Forward  = 1,   //allow forward 
-           Platform_Permission_Liked    = 2,   //allow liked or scored
-           Platform_Permission_Buyout   = 4,   //allow buyout
-           Platform_Permission_Comment  = 8,   //allow comment
-           Platform_Permission_Reward   = 16,  //allow reward
-           Platform_Permission_Transfer = 32,  //allow transfer
-           Platform_Permission_Post     = 64,  //allow post
-       };
+      enum Platform_Auth_Permission
+      {
+         Platform_Permission_Forward        = 1,        //allow forward 
+         Platform_Permission_Liked          = 2,        //allow liked or scored
+         Platform_Permission_Buyout         = 4,        //allow buyout
+         Platform_Permission_Comment        = 8,        //allow comment
+         Platform_Permission_Reward         = 16,       //allow reward
+         Platform_Permission_Transfer       = 32,       //allow transfer
+         Platform_Permission_Post           = 64,       //allow post
+         Platform_Permission_Content_Update = 128 //allow content update
+      };
 
-       static const uint8_t space_id = implementation_ids;
-       static const uint8_t type_id = impl_account_auth_platform_object_type;
+      static const uint8_t space_id = implementation_ids;
+      static const uint8_t type_id = impl_account_auth_platform_object_type;
 
-       account_uid_type  account;
-       account_uid_type  platform;
+      account_uid_type  account;
+      account_uid_type  platform;
 
-       share_type    max_limit = 0;   //max limit prepaid for platform
-       share_type    cur_used = 0;    //current prepaid used by platform 
-       bool          is_active = true;
-       uint32_t      permission_flags = account_auth_platform_object::Platform_Permission_Forward |
-                                        account_auth_platform_object::Platform_Permission_Liked |
-                                        account_auth_platform_object::Platform_Permission_Buyout |
-                                        account_auth_platform_object::Platform_Permission_Comment |
-                                        account_auth_platform_object::Platform_Permission_Reward |
-                                        account_auth_platform_object::Platform_Permission_Transfer |
-                                        account_auth_platform_object::Platform_Permission_Post;
-       optional<memo_data>    memo;
+      share_type    max_limit = 0;   //max limit prepaid for platform
+      share_type    cur_used = 0;    //current prepaid used by platform 
+      bool          is_active = true;
+      uint32_t      permission_flags = account_auth_platform_object::Platform_Permission_Forward |
+                                       account_auth_platform_object::Platform_Permission_Liked |
+                                       account_auth_platform_object::Platform_Permission_Buyout |
+                                       account_auth_platform_object::Platform_Permission_Comment |
+                                       account_auth_platform_object::Platform_Permission_Reward |
+                                       account_auth_platform_object::Platform_Permission_Transfer |
+                                       account_auth_platform_object::Platform_Permission_Post |
+                                       account_auth_platform_object::Platform_Permission_Content_Update;
+      optional<memo_data>    memo;
 
-       share_type get_auth_platform_usable_prepaid(share_type account_prepaid) const{
-           share_type usable_prepaid = 0;
-           FC_ASSERT(max_limit >= cur_used);
-           share_type amount = max_limit - cur_used;
-           usable_prepaid = account_prepaid >= amount ? amount : account_prepaid;
-           return usable_prepaid;
-       };
+      share_type get_auth_platform_usable_prepaid(share_type account_prepaid) const{
+         share_type usable_prepaid = 0;
+         FC_ASSERT(max_limit >= cur_used);
+         share_type amount = max_limit - cur_used;
+         usable_prepaid = account_prepaid >= amount ? amount : account_prepaid;
+         return usable_prepaid;
+      };
    };
 
    struct by_account_uid{};
@@ -759,15 +763,15 @@ namespace graphene { namespace chain {
 
    typedef multi_index_container<
        account_auth_platform_object,
-	   indexed_by<
+	    indexed_by<
 	      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-          ordered_unique< tag<by_account_platform>,
+         ordered_unique< tag<by_account_platform>,
                                  composite_key< 
                                  account_auth_platform_object,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::account >,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >>
                                  >,
-          ordered_unique< tag<by_platform_account>,
+         ordered_unique< tag<by_platform_account>,
                                  composite_key< 
                                  account_auth_platform_object,
                                  member< account_auth_platform_object, account_uid_type, &account_auth_platform_object::platform >,
@@ -785,7 +789,7 @@ namespace graphene { namespace chain {
 FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
                     //(membership_expiration_date)
-                    (register_by_platform)
+                    (referrer_by_platform)
                     //(registrar)(referrer)(lifetime_referrer)
                     //(network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
                     (uid)(name)(owner)(active)(secondary)(memo_key)(reg_info)
@@ -848,6 +852,8 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (platform_pledge_release_block_number)
                     (last_post_sequence)
                     (last_custom_vote_sequence)
+                    (last_advertising_sequence)
+                    (last_license_sequence)
                   )
 
 FC_REFLECT_DERIVED(graphene::chain::account_auth_platform_object,

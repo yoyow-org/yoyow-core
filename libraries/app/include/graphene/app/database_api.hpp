@@ -109,13 +109,6 @@ struct asset_object_with_data : public asset_object
    asset_dynamic_data_object dynamic_asset_data;
 };
 
-struct Post_Object_Index
-{
-    account_uid_type platform;
-    account_uid_type poster;
-    post_pid_type    postid;
-};
-
 struct Platform_Period_Profit_Detail
 {
     uint32_t                               cur_period;
@@ -125,9 +118,10 @@ struct Platform_Period_Profit_Detail
     flat_map<asset_aid_type, share_type>   rewards_profits;
     share_type                             foward_profits = 0;
     share_type                             post_profits = 0;
+    share_type                             post_profits_by_platform = 0;
     share_type                             platform_profits = 0;
 
-    vector<Post_Object_Index>              active_post_pids;
+    vector<active_post_object>             active_objects;
 };
 
 struct Poster_Period_Profit_Detail
@@ -139,7 +133,7 @@ struct Poster_Period_Profit_Detail
     flat_map<asset_aid_type, share_type>   total_rewards;
     share_type                             total_post_award = 0;
 
-    vector<Post_Object_Index>              active_post_pids;
+    vector<active_post_object>             active_objects;
 };
 /**
  * @brief The database_api class implements the RPC API for the chain database.
@@ -342,6 +336,7 @@ class database_api
        */
       map<string,account_uid_type> lookup_accounts_by_name(const string& lower_bound_name, uint32_t limit)const;
 
+      uint64_t get_account_auth_platform_count(const account_uid_type platform)const;
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(const account_uid_type platform, 
                                                                                   const account_uid_type lower_bound_account, 
                                                                                   const uint32_t limit)const;
@@ -445,6 +440,11 @@ class database_api
                                        const post_pid_type    post_pid,
                                        const account_uid_type from_account)const;
 
+      vector<score_object> get_scores_by_uid(const account_uid_type  scorer,
+                                             const uint32_t          period,
+                                             const object_id_type    lower_bound_score,
+                                             const uint32_t          limit)const;
+
       vector<score_object> list_scores(const account_uid_type platform,
                                        const account_uid_type poster_uid,
                                        const post_pid_type    post_pid,
@@ -485,11 +485,17 @@ class database_api
 
       vector<Platform_Period_Profit_Detail> get_platform_profits_detail(const uint32_t         begin_period,
                                                                         const uint32_t         end_period,
-                                                                        const account_uid_type platform)const;
+                                                                        const account_uid_type platform,
+                                                                        const uint32_t         lower_bound_index,
+                                                                        uint32_t               limit)const;
 
       vector<Poster_Period_Profit_Detail> get_poster_profits_detail(const uint32_t         begin_period,
                                                                     const uint32_t         end_period,
-                                                                    const account_uid_type poster)const;
+                                                                    const account_uid_type poster,
+                                                                    const uint32_t         lower_bound_index,
+                                                                    uint32_t               limit)const;
+
+      uint64_t get_posts_count(optional<account_uid_type> platform, optional<account_uid_type> poster)const;
 
       share_type get_score_profit(account_uid_type account, uint32_t period)const;
 
@@ -504,10 +510,10 @@ class database_api
       // TODO may need a flag to fetch root posts only, or non-root posts only, or both
       // FIXME if limit is 100, will be buggy when too many posts in same second
       vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
-                                      optional<account_uid_type> poster,
-                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
-                                      const object_id_type lower_bound_post,
-                                      const uint32_t limit )const;
+                                                        optional<account_uid_type> poster,
+                                                        const std::pair<time_point_sec, time_point_sec> create_time_range,
+                                                        const object_id_type lower_bound_post,
+                                                        const uint32_t limit )const;
 
       ////////////
       // Assets //
@@ -692,11 +698,6 @@ FC_REFLECT( graphene::app::full_account_query_options,
             (fetch_balances)
           );
 
-FC_REFLECT(graphene::app::Post_Object_Index,
-          (platform)
-          (poster)
-          (postid));
-
 FC_REFLECT(graphene::app::Platform_Period_Profit_Detail,
           (cur_period)
           (platform_account)
@@ -704,15 +705,16 @@ FC_REFLECT(graphene::app::Platform_Period_Profit_Detail,
           (rewards_profits)
           (foward_profits)
           (post_profits)
+          (post_profits_by_platform)
           (platform_profits)
-          (active_post_pids));
+          (active_objects));
 FC_REFLECT(graphene::app::Poster_Period_Profit_Detail,
           (cur_period)
           (poster_account)
           (total_forward)
           (total_rewards)
           (total_post_award)
-          (active_post_pids));
+          (active_objects));
 
 FC_REFLECT_ENUM( graphene::app::data_sorting_type,
                  (order_by_uid)
@@ -764,6 +766,7 @@ FC_API( graphene::app::database_api,
    (get_account_references)
    //(lookup_account_names)
    (lookup_accounts_by_name)
+   (get_account_auth_platform_count)
    (list_account_auth_platform_by_platform)
    (list_account_auth_platform_by_account)
    (get_account_count)
@@ -779,7 +782,9 @@ FC_API( graphene::app::database_api,
    (get_platform_count)
    (get_post)
    (get_posts_by_platform_poster)
+   (get_posts_count)
    (get_score)
+   (get_scores_by_uid)
    (list_scores)
    (get_license)
    (list_licenses)

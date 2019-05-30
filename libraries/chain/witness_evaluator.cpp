@@ -87,7 +87,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
    const uint64_t csaf_window = global_params.csaf_accumulate_window;
    auto block_time = d.head_block_time();
-   bool reduce_witness = d.head_block_num() > HARDFORK_0_4_BLOCKNUM;
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
 
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.last_witness_sequence += 1;
@@ -95,15 +95,19 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
          s.releasing_witness_pledge -= op.pledge.amount;
       else
       {
+         if (dpo.enabled_hardfork_04)
+             s.update_coin_seconds_earned(csaf_window, block_time, true);
          s.total_witness_pledge = op.pledge.amount;
          if( s.releasing_witness_pledge > 0 )
          {
             s.releasing_witness_pledge = 0;
             s.witness_pledge_release_block_number = -1;
          }
-         if (reduce_witness)
-             s.update_coin_seconds_earned(csaf_window, block_time, true);
       }
+   });
+
+   d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+      _dpo.total_witness_pledge += op.pledge.amount;
    });
 
    return new_witness_object.id;
@@ -197,20 +201,20 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       {
           const uint64_t csaf_window = global_params.csaf_accumulate_window;
           auto block_time = d.head_block_time();
-          bool reduce_witness = d.head_block_num() > HARDFORK_0_4_BLOCKNUM;
+          const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
          d.modify( *account_stats, [&](account_statistics_object& s) {
             if( s.releasing_witness_pledge > delta )
                s.releasing_witness_pledge -= delta;
             else
             {
+               if (dpo.enabled_hardfork_04)
+                   s.update_coin_seconds_earned(csaf_window, block_time, true);
                s.total_witness_pledge = op.new_pledge->amount;
                if( s.releasing_witness_pledge > 0 )
                {
                   s.releasing_witness_pledge = 0;
                   s.witness_pledge_release_block_number = -1;
                }
-               if (reduce_witness)
-                   s.update_coin_seconds_earned(csaf_window, block_time, true);
             }
          });
       }
@@ -235,6 +239,11 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
 
          if( op.new_url.valid() )
             wit.url = *op.new_url;
+      });
+
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+         _dpo.total_witness_pledge += delta;
       });
 
       // update schedule
@@ -538,8 +547,10 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       // update account stats object
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
       auto block_time = d.head_block_time();
-      bool reduce_witness = d.head_block_num() > HARDFORK_0_4_BLOCKNUM;
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify( *account_stats, [&]( account_statistics_object& s ) {
+         if (dpo.enabled_hardfork_04)
+             s.update_coin_seconds_earned(csaf_window, block_time, true);
          if( from_releasing > 0 )
          {
             s.releasing_witness_pledge -= from_releasing;
@@ -549,8 +560,10 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          s.total_witness_pledge -= total;
          s.witness_last_reported_block_num = reporting_block_num;
          s.witness_total_reported += 1;
-         if (reduce_witness)
-             s.update_coin_seconds_earned(csaf_window, block_time, true);
+      });
+
+      d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+         _dpo.total_witness_pledge -= total;
       });
       
       // update witness object

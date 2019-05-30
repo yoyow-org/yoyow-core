@@ -139,7 +139,7 @@ struct wallet_data
    map<string, vector<string> > pending_account_registrations;
    map<string, string> pending_witness_registrations;
 
-   key_label_index_type                                              labeled_keys;
+   key_label_index_type      labeled_keys;
 
    string                    ws_server = "ws://localhost:8090";
    string                    ws_user;
@@ -181,6 +181,8 @@ struct post_update_ext
     optional<uint32_t>                  buyout_expiration;
     optional<license_lid_type>          license_lid;
     optional<uint32_t>                  permission_flags;
+    optional<string>                    content_sign_platform;
+    optional<string>                    receiptor_sign_platform;
 };
 
 struct receiptor_ext
@@ -202,6 +204,7 @@ struct post_create_ext
                                 post_object::Post_Permission_Buyout |
                                 post_object::Post_Permission_Comment |
                                 post_object::Post_Permission_Reward;
+    optional<string> sign_platform;
 };
 
 namespace detail {
@@ -308,7 +311,7 @@ class wallet_api
        * @param start the sequence number where to start looping back throw the history, set 0 for most recent
        * @returns a list of \c operation_history_objects
        */
-     vector<operation_detail>  get_relative_account_history(string account, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const;
+      vector<operation_detail>  get_relative_account_history(string account, optional<uint16_t> op_type, uint32_t stop, int limit, uint32_t start)const;
 
       /** Returns the block chain's slowly-changing settings.
        * This object contains all of the properties of the blockchain that are fixed
@@ -554,7 +557,7 @@ class wallet_api
       * @param n a number
       * @return an account uid
       */
-     uint64_t calculate_account_uid(uint64_t n)const;
+      uint64_t calculate_account_uid(uint64_t n)const;
 
      /**
       * Derive any number of *possible* owner keys from a given brain key.
@@ -568,7 +571,7 @@ class wallet_api
       * @param number_of_desired_keys  Number of desired keys
       * @return A list of keys that are deterministically derived from the brainkey
       */
-     vector<brain_key_info> derive_owner_keys_from_brain_key(string brain_key, int number_of_desired_keys = 1) const;
+      vector<brain_key_info> derive_owner_keys_from_brain_key(string brain_key, int number_of_desired_keys = 1) const;
 
      /**
       * Determine whether a textual representation of a public key
@@ -577,7 +580,7 @@ class wallet_api
       * @param public_key Public key
       * @return Whether a public key is known
       */
-     bool is_public_key_registered(string public_key) const;
+      bool is_public_key_registered(string public_key) const;
 
       /** Converts a signed_transaction in JSON form to its binary representation.
        *
@@ -703,6 +706,7 @@ class wallet_api
                                             string amount,
                                             string asset_symbol,
                                             string memo,
+                                            optional<string> sign_platform,
                                             bool isfrom_balance = true,
                                             bool isto_balance = true,
                                             bool csaf_fee = true,
@@ -1039,6 +1043,8 @@ class wallet_api
                                       fc::time_point_sec time,
                                       bool csaf_fee = true,
                                       bool broadcast = false);
+									  
+      string compute_available_csaf(string account_name_or_uid);
 
 
       /** Returns information about the given platform.
@@ -1152,7 +1158,8 @@ class wallet_api
                                                                            account_auth_platform_object::Platform_Permission_Buyout |
                                                                            account_auth_platform_object::Platform_Permission_Comment |
                                                                            account_auth_platform_object::Platform_Permission_Reward |
-                                                                           account_auth_platform_object::Platform_Permission_Post,
+                                                                           account_auth_platform_object::Platform_Permission_Post |
+                                                                           account_auth_platform_object::Platform_Permission_Content_Update,
                                                bool csaf_fee = true,
                                                bool broadcast = false);
 
@@ -1268,6 +1275,8 @@ class wallet_api
        * @return the signed version of the transaction
        */
       signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false);
+     
+      transaction_id_type broadcast_transaction( signed_transaction tx );
 
       /** Returns an uninitialized object representing a given blockchain operation.
        *
@@ -1373,6 +1382,7 @@ class wallet_api
                                       post_pid_type    post_pid,
                                       int8_t           score,
                                       string           csaf,
+                                      optional<string> sign_platform,
                                       bool csaf_fee = true,
                                       bool broadcast = false);
 
@@ -1415,6 +1425,7 @@ class wallet_api
                                                        string           poster,
                                                        post_pid_type    post_pid,
                                                        string           amount,
+                                                       optional<string> sign_platform,
                                                        bool csaf_fee = true,
                                                        bool broadcast = false);
 
@@ -1435,6 +1446,7 @@ class wallet_api
                                      string           poster,
                                      post_pid_type    post_pid,
                                      string           receiptor_account,
+                                     optional<string> sign_platform,
                                      bool csaf_fee = true,
                                      bool broadcast = false);
 
@@ -1534,11 +1546,17 @@ class wallet_api
                                                        object_id_type   lower_bound_post,
                                                        uint32_t         limit);
 
+      uint64_t get_posts_count(optional<string> platform, optional<string> poster);
+
       score_object get_score(string platform,
                              string poster_uid,
                              string post_pid,
                              string from_account);
-
+      
+      vector<score_object> get_scores_by_uid(string   scorer,
+                                             uint32_t period,
+                                             object_id_type lower_bound_score,
+                                             uint32_t limit);
       vector<score_object> list_scores(string   platform,
                                        string   poster_uid,
                                        string   post_pid,
@@ -1559,17 +1577,19 @@ class wallet_api
                                                          uint32_t         end_period,
                                                          string           platform,
                                                          string           poster,
-                                                         string           post_pid,
-                                                         object_id_type   lower_bound_active,
-                                                         uint32_t         limit);
+                                                         string           post_pid);
 
       vector<Platform_Period_Profit_Detail> get_platform_profits_detail(uint32_t         begin_period,
                                                                         uint32_t         end_period,
-                                                                        string           platform);
+                                                                        string           platform,
+                                                                        uint32_t         lower_bound_index,
+                                                                        uint32_t         limit);
 
       vector<Poster_Period_Profit_Detail> get_poster_profits_detail(uint32_t         begin_period,
                                                                     uint32_t         end_period,
-                                                                    string           poster);
+                                                                    string           poster,
+                                                                    uint32_t         lower_bound_index,
+                                                                    uint32_t         limit);
 
       share_type get_score_profit(string account, uint32_t period);
 
@@ -1605,7 +1625,7 @@ class wallet_api
       signed_transaction confirm_advertising(string         platform,
                                              advertising_aid_type         advertising_aid,
                                              advertising_order_oid_type   advertising_order_oid,
-                                             bool           comfirm,
+                                             bool           confirm,
                                              bool           csaf_fee = true,
                                              bool           broadcast = false
                                              );
@@ -1649,12 +1669,14 @@ class wallet_api
                                                                       uint32_t limit);
 
 
+      uint64_t get_account_auth_platform_count(string platform);
+
       vector<account_auth_platform_object> list_account_auth_platform_by_platform(string   platform,
-                                                                                  string   lower_bound_account,
+                                                                                  account_uid_type   lower_bound_account,
                                                                                   uint32_t limit = 100);
 
       vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
-                                                                                 string   lower_bound_platform,
+                                                                                 account_uid_type   lower_bound_platform,
                                                                                  uint32_t limit = 100);
          
       void dbg_make_uia(string creator, string symbol);
@@ -1729,6 +1751,8 @@ FC_REFLECT(graphene::wallet::post_update_ext,
           (buyout_expiration)
           (license_lid)
           (permission_flags)
+          (content_sign_platform)
+          (receiptor_sign_platform)
           )
 
 FC_REFLECT(graphene::wallet::receiptor_ext,
@@ -1744,6 +1768,7 @@ FC_REFLECT(graphene::wallet::post_create_ext,
           (receiptors)
           (license_lid)
           (permission_flags)
+          (sign_platform)
           )
 
 FC_REFLECT( graphene::wallet::operation_detail, 
@@ -1812,6 +1837,7 @@ FC_API( graphene::wallet::wallet_api,
         (collect_witness_pay)
         (collect_csaf)
         (collect_csaf_with_time)
+        (compute_available_csaf)
         (get_platform)
         (list_platforms)
         (get_platform_count)
@@ -1837,6 +1863,7 @@ FC_API( graphene::wallet::wallet_api,
         (save_wallet_file)
         (serialize_transaction)
         (sign_transaction)
+        (broadcast_transaction)
         (get_prototype_operation)
         //(dbg_make_uia)
         //(dbg_push_blocks)
@@ -1859,7 +1886,9 @@ FC_API( graphene::wallet::wallet_api,
         (account_manage)
         (get_post)
         (get_posts_by_platform_poster)
+        (get_posts_count)
         (get_score)
+        (get_scores_by_uid)
         (list_scores)
         (get_license)
         (list_licenses)
@@ -1882,6 +1911,7 @@ FC_API( graphene::wallet::wallet_api,
         (lookup_custom_votes)
         (list_cast_custom_votes_by_id)
         (list_cast_custom_votes_by_voter)
+        (get_account_auth_platform_count)
         (list_account_auth_platform_by_platform)
         (list_account_auth_platform_by_account)
         (get_global_properties_extensions)

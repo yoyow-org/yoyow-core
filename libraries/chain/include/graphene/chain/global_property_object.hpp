@@ -90,6 +90,10 @@ namespace graphene { namespace chain {
 				 uint64_t												 current_active_post_sequence = 0;
 
          bool                            content_award_enable = false;
+         share_type                      total_witness_pledge = 0;
+         bool                            enabled_hardfork_04 = false;
+         share_type                      by_pledge_witness_pay_per_block = 0;
+		 bool							 content_award_done = false;
          /**
           *  Every time a block is missed this increases by
           *  RECENTLY_MISSED_COUNT_INCREMENT,
@@ -162,6 +166,10 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
 										(last_platform_voted_award_time)
 										(current_active_post_sequence)
                     (content_award_enable)
+                    (total_witness_pledge)
+                    (enabled_hardfork_04)
+                    (by_pledge_witness_pay_per_block)
+                    (content_award_done)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::global_property_object, (graphene::db::object),

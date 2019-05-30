@@ -101,7 +101,8 @@ namespace graphene { namespace chain {
                                             flat_set<account_uid_type>& owner_uids,
                                             flat_set<account_uid_type>& active_uids,
                                             flat_set<account_uid_type>& secondary_uids,
-                                            vector<authority>&  other );
+                                            vector<authority>&  other,
+                                            bool	  enabled_hardfork);
 
    void operation_validate( const operation& op );
 

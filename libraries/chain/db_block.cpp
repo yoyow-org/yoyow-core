@@ -36,6 +36,7 @@
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/evaluator.hpp>
+#include <graphene/chain/chain_property_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 
@@ -541,13 +542,23 @@ void database::_apply_block( const signed_block& next_block )
    update_committee();
    adjust_budgets();
 
-	 process_content_platform_awards();
-	 process_platform_voted_awards();
+   process_content_platform_awards();
+   process_platform_voted_awards();
 
    clear_unnecessary_objects();
 
-   if (head_block_num() == HARDFORK_0_4_BLOCKNUM)
-       update_reduce_witness_csaf();
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   if (head_block_time() >= HARDFORK_0_4_TIME && !dpo.enabled_hardfork_04)
+   {
+      update_reduce_witness_csaf();
+      modify(dpo, [&](dynamic_global_property_object& dp)
+      {
+         dp.enabled_hardfork_04 = true;
+      });
+      
+      //modify default value, can_reply,can_rate default to true
+      update_account_permission();
+   }       
 
    //dlog("before update_witness_schedule");
    update_witness_schedule();
@@ -565,7 +576,7 @@ void database::_apply_block( const signed_block& next_block )
    // TODO catch exceptions thrown by plugins but not the core
    applied_block( next_block ); //emit
    _applied_ops.clear();
-
+   
    //dlog("before notify changed objects");
    notify_changed_objects();
 } FC_CAPTURE_AND_RETHROW( (next_block.block_num())(next_block) )  }
@@ -605,8 +616,10 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
        {
            if (op.which() == operation::tag< transfer_operation >::value ||
                op.which() == operation::tag< post_operation >::value || 
+               op.which() == operation::tag< post_update_operation >::value ||
                op.which() == operation::tag< reward_proxy_operation >::value || 
-               op.which() == operation::tag< buyout_operation >::value )
+               op.which() == operation::tag< buyout_operation >::value ||
+               op.which() == operation::tag< score_create_operation >::value )
            {
                return true;
            }
@@ -626,6 +639,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
                             get_owner_by_uid,
                             get_active_by_uid,
                             get_secondary_by_uid,
+                            get_dynamic_global_properties().enabled_hardfork_04,
                             chain_parameters.max_authority_depth );
    }
 
@@ -671,7 +685,10 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
 
    return ptrx;
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
-
+void database::handle_non_consensus_index(const operation & op){
+   if(op.which()==operation::tag<custom_vote_cast_operation>::value)
+      update_non_consensus_index(op);
+}
 operation_result database::apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs)
 { try {
    int i_which = op.which();
@@ -683,6 +700,7 @@ operation_result database::apply_operation(transaction_evaluation_state& eval_st
    auto op_id = push_applied_operation( op );
    auto result = eval->evaluate( eval_state, op, true, sigs);
    set_applied_operation_result( op_id, result );
+   handle_non_consensus_index(op);
    return result;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -727,5 +745,5 @@ bool database::before_last_checkpoint()const
 {
    return (_checkpoints.size() > 0) && (_checkpoints.rbegin()->first >= head_block_num());
 }
-
+   
 } }

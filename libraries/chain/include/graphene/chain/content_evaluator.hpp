@@ -8,7 +8,7 @@
 
 namespace graphene { namespace chain {
 
-class platform_create_evaluator : public evaluator<platform_create_evaluator>
+   class platform_create_evaluator : public evaluator<platform_create_evaluator>
    {
       public:
          typedef platform_create_operation operation_type;
@@ -58,10 +58,10 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
          void_result do_evaluate( const operation_type& o );
          object_id_type do_apply( const operation_type& o );
 
-         const active_post_object* active_post = nullptr;
          const account_statistics_object* account_stats = nullptr;
          const post_operation::ext* ext_para = nullptr;
          const account_auth_platform_object* auth_object = nullptr;
+         const post_object* origin_post = nullptr;
    };
 
    class post_update_evaluator : public evaluator<post_update_evaluator>
@@ -75,60 +75,58 @@ class platform_create_evaluator : public evaluator<platform_create_evaluator>
          //const account_object* poster_account;
          const post_object*    post = nullptr;
          const post_update_operation::ext* ext_para = nullptr;
+         const account_auth_platform_object* poster_auth_object = nullptr;
    };
 
-   class score_create_evaluator : public evaluator<score_create_evaluator>
+   class score_create_evaluator : public evaluator < score_create_evaluator >
    {
-   public:
-	   typedef score_create_operation operation_type;
+      public:
+         typedef score_create_operation operation_type;
 
-	   void_result do_evaluate(const operation_type& o);
-	   object_id_type do_apply(const operation_type& o);
+         void_result do_evaluate(const operation_type& o);
+         object_id_type do_apply(const operation_type& o);
 
-		 const active_post_object* active_post = nullptr;
+         const account_auth_platform_object* auth_object = nullptr;
    };
 
    class reward_evaluator : public evaluator<reward_evaluator>
    {
-   public:
-	   typedef reward_operation operation_type;
+      public:
+         typedef reward_operation operation_type;
 
-	   void_result do_evaluate(const operation_type& o);
-	   void_result do_apply(const operation_type& o);
-
-		 const active_post_object* active_post = nullptr;
+         void_result do_evaluate(const operation_type& o);
+         void_result do_apply(const operation_type& o);
    };
 
    class reward_proxy_evaluator : public evaluator<reward_proxy_evaluator>
    {
-   public:
-       typedef reward_proxy_operation operation_type;
+      public:
+         typedef reward_proxy_operation operation_type;
 
-       void_result do_evaluate(const operation_type& o);
-       void_result do_apply(const operation_type& o);
+         void_result do_evaluate(const operation_type& o);
+         void_result do_apply(const operation_type& o);
 
-       const active_post_object* active_post = nullptr;
-       const account_auth_platform_object* auth_object = nullptr;
+         const account_auth_platform_object* auth_object = nullptr;
    };
 
    class buyout_evaluator : public evaluator<buyout_evaluator>
    {
-   public:
-	   typedef buyout_operation operation_type;
+      public:
+         typedef buyout_operation operation_type;
 
-	   void_result do_evaluate(const operation_type& o);
-	   void_result do_apply(const operation_type& o);
-       const account_auth_platform_object* auth_object = nullptr;
+         void_result do_evaluate(const operation_type& o);
+         void_result do_apply(const operation_type& o);
+         const account_auth_platform_object* auth_object = nullptr;
    };
 
    class license_create_evaluator : public evaluator < license_create_evaluator >
    {
-   public:
-       typedef license_create_operation operation_type;
+      public:
+         typedef license_create_operation operation_type;
 
-       void_result do_evaluate(const operation_type& op);
-       object_id_type do_apply(const operation_type& op);
+         void_result do_evaluate(const operation_type& op);
+         object_id_type do_apply(const operation_type& op);
 
-       const platform_object* platform_obj = nullptr;
+         const account_statistics_object* platform_ant = nullptr;
    };
 } } // graphene::chain

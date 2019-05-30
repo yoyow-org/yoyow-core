@@ -14,10 +14,10 @@ void custom_vote_create_operation::validate()const
 
    FC_ASSERT(options.size() > 1 && options.size() < 256, "options size should more than 1 and less than 256");
    FC_ASSERT(minimum_selected_items <= maximum_selected_items,
-      "maximum selected items must be greater then  or equal to minimum selected items");
-   FC_ASSERT(minimum_selected_items > 0, "minimum selected items must be greater then 0");
-   FC_ASSERT(maximum_selected_items < options.size(), "maximum selected items must be less then options size");
-   FC_ASSERT(required_asset_amount > 0, "required vote asset amount must be grater then 0");
+      "maximum selected items must be greater than  or equal to minimum selected items");
+   FC_ASSERT(minimum_selected_items > 0, "minimum selected items must be greater than 0");
+   FC_ASSERT(maximum_selected_items < options.size(), "maximum selected items must be less than options size");
+   FC_ASSERT(required_asset_amount > 0, "required vote asset amount must be grater than 0");
    FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
@@ -25,6 +25,7 @@ share_type custom_vote_create_operation::calculate_fee(const fee_parameters_type
 {
    share_type core_fee_required = k.fee;
    auto size = fc::raw::pack_size(description);
+   size += fc::raw::pack_size(title);
    size += fc::raw::pack_size(options);
    core_fee_required += calculate_data_fee(size, k.price_per_kbyte);
    return core_fee_required;

@@ -30,127 +30,142 @@
 namespace graphene { namespace chain {
 void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
 { try {
-   
+
    const database& d = db();
 
-   from_account    = &d.get_account_by_uid( op.from );
-   to_account      = &d.get_account_by_uid( op.to );
+   from_account = &d.get_account_by_uid(op.from);
+   to_account = &d.get_account_by_uid(op.to);
 
-   const asset_object&   transfer_asset_object      = d.get_asset_by_aid( op.amount.asset_id );
+   const asset_object&   transfer_asset_object = d.get_asset_by_aid(op.amount.asset_id);
 
-   validate_authorized_asset( d, *from_account, transfer_asset_object, "'from' " );
-   validate_authorized_asset( d, *to_account,   transfer_asset_object, "'to' " );
+   validate_authorized_asset(d, *from_account, transfer_asset_object, "'from' ");
+   validate_authorized_asset(d, *to_account, transfer_asset_object, "'to' ");
 
+   account_uid_type sign_account = sigs.real_secondary_uid(op.from, 1);
    if (!op.some_from_balance())
    {
-       account_uid_type sign_account = sigs.real_secondary_uid(op.from, 1);
-       if (sign_account != op.from)
-       {
-           const auto& account_stats = d.get_account_statistics_by_uid(op.from);
-           auth_object = d.find_account_auth_platform_object_by_account_platform(op.from, sign_account);
-           if (auth_object){   //transfer by platform,
-               FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Transfer) > 0,
-                   "the transfer permisson of platform ${p} authorized by account ${a} is invalid. ",
-                   ("a", (op.from))("p", sign_account));
-               FC_ASSERT(account_stats.prepaid >= op.amount.amount,
-                   "Insufficient balance: unable to transfer, because the account ${a} `s prepaid [${c}] is less then needed [${n}]. ",
-                   ("c", (account_stats.prepaid))("a", op.from)("n", op.amount.amount));
-               if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
-               {
-                   share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats.prepaid);
-                   FC_ASSERT(usable_prepaid >= op.amount.amount,
-                       "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less then needed [${n}]. ",
-                       ("c", usable_prepaid)("p", sign_account)("a", op.from)("n", op.amount.amount));
-               }
-           }
-       }
+      if (sign_account != op.from)
+      {
+         const auto& account_stats = d.get_account_statistics_by_uid(op.from);
+         auth_object = d.find_account_auth_platform_object_by_account_platform(op.from, sign_account);
+         if (auth_object){   //transfer by platform,
+            FC_ASSERT((auth_object->permission_flags & account_auth_platform_object::Platform_Permission_Transfer) > 0,
+               "the transfer permisson of platform ${p} authorized by account ${a} is invalid. ",
+               ("a", (op.from))("p", auth_object->platform));
+            FC_ASSERT(account_stats.prepaid >= op.amount.amount,
+               "Insufficient balance: unable to transfer, because the account ${a} `s prepaid [${c}] is less than needed [${n}]. ",
+               ("c", (account_stats.prepaid))("a", op.from)("n", op.amount.amount));
+            if (auth_object->max_limit < GRAPHENE_MAX_PLATFORM_LIMIT_PREPAID)
+            {
+               share_type usable_prepaid = auth_object->get_auth_platform_usable_prepaid(account_stats.prepaid);
+               FC_ASSERT(usable_prepaid >= op.amount.amount,
+                  "Insufficient balance: unable to forward, because the prepaid [${c}] of platform ${p} authorized by account ${a} is less than needed [${n}]. ",
+                  ("c", usable_prepaid)("p", sign_account)("a", op.from)("n", op.amount.amount));
+            }
+         }
+      }
+   }
+
+   if (auth_object){
+      if (d.head_block_time() > HARDFORK_0_4_TIME){
+         FC_ASSERT(op.extensions.valid(), "op.extension must be exist.");
+         FC_ASSERT(op.extensions->value.sign_platform.valid(), "sign_platform must be valid.");
+         FC_ASSERT(*(op.extensions->value.sign_platform) == auth_object->platform, "sign_platform ${p} must be authorized by account ${a}",
+            ("a", (op.from))("p", *(op.extensions->value.sign_platform)));
+      }
+   }
+   else{
+      if (d.head_block_time() > HARDFORK_0_4_TIME && op.extensions.valid()){
+         FC_ASSERT(!(op.extensions->value.sign_platform.valid()), "sign_platform shouldn`t be valid.");
+      }
    }
 
    try {
 
-      if( transfer_asset_object.is_transfer_restricted() )
+      if (transfer_asset_object.is_transfer_restricted())
       {
          GRAPHENE_ASSERT(
             from_account->uid == transfer_asset_object.issuer || to_account->uid == transfer_asset_object.issuer,
             transfer_restricted_transfer_asset,
             "Asset {asset} has transfer_restricted flag enabled.",
             ("asset", op.amount.asset_id)
-          );
+            );
       }
 
       // by default, from balance to balance
       asset_from_balance = asset_to_balance = op.amount;
 
-      if ( op.extensions.valid() )
+      if (op.extensions.valid())
       {
          const auto& ev = op.extensions->value;
-         if( ev.from_prepaid.valid() && ev.from_prepaid->amount > 0 )
+         if (ev.from_prepaid.valid() && ev.from_prepaid->amount > 0)
          {
             asset_from_prepaid = *ev.from_prepaid;
             from_account_stats = &from_account->statistics(d);
-            bool sufficient_prepaid = ( from_account_stats->prepaid >= asset_from_prepaid.amount );
-            FC_ASSERT( sufficient_prepaid,
-                       "Insufficient Prepaid: ${prepaid}, unable to transfer '${a}' from account '${f}' to '${t}'.",
-                       ("f",from_account->uid)("t",to_account->uid)("a",d.to_pretty_string(asset_from_prepaid))
-                       ("prepaid",d.to_pretty_core_string(from_account_stats->prepaid)) );
+            bool sufficient_prepaid = (from_account_stats->prepaid >= asset_from_prepaid.amount);
+            FC_ASSERT(sufficient_prepaid,
+               "Insufficient Prepaid: ${prepaid}, unable to transfer '${a}' from account '${f}' to '${t}'.",
+               ("f", from_account->uid)("t", to_account->uid)("a", d.to_pretty_string(asset_from_prepaid))
+               ("prepaid", d.to_pretty_core_string(from_account_stats->prepaid)));
          }
-         if( ev.from_balance.valid() )
+         if (ev.from_balance.valid())
             asset_from_balance = *ev.from_balance;
-         else if( asset_from_prepaid.amount > 0 ) // if from_balance didn't present but from_prepaid presented
+         else if (asset_from_prepaid.amount > 0) // if from_balance didn't present but from_prepaid presented
             asset_from_balance.amount = 0;
 
-         if( ev.to_prepaid.valid() && ev.to_prepaid->amount > 0 )
+         if (ev.to_prepaid.valid() && ev.to_prepaid->amount > 0)
          {
             asset_to_prepaid = *ev.to_prepaid;
             to_account_stats = &to_account->statistics(d);
          }
-         if( ev.to_balance.valid() )
+         if (ev.to_balance.valid())
             asset_to_balance = *ev.to_balance;
-         else if( asset_to_prepaid.amount > 0 ) // if to_balance didn't present but to_prepaid presented
+         else if (asset_to_prepaid.amount > 0) // if to_balance didn't present but to_prepaid presented
             asset_to_balance.amount = 0;
       }
 
-      if( asset_from_balance.amount > 0 )
+      if (asset_from_balance.amount > 0)
       {
-         const auto& from_balance = d.get_balance( *from_account, transfer_asset_object );
-         bool sufficient_balance = ( from_balance.amount >= asset_from_balance.amount );
-         FC_ASSERT( sufficient_balance,
-                    "Insufficient Balance: ${balance}, unable to transfer '${a}' from account '${f}' to '${t}'.",
-                    ("f",from_account->uid)("t",to_account->uid)("a",d.to_pretty_string(asset_from_balance))
-                    ("balance",d.to_pretty_string(from_balance)) );
+         const auto& from_balance = d.get_balance(*from_account, transfer_asset_object);
+         bool sufficient_balance = (from_balance.amount >= asset_from_balance.amount);
+         FC_ASSERT(sufficient_balance,
+            "Insufficient Balance: ${balance}, unable to transfer '${a}' from account '${f}' to '${t}'.",
+            ("f", from_account->uid)("t", to_account->uid)("a", d.to_pretty_string(asset_from_balance))
+            ("balance", d.to_pretty_string(from_balance)));
       }
 
       return void_result();
-   } FC_RETHROW_EXCEPTIONS( error, "Unable to transfer ${a} from ${f} to ${t}", ("a",d.to_pretty_string(op.amount))("f",from_account->uid)("t",to_account->uid) );
+   } FC_RETHROW_EXCEPTIONS(error, "Unable to transfer ${a} from ${f} to ${t}", ("a", d.to_pretty_string(op.amount))("f", from_account->uid)("t", to_account->uid));
 
-}  FC_CAPTURE_AND_RETHROW( (op) ) }
+}  FC_CAPTURE_AND_RETHROW((op))
+}
 
 void_result transfer_evaluator::do_apply( const transfer_operation& o )
 { try {
    database& d = db();
-   if( asset_from_balance.amount > 0 )
-      d.adjust_balance( *from_account, -asset_from_balance );
+   if (asset_from_balance.amount > 0)
+      d.adjust_balance(*from_account, -asset_from_balance);
    if (asset_from_prepaid.amount > 0){
-       d.modify(*from_account_stats, [&](account_statistics_object& s)
-       {
-           s.prepaid -= asset_from_prepaid.amount;
-       });
-
-       if (auth_object)
-       {
-           d.modify(*auth_object, [&](account_auth_platform_object& obj)
-           {
-               obj.cur_used += asset_from_prepaid.amount;
-           });
-       }
-   }
-   if( asset_to_balance.amount > 0 )
-      d.adjust_balance( *to_account, asset_to_balance );
-   if( asset_to_prepaid.amount > 0 )
-      d.modify( *to_account_stats, [&](account_statistics_object& s)
+      d.modify(*from_account_stats, [&](account_statistics_object& s)
       {
-         s.prepaid += asset_to_prepaid.amount;
+         s.prepaid -= asset_from_prepaid.amount;
       });
+
+      if (auth_object)
+      {
+         d.modify(*auth_object, [&](account_auth_platform_object& obj)
+         {
+            obj.cur_used += asset_from_prepaid.amount;
+         });
+      }
+   }
+   if (asset_to_balance.amount > 0)
+      d.adjust_balance(*to_account, asset_to_balance);
+   if (asset_to_prepaid.amount > 0)
+      d.modify(*to_account_stats, [&](account_statistics_object& s)
+   {
+      s.prepaid += asset_to_prepaid.amount;
+   });
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 

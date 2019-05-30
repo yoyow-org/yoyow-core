@@ -41,7 +41,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
       share_type        calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // Necessary balance of authority
          a.insert( account );
@@ -79,11 +79,11 @@ namespace graphene { namespace chain {
 
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
-      share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      share_type        calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
       {
          // Necessary balance of authority
-         a.insert( account );
+         a.insert(account);
       }
    };
 
@@ -116,7 +116,7 @@ namespace graphene { namespace chain {
       account_uid_type  fee_payer_uid()const { return voter; }
       void              validate()const;
       share_type        calculate_fee(const fee_parameters_type& k)const;
-      void get_required_active_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_active_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
          // Necessary balance of authority
          a.insert( voter );
@@ -132,41 +132,49 @@ namespace graphene { namespace chain {
     *
     *  @return n/a
     */
-   class Recerptor_Parameter
+   class Receiptor_Parameter
    {
    public:
-	   uint16_t       cur_ratio;
-	   bool           to_buyout;
-	   uint16_t       buyout_ratio;
-	   share_type     buyout_price;
-       time_point_sec buyout_expiration = time_point_sec::maximum();
+      uint16_t          cur_ratio;        //the receiptor`s current ratio of the post
+      bool              to_buyout;        //is to sell receiptor`s ratio
+      uint16_t          buyout_ratio = 0; //the ratio to sell
+      share_type        buyout_price = 0; //the price of the ratio for sell
+      time_point_sec    buyout_expiration = time_point_sec::maximum(); //the expiration time for receiptor`s sell order
+      extensions_type   extensions;
 
-       Recerptor_Parameter(){}
 
-       Recerptor_Parameter(uint16_t       cur_ratio_,
-                           bool           to_buyout_,
-                           uint16_t       buyout_ratio_,
-                           share_type     buyout_price_,
-                           time_point_sec buyout_expiration_ = time_point_sec::maximum()) :
-        cur_ratio(cur_ratio_), to_buyout(to_buyout_), buyout_ratio(buyout_ratio_), buyout_price(buyout_price_), buyout_expiration(buyout_expiration_)
+      Receiptor_Parameter(){}
+
+      Receiptor_Parameter(uint16_t       cur_ratio_,
+         bool           to_buyout_,
+         uint16_t       buyout_ratio_,
+         share_type     buyout_price_,
+         time_point_sec buyout_expiration_ = time_point_sec::maximum()) :
+         cur_ratio(cur_ratio_), to_buyout(to_buyout_), buyout_ratio(buyout_ratio_), buyout_price(buyout_price_), buyout_expiration(buyout_expiration_)
+      {
+      }
+
+       void validate()const
        {
+          if (to_buyout){
+             FC_ASSERT(buyout_price > 0, "if buyout, buyout_price must be > 0. ");
+             FC_ASSERT(buyout_ratio > 0, "if buyout, buyout_ratio must be > 0. ");
+             FC_ASSERT(buyout_ratio <= cur_ratio, "buyout_ratio must be less than cur_ratio");
+          }
+          else{
+             FC_ASSERT(buyout_price == 0, "if not to buyout, buyout_price must be == 0. ");
+             FC_ASSERT(buyout_ratio == 0, "if not to buyout, buyout_ratio must be == 0. ");
+          }
        }
 
-	   void validate()const
-	   {
-		   if (to_buyout)
-			   FC_ASSERT(buyout_ratio <= cur_ratio, "forward_ratio must be less then cur_ratio");
-		   FC_ASSERT(cur_ratio <= (10000 - GRAPHENE_DEFAULT_PLATFORM_RECERPTS_RATIO), "forward_ratio must be less then 75%");
-	   }
-
-       bool operator == (Recerptor_Parameter r1)
-       {
-           return (cur_ratio == r1.cur_ratio) &&
-                  (to_buyout == r1.to_buyout) && 
-                  (buyout_price == r1.buyout_price) && 
-                  (buyout_ratio == r1.buyout_ratio) &&
-                  (buyout_expiration == r1.buyout_expiration);
-       }
+      bool operator == (const Receiptor_Parameter& r1) const
+      {
+         return (cur_ratio == r1.cur_ratio) &&
+            (to_buyout == r1.to_buyout) &&
+            (buyout_price == r1.buyout_price) &&
+            (buyout_ratio == r1.buyout_ratio) &&
+            (buyout_expiration == r1.buyout_expiration);
+      }
    };
 
    struct post_operation : public base_operation
@@ -181,14 +189,15 @@ namespace graphene { namespace chain {
 		   Post_Type_Default
 	   };
 
-	   struct ext
-	   {
-           optional<uint8_t>                                      post_type = Post_Type_Post;
-		   optional<share_type>                                   forward_price;
-           optional<license_lid_type>                             license_lid;
-           optional<uint32_t>                                     permission_flags = 0xFF;
-           optional<map<account_uid_type, Recerptor_Parameter> >  receiptors;
-	   };
+      struct ext
+      {
+         optional<uint8_t>                                      post_type = Post_Type_Post; // post`s type
+         optional<share_type>                                   forward_price;              // the price of forward this post
+         optional<license_lid_type>                             license_lid;                // the license`s id of this post
+         optional<uint32_t>                                     permission_flags = 0xFF;    // permissions of this post
+         optional<map<account_uid_type, Receiptor_Parameter> >  receiptors;                 // map of receiptor`s parameters
+         optional<account_uid_type>                             sign_platform;              // sign by platform account
+      };
 
       struct fee_parameters_type {
          uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -218,7 +227,7 @@ namespace graphene { namespace chain {
       account_uid_type fee_payer_uid()const { return poster; }
       void             validate()const;
       share_type       calculate_fee(const fee_parameters_type& k)const;
-      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a ,bool enabled_hardfork)const
       {
          a.insert( poster );    // Requires authors to change the permissions
          a.insert( platform );  // Requires platform to change the permissions
@@ -236,17 +245,19 @@ namespace graphene { namespace chain {
     */
    struct post_update_operation : public base_operation
    {
-	   struct ext
-	   {
-		   optional<share_type>           forward_price;
-		   optional<account_uid_type>     receiptor;
-		   optional<bool>                 to_buyout;
-		   optional<uint16_t>             buyout_ratio;
-		   optional<share_type>           buyout_price;
-           optional<time_point_sec>       buyout_expiration;
-           optional<license_lid_type>     license_lid;
-           optional<uint32_t>             permission_flags;
-	   };
+      struct ext
+      {
+         optional<share_type>           forward_price;     //the post`s forward price for update
+         optional<account_uid_type>     receiptor;         //the receiptor account for update his parameter
+         optional<bool>                 to_buyout;         //buyout or not the receiptor`s ratio
+         optional<uint16_t>             buyout_ratio;      //if buyout, the buyout ratio of the receiptor for sell
+         optional<share_type>           buyout_price;      //buyout price for sell the buyout ratio
+         optional<time_point_sec>       buyout_expiration; //the expiration time for this buyout order
+         optional<license_lid_type>     license_lid;       //the post`s license`s id for update
+         optional<uint32_t>             permission_flags;  //the post`s permissions for update
+         optional<account_uid_type>     content_sign_platform;   // sign by platform account
+         optional<account_uid_type>     receiptor_sign_platform; // sign by platform account
+      };
 
       struct fee_parameters_type {
          uint64_t fee              = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -272,19 +283,27 @@ namespace graphene { namespace chain {
       account_uid_type fee_payer_uid()const { return poster; }
       void            validate()const;
       share_type      calculate_fee(const fee_parameters_type& k)const;
-      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a )const
+      void get_required_secondary_uid_authorities( flat_set<account_uid_type>& a,bool enabled_hardfork )const
       {
-		  a.insert(platform);  // Requires platform to change the permissions
-		  if (hash_value.valid() || extra_data.valid() || title.valid() || body.valid())
-			  a.insert(poster);    // Requires authors to change the permissions
-		  if (extensions.valid())
-		  {
-              const post_update_operation::ext& ext = extensions->value;
-              if ((ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()) && a.find(poster) == a.end())
-                  a.insert(poster);
-              if (ext.receiptor.valid() && a.find(*(ext.receiptor)) == a.end())
-                  a.insert(*(ext.receiptor));
-		  }
+         if (hash_value.valid() || extra_data.valid() || title.valid() || body.valid()){
+            a.insert(platform);  // Requires platform to change the permissions
+            a.insert(poster);    // Requires authors to change the permissions
+         }
+
+         if (extensions.valid())
+         {
+            const post_update_operation::ext& ext = extensions->value;
+            if (ext.forward_price.valid() || ext.permission_flags.valid() || ext.license_lid.valid()){
+               a.insert(platform);
+               a.insert(poster);
+            }
+            if (ext.receiptor.valid())
+               a.insert(*(ext.receiptor));
+         }
+         else{
+            a.insert(poster);
+            a.insert(platform);
+         }
       }
    };
 
@@ -300,31 +319,32 @@ namespace graphene { namespace chain {
    struct score_create_operation : public base_operation
    {
 	   struct fee_parameters_type {
-		   uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
-		   uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
+		   uint32_t price_per_kbyte = 0;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
 		   extensions_type   extensions;
 	   };
 
-	   fee_type                     fee;
+      fee_type                     fee;
 
-	   account_uid_type             from_account_uid;//from account
-	   account_uid_type             platform;
-	   account_uid_type             poster;
-	   post_pid_type                post_pid; //post id
-	   int8_t                       score;
-       share_type                   csaf;
+      account_uid_type             from_account_uid; //from account`s uid
+      account_uid_type             platform;         //platform account`s uid
+      account_uid_type             poster;           //poster account`s uid
+      post_pid_type                post_pid;         //post`s pid
+      int8_t                       score;            //the score for post. range [-5,5]
+      share_type                   csaf;             //the integration of yoyow for post
+      optional<account_uid_type>   sign_platform;    // sign by platform account
 
-	   extensions_type              extensions;
+      extensions_type              extensions;
 
 	   account_uid_type fee_payer_uid()const { return from_account_uid; }
 	   void             validate()const;
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
-	   void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
-	   {
-           a.insert(from_account_uid);  // Requires platform to change the permissions
-	   }
+      void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
+      {
+         a.insert(from_account_uid);  // Requires platform to change the permissions
+      }
    };
 
    /**
@@ -339,8 +359,8 @@ namespace graphene { namespace chain {
    struct reward_operation : public base_operation
    {
 	   struct fee_parameters_type {
-		   uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
-		   uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
+		   uint32_t price_per_kbyte = 0;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
 		   extensions_type   extensions;
@@ -348,18 +368,18 @@ namespace graphene { namespace chain {
 
 	   fee_type                     fee;
 
-	   account_uid_type             from_account_uid;//from account
-	   account_uid_type             platform;
-	   account_uid_type             poster;
-	   post_pid_type                post_pid; //post id
-	   asset                        amount;
+	   account_uid_type             from_account_uid; //from account`s uid
+	   account_uid_type             platform;         //platform account`s uid
+	   account_uid_type             poster;           //poster account`s uid
+	   post_pid_type                post_pid;         //post`s pid
+	   asset                        amount;           //the asset reward for the post
 
 	   extensions_type              extensions;
 
 	   account_uid_type fee_payer_uid()const { return from_account_uid; }
 	   void             validate()const;
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
 	   {
 		   a.insert(from_account_uid);    // Requires authors to change the permissions
 	   }
@@ -377,8 +397,8 @@ namespace graphene { namespace chain {
    struct reward_proxy_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
+           uint32_t price_per_kbyte = 0;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
            extensions_type   extensions;
@@ -386,18 +406,19 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
-       account_uid_type             from_account_uid;//from account
-       account_uid_type             platform;
-       account_uid_type             poster;
-       post_pid_type                post_pid; //post id
-       share_type                   amount;
+       account_uid_type             from_account_uid;  //from account`s uid
+       account_uid_type             platform;          //platform account`s uid
+       account_uid_type             poster;            //poster account`s uid
+       post_pid_type                post_pid;          //post`s pid
+       share_type                   amount;            //amount of YOYO reward for the post proxy by platform
+       optional<account_uid_type>   sign_platform;     // sign by platform account
 
        extensions_type              extensions;
 
        account_uid_type fee_payer_uid()const { return from_account_uid; }
        void             validate()const;
        share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
        {
            a.insert(from_account_uid);    // Requires authors to change the permissions
            a.insert(platform);  // Requires platform to change the permissions
@@ -417,8 +438,8 @@ namespace graphene { namespace chain {
    struct buyout_operation : public base_operation
    {
 	   struct fee_parameters_type {
-		   uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
-		   uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+		   uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
+		   uint32_t price_per_kbyte = 0;
 		   uint64_t min_real_fee = 0;
 		   uint16_t min_rf_percent = 0;
 		   extensions_type   extensions;
@@ -426,21 +447,21 @@ namespace graphene { namespace chain {
 
 	   fee_type                     fee;
 
-	   account_uid_type             from_account_uid;//from account
-	   account_uid_type             platform;
-	   account_uid_type             poster;
-	   post_pid_type                post_pid; //post id
-	   account_uid_type             receiptor_account_uid;
+	   account_uid_type             from_account_uid;      //from account`s uid
+	   account_uid_type             platform;              //platform account`s uid
+	   account_uid_type             poster;                //poster account`s uid
+	   post_pid_type                post_pid;              //post`s pid
+	   account_uid_type             receiptor_account_uid; //the receiptor account`s uid. to buy the receiptor`s sell order.
+       optional<account_uid_type>   sign_platform;         // sign by platform account
 
 	   extensions_type              extensions;
 
 	   account_uid_type fee_payer_uid()const { return from_account_uid; }
 	   void             validate()const;
 	   share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_secondary_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
 	   {
 		   a.insert(from_account_uid);    // Requires authors to change the permissions
-		   a.insert(platform);  // Requires platform to change the permissions
 	   }
    };
 
@@ -456,8 +477,8 @@ namespace graphene { namespace chain {
    struct license_create_operation : public base_operation
    {
        struct fee_parameters_type {
-           uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION/10;
+           uint32_t price_per_kbyte = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 0;
            uint16_t min_rf_percent = 0;
            extensions_type   extensions;
@@ -465,20 +486,20 @@ namespace graphene { namespace chain {
 
        fee_type                     fee;
 
-       license_lid_type             license_lid;
-       account_uid_type             platform = 0;
-       uint8_t                      type;
-       string                       hash_value;
-       string                       extra_data = "{}"; 
-       string                       title;
-       string                       body;
+       license_lid_type             license_lid;       //the license`s lid
+       account_uid_type             platform = 0;      //the platform account who create this license
+       uint8_t                      type;              //the type of the license
+       string                       hash_value;        //license`s hash
+       string                       extra_data = "{}"; //license`s extra datas
+       string                       title;             //the title of the license
+       string                       body;              //the body of the license
 
        extensions_type              extensions;
 
        account_uid_type fee_payer_uid()const { return platform; }
        void             validate()const;
        share_type       calculate_fee(const fee_parameters_type& k)const;
-       void get_required_active_uid_authorities(flat_set<account_uid_type>& a)const
+       void get_required_active_uid_authorities(flat_set<account_uid_type>& a,bool enabled_hardfork)const
        {
            a.insert(platform);    // Requires platform to change the permissions
        }
@@ -501,8 +522,9 @@ FC_REFLECT(graphene::chain::platform_update_operation, (fee)(account)(new_pledge
 FC_REFLECT( graphene::chain::platform_vote_update_operation::fee_parameters_type, (basic_fee)(price_per_platform)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT(graphene::chain::platform_vote_update_operation, (fee)(voter)(platform_to_add)(platform_to_remove)(extensions) )
 
-FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(license_lid)(permission_flags)(receiptors))
-FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(license_lid)(permission_flags))
+FC_REFLECT(graphene::chain::post_operation::ext, (post_type)(forward_price)(license_lid)(permission_flags)(receiptors)(sign_platform))
+FC_REFLECT(graphene::chain::post_update_operation::ext, (forward_price)(receiptor)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)
+                                                        (license_lid)(permission_flags)(content_sign_platform)(receiptor_sign_platform))
 
 FC_REFLECT( graphene::chain::post_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::post_operation,
@@ -519,18 +541,18 @@ FC_REFLECT( graphene::chain::post_update_operation,
             (extensions) )
 
 FC_REFLECT(graphene::chain::score_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(extensions))
+FC_REFLECT(graphene::chain::score_create_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(score)(csaf)(sign_platform)(extensions))
 
 FC_REFLECT(graphene::chain::reward_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::reward_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
 
 FC_REFLECT(graphene::chain::reward_proxy_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::reward_proxy_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(extensions))
+FC_REFLECT(graphene::chain::reward_proxy_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(amount)(sign_platform)(extensions))
 
-FC_REFLECT(graphene::chain::Recerptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration))
+FC_REFLECT(graphene::chain::Receiptor_Parameter, (cur_ratio)(to_buyout)(buyout_ratio)(buyout_price)(buyout_expiration)(extensions))
 
 FC_REFLECT(graphene::chain::buyout_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(extensions))
+FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(poster)(post_pid)(receiptor_account_uid)(sign_platform)(extensions))
 
 FC_REFLECT(graphene::chain::license_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::license_create_operation, (fee)(license_lid)(platform)(type)(hash_value)(extra_data)(title)(body)(extensions))
