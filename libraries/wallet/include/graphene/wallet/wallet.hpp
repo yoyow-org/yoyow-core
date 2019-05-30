@@ -1520,11 +1520,11 @@ class wallet_api
       signed_transaction update_post(string           platform,
                                      string           poster,
                                      string           post_pid,
-                                     string           hash_value = "",
-                                     string           title = "",
-                                     string           body = "",
-                                     string           extra_data = "",
-                                     post_update_ext ext = post_update_ext(),
+                                     string           hash_value,
+                                     string           title,
+                                     string           body,
+                                     string           extra_data,
+                                     optional<post_update_ext> ext,
                                      bool csaf_fee = true,
                                      bool broadcast = false);
 

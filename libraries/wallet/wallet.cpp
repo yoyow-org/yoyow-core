@@ -2567,11 +2567,11 @@ signed_transaction account_cancel_auth_platform(string account,
    signed_transaction update_post(string           platform,
                                   string           poster,
                                   string           post_pid,
-                                  string           hash_value = "",
-                                  string           title = "",
-                                  string           body = "",
-                                  string           extra_data = "",
-                                  post_update_ext ext = post_update_ext(),
+                                  string           hash_value,
+                                  string           title,
+                                  string           body,
+                                  string           extra_data,
+                                  optional<post_update_ext> ext,
                                   bool csaf_fee = true,
                                   bool broadcast = false)
    {
@@ -2594,27 +2594,32 @@ signed_transaction account_cancel_auth_platform(string account,
          if (!body.empty())
             update_op.body = body;
 
-         update_op.extensions = graphene::chain::extension<post_update_operation::ext>();
-         if (ext.forward_price.valid())
-            update_op.extensions->value.forward_price = asset_obj->amount_from_string(*(ext.forward_price)).amount;
-         if (ext.receiptor.valid())
-            update_op.extensions->value.receiptor = get_account_uid(*(ext.receiptor));
-         if (ext.to_buyout.valid())
-            update_op.extensions->value.to_buyout = ext.to_buyout;
-         if (ext.buyout_ratio.valid())
-            update_op.extensions->value.buyout_ratio = uint16_t((*(ext.buyout_ratio))* GRAPHENE_1_PERCENT);
-         if (ext.buyout_price.valid())
-            update_op.extensions->value.buyout_price = asset_obj->amount_from_string(*(ext.buyout_price)).amount;
-         if (ext.buyout_expiration.valid())
-            update_op.extensions->value.buyout_expiration = time_point_sec(*(ext.buyout_expiration));
-         if (ext.license_lid.valid())
-            update_op.extensions->value.license_lid = ext.license_lid;
-         if (ext.permission_flags.valid())
-            update_op.extensions->value.permission_flags = ext.permission_flags;
-         if (ext.content_sign_platform.valid())
-            update_op.extensions->value.content_sign_platform = get_account_uid(*(ext.content_sign_platform));
-         if (ext.receiptor_sign_platform.valid())
-            update_op.extensions->value.receiptor_sign_platform = get_account_uid(*(ext.receiptor_sign_platform));
+         if (ext.valid())
+         {
+            update_op.extensions = graphene::chain::extension<post_update_operation::ext>();
+            auto value = *ext;
+            if (value.forward_price.valid())
+               update_op.extensions->value.forward_price = asset_obj->amount_from_string(*(value.forward_price)).amount;
+            if (value.receiptor.valid())
+               update_op.extensions->value.receiptor = get_account_uid(*(value.receiptor));
+            if (value.to_buyout.valid())
+               update_op.extensions->value.to_buyout = value.to_buyout;
+            if (value.buyout_ratio.valid())
+               update_op.extensions->value.buyout_ratio = uint16_t((*(value.buyout_ratio))* GRAPHENE_1_PERCENT);
+            if (value.buyout_price.valid())
+               update_op.extensions->value.buyout_price = asset_obj->amount_from_string(*(value.buyout_price)).amount;
+            if (value.buyout_expiration.valid())
+               update_op.extensions->value.buyout_expiration = time_point_sec(*(value.buyout_expiration));
+            if (value.license_lid.valid())
+               update_op.extensions->value.license_lid = value.license_lid;
+            if (value.permission_flags.valid())
+               update_op.extensions->value.permission_flags = value.permission_flags;
+            if (value.content_sign_platform.valid())
+               update_op.extensions->value.content_sign_platform = get_account_uid(*(value.content_sign_platform));
+            if (value.receiptor_sign_platform.valid())
+               update_op.extensions->value.receiptor_sign_platform = get_account_uid(*(value.receiptor_sign_platform));
+         }
+            
 
          signed_transaction tx;
          tx.operations.push_back(update_op);
@@ -4393,7 +4398,7 @@ signed_transaction wallet_api::update_post(string                     platform,
                                            string                     title,
                                            string                     body,
                                            string                     extra_data,
-                                           post_update_ext            ext,
+                                           optional<post_update_ext>  ext,
                                            bool                       csaf_fee,
                                            bool                       broadcast)
 {
