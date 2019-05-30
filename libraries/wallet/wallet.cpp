@@ -2797,7 +2797,7 @@ signed_transaction account_cancel_auth_platform(string account,
          if (score)
             return *score;
          else
-            FC_THROW("score that form account : ${from_account} for post£º${post} created by poster: ${poster} in platform: ${platform} not found",
+            FC_THROW("score that form account ${from_account} for post ${post} created by poster ${poster} in platform ${platform} not found",
             ("from_account", from_account)("post", post_pid)("poster", poster_uid)("platform", platform));
       } FC_CAPTURE_AND_RETHROW((platform)(poster_uid)(post_pid)(from_account))
    }
