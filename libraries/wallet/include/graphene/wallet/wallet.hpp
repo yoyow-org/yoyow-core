@@ -748,7 +748,7 @@ class wallet_api
                                                              string amount,
                                                              string asset_symbol,
                                                              string memo ) {
-         auto trx = transfer( from, to, amount, asset_symbol, memo, true, true );
+         auto trx = transfer_new( from, to, amount, asset_symbol, memo, true, true );
          return std::make_pair(trx.id(),trx);
       }
 
