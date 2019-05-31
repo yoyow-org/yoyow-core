@@ -291,6 +291,8 @@ void_result advertising_ransom_evaluator::do_apply(const operation_type& op)
          obj.handle_time = d.head_block_time();
       });
 
+      return void_result();
+
    } FC_CAPTURE_AND_RETHROW((op))
 }
 
