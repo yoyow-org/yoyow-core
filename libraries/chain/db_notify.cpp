@@ -424,6 +424,12 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
            assert( aobj != nullptr );
            operation_get_impacted_account_uids( aobj->op, accounts );
            break;
+        } case active_post_object_type:{
+           const auto& aobj = dynamic_cast<const active_post_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->platform );
+           accounts.insert( aobj->poster );
+           break;
         }
       }
    }
