@@ -693,12 +693,19 @@ class wallet_api
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction transferring funds
        */
-      signed_transaction transfer(string from,
+      signed_transaction transfer_new(string from,
                                   string to,
                                   string amount,
                                   string asset_symbol,
                                   string memo,
                                   bool csaf_fee = true,
+                                  bool broadcast = false);
+	  
+	  signed_transaction transfer(string from,
+                                  string to,
+                                  string amount,
+                                  string asset_symbol,
+                                  string memo,
                                   bool broadcast = false);
 
       signed_transaction transfer_extension(string from,
@@ -1019,12 +1026,28 @@ class wallet_api
        * @param asset_symbol The symbol of the asset to collect.
        * @param broadcast true if you wish to broadcast the transaction.
        */
-      signed_transaction collect_csaf(string from,
+      signed_transaction collect_csaf_new(string from,
                                       string to,
                                       string amount,
                                       string asset_symbol,
                                       bool csaf_fee = true,
                                       bool broadcast = false);
+
+	  /**
+       * Collect CSAF with current time.
+       *
+       * @param from The UID or name of the account that will collect CSAF from.
+       * @param to The UID or name of the account that will collect CSAF to.
+       * @param amount The amount to collect.
+       * @param asset_symbol The symbol of the asset to collect.
+       * @param broadcast true if you wish to broadcast the transaction.
+       */
+      signed_transaction collect_csaf(string from,
+                                      string to,
+                                      string amount,
+                                      string asset_symbol,
+                                      bool broadcast = false);
+	  
 
       /**
        * Collect CSAF with specified time.
@@ -1805,6 +1828,7 @@ FC_API( graphene::wallet::wallet_api,
         //(derive_owner_keys_from_brain_key)
         (register_account)
         (create_account_with_brain_key)
+        (transfer_new)
         (transfer)
         (transfer_extension)
         (override_transfer)
@@ -1835,6 +1859,7 @@ FC_API( graphene::wallet::wallet_api,
         (list_witnesses)
         (update_witness_votes)
         (collect_witness_pay)
+        (collect_csaf_new)
         (collect_csaf)
         (collect_csaf_with_time)
         (compute_available_csaf)

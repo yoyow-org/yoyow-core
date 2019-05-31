@@ -3903,11 +3903,18 @@ signed_transaction wallet_api::issue_asset(string to_account, string amount, str
    return my->issue_asset(to_account, amount, symbol, memo, csaf_fee, broadcast);
 }
 
-signed_transaction wallet_api::transfer(string from, string to, string amount,
+signed_transaction wallet_api::transfer_new(string from, string to, string amount,
                                         string asset_symbol, string memo, bool csaf_fee, bool broadcast /* = false */)
 {
    return my->transfer(from, to, amount, asset_symbol, memo, csaf_fee, broadcast);
 }
+
+signed_transaction wallet_api::transfer(string from, string to, string amount,
+                                        string asset_symbol, string memo,bool broadcast /* = false */)
+{
+   return my->transfer(from, to, amount, asset_symbol, memo, true, broadcast);
+}
+
 
 signed_transaction wallet_api::transfer_extension(string from, string to, string amount,
     string asset_symbol, string memo, optional<string> sign_platform, bool isfrom_balance, bool isto_balance, bool csaf_fee, bool broadcast)
@@ -4102,7 +4109,7 @@ signed_transaction wallet_api::collect_witness_pay(string witness_account,
    return my->collect_witness_pay(witness_account, pay_amount, pay_asset_symbol, csaf_fee, broadcast);
 }
 
-signed_transaction wallet_api::collect_csaf(string from,
+signed_transaction wallet_api::collect_csaf_new(string from,
                                         string to,
                                         string amount,
                                         string asset_symbol,
@@ -4112,6 +4119,18 @@ signed_transaction wallet_api::collect_csaf(string from,
    time_point_sec time( time_point::now().sec_since_epoch() / 60 * 60 );
    return my->collect_csaf(from, to, amount, asset_symbol, time, csaf_fee, broadcast);
 }
+
+signed_transaction wallet_api::collect_csaf(string from,
+                                        string to,
+                                        string amount,
+                                        string asset_symbol,
+                                        bool broadcast /* = false */)
+{
+   time_point_sec time( time_point::now().sec_since_epoch() / 60 * 60 );
+   return my->collect_csaf(from, to, amount, asset_symbol, time, true, broadcast);
+}
+
+
 
 signed_transaction wallet_api::collect_csaf_with_time(string from,
                                         string to,
