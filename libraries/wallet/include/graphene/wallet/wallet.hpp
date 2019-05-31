@@ -428,6 +428,7 @@ class wallet_api
        * @param fee_paying_account The account paying the fee for the op.
        * @param proposal_id The proposal to modify.
        * @param delta Members contain approvals to create or remove.  In JSON you can leave empty members undefined.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        * @return the signed version of the transaction
        */
@@ -642,6 +643,8 @@ class wallet_api
        *                         not claimed by the blockchain that will be distributed to the
        *                         referrer; the rest will be sent to the registrar.  Will be
        *                         multiplied by GRAPHENE_1_PERCENT when constructing the transaction.
+       * @param seed the seed number to generate account_uid
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering the account
        */
@@ -670,6 +673,8 @@ class wallet_api
        * @param referrer_account the account who is acting as a referrer, and may receive a
        *                         portion of the user's transaction fees.  This can be the
        *                         same as the registrar_account if there is no referrer.
+       * @param seed the seed number to generate account_uid
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering the account
        */
@@ -690,6 +695,7 @@ class wallet_api
        *             transaction and readable for the receiver.  There is no length limit
        *             other than the limit imposed by maximum transaction size, but transaction fee
        *             increase with transaction size
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction transferring funds
        */
@@ -701,6 +707,18 @@ class wallet_api
                                   bool csaf_fee = true,
                                   bool broadcast = false);
 	  
+      /** Transfer an amount from one account to another.
+       * @param from the name or id of the account sending the funds
+       * @param to the name or id of the account receiving the funds
+       * @param amount the amount to send (in nominal units -- to send half of an asset, specify 0.5)
+       * @param asset_symbol the symbol or id of the asset to send
+       * @param memo a memo to attach to the transaction.  The memo will be encrypted in the
+       *             transaction and readable for the receiver.  There is no length limit
+       *             other than the limit imposed by maximum transaction size, but transaction fee
+       *             increase with transaction size
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction transferring funds
+       */
 	  signed_transaction transfer(string from,
                                   string to,
                                   string amount,
@@ -708,6 +726,22 @@ class wallet_api
                                   string memo,
                                   bool broadcast = false);
 
+      /** Transfer an amount from one account to another.
+       * @param from the name or id of the account sending the funds
+       * @param to the name or id of the account receiving the funds
+       * @param amount the amount to send (in nominal units -- to send half of an asset, specify 0.5)
+       * @param asset_symbol the symbol or id of the asset to send
+       * @param memo a memo to attach to the transaction.  The memo will be encrypted in the
+       *             transaction and readable for the receiver.  There is no length limit
+       *             other than the limit imposed by maximum transaction size, but transaction fee
+       *             increase with transaction size
+       * @param sign_platform the platform that signs the transaction
+       * @param isfrom_balance true if you wish to transfer from balance
+       * @param isto_balance true if you wish to transfer to balance
+       * @param csaf_fee true if you wish to pay fee with CSAF
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction transferring funds
+       */
       signed_transaction transfer_extension(string from,
                                             string to,
                                             string amount,
@@ -728,6 +762,7 @@ class wallet_api
        *             transaction and readable for the receiver.  There is no length limit
        *             other than the limit imposed by maximum transaction size, but transaction fee
        *             increase with transaction size
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction transferring funds
        */
@@ -790,6 +825,7 @@ class wallet_api
        * @param initial_supply issue this amount to self immediately after the asset is created.
        *                       Note: this amount is NOT in nominal units, E.G. if precision of
        *                         new asset is 3, to issue 1 nominal unit of asset, specify 1000.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction creating a new asset
        */
@@ -807,6 +843,7 @@ class wallet_api
        * @param amount the amount to issue, in nominal units
        * @param symbol the ticker symbol of the asset to issue
        * @param memo a memo to include in the transaction, readable by the recipient
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction issuing the new shares
        */
@@ -827,6 +864,7 @@ class wallet_api
        *                   null if you wish to remain the precision of the asset
        * @param new_options the new asset_options object, which will entirely replace the existing
        *                    options.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction updating the asset
        */
@@ -842,6 +880,7 @@ class wallet_api
        * @param from the account containing the asset you wish to burn
        * @param amount the amount to burn, in nominal units
        * @param symbol the name or id of the asset to burn
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction burning the asset
        */
@@ -868,6 +907,7 @@ class wallet_api
        * @param authorizing_account the account who is doing the whitelisting
        * @param account_to_list the account being whitelisted
        * @param new_listing_status the new whitelisting status
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction changing the whitelisting status
        */
@@ -886,6 +926,7 @@ class wallet_api
        * @param pledge_asset_symbol The symbol of the asset to set as pledge.
        * @param url a URL to include in the committee_member record in the blockchain.  Clients may
        *            display this when showing a list of committee_members.  May be blank.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a committee_member
        */
@@ -904,6 +945,7 @@ class wallet_api
        * @param pledge_asset_symbol The symbol of the asset to set as pledge. Do not set if want to remain the same.
        * @param url a URL to include in the committee member record in the blockchain.  Clients may
        *            display this when showing a list of committee members.  May be blank. Do not set if want to remain the same.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction update_committee_member(string committee_member_account,
@@ -972,6 +1014,7 @@ class wallet_api
        * @param pledge_asset_symbol The symbol of the asset to set as pledge.
        * @param url a URL to include in the witness record in the blockchain.  Clients may
        *            display this when showing a list of witnesses.  May be blank.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a witness
        */
@@ -992,6 +1035,7 @@ class wallet_api
        * @param pledge_asset_symbol The symbol of the asset to set as pledge. Do not set if want to remain the same.
        * @param url a URL to include in the witness record in the blockchain.  Clients may
        *            display this when showing a list of witnesses.  May be blank. Do not set if want to remain the same.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction update_witness(string witness_account,
@@ -1009,6 +1053,7 @@ class wallet_api
        * @param witness_account The UID or name of the witness's owner account.
        * @param pay_amount The amount to collect.
        * @param pay_asset_symbol The symbol of the asset to collect.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction collect_witness_pay(string witness_account,
@@ -1024,6 +1069,7 @@ class wallet_api
        * @param to The UID or name of the account that will collect CSAF to.
        * @param amount The amount to collect.
        * @param asset_symbol The symbol of the asset to collect.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction collect_csaf_new(string from,
@@ -1057,6 +1103,7 @@ class wallet_api
        * @param amount The amount to collect.
        * @param asset_symbol The symbol of the asset to collect.
        * @param time The time that will be used to calculate available CSAF.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction collect_csaf_with_time(string from,
@@ -1110,6 +1157,7 @@ class wallet_api
        * @param url a URL to include in the platform record in the blockchain.  Clients may
        *            display this when showing a list of platforms.  May be blank.
        * @param extra_data a string json format,Including api_url, platform introduction
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a platform
        */
@@ -1132,6 +1180,7 @@ class wallet_api
        * @param url a URL to include in the platform record in the blockchain.  Clients may
        *            display this when showing a list of platforms.  May be blank. Do not set if want to remain the same.
        * @param extra_data a string json format,Including api_url, platform introduction
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction update_platform(string platform_account,
@@ -1156,6 +1205,7 @@ class wallet_api
        * @param voting_account the name or uid of the account who is voting with their shares
        * @param platforms_to_add a list of name or uid of platforms that to be voted for
        * @param platforms_to_remove a list of name or uid of platforms that to revoke votes from
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        * @return the signed transaction changing your vote for the given platforms
        */
@@ -1170,6 +1220,10 @@ class wallet_api
        * 
        * @param account the name or uid of the account
        * @param platform_owner the platform owner uid
+       * @param memo the memo for the authorization
+       * @param limit_for_platform the maximum prepaid amount to be used by the platform
+       * @param permission_flags the permission details of the authorization
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        */ 
       signed_transaction account_auth_platform(string account,
@@ -1191,6 +1245,7 @@ class wallet_api
        * 
        * @param account the name or uid of the account
        * @param platform_owner the platform owner uid
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        */ 
       signed_transaction account_cancel_auth_platform(string account,
@@ -1203,6 +1258,7 @@ class wallet_api
        *
        * @param account the name or uid of the account
        * @param enable true to enable, false to disable
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        */
       signed_transaction enable_allowed_assets(string account,
@@ -1216,6 +1272,7 @@ class wallet_api
        * @param account the name or uid of the account
        * @param assets_to_add a list of id or symbol of assets to be added to allowed_assets
        * @param assets_to_remove a list of id or symbol of assets to be removed from allowed_assets
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        */
       signed_transaction update_allowed_assets(string account,
@@ -1237,6 +1294,7 @@ class wallet_api
        * @param voting_account the name or uid of the account who is voting with their shares
        * @param witnesses_to_add a list of name or uid of witnesses that to be voted for
        * @param witnesses_to_remove a list of name or uid of witnesses that to revoke votes from
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        * @return the signed transaction changing your vote for the given witnesses
        */
@@ -1259,6 +1317,7 @@ class wallet_api
        * @param voting_account the name or uid of the account who is voting with their shares
        * @param committee_members_to_add a list of name or uid of committee members that to be voted for
        * @param committee_members_to_remove a list of name or uid of committee members that to revoke votes from
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        * @return the signed transaction changing your vote for the given committee members
        */
@@ -1281,6 +1340,7 @@ class wallet_api
        * @param voting_account the name or uid of an account authorized to vote account_to_modify's shares,
        *                       or null to vote your own shares
        *
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        * @return the signed transaction changing your vote proxy settings
        */
@@ -1299,6 +1359,11 @@ class wallet_api
        */
       signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false);
      
+      /** Broadcast a transaction.
+       *
+       * @param tx the signed transaction
+       * @return the transaction ID (txid)
+       */
       transaction_id_type broadcast_transaction( signed_transaction tx );
 
       /** Returns an uninitialized object representing a given blockchain operation.
@@ -1327,6 +1392,7 @@ class wallet_api
        * @param proposer_opinion Whether the proposer agree with the proposal
        * @param execution_block_num When will the proposal be executed if approved
        * @param expiration_block_num When will the proposal be tried to executed again if failed on first execution, will be ignored if failed again.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        * @return the signed version of the transaction
        */ 
@@ -1346,6 +1412,7 @@ class wallet_api
        * @param committee_member_account The committee member that casted the vote.
        * @param proposal_number The proposal to vote.
        * @param opinion The voter's opinion.
+       * @param csaf_fee true if you wish to pay fee with CSAF
        * @param broadcast true if you wish to broadcast the transaction
        * @return the signed version of the transaction
        */
@@ -1391,11 +1458,13 @@ class wallet_api
       * An account can create only one score_object for a post_object.
       *
       * @param from_account the name or uid of the account which is creating the score_object
-      * @param platform The post`s platform account.
-      * @param poster The post`s publisher account.
-      * @param post_pid_type The post`s id.
+      * @param platform The post's platform account.
+      * @param poster The post's publisher account.
+      * @param post_pid The post's id.
       * @param score given score num, from -5 to 5
       * @param csaf given some csaf from from_account for this score object 
+      * @param sign_platform the platform that signs the transaction
+      * @param csaf_fee true if you wish to pay fee with CSAF
       * @param broadcast true to broadcast the transaction on the network
       * @returns the signed transaction 
       */
@@ -1414,11 +1483,12 @@ class wallet_api
       * Any asset can reward a post_object by from_account.
       *
       * @param from_account the name or uid of the account which reward the post
-      * @param platform The post`s platform account.
-      * @param poster The post`s publisher account.
-      * @param post_pid_type The post`s id.
-      * @param amount the reward asset`s amount
-      * @param asset_symbol the reward asset`s symbol
+      * @param platform The post's platform account.
+      * @param poster The post's publisher account.
+      * @param post_pid The post's id.
+      * @param amount the reward asset's amount
+      * @param asset_symbol the reward asset's symbol
+      * @param csaf_fee true if you wish to pay fee with CSAF
       * @param broadcast true to broadcast the transaction on the network
       * @returns the signed transaction
       */
@@ -1436,10 +1506,12 @@ class wallet_api
       * Only pre_paid can reward a post_object by platform which allowed by from_account.
       *
       * @param from_account the name or uid of the account which reward the post
-      * @param platform The post`s platform account.
-      * @param poster The post`s publisher account.
-      * @param post_pid_type The post`s id.
-      * @param amount the reward asset`s amount, just pre_paid
+      * @param platform The post's platform account.
+      * @param poster The post's publisher account.
+      * @param post_pid The post's id.
+      * @param amount the reward asset's amount, just pre_paid
+      * @param sign_platform the platform that signs the transaction
+      * @param csaf_fee true if you wish to pay fee with CSAF
       * @param broadcast true to broadcast the transaction on the network
       * @returns the signed transaction
       */
@@ -1457,10 +1529,12 @@ class wallet_api
       * Only from_account buyout receipt ratio owned by receiptor_account.
       *
       * @param from_account the name or uid of the account which buyout the post
-      * @param platform The post`s platform account.
-      * @param poster The post`s publisher account.
-      * @param post_pid_type The post`s id.
-      * @param receiptor_account the receipt ratio`s owner
+      * @param platform The post's platform account.
+      * @param poster The post's publisher account.
+      * @param post_pid The post's id.
+      * @param receiptor_account the receipt ratio's owner
+      * @param sign_platform the platform that signs the transaction
+      * @param csaf_fee true if you wish to pay fee with CSAF
       * @param broadcast true to broadcast the transaction on the network
       * @returns the signed transaction
       */
@@ -1478,11 +1552,12 @@ class wallet_api
       * Only platformcan create a license.
       *
       * @param platform the name or uid of the platform which create this license.
-      * @param license_type The license`s type.
+      * @param license_type The license's type.
       * @param hash_value the hash for this license.
-      * @param title the license`s title
-      * @param body the license`s body
-      * @param extra_data the license`s extra_data
+      * @param title the license's title
+      * @param body the license's body
+      * @param extra_data the license's extra_data
+      * @param csaf_fee true if you wish to pay fee with CSAF
       * @param broadcast true to broadcast the transaction on the network
       * @returns the signed transaction
       */
@@ -1502,13 +1577,14 @@ class wallet_api
       * @param platform the name or uid of the platform which create this license.
       * @param poster the poster.
       * @param hash_value the hash for this post.
-      * @param title the post`s title.
-      * @param body the post`s body.
-      * @param extra_data the post`s extra_data.
+      * @param title the post's title.
+      * @param body the post's body.
+      * @param extra_data the post's extra_data.
       * @param origin_platform the origin post platform od the post.
       * @param origin_poster the origin poster of the post.
       * @param origin_post_pid the origin post id of the post.
-      * @param ext the post`s extensions.
+      * @param ext the post's extensions.
+      * @param csaf_fee true if you wish to pay fee with CSAF
       * @param broadcast true to broadcast the transaction on the network.
       * @returns the signed transaction.
       */
@@ -1531,12 +1607,13 @@ class wallet_api
       *
       * @param platform the name or uid of the platform which create this license.
       * @param poster the poster.
-      * @param post_pid the poster`s id.
+      * @param post_pid the poster's id.
       * @param hash_value the hash to update.
       * @param title the title to update.
       * @param body the body to update.
       * @param extra_data the extra_data to update.
-      * @param ext the post`s extensions.
+      * @param ext the post's extensions.
+      * @param csaf_fee true if you wish to pay fee with CSAF
       * @param broadcast true to broadcast the transaction on the network.
       * @returns the signed transaction.
       */
