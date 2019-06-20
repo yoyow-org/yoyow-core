@@ -107,7 +107,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.referrer_by_platform = platform == nullptr ? 0 : platform->sequence;
          obj.create_time          = d.head_block_time();
          obj.last_update_time     = d.head_block_time();
-         if (dpo.enabled_hardfork_04) {
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_04) {
              //After hardfork_0_4_time, make account_object can_rate and can_reply by default
              obj.can_rate = true;
              obj.can_reply = true;

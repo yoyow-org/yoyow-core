@@ -47,6 +47,7 @@
 #include <graphene/chain/content_evaluator.hpp>
 #include <graphene/chain/advertising_evaluator.hpp>
 #include <graphene/chain/custom_vote_evaluator.hpp>
+#include <graphene/chain/balance_lock_evaluator.hpp>
 #include <graphene/chain/csaf_evaluator.hpp>
 #include <graphene/chain/proposal_evaluator.hpp>
 #include <graphene/chain/transfer_evaluator.hpp>
@@ -201,6 +202,7 @@ void database::initialize_evaluators()
    register_evaluator<advertising_ransom_evaluator>();
    register_evaluator<custom_vote_create_evaluator>();
    register_evaluator<custom_vote_cast_evaluator>();
+   register_evaluator<balance_lock_update_evaluator>();
 }
 
 void database::initialize_indexes()

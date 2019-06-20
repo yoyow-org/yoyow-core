@@ -1677,6 +1677,25 @@ void database_fixture::cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys
    } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creater)(custom_vote_vid)(vote_result))
 }
 
+void database_fixture::balance_lock_update(flat_set<fc::ecc::private_key> sign_keys, account_uid_type account, share_type amount)
+{
+   try {
+      balance_lock_update_operation lock_op;
+      lock_op.account = account;
+      lock_op.new_lock_balance = amount;
+
+      signed_transaction tx;
+      tx.operations.push_back(lock_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((account)(amount))
+}
 
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
 database_fixture::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)

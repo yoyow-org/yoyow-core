@@ -467,6 +467,8 @@ struct database_fixture {
       custom_vote_vid_type  custom_vote_vid,
       set<uint8_t>          vote_result);
 
+   void balance_lock_update(flat_set<fc::ecc::private_key> sign_keys, account_uid_type account, share_type amount);
+
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);
 };

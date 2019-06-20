@@ -83,17 +83,17 @@ namespace graphene { namespace chain {
          committee_proposal_number_type  next_committee_proposal_number = 1;
          uint32_t                        accounts_registered_this_interval = 0;
 
-				 time_point_sec									 next_content_award_time = time_point_sec(0);
-				 time_point_sec									 last_content_award_time = time_point_sec(0);
-				 time_point_sec									 next_platform_voted_award_time = time_point_sec(0);
-				 time_point_sec									 last_platform_voted_award_time = time_point_sec(0);
-				 uint64_t												 current_active_post_sequence = 0;
+         time_point_sec									 next_content_award_time = time_point_sec(0);
+         time_point_sec									 last_content_award_time = time_point_sec(0);
+         time_point_sec									 next_platform_voted_award_time = time_point_sec(0);
+         time_point_sec									 last_platform_voted_award_time = time_point_sec(0);
+         uint64_t												 current_active_post_sequence = 0;
 
          bool                            content_award_enable = false;
          share_type                      total_witness_pledge = 0;
-         bool                            enabled_hardfork_04 = false;
+         uint8_t                         enabled_hardfork_version = ENABLE_HEAD_FORK_NONE;
          share_type                      by_pledge_witness_pay_per_block = 0;
-		 bool							 content_award_done = false;
+         bool							 content_award_done = false;
          /**
           *  Every time a block is missed this increases by
           *  RECENTLY_MISSED_COUNT_INCREMENT,
@@ -160,17 +160,17 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
                     (recent_slots_filled)
                     //(dynamic_flags)
                     (last_irreversible_block_num)
-										(next_content_award_time)
-										(last_content_award_time)
-										(next_platform_voted_award_time)
-										(last_platform_voted_award_time)
-										(current_active_post_sequence)
+                    (next_content_award_time)
+                    (last_content_award_time)
+                    (next_platform_voted_award_time)
+                    (last_platform_voted_award_time)
+                    (current_active_post_sequence)
                     (content_award_enable)
                     (total_witness_pledge)
-                    (enabled_hardfork_04)
+                    (enabled_hardfork_version)
                     (by_pledge_witness_pay_per_block)
                     (content_award_done)
-                  )
+   )
 
 FC_REFLECT_DERIVED( graphene::chain::global_property_object, (graphene::db::object),
                     (parameters)

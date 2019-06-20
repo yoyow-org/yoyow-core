@@ -39,6 +39,7 @@ namespace graphene { namespace chain {
     * separating the account data that changes frequently from the account data that is mostly static, which will
     * minimize the amount of data that must be backed up as part of the undo history everytime a transfer is made.
     */
+
    class account_statistics_object : public graphene::db::abstract_object<account_statistics_object>
    {
       public:
@@ -115,6 +116,19 @@ namespace graphene { namespace chain {
           * block number that releasing witness pledge will be finally unlocked.
           */
          uint32_t witness_pledge_release_block_number = -1;
+
+         /**
+         * coins locked for produce feepoint.
+         */
+         share_type locked_balance_for_feepoint;
+         /**
+         * coins that are requested to be released but not yet unlocked.
+         */
+         share_type releasing_locked_feepoint;
+         /**
+         * block number that releasing locked_balance_for_feepoint will be finally unlocked.
+         */
+         uint32_t feepoint_unlock_block_number = -1;
 
          /**
           * how many times have this account created witness object
@@ -228,14 +242,13 @@ namespace graphene { namespace chain {
           * are available.
           */
          // TODO use a public funtion to do this job as well as same job in vesting_balance_object
-         std::pair<fc::uint128_t,share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const bool reduce_witness = false)const;
-
+         std::pair<fc::uint128_t, share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const uint8_t enable_hard_fork_type = ENABLE_HEAD_FORK_NONE)const;
          /**
           * Update coin_seconds_earned and
           * coin_seconds_earned_last_update fields due to passing of time
           */
          // TODO use a public funtion to do this job and same job in vesting_balance_object
-         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const bool reduce_witness = false);
+         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const uint8_t enable_hard_fork_type = ENABLE_HEAD_FORK_NONE);
 
          /**
           * Update coin_seconds_earned and
@@ -674,6 +687,7 @@ namespace graphene { namespace chain {
    struct by_witness_pledge_release;
    struct by_committee_member_pledge_release;
    struct by_platform_pledge_release;
+   struct by_locked_balance_release;
 
    /**
     * @ingroup object_index
@@ -703,6 +717,13 @@ namespace graphene { namespace chain {
                member<account_statistics_object, uint32_t, &account_statistics_object::platform_pledge_release_block_number>,
                member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
             >
+         >,
+         ordered_unique< tag<by_locked_balance_release>,
+            composite_key<
+               account_statistics_object,
+               member<account_statistics_object, uint32_t, &account_statistics_object::feepoint_unlock_block_number>,
+               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
+         >
          >
       >
    > account_statistics_object_multi_index_type;
@@ -836,6 +857,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (average_coins)(average_coins_last_update)
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                     (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
+                    (locked_balance_for_feepoint)(releasing_locked_feepoint)(feepoint_unlock_block_number)
                     (last_witness_sequence)(uncollected_witness_pay)
                     (witness_last_confirmed_block_num)
                     (witness_last_aslot)

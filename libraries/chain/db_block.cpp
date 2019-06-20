@@ -533,6 +533,7 @@ void database::_apply_block( const signed_block& next_block )
    release_witness_pledges();
    release_committee_member_pledges();
    release_platform_pledges();
+   release_locked_balance();
    clear_resigned_witness_votes();
    clear_resigned_committee_member_votes();
    clear_resigned_platform_votes();
@@ -548,17 +549,26 @@ void database::_apply_block( const signed_block& next_block )
    clear_unnecessary_objects();
 
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   if (head_block_time() >= HARDFORK_0_4_TIME && !dpo.enabled_hardfork_04)
+   if (head_block_time() >= HARDFORK_0_4_TIME && dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_04)
    {
       update_reduce_witness_csaf();
       modify(dpo, [&](dynamic_global_property_object& dp)
       {
-         dp.enabled_hardfork_04 = true;
+         dp.enabled_hardfork_version = ENABLE_HEAD_FORK_04;
       });
       
       //modify default value, can_reply,can_rate default to true
       update_account_permission();
-   }       
+   }    
+
+   if (head_block_time() >= HARDFORK_0_5_TIME && dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+   {
+      update_account_feepoint();
+      modify(dpo, [&](dynamic_global_property_object& dp)
+      {
+         dp.enabled_hardfork_version = ENABLE_HEAD_FORK_05;
+      });
+   }
 
    //dlog("before update_witness_schedule");
    update_witness_schedule();
@@ -639,7 +649,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
                             get_owner_by_uid,
                             get_active_by_uid,
                             get_secondary_by_uid,
-                            get_dynamic_global_properties().enabled_hardfork_04,
+                            get_dynamic_global_properties().enabled_hardfork_version >= ENABLE_HEAD_FORK_04,
                             chain_parameters.max_authority_depth );
    }
 

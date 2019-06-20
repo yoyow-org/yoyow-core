@@ -350,7 +350,7 @@ void database::update_reduce_witness_csaf()
     {
         const account_statistics_object& statistics_obj = get_account_statistics_by_uid(itr->account);
         modify(statistics_obj, [&](account_statistics_object& s) {
-            s.update_coin_seconds_earned(csaf_window, head_block_time(), false);
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_NONE);
         });
     }
 }
@@ -363,6 +363,19 @@ void database::update_account_permission()
       modify(*itr, [&](account_object& a) {
          a.can_reply = true;
          a.can_rate = true;
+      });
+   }
+}
+
+void database::update_account_feepoint()
+{
+   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+   const auto& account_idx = get_index_type<account_statistics_index>().indices();
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
+   {
+      modify(*itr, [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
       });
    }
 }
@@ -480,12 +493,12 @@ void database::clear_expired_csaf_leases()
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    while( itr != idx.end() && itr->expiration <= head_time )
    {
-      modify( get_account_statistics_by_uid( itr->from ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
+      modify(get_account_statistics_by_uid(itr->from), [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
          s.core_leased_out -= itr->amount;
       });
-      modify( get_account_statistics_by_uid( itr->to ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
+      modify(get_account_statistics_by_uid(itr->to), [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
          s.core_leased_in -= itr->amount;
       });
       remove( *itr );
@@ -515,12 +528,12 @@ void database::release_witness_pledges()
    auto itr = idx.begin();
    while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
    {
-      modify( *itr, [&](account_statistics_object& s) {
-          if (dpo.enabled_hardfork_04)
-              s.update_coin_seconds_earned(csaf_window, head_block_time(), true);
-          s.total_witness_pledge -= s.releasing_witness_pledge;
-          s.releasing_witness_pledge = 0;
-          s.witness_pledge_release_block_number = -1;
+      modify(*itr, [&](account_statistics_object& s) {
+         if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
+         s.total_witness_pledge -= s.releasing_witness_pledge;
+         s.releasing_witness_pledge = 0;
+         s.witness_pledge_release_block_number = -1;
       });
       itr = idx.begin();
    }
@@ -537,6 +550,23 @@ void database::release_committee_member_pledges()
          s.total_committee_member_pledge -= s.releasing_committee_member_pledge;
          s.releasing_committee_member_pledge = 0;
          s.committee_member_pledge_release_block_number = -1;
+      });
+      itr = idx.begin();
+   }
+}
+
+void database::release_locked_balance()
+{
+   const auto head_num = head_block_num();
+   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_locked_balance_release>();
+   auto itr = idx.begin();
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   while (itr != idx.end() && itr->feepoint_unlock_block_number <= head_num)
+   {
+      modify(*itr, [&](account_statistics_object& s) {
+         s.releasing_locked_feepoint = 0;
+         s.feepoint_unlock_block_number = -1;
       });
       itr = idx.begin();
    }
@@ -956,148 +986,150 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
          });
       }
       // apply changes : global params update
-      if( param_item != nullptr )
+      if (param_item != nullptr)
       {
          const auto& pv = param_item->value;
-         modify( get_global_properties(), [&]( global_property_object& _gpo )
+         modify(get_global_properties(), [&](global_property_object& _gpo)
          {
             auto& o = _gpo.parameters;
-            if( pv.maximum_transaction_size.valid() )
+            if (pv.maximum_transaction_size.valid())
                o.maximum_transaction_size = *pv.maximum_transaction_size;
-            if( pv.maximum_block_size.valid() )
+            if (pv.maximum_block_size.valid())
                o.maximum_block_size = *pv.maximum_block_size;
-            if( pv.maximum_time_until_expiration.valid() )
+            if (pv.maximum_time_until_expiration.valid())
                o.maximum_time_until_expiration = *pv.maximum_time_until_expiration;
-            if( pv.maximum_authority_membership.valid() )
+            if (pv.maximum_authority_membership.valid())
                o.maximum_authority_membership = *pv.maximum_authority_membership;
-            if( pv.max_authority_depth.valid() )
+            if (pv.max_authority_depth.valid())
                o.max_authority_depth = *pv.max_authority_depth;
-            if( pv.csaf_rate.valid() )
+            if (pv.csaf_rate.valid())
                o.csaf_rate = *pv.csaf_rate;
-            if( pv.max_csaf_per_account.valid() )
+            if (pv.max_csaf_per_account.valid())
                o.max_csaf_per_account = *pv.max_csaf_per_account;
-            if( pv.csaf_accumulate_window.valid() )
+            if (pv.csaf_accumulate_window.valid())
                o.csaf_accumulate_window = *pv.csaf_accumulate_window;
-            if( pv.min_witness_pledge.valid() )
+            if (pv.min_witness_pledge.valid())
                o.min_witness_pledge = *pv.min_witness_pledge;
-            if( pv.max_witness_pledge_seconds.valid() )
+            if (pv.max_witness_pledge_seconds.valid())
                o.max_witness_pledge_seconds = *pv.max_witness_pledge_seconds;
-            if( pv.witness_avg_pledge_update_interval.valid() )
+            if (pv.witness_avg_pledge_update_interval.valid())
                o.witness_avg_pledge_update_interval = *pv.witness_avg_pledge_update_interval;
-            if( pv.witness_pledge_release_delay.valid() )
+            if (pv.witness_pledge_release_delay.valid())
                o.witness_pledge_release_delay = *pv.witness_pledge_release_delay;
-            if( pv.min_governance_voting_balance.valid() )
+            if (pv.min_governance_voting_balance.valid())
                o.min_governance_voting_balance = *pv.min_governance_voting_balance;
-            if( pv.governance_voting_expiration_blocks.valid() )
+            if (pv.governance_voting_expiration_blocks.valid())
                o.governance_voting_expiration_blocks = *pv.governance_voting_expiration_blocks;
-            if( pv.governance_votes_update_interval.valid() )
+            if (pv.governance_votes_update_interval.valid())
                o.governance_votes_update_interval = *pv.governance_votes_update_interval;
-            if( pv.max_governance_votes_seconds.valid() )
+            if (pv.max_governance_votes_seconds.valid())
                o.max_governance_votes_seconds = *pv.max_governance_votes_seconds;
-            if( pv.max_witnesses_voted_per_account.valid() )
+            if (pv.max_witnesses_voted_per_account.valid())
                o.max_witnesses_voted_per_account = *pv.max_witnesses_voted_per_account;
-            if( pv.max_witness_inactive_blocks.valid() )
+            if (pv.max_witness_inactive_blocks.valid())
                o.max_witness_inactive_blocks = *pv.max_witness_inactive_blocks;
-            if( pv.by_vote_top_witness_pay_per_block.valid() )
+            if (pv.by_vote_top_witness_pay_per_block.valid())
                o.by_vote_top_witness_pay_per_block = *pv.by_vote_top_witness_pay_per_block;
-            if( pv.by_vote_rest_witness_pay_per_block.valid() )
+            if (pv.by_vote_rest_witness_pay_per_block.valid())
                o.by_vote_rest_witness_pay_per_block = *pv.by_vote_rest_witness_pay_per_block;
-            if( pv.by_pledge_witness_pay_per_block.valid() )
+            if (pv.by_pledge_witness_pay_per_block.valid())
                o.by_pledge_witness_pay_per_block = *pv.by_pledge_witness_pay_per_block;
-            if( pv.by_vote_top_witness_count.valid() )
+            if (pv.by_vote_top_witness_count.valid())
                o.by_vote_top_witness_count = *pv.by_vote_top_witness_count;
-            if( pv.by_vote_rest_witness_count.valid() )
+            if (pv.by_vote_rest_witness_count.valid())
                o.by_vote_rest_witness_count = *pv.by_vote_rest_witness_count;
-            if( pv.by_pledge_witness_count.valid() )
+            if (pv.by_pledge_witness_count.valid())
                o.by_pledge_witness_count = *pv.by_pledge_witness_count;
-            if( pv.budget_adjust_interval.valid() )
+            if (pv.budget_adjust_interval.valid())
                o.budget_adjust_interval = *pv.budget_adjust_interval;
-            if( pv.budget_adjust_target.valid() )
+            if (pv.budget_adjust_target.valid())
                o.budget_adjust_target = *pv.budget_adjust_target;
-            if( pv.min_committee_member_pledge.valid() )
+            if (pv.min_committee_member_pledge.valid())
                o.min_committee_member_pledge = *pv.min_committee_member_pledge;
-            if( pv.committee_member_pledge_release_delay.valid() )
+            if (pv.committee_member_pledge_release_delay.valid())
                o.committee_member_pledge_release_delay = *pv.committee_member_pledge_release_delay;
-            if( pv.witness_report_prosecution_period.valid() )
+            if (pv.witness_report_prosecution_period.valid())
                o.witness_report_prosecution_period = *pv.witness_report_prosecution_period;
-            if( pv.witness_report_allow_pre_last_block.valid() )
+            if (pv.witness_report_allow_pre_last_block.valid())
                o.witness_report_allow_pre_last_block = *pv.witness_report_allow_pre_last_block;
-            if( pv.witness_report_pledge_deduction_amount.valid() )
+            if (pv.witness_report_pledge_deduction_amount.valid())
                o.witness_report_pledge_deduction_amount = *pv.witness_report_pledge_deduction_amount;
-            
-            if( pv.platform_min_pledge.valid() )
+
+            if (pv.platform_min_pledge.valid())
                o.platform_min_pledge = *pv.platform_min_pledge;
-            if( pv.platform_pledge_release_delay.valid() )
+            if (pv.platform_pledge_release_delay.valid())
                o.platform_pledge_release_delay = *pv.platform_pledge_release_delay;
-            if( pv.platform_max_vote_per_account.valid() )
+            if (pv.platform_max_vote_per_account.valid())
                o.platform_max_vote_per_account = *pv.platform_max_vote_per_account;
-            if( pv.platform_max_pledge_seconds.valid() )
+            if (pv.platform_max_pledge_seconds.valid())
                o.platform_max_pledge_seconds = *pv.platform_max_pledge_seconds;
-            if( pv.platform_avg_pledge_update_interval.valid() )
+            if (pv.platform_avg_pledge_update_interval.valid())
                o.platform_avg_pledge_update_interval = *pv.platform_avg_pledge_update_interval;
          });
       }
-			if (content_item != nullptr)
-			{
-				const auto& pv = content_item->value;
-				modify(get_global_properties(), [&](global_property_object& _gpo)
-				{
-           auto& v = _gpo.parameters.content_parameters;
-           if (pv.content_award_interval.valid())
-              v.content_award_interval = *pv.content_award_interval;
-           if (pv.platform_award_interval.valid())
-              v.platform_award_interval = *pv.platform_award_interval;
-           if (pv.max_csaf_per_approval.valid())
-              v.max_csaf_per_approval = *pv.max_csaf_per_approval;
-           if (pv.approval_expiration.valid())
-              v.approval_expiration = *pv.approval_expiration;
-           if (pv.min_effective_csaf.valid())
-              v.min_effective_csaf = *pv.min_effective_csaf;
-           if (pv.total_content_award_amount.valid())
-              v.total_content_award_amount = *pv.total_content_award_amount;
-           if (pv.total_platform_content_award_amount.valid())
-              v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
-           if (pv.total_platform_voted_award_amount.valid())
-              v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
-           if (pv.platform_award_min_votes.valid())
-              v.platform_award_min_votes = *pv.platform_award_min_votes;
-           if (pv.platform_award_requested_rank.valid())
-              v.platform_award_requested_rank = *pv.platform_award_requested_rank;
+      if (content_item != nullptr)
+      {
+         const auto& pv = content_item->value;
+         modify(get_global_properties(), [&](global_property_object& _gpo)
+         {
+            auto& v = _gpo.parameters.content_parameters;
+            if (pv.content_award_interval.valid())
+               v.content_award_interval = *pv.content_award_interval;
+            if (pv.platform_award_interval.valid())
+               v.platform_award_interval = *pv.platform_award_interval;
+            if (pv.max_csaf_per_approval.valid())
+               v.max_csaf_per_approval = *pv.max_csaf_per_approval;
+            if (pv.approval_expiration.valid())
+               v.approval_expiration = *pv.approval_expiration;
+            if (pv.min_effective_csaf.valid())
+               v.min_effective_csaf = *pv.min_effective_csaf;
+            if (pv.total_content_award_amount.valid())
+               v.total_content_award_amount = *pv.total_content_award_amount;
+            if (pv.total_platform_content_award_amount.valid())
+               v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
+            if (pv.total_platform_voted_award_amount.valid())
+               v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
+            if (pv.platform_award_min_votes.valid())
+               v.platform_award_min_votes = *pv.platform_award_min_votes;
+            if (pv.platform_award_requested_rank.valid())
+               v.platform_award_requested_rank = *pv.platform_award_requested_rank;
 
-           if (pv.platform_award_basic_rate.valid())
-              v.platform_award_basic_rate = *pv.platform_award_basic_rate;
-           if (pv.casf_modulus.valid())
-              v.casf_modulus = *pv.casf_modulus;
-           if (pv.post_award_expiration.valid())
-              v.post_award_expiration = *pv.post_award_expiration;
-           if (pv.approval_casf_min_weight.valid())
-              v.approval_casf_min_weight = *pv.approval_casf_min_weight;
-           if (pv.approval_casf_first_rate.valid())
-              v.approval_casf_first_rate = *pv.approval_casf_first_rate;
-           if (pv.approval_casf_second_rate.valid())
-              v.approval_casf_second_rate = *pv.approval_casf_second_rate;
-           if (pv.receiptor_award_modulus.valid())
-              v.receiptor_award_modulus = *pv.receiptor_award_modulus;
-           if (pv.disapprove_award_modulus.valid())
-              v.disapprove_award_modulus = *pv.disapprove_award_modulus;
+            if (pv.platform_award_basic_rate.valid())
+               v.platform_award_basic_rate = *pv.platform_award_basic_rate;
+            if (pv.casf_modulus.valid())
+               v.casf_modulus = *pv.casf_modulus;
+            if (pv.post_award_expiration.valid())
+               v.post_award_expiration = *pv.post_award_expiration;
+            if (pv.approval_casf_min_weight.valid())
+               v.approval_casf_min_weight = *pv.approval_casf_min_weight;
+            if (pv.approval_casf_first_rate.valid())
+               v.approval_casf_first_rate = *pv.approval_casf_first_rate;
+            if (pv.approval_casf_second_rate.valid())
+               v.approval_casf_second_rate = *pv.approval_casf_second_rate;
+            if (pv.receiptor_award_modulus.valid())
+               v.receiptor_award_modulus = *pv.receiptor_award_modulus;
+            if (pv.disapprove_award_modulus.valid())
+               v.disapprove_award_modulus = *pv.disapprove_award_modulus;
 
-           if (pv.advertising_confirmed_fee_rate.valid())
-              v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
-           if (pv.advertising_confirmed_min_fee.valid())
-              v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
-           if (pv.custom_vote_effective_time.valid())
-              v.custom_vote_effective_time = *pv.custom_vote_effective_time;
+            if (pv.advertising_confirmed_fee_rate.valid())
+               v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
+            if (pv.advertising_confirmed_min_fee.valid())
+               v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
+            if (pv.custom_vote_effective_time.valid())
+               v.custom_vote_effective_time = *pv.custom_vote_effective_time;
 
-           if (pv.min_witness_block_produce_pledge.valid())
-              v.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
+            if (pv.min_witness_block_produce_pledge.valid())
+               v.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
 
-		   if (pv.content_award_skip_slots.valid())
-              v.content_award_skip_slots = *pv.content_award_skip_slots;
-				});
-			}
+            if (pv.content_award_skip_slots.valid())
+               v.content_award_skip_slots = *pv.content_award_skip_slots;
+            if (pv.unlocked_balance_release_delay.valid())
+               v.unlocked_balance_release_delay = *pv.unlocked_balance_release_delay;
+         });
+      }
 
       // remove the executed proposal
-      remove( proposal );
+      remove(proposal);
 
    } catch ( const fc::exception& e ) {
       if( silent_fail )

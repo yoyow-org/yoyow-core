@@ -338,6 +338,14 @@ namespace graphene { namespace chain {
       friend bool operator == ( const extended_private_key_type& p1, const extended_private_key_type& p2);
       friend bool operator != ( const extended_private_key_type& p1, const extended_private_key_type& p2);
    };
+
+   enum ENABLE_HEAD_FORK_TYPE{
+      ENABLE_HEAD_FORK_NONE = 0,
+      ENABLE_HEAD_FORK_04 = 1,
+      ENABLE_HEAD_FORK_05 = 2,
+
+      ENABLE_HEAD_FORK_NUM
+   };
 } }  // graphene::chain
 
 namespace fc

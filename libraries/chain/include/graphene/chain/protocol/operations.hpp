@@ -33,6 +33,7 @@
 #include <graphene/chain/protocol/proposal.hpp>
 #include <graphene/chain/protocol/transfer.hpp>
 #include <graphene/chain/protocol/witness.hpp>
+#include <graphene/chain/protocol/balance_lock.hpp>
 
 namespace graphene { namespace chain {
 
@@ -91,7 +92,8 @@ namespace graphene { namespace chain {
             advertising_confirm_operation,
             advertising_ransom_operation,
             custom_vote_create_operation,
-            custom_vote_cast_operation
+            custom_vote_cast_operation,
+            balance_lock_update_operation
          > operation;
 
    /// @} // operations group

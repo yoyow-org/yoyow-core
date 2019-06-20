@@ -1778,6 +1778,11 @@ class wallet_api
       vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
                                                                                  account_uid_type   lower_bound_platform,
                                                                                  uint32_t limit = 100);
+
+      signed_transaction update_lock_balance(string lock_balance_account,
+                                             string lock_balance_amount,
+                                             bool csaf_fee = true,
+                                             bool broadcast = false);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -2017,4 +2022,5 @@ FC_API( graphene::wallet::wallet_api,
         (list_account_auth_platform_by_platform)
         (list_account_auth_platform_by_account)
         (get_global_properties_extensions)
+        (update_lock_balance)
       )

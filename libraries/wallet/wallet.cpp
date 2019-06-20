@@ -3117,6 +3117,31 @@ signed_transaction account_cancel_auth_platform(string account,
       } FC_CAPTURE_AND_RETHROW((account)(lower_bound_platform)(limit))
    }
 
+   signed_transaction update_lock_balance(
+      string lock_balance_account,
+      string lock_balance_amount,
+      bool csaf_fee,
+      bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         auto asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         share_type lock_balance = asset_obj.amount_from_string(lock_balance_amount).amount;
+         account_uid_type account_uid = get_account_uid(lock_balance_account);
+
+         balance_lock_update_operation balance_lock_update_op;
+         balance_lock_update_op.account = account_uid;
+         balance_lock_update_op.new_lock_balance = lock_balance;
+
+         signed_transaction tx;
+         tx.operations.push_back(balance_lock_update_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((lock_balance_account)(lock_balance_amount)(csaf_fee)(broadcast))
+   }
+
    signed_transaction approve_proposal(
       const string& fee_paying_account,
       const string& proposal_id,
@@ -4676,6 +4701,14 @@ vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_a
                                                                                        uint32_t limit)
 {
    return my->list_account_auth_platform_by_account(account, lower_bound_platform, limit);
+}
+
+signed_transaction wallet_api::update_lock_balance(string lock_balance_account,
+                                       string lock_balance_amount,
+                                       bool csaf_fee,
+                                       bool broadcast)
+{
+   return my->update_lock_balance(lock_balance_account, lock_balance_amount, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::approve_proposal(

@@ -28,7 +28,8 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
    FC_ASSERT( op.time + GRAPHENE_MAX_CSAF_COLLECTING_TIME_OFFSET >= head_time,
               "Time should not be earlier than 5 minutes before head block time" );
 
-   available_coin_seconds = from_stats->compute_coin_seconds_earned( csaf_window, op.time ).first;
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+   available_coin_seconds = from_stats->compute_coin_seconds_earned(csaf_window, op.time, dpo.enabled_hardfork_version).first;
 
    collecting_coin_seconds = fc::uint128_t(op.amount.amount.value) * global_params.csaf_rate;
 
@@ -88,6 +89,8 @@ void_result csaf_lease_evaluator::do_evaluate( const csaf_lease_operation& op )
                              - from_stats->core_leased_out
                              - from_stats->total_witness_pledge
                              - from_stats->total_platform_pledge
+                             - from_stats->locked_balance_for_feepoint
+                             - from_stats->releasing_locked_feepoint
                              - from_stats->total_committee_member_pledge;
       FC_ASSERT( available_balance >= delta,
                  "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
@@ -134,13 +137,13 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
       
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-      d.modify( *from_stats, [&](account_statistics_object& s) {
-          s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
-          s.core_leased_out += delta;
+      d.modify(*from_stats, [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+         s.core_leased_out += delta;
       });
-      d.modify( *to_stats, [&](account_statistics_object& s) {
-          s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
-          s.core_leased_in += delta;
+      d.modify(*to_stats, [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+         s.core_leased_in += delta;
       });
    }
 

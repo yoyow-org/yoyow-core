@@ -1387,4 +1387,57 @@ BOOST_AUTO_TEST_CASE(custom_vote_test)
    }
 }
 
+BOOST_AUTO_TEST_CASE(balance_lock_for_feepoint_test)
+{
+   try{
+      ACTORS((1000)(2000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+      transfer(committee_account, u_1000_id, _core(10000));
+      transfer(committee_account, u_2000_id, _core(10000));
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+
+
+      balance_lock_update({ u_1000_private_key }, u_1000_id, 5000 * prec);
+      balance_lock_update({ u_2000_private_key }, u_2000_id, 8000 * prec);
+      const auto& user1 = db.get_account_statistics_by_uid(u_1000_id);
+      BOOST_CHECK(user1.locked_balance_for_feepoint == 5000 * prec);
+      BOOST_CHECK(user1.releasing_locked_feepoint == 0 * prec);
+      const auto& user2 = db.get_account_statistics_by_uid(u_2000_id);
+      BOOST_CHECK(user2.locked_balance_for_feepoint == 8000 * prec);
+      BOOST_CHECK(user2.releasing_locked_feepoint == 0 * prec);
+
+      balance_lock_update({ u_1000_private_key }, u_1000_id, 6000 * prec);
+      balance_lock_update({ u_2000_private_key }, u_2000_id, 5000 * prec);
+      const auto& user3 = db.get_account_statistics_by_uid(u_1000_id);
+      BOOST_CHECK(user3.locked_balance_for_feepoint == 6000 * prec);
+      BOOST_CHECK(user3.releasing_locked_feepoint == -1000 * prec);
+      BOOST_CHECK(user3.feepoint_unlock_block_number == GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+      const auto& user4 = db.get_account_statistics_by_uid(u_2000_id);
+      BOOST_CHECK(user4.locked_balance_for_feepoint == 5000 * prec);
+      BOOST_CHECK(user4.releasing_locked_feepoint == 3000 * prec);
+      BOOST_CHECK(user4.feepoint_unlock_block_number == GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+
+      generate_blocks(GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+      generate_block(5);
+
+      const auto& user5 = db.get_account_statistics_by_uid(u_1000_id);
+      BOOST_CHECK(user5.locked_balance_for_feepoint == 6000 * prec);
+      BOOST_CHECK(user5.releasing_locked_feepoint == 0 * prec);
+      BOOST_CHECK(user5.feepoint_unlock_block_number == -1);
+      const auto& user6 = db.get_account_statistics_by_uid(u_2000_id);
+      BOOST_CHECK(user6.locked_balance_for_feepoint == 5000 * prec);
+      BOOST_CHECK(user6.releasing_locked_feepoint == 0 * prec);
+      BOOST_CHECK(user6.feepoint_unlock_block_number == -1);
+
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

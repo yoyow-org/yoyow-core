@@ -2167,12 +2167,13 @@ std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_se
 std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> database_api_impl::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
 {
    wdump((trx)(available_keys));
+   bool enable_hardfork_04 = _db.get_dynamic_global_properties().enabled_hardfork_version >= ENABLE_HEAD_FORK_04;
    auto result = trx.get_required_signatures( _db.get_chain_id(),
                                        available_keys,
                                        [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).owner); },
                                        [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).active); },
                                        [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).secondary); },
-                                       _db.get_dynamic_global_properties().enabled_hardfork_04,
+                                       enable_hardfork_04,
                                        _db.get_global_properties().parameters.max_authority_depth );
    wdump((std::get<0>(result))(std::get<1>(result))(std::get<2>(result)));
    return std::make_pair( std::make_pair( std::get<0>(result), std::get<1>(result) ), std::get<2>(result) );
@@ -2187,6 +2188,7 @@ set<public_key_type> database_api_impl::get_potential_signatures( const signed_t
 {
    wdump((trx));
    set<public_key_type> result;
+   bool enable_hardfork_04 = _db.get_dynamic_global_properties().enabled_hardfork_version >= ENABLE_HEAD_FORK_04;
    trx.get_required_signatures(
       _db.get_chain_id(),
       flat_set<public_key_type>(),
@@ -2211,7 +2213,7 @@ set<public_key_type> database_api_impl::get_potential_signatures( const signed_t
             result.insert(k);
          return &auth;
       },
-      _db.get_dynamic_global_properties().enabled_hardfork_04,
+      enable_hardfork_04,
       _db.get_global_properties().parameters.max_authority_depth
    );
 
@@ -2226,12 +2228,13 @@ bool database_api::verify_authority( const signed_transaction& trx )const
 
 bool database_api_impl::verify_authority( const signed_transaction& trx )const
 {
+   bool enable_hardfork_04 = _db.get_dynamic_global_properties().enabled_hardfork_version >= ENABLE_HEAD_FORK_04;
    trx.verify_authority( _db.get_chain_id(),
                          [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).owner); },
                          [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).active); },
                          [this]( account_uid_type uid ){ return &(_db.get_account_by_uid( uid ).secondary); },
-                         _db.get_dynamic_global_properties().enabled_hardfork_04,
-                          _db.get_global_properties().parameters.max_authority_depth );
+                         enable_hardfork_04,
+                         _db.get_global_properties().parameters.max_authority_depth );
    return true;
 }
 

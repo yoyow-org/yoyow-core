@@ -501,6 +501,7 @@ namespace graphene { namespace chain {
          void clear_unnecessary_objects();//advertising order, custom vote and cast custom vote
          void update_reduce_witness_csaf();//only execute once for HARDFORK_0_4_BLOCKNUM
          void update_account_permission();
+         void update_account_feepoint(); //only execute once for HARDFORK_0_5_BLOCKNUM
 
          std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
               get_effective_csaf(const active_post_object& active_post);
@@ -510,6 +511,7 @@ namespace graphene { namespace chain {
          void update_average_witness_pledges();
          void release_witness_pledges();
          void release_committee_member_pledges();
+         void release_locked_balance();
          void clear_resigned_witness_votes();
          void clear_resigned_committee_member_votes();
          void invalidate_expired_governance_voters();
