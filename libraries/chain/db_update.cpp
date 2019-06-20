@@ -494,11 +494,13 @@ void database::clear_expired_csaf_leases()
    while( itr != idx.end() && itr->expiration <= head_time )
    {
       modify(get_account_statistics_by_uid(itr->from), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+            s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
          s.core_leased_out -= itr->amount;
       });
       modify(get_account_statistics_by_uid(itr->to), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+            s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
          s.core_leased_in -= itr->amount;
       });
       remove( *itr );
