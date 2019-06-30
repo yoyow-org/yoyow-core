@@ -813,7 +813,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
       flat_map<account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
       const committee_update_fee_schedule_item_type* fee_item = nullptr;
       const committee_update_global_parameter_item_type* param_item = nullptr;
-			const committee_update_global_content_parameter_item_type* content_item = nullptr;
+      const committee_update_global_content_parameter_item_type* content_item = nullptr;
       for( const auto& item : proposal.items )
       {
          // account update item
@@ -911,14 +911,14 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
             fee_item = &item.get< committee_update_fee_schedule_item_type >();
          }
          // parameter update item
-         else if( item.which() == committee_proposal_item_type::tag< committee_update_global_parameter_item_type >::value )
+         else if (item.which() == committee_proposal_item_type::tag< committee_update_global_parameter_item_type >::value)
          {
             param_item = &item.get< committee_update_global_parameter_item_type >();
          }
-				 else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
-				 {
-					 content_item = &item.get< committee_update_global_content_parameter_item_type >();
-				 }
+         else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
+         {
+            content_item = &item.get< committee_update_global_content_parameter_item_type >();
+         }
       }
 
       // apply changes : new takeover registrars

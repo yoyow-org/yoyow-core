@@ -487,7 +487,7 @@ object_id_type committee_proposal_create_evaluator::do_apply( const committee_pr
       cpo.expiration_block_num     = op.expiration_block_num;
       if( op.proposer_opinion.valid() )
          cpo.opinions.insert( std::make_pair( op.proposer, *op.proposer_opinion ) );
-      cpo.approve_threshold        = cpo.get_approve_threshold();
+      cpo.approve_threshold        = cpo.get_approve_threshold(dpo.enabled_hardfork_version);
       cpo.is_approved              = ( new_for >= cpo.approve_threshold ? true : false );
    });
 
