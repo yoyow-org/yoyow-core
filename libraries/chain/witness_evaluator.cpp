@@ -195,6 +195,13 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          wit.by_pledge_scheduled_time = fc::uint128_t::max_value();
          wit.by_vote_scheduled_time = fc::uint128_t::max_value();
       });
+      if (d.head_block_time() >= HARDFORK_0_5_TIME){
+         share_type delta = op.new_pledge->amount - witness_obj->pledge;
+         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+         d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+            _dpo.total_witness_pledge += delta;
+         });
+      }
    }
    else // change pledge
    {

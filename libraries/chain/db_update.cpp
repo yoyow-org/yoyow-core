@@ -380,6 +380,22 @@ void database::update_account_feepoint()
    }
 }
 
+void database::fix_total_witness_pledge()
+{
+   share_type total_witness_pledges;
+   const auto& account_idx = get_index_type<account_statistics_index>().indices();
+   for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
+   {
+      modify(*itr, [&](account_statistics_object& s) {
+         total_witness_pledges += s.total_witness_pledge;
+      });
+   }
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   modify(dpo, [&](dynamic_global_property_object& _dpo) {
+      _dpo.total_witness_pledge = total_witness_pledges;
+   });
+}
+
 std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
 database::get_effective_csaf(const active_post_object& active_post)
 {
