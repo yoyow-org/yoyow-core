@@ -564,7 +564,6 @@ void database::_apply_block( const signed_block& next_block )
    if (head_block_time() >= HARDFORK_0_5_TIME && dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
    {
       update_account_feepoint();
-      fix_total_witness_pledge();
       modify(dpo, [&](dynamic_global_property_object& dp)
       {
          dp.enabled_hardfork_version = ENABLE_HEAD_FORK_05;

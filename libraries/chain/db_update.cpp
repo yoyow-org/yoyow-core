@@ -183,13 +183,16 @@ share_type database::get_witness_pay_by_pledge(const global_property_object& gpo
    const uint64_t witness_pay_lower_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000000);
    const uint64_t witness_pay_upper_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(320000000);
    const uint64_t witness_pay_lower_point_rate = GRAPHENE_1_PERCENT * 25;
-
-   bigint witness_pay_per_year = 0;
-   if (dpo.total_witness_pledge < witness_pay_lower_point) {
-      witness_pay_per_year = (bigint)witness_pay_lower_point_rate * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
+   share_type total_witness_pledges = dpo.total_witness_pledge;
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05){
+      total_witness_pledges += dpo.resign_witness_pledge_before_05;
    }
-   else if (dpo.total_witness_pledge < witness_pay_upper_point) {
-      bigint pledge = dpo.total_witness_pledge.value;
+   bigint witness_pay_per_year = 0;
+   if (total_witness_pledges < witness_pay_lower_point) {
+      witness_pay_per_year = (bigint)witness_pay_lower_point_rate * total_witness_pledges.value / GRAPHENE_100_PERCENT;
+   }
+   else if (total_witness_pledges < witness_pay_upper_point) {
+      bigint pledge = total_witness_pledges.value;
       bigint A = GRAPHENE_BLOCKCHAIN_PRECISION * 10000000;
 
       bigint rate = pledge * pledge * witness_pay_second_modulus * A
@@ -378,22 +381,6 @@ void database::update_account_feepoint()
          s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
       });
    }
-}
-
-void database::fix_total_witness_pledge()
-{
-   share_type total_witness_pledges;
-   const auto& account_idx = get_index_type<account_statistics_index>().indices();
-   for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
-   {
-      modify(*itr, [&](account_statistics_object& s) {
-         total_witness_pledges += s.total_witness_pledge;
-      });
-   }
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   modify(dpo, [&](dynamic_global_property_object& _dpo) {
-      _dpo.total_witness_pledge = total_witness_pledges;
-   });
 }
 
 std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
