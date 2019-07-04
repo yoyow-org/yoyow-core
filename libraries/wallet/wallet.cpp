@@ -1390,6 +1390,7 @@ public:
 
    signed_transaction create_witness(string owner_account,
                                      string url,
+                                     share_type pledge,
                                      bool csaf_fee,
                                      bool broadcast /* = false */)
    { try {
@@ -1403,6 +1404,7 @@ public:
       witness_create_op.account = witness_account.uid;
       witness_create_op.block_signing_key = witness_public_key;
       witness_create_op.url = url;
+      witness_create_op.pledge = asset(pledge);
 
       if (_remote_db->get_witness_by_account(witness_create_op.account))
          FC_THROW("Account ${owner_account} is already a witness", ("owner_account", owner_account));

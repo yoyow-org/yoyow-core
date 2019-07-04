@@ -249,9 +249,9 @@ struct database_fixture {
 
    const committee_member_object& create_committee_member(const account_object& owner);
    const witness_object& create_witness(account_uid_type owner,
-      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
+      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"), asset pledge = asset());
    const witness_object& create_witness(const account_object& owner,
-      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
+      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"), asset pledge = asset());
    //   const worker_object& create_worker(account_id_type owner, const share_type daily_pay = 1000, const fc::microseconds& duration = fc::days(2));
    uint64_t fund(const account_object& account, const asset& amount = asset(500000));
    digest_type digest(const transaction& tx);
@@ -411,7 +411,9 @@ struct database_fixture {
       );
 
    void collect_csaf(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount);
+   void collect_csaf_origin(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount);
    void collect_csaf_from_committee(account_uid_type to_account, int64_t amount);
+   void csaf_lease(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount, time_point_sec expiration);
 
    void actor(uint32_t start, uint32_t limit, flat_map<account_uid_type, fc::ecc::private_key>& map)
    {
@@ -468,6 +470,13 @@ struct database_fixture {
       set<uint8_t>          vote_result);
 
    void balance_lock_update(flat_set<fc::ecc::private_key> sign_keys, account_uid_type account, share_type amount);
+
+   void update_witness(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type account,
+      optional<public_key_type> new_signing_key,
+      optional<asset> new_pledge,
+      optional<string> new_url
+      );
 
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);

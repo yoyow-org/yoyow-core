@@ -36,8 +36,8 @@ BOOST_AUTO_TEST_CASE(witness_csaf_test)
 
       transfer(committee_account, u_1000_id, _core(100000));
       transfer(committee_account, u_2000_id, _core(100000));
-      const witness_object& witness1 = create_witness(u_1000_id, u_1000_private_key);
-      const witness_object& witness2 = create_witness(u_2000_id, u_2000_private_key);
+      const witness_object& witness1 = create_witness(u_1000_id, u_1000_private_key, _core(10000));
+      const witness_object& witness2 = create_witness(u_2000_id, u_2000_private_key, _core(10000));
 
 
       //###############################  before reduce witness csaf on hardfork_4_time
@@ -1439,5 +1439,131 @@ BOOST_AUTO_TEST_CASE(balance_lock_for_feepoint_test)
       throw;
    }
 }
+
+BOOST_AUTO_TEST_CASE(total_witness_pledge_test)
+{
+   try{
+      ACTORS((1000)(2000)(9001)(9002)(9003));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+      transfer(committee_account, u_9001_id, _core(10000));
+      transfer(committee_account, u_9002_id, _core(10000));
+      transfer(committee_account, u_9003_id, _core(10000));
+      add_csaf_for_account(u_9001_id, 10000);
+      add_csaf_for_account(u_9002_id, 10000);
+      add_csaf_for_account(u_9003_id, 10000);
+      create_witness(u_9001_id, u_9001_private_key, _core(10000));
+      create_witness(u_9002_id, u_9002_private_key, _core(10000));
+      create_witness(u_9003_id, u_9003_private_key, _core(10000));
+
+
+      transfer(committee_account, u_1000_id, _core(30000));
+      transfer(committee_account, u_2000_id, _core(30000));
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+
+      const witness_object& witness1 = create_witness(u_1000_id, u_1000_private_key, _core(10000));
+      const witness_object& witness2 = create_witness(u_2000_id, u_2000_private_key, _core(10000));
+      BOOST_CHECK(witness1.pledge == 10000 * prec);
+      BOOST_CHECK(witness2.pledge == 10000 * prec);
+
+      const dynamic_global_property_object dpo = db.get_dynamic_global_properties();
+      BOOST_CHECK(dpo.total_witness_pledge == 50000 * prec);
+      BOOST_CHECK(dpo.resign_witness_pledge_before_05 == 0);
+
+      update_witness({ u_1000_private_key }, u_1000_id, optional<public_key_type>(), _core(15000), optional<string>());
+      update_witness({ u_2000_private_key }, u_2000_id, optional<public_key_type>(), _core(15000), optional<string>());
+      generate_blocks(28800);
+
+      const dynamic_global_property_object dpo1 = db.get_dynamic_global_properties();
+      BOOST_CHECK(dpo1.total_witness_pledge == 60000 * prec);
+      BOOST_CHECK(dpo1.resign_witness_pledge_before_05 == 0);
+
+      update_witness({ u_1000_private_key }, u_1000_id, optional<public_key_type>(), _core(0), optional<string>());
+      update_witness({ u_2000_private_key }, u_2000_id, optional<public_key_type>(), _core(20000), optional<string>());
+      const dynamic_global_property_object dpo2 = db.get_dynamic_global_properties();
+      BOOST_CHECK(dpo2.total_witness_pledge == 65000 * prec);
+      BOOST_CHECK(dpo2.resign_witness_pledge_before_05 == (-15000)*prec);
+
+      generate_blocks(28800);
+
+      const dynamic_global_property_object dpo3 = db.get_dynamic_global_properties();
+      BOOST_CHECK(dpo3.total_witness_pledge == 65000 * prec);
+      BOOST_CHECK(dpo3.resign_witness_pledge_before_05 == (-15000)*prec);
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+BOOST_AUTO_TEST_CASE(csaf_compute_test)
+{
+   try{
+      ACTORS((1000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      transfer(committee_account, u_1000_id, _core(3000000));
+
+      //before_hardfork_01
+      generate_blocks(1000);
+      collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
+      //debug in funs : _apply_block and compute_coin_seconds_earned
+
+      //after_hardfork_04
+      generate_blocks(28800);
+      collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
+      //debug in funs : _apply_block and compute_coin_seconds_earned
+
+      //after_hardfork_05
+      generate_blocks(28800);
+      collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
+      //debug in funs : _apply_block and compute_coin_seconds_earned
+      
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+BOOST_AUTO_TEST_CASE(csaf_lease_test)
+{
+   try{
+      ACTORS((1000)(2000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      transfer(committee_account, u_1000_id, _core(30000));
+      transfer(committee_account, u_2000_id, _core(30000));
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+
+      csaf_lease({ u_1000_private_key }, u_1000_id, u_2000_id, 15000, time_point_sec(1562224400));
+      const account_statistics_object ant_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      const account_statistics_object ant_2000 = db.get_account_statistics_by_uid(u_2000_id);
+      BOOST_CHECK(ant_1000.core_leased_out == 15000*prec);
+      BOOST_CHECK(ant_2000.core_leased_in == 15000 * prec);
+
+      generate_blocks(28800);
+      const account_statistics_object ant_1000a = db.get_account_statistics_by_uid(u_1000_id);
+      const account_statistics_object ant_2000a = db.get_account_statistics_by_uid(u_2000_id);
+      BOOST_CHECK(ant_1000a.core_leased_out == 0 * prec);
+      BOOST_CHECK(ant_2000a.core_leased_in == 0 * prec);
+
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

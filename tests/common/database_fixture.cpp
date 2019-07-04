@@ -50,7 +50,7 @@
 
 using namespace graphene::chain::test;
 
-uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1530522000;// 1520611200;
+uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1562208756;// 1520611200;
 
 namespace graphene { namespace chain {
 
@@ -593,20 +593,21 @@ const committee_member_object& database_fixture::create_committee_member(const a
    return db.get<committee_member_object>(ptx.operation_results[0].get<object_id_type>());
 }
 
-const witness_object&database_fixture::create_witness(account_uid_type owner, const fc::ecc::private_key& signing_private_key)
+const witness_object&database_fixture::create_witness(account_uid_type owner, const fc::ecc::private_key& signing_private_key, asset pledge)
 {
-   return create_witness(db.get_account_by_uid(owner), signing_private_key);
+   return create_witness(db.get_account_by_uid(owner), signing_private_key, pledge);
 }
 
 const witness_object& database_fixture::create_witness(const account_object& owner,
-   const fc::ecc::private_key& signing_private_key)
+   const fc::ecc::private_key& signing_private_key,
+   asset pledge)
 {
    try {
       witness_create_operation op;
       op.account = owner.uid;
       op.block_signing_key = signing_private_key.get_public_key();
       /*op.pledge = asset(10000);*/
-      op.pledge = asset(10000 * 100000);
+      op.pledge = pledge;
       op.url = "";
       trx.operations.push_back(op);
       trx.validate();
@@ -1493,6 +1494,34 @@ void database_fixture::collect_csaf(flat_set<fc::ecc::private_key> sign_keys, ac
    } FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(to_account)(amount))
 }
 
+void database_fixture::collect_csaf_origin(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount)
+{
+   try {
+      FC_ASSERT(amount <= (uint32_t(-1) >> 1) / 100000, "collect_csaf : amount is too big");
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      uint32_t counts = db.head_block_time().sec_since_epoch();
+      time_point_sec tim((counts / 60) * 60);
+
+      csaf_collect_operation cc_op;
+      cc_op.from = from_account;
+      cc_op.to = to_account;
+      cc_op.amount = asset(amount*prec);
+      cc_op.time = tim;
+
+      signed_transaction tx;
+      tx.operations.push_back(cc_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+      db.push_transaction(tx);
+
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(to_account)(amount))
+}
+
+
 void database_fixture::collect_csaf_from_committee(account_uid_type to_account, int64_t amount)
 {
    try {
@@ -1520,6 +1549,30 @@ void database_fixture::collect_csaf_from_committee(account_uid_type to_account, 
       trx.operations.clear();
 
    } FC_CAPTURE_AND_RETHROW((to_account)(amount))
+}
+
+void database_fixture::csaf_lease(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount, time_point_sec expiration)
+{
+   try {
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      csaf_lease_operation cc_op;
+      cc_op.from = from_account;
+      cc_op.to = to_account;
+      cc_op.amount = asset(amount*prec);
+      cc_op.expiration = expiration;
+
+      signed_transaction tx;
+      tx.operations.push_back(cc_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+      db.push_transaction(tx);
+
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(to_account)(amount)(expiration))
 }
 
 void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_keys,
@@ -1695,6 +1748,33 @@ void database_fixture::balance_lock_update(flat_set<fc::ecc::private_key> sign_k
 
       db.push_transaction(tx);
    } FC_CAPTURE_AND_RETHROW((account)(amount))
+}
+
+void database_fixture::update_witness(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type account,
+   optional<public_key_type> new_signing_key,
+   optional<asset> new_pledge,
+   optional<string> new_url
+   )
+{
+   try {
+      witness_update_operation update_op;
+      update_op.account = account;
+      update_op.new_signing_key = new_signing_key;
+      update_op.new_pledge = new_pledge;
+      update_op.new_url = new_url;
+
+      signed_transaction tx;
+      tx.operations.push_back(update_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((account)(new_signing_key)(new_pledge)(new_url))
 }
 
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
