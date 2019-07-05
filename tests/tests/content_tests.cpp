@@ -272,6 +272,15 @@ BOOST_AUTO_TEST_CASE(score_test)
          BOOST_CHECK(score_obj.score == 5);
          BOOST_CHECK(score_obj.csaf == 10);
       }
+
+      //test clear expired score
+      generate_blocks(10);
+      generate_block(~0, generate_private_key("null_key"), 10512000);
+      for (auto a : score_map)
+      {
+         auto score_obj = db.find_score(u_9000_id, u_1001_id, 1, a.first);
+         BOOST_CHECK(score_obj == nullptr);
+      }
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
@@ -1327,6 +1336,9 @@ BOOST_AUTO_TEST_CASE(custom_vote_test)
          0, share_type(1000000), 1, 3, { "aa", "bb", "cc", "dd" });
 
 
+      /***************************************************
+      must start non_consensus custom vote, or check error
+      ***************************************************/
       const auto& idx = db.get_index_type<custom_vote_index>().indices().get<by_id>();
       const auto& obj = *(idx.begin());
       BOOST_CHECK(obj.custom_vote_creater == u_9000_id);
