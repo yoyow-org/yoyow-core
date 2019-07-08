@@ -195,6 +195,11 @@ share_type database::get_witness_pay_by_pledge(const global_property_object& gpo
       bigint pledge = total_witness_pledges.value;
       bigint A = GRAPHENE_BLOCKCHAIN_PRECISION * 10000000;
 
+      /*
+      * when total witness pledge between 10 million and 320 million, witness_pay_per_year is calculated as follows:
+      * rate = (-0.001052*pledge*pledge*pledge + 0.06937*pledge*pledge - 1.656*pledge + 21.12)/100, pledge unit is 10 million;
+      * witness_pay_per_year = pledge * rate,
+      */
       bigint rate = pledge * pledge * witness_pay_second_modulus * A
          - pledge * pledge * pledge * witness_pay_first_modulus
          - pledge * witness_pay_third_modulus * A * A
