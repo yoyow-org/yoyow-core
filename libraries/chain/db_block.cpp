@@ -534,6 +534,7 @@ void database::_apply_block( const signed_block& next_block )
    release_committee_member_pledges();
    release_platform_pledges();
    release_locked_balance();
+   release_pledge_to_witness();
    clear_resigned_witness_votes();
    clear_resigned_committee_member_votes();
    clear_resigned_platform_votes();

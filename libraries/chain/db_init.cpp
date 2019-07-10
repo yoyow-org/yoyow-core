@@ -150,6 +150,9 @@ const uint8_t custom_vote_object::type_id;
 const uint8_t cast_custom_vote_object::space_id;
 const uint8_t cast_custom_vote_object::type_id;
 
+const uint8_t witness_pledge_object::space_id;
+const uint8_t witness_pledge_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -203,6 +206,7 @@ void database::initialize_evaluators()
    register_evaluator<custom_vote_create_evaluator>();
    register_evaluator<custom_vote_cast_evaluator>();
    register_evaluator<balance_lock_update_evaluator>();
+   register_evaluator<account_pledge_update_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -245,6 +249,7 @@ void database::initialize_indexes()
    add_index< primary_index<custom_vote_index                             > >();
    add_index< primary_index<cast_custom_vote_index                        > >();
    add_index< primary_index<account_auth_platform_index                   > >();
+   add_index< primary_index<witness_pledge_index                          > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();

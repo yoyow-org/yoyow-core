@@ -334,6 +334,9 @@ namespace graphene { namespace chain {
          const witness_object& get_witness_by_uid( account_uid_type uid )const;
          const witness_object* find_witness_by_uid( account_uid_type uid )const;
 
+         const witness_pledge_object& get_witness_pledge_by_pledge_account(account_uid_type pledge_account)const;
+         const witness_pledge_object* find_witness_pledge_by_pledge_account(account_uid_type pledge_account)const;
+
          const witness_vote_object* find_witness_vote( account_uid_type voter_uid,
                                                        uint32_t         voter_sequence,
                                                        account_uid_type witness_uid,
@@ -512,6 +515,7 @@ namespace graphene { namespace chain {
          void release_witness_pledges();
          void release_committee_member_pledges();
          void release_locked_balance();
+         void release_pledge_to_witness();
          void clear_resigned_witness_votes();
          void clear_resigned_committee_member_votes();
          void invalidate_expired_governance_voters();

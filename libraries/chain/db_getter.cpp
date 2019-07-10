@@ -200,6 +200,24 @@ const witness_object* database::find_witness_by_uid( account_uid_type uid )const
       return nullptr;
 }
 
+const witness_pledge_object& database::get_witness_pledge_by_pledge_account(account_uid_type pledge_account)const
+{
+   const auto& idx = get_index_type<witness_pledge_index>().indices().get<by_pledge_account>();
+   auto itr = idx.find(pledge_account);
+   FC_ASSERT(itr != idx.end(), "witness pledge ${uid} not found.", ("uid", pledge_account));
+   return *itr;
+}
+
+const witness_pledge_object* database::find_witness_pledge_by_pledge_account(account_uid_type pledge_account)const
+{
+   const auto& idx = get_index_type<witness_pledge_index>().indices().get<by_pledge_account>();
+   auto itr = idx.find(pledge_account);
+   if (itr != idx.end())
+      return &(*itr);
+   else
+      return nullptr;
+}
+
 const witness_vote_object* database::find_witness_vote( account_uid_type voter_uid,
                                                         uint32_t         voter_sequence,
                                                         account_uid_type witness_uid,

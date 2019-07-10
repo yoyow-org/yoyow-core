@@ -65,6 +65,9 @@ namespace graphene { namespace chain {
       uint64_t    min_witness_block_produce_pledge    = GRAPHENE_DEFAULT_MIN_WITNESS_BLOCK_PRODUCE_PLEDGE;///< pos, witness pledge must greater this number, can produce block
       uint8_t		content_award_skip_slots		      = 0;
       uint32_t    unlocked_balance_release_delay      = GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY;
+
+      uint64_t    min_pledge_to_witness               = GRAPHENE_DEFAULT_MIN_PLEDGE_TO_WITNESS;
+      uint32_t    pledge_to_witness_release_delay     = GRAPHENE_DEFAULT_PLEDGE_TO_WITNESS_RELEASE_DELAY;
 	 };
 
    struct chain_parameters
@@ -168,7 +171,9 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
    (custom_vote_effective_time)
    (min_witness_block_produce_pledge)
    (content_award_skip_slots)
-   (unlocked_balance_release_delay))
+   (unlocked_balance_release_delay)
+   (min_pledge_to_witness)
+   (pledge_to_witness_release_delay))
 
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)

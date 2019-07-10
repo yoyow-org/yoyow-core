@@ -52,6 +52,7 @@ void_result committee_member_create_evaluator::do_evaluate( const committee_memb
                           - account_stats->total_platform_pledge
                           - account_stats->locked_balance_for_feepoint
                           - account_stats->releasing_locked_feepoint
+                          - account_stats->total_pledge_to_witness
                           - account_stats->total_witness_pledge; // releasing committee member pledge can be reused.
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
@@ -122,6 +123,7 @@ void_result committee_member_update_evaluator::do_evaluate( const committee_memb
                                 - account_stats->total_witness_pledge // releasing committee member pledge can be reused.
                                 - account_stats->locked_balance_for_feepoint
                                 - account_stats->releasing_locked_feepoint
+                                - account_stats->total_pledge_to_witness
                                 - account_stats->total_platform_pledge;
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",

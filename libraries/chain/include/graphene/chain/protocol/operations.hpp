@@ -93,7 +93,8 @@ namespace graphene { namespace chain {
             advertising_ransom_operation,
             custom_vote_create_operation,
             custom_vote_cast_operation,
-            balance_lock_update_operation
+            balance_lock_update_operation,
+            account_pledge_update_operation
          > operation;
 
    /// @} // operations group

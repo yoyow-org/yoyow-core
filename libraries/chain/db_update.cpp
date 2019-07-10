@@ -582,6 +582,24 @@ void database::release_locked_balance()
    }
 }
 
+void database::release_pledge_to_witness()
+{
+   const auto head_num = head_block_num();
+   auto block_time = head_block_time();
+   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_pledge_to_witness_release>();
+   auto itr = idx.begin();
+   while (itr != idx.end() && itr->pledge_to_witness_release_block_number <= head_num)
+   {
+      modify(*itr, [&](account_statistics_object& s) {
+         s.total_pledge_to_witness -= s.releasing_pledge_to_witness;
+         s.releasing_pledge_to_witness = 0;
+         s.pledge_to_witness_release_block_number = -1;
+      });
+      itr = idx.begin();
+      //TODO clear witness_pledge_object
+   }
+}
+
 void database::clear_resigned_witness_votes()
 {
    const uint32_t max_votes_to_process = GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK;
@@ -1135,6 +1153,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                v.content_award_skip_slots = *pv.content_award_skip_slots;
             if (pv.unlocked_balance_release_delay.valid())
                v.unlocked_balance_release_delay = *pv.unlocked_balance_release_delay;
+            if (pv.min_pledge_to_witness.valid())
+               v.min_pledge_to_witness = *pv.min_pledge_to_witness;
+            if (pv.pledge_to_witness_release_delay.valid())
+               v.pledge_to_witness_release_delay = *pv.pledge_to_witness_release_delay;
          });
       }
 
