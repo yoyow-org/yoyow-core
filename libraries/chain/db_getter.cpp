@@ -28,6 +28,7 @@
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/advertising_object.hpp>
+#include <graphene/chain/pledge_mining_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 
@@ -200,7 +201,7 @@ const witness_object* database::find_witness_by_uid( account_uid_type uid )const
       return nullptr;
 }
 
-const witness_pledge_object& database::get_witness_pledge_by_pledge_account(account_uid_type pledge_account)const
+const pledge_mining_object& database::get_witness_pledge_by_pledge_account(account_uid_type pledge_account)const
 {
    const auto& idx = get_index_type<witness_pledge_index>().indices().get<by_pledge_account>();
    auto itr = idx.find(pledge_account);
@@ -208,7 +209,7 @@ const witness_pledge_object& database::get_witness_pledge_by_pledge_account(acco
    return *itr;
 }
 
-const witness_pledge_object* database::find_witness_pledge_by_pledge_account(account_uid_type pledge_account)const
+const pledge_mining_object* database::find_witness_pledge_by_pledge_account(account_uid_type pledge_account)const
 {
    const auto& idx = get_index_type<witness_pledge_index>().indices().get<by_pledge_account>();
    auto itr = idx.find(pledge_account);

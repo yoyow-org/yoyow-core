@@ -68,6 +68,7 @@ namespace graphene { namespace chain {
 
       uint64_t    min_pledge_to_witness               = GRAPHENE_DEFAULT_MIN_PLEDGE_TO_WITNESS;
       uint32_t    pledge_to_witness_release_delay     = GRAPHENE_DEFAULT_PLEDGE_TO_WITNESS_RELEASE_DELAY;
+      uint32_t    max_pledge_mining_bonus_rate        = GRAPHENE_DEFAULT_MAX_PLEDGE_MINING_BONUS_RATE;
 	 };
 
    struct chain_parameters
@@ -173,7 +174,8 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
    (content_award_skip_slots)
    (unlocked_balance_release_delay)
    (min_pledge_to_witness)
-   (pledge_to_witness_release_delay))
+   (pledge_to_witness_release_delay)
+   (max_pledge_mining_bonus_rate))
 
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)

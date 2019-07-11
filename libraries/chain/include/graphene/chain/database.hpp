@@ -334,8 +334,8 @@ namespace graphene { namespace chain {
          const witness_object& get_witness_by_uid( account_uid_type uid )const;
          const witness_object* find_witness_by_uid( account_uid_type uid )const;
 
-         const witness_pledge_object& get_witness_pledge_by_pledge_account(account_uid_type pledge_account)const;
-         const witness_pledge_object* find_witness_pledge_by_pledge_account(account_uid_type pledge_account)const;
+         const pledge_mining_object& get_witness_pledge_by_pledge_account(account_uid_type pledge_account)const;
+         const pledge_mining_object* find_witness_pledge_by_pledge_account(account_uid_type pledge_account)const;
 
          const witness_vote_object* find_witness_vote( account_uid_type voter_uid,
                                                        uint32_t         voter_sequence,
@@ -427,7 +427,7 @@ namespace graphene { namespace chain {
          void adjust_balance(const account_object& account, asset delta);
 
          // helper to handle witness pay
-         void deposit_witness_pay(const witness_object& wit, share_type amount);
+         void deposit_witness_pay(const witness_object& wit, share_type amount, scheduled_witness_type wit_type);
 
 
          //////////////////// db_debug.cpp ////////////////////
@@ -515,7 +515,7 @@ namespace graphene { namespace chain {
          void release_witness_pledges();
          void release_committee_member_pledges();
          void release_locked_balance();
-         void release_pledge_to_witness();
+         void release_mining_pledge();
          void clear_resigned_witness_votes();
          void clear_resigned_committee_member_votes();
          void invalidate_expired_governance_voters();
@@ -535,6 +535,8 @@ namespace graphene { namespace chain {
       public:
          void update_platform_avg_pledge( const platform_object& pla );
          void adjust_platform_votes( const platform_object& platform, share_type delta );
+         void update_pledge_bonus();
+         void update_pledge_bonus_to_account(const witness_object& witness_obj, const pledge_mining_object& pledge_mining_obj);
 
 
       public:

@@ -153,7 +153,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    }
 
    if( witness_pay > 0 )
-      deposit_witness_pay( signing_witness, witness_pay );
+      deposit_witness_pay( signing_witness, witness_pay, wit_type );
 
    modify( signing_witness, [&]( witness_object& _wit )
    {
@@ -582,18 +582,18 @@ void database::release_locked_balance()
    }
 }
 
-void database::release_pledge_to_witness()
+void database::release_mining_pledge()
 {
    const auto head_num = head_block_num();
    auto block_time = head_block_time();
    const auto& idx = get_index_type<account_statistics_index>().indices().get<by_pledge_to_witness_release>();
    auto itr = idx.begin();
-   while (itr != idx.end() && itr->pledge_to_witness_release_block_number <= head_num)
+   while (itr != idx.end() && itr->mining_pledge_release_block_number <= head_num)
    {
       modify(*itr, [&](account_statistics_object& s) {
-         s.total_pledge_to_witness -= s.releasing_pledge_to_witness;
-         s.releasing_pledge_to_witness = 0;
-         s.pledge_to_witness_release_block_number = -1;
+         s.total_mining_pledge -= s.releasing_mining_pledge;
+         s.releasing_mining_pledge = 0;
+         s.mining_pledge_release_block_number = -1;
       });
       itr = idx.begin();
       //TODO clear witness_pledge_object
@@ -1157,6 +1157,8 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                v.min_pledge_to_witness = *pv.min_pledge_to_witness;
             if (pv.pledge_to_witness_release_delay.valid())
                v.pledge_to_witness_release_delay = *pv.pledge_to_witness_release_delay;
+            if (pv.max_pledge_mining_bonus_rate.valid())
+               v.max_pledge_mining_bonus_rate = *pv.max_pledge_mining_bonus_rate;
          });
       }
 
@@ -1466,6 +1468,61 @@ void database::adjust_platform_votes( const platform_object& platform, share_typ
    {
       pla.total_votes += delta.value;
    } );
+}
+
+void database::update_pledge_bonus()
+{
+   const auto& wit_idx = get_index_type<witness_index>().indices().get<by_id>();
+   auto wit_itr = wit_idx.begin();
+   while (wit_itr != wit_idx.end())
+   {
+      if (wit_itr->bonus_rate != 0 && wit_itr->total_mining_pledge == 0)
+      {
+         const auto& wit_pledge_idx = get_index_type<witness_pledge_index>().indices().get<by_pledge_witness>();
+         auto wit_pledge_itr = wit_pledge_idx.lower_bound(wit_itr->account);
+         while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == wit_itr->account)
+         {
+            update_pledge_bonus_to_account(*wit_itr, *wit_pledge_itr);
+            ++wit_pledge_itr;
+         }
+      }
+      //TODO modify, because itr can changed
+      modify(*wit_itr, [&](witness_object& w)
+      {
+         //w.is_pledge_changed = false;
+         w.unhandled_bonus = 0;
+         w.bonus_per_pledge.clear();
+      });
+      ++wit_itr;
+   }
+}
+
+void database::update_pledge_bonus_to_account(const witness_object& witness_obj, const pledge_mining_object& pledge_mining_obj)
+{
+   if (pledge_mining_obj.pledge == 0)
+      return;
+
+   auto itr = witness_obj.bonus_per_pledge.find(pledge_mining_obj.last_bonus_block_num + 1);
+   if (itr != witness_obj.bonus_per_pledge.end())
+   {
+      share_type total_bonus_per_pledge = std::accumulate(itr, witness_obj.bonus_per_pledge.end(), 0, 
+         [](uint64_t bonus, std::pair<uint32_t, share_type> p) {return bonus + p.second.value; });
+
+      share_type total_bonus = ((uint128_t)total_bonus_per_pledge.value * pledge_mining_obj.pledge
+         / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+      if (total_bonus > 0)
+      {
+         modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](account_statistics_object& o)
+         {
+            o.uncollected_pledge_bonus += total_bonus;
+         });
+      }
+      modify(pledge_mining_obj, [&](pledge_mining_object& o)
+      {
+         o.last_bonus_block_num = witness_obj.bonus_per_pledge.rbegin()->first;
+      });
+   }
+    
 }
 
 void database::update_platform_avg_pledge( const account_uid_type uid )

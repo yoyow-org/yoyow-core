@@ -361,10 +361,15 @@ struct get_impacted_account_uid_visitor
       _impacted.insert(op.fee_payer_uid()); // fee payer
    }
 
-   void operator()(const account_pledge_update_operation& op)
+   void operator()(const pledge_mining_update_operation& op)
    {
       _impacted.insert(op.fee_payer_uid()); // fee payer
       _impacted.insert(op.witness);
+   }
+
+   void operator()(const pledge_bonus_collect_operation& op)
+   {
+      _impacted.insert(op.fee_payer_uid()); // fee payer
    }
 };
 

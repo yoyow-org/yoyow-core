@@ -26,7 +26,7 @@ void_result balance_lock_update_evaluator::do_evaluate(const operation_type& op)
             - account_stats->core_leased_out
             - account_stats->total_platform_pledge
             - account_stats->total_committee_member_pledge
-            - account_stats->total_pledge_to_witness
+            - account_stats->total_mining_pledge
             - account_stats->total_witness_pledge; // releasing balance can be reused.        
          FC_ASSERT(available_balance >= op.new_lock_balance,
             "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",

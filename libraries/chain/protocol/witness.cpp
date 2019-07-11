@@ -95,12 +95,4 @@ void witness_report_operation::validate() const
    FC_ASSERT( first_block.signee() == second_block.signee(), "first block and second block should be signed by same key" );
 }
 
-void account_pledge_update_operation::validate() const
-{
-   validate_op_fee(fee, "account pledge update");
-   validate_account_uid(pledge_account, "pledge account ");
-   validate_account_uid(witness, "witness");
-   validate_non_negative_amount(new_pledge, " new pledge amount");
-}
-
 } } // graphene::chain

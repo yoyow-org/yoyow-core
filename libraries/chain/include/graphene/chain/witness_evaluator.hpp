@@ -92,17 +92,4 @@ namespace graphene { namespace chain {
          uint32_t reporting_block_num = 0;
    };
 
-   class account_pledge_update_evaluator : public evaluator < account_pledge_update_evaluator >
-   {
-      public:
-         typedef account_pledge_update_operation operation_type;
-
-         void_result do_evaluate(const account_pledge_update_operation& o);
-         void_result do_apply(const account_pledge_update_operation& o);
-
-         const witness_object* witness_obj = nullptr;
-         const witness_pledge_object* witness_pledge_obj = nullptr;
-         const account_statistics_object* account_stats = nullptr;
-   };
-
 } } // graphene::chain

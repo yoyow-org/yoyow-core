@@ -54,6 +54,7 @@ add_library( graphene_chain
              protocol/advertising.cpp
              protocol/custom_vote.cpp
              protocol/balance_lock.cpp
+             protocol/pledge_mining.cpp
 			 
              genesis_state.cpp
              get_config.cpp
@@ -70,6 +71,7 @@ add_library( graphene_chain
              advertising_evaluator.cpp
              custom_vote_evaluator.cpp
              balance_lock_evaluator.cpp
+             pledge_mining_evaluator.cpp
 
              account_object.cpp
              asset_object.cpp

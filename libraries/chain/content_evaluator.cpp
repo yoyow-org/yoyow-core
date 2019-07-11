@@ -33,7 +33,7 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
                           - account_stats->total_committee_member_pledge
                           - account_stats->locked_balance_for_feepoint
                           - account_stats->releasing_locked_feepoint
-                          - account_stats->total_pledge_to_witness
+                          - account_stats->total_mining_pledge
                           - account_stats->total_witness_pledge;
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
@@ -118,7 +118,7 @@ void_result platform_update_evaluator::do_evaluate( const platform_update_operat
                                 - account_stats->total_committee_member_pledge
                                 - account_stats->locked_balance_for_feepoint
                                 - account_stats->releasing_locked_feepoint
-                                - account_stats->total_pledge_to_witness
+                                - account_stats->total_mining_pledge
                                 - account_stats->total_witness_pledge;
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",

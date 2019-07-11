@@ -237,6 +237,10 @@ void committee_updatable_content_parameters::validate()const
       FC_ASSERT(*content_award_interval <= 86400*365, "content award interval must be less than or equal to one year");
    if (platform_award_interval.valid())
       FC_ASSERT(*platform_award_interval <= 86400*365, "platform award interval must be less than or equal to one year");
+
+   if (max_pledge_mining_bonus_rate.valid())
+      FC_ASSERT(*max_pledge_mining_bonus_rate >= 1000 && *max_pledge_mining_bonus_rate <= 9000,
+               "max pledge to witness mining rate should be in range 10-90%");
 }
 
 void committee_proposal_create_operation::validate()const

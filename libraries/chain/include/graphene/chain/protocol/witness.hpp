@@ -35,8 +35,8 @@ namespace graphene { namespace chain {
     * vote on to approve its position as a witness.
     */
 
-   namespace witness {
-      struct ext 
+   namespace pledge_mining {
+      struct ext
       {
          optional<bool>        can_pledge;
          optional<uint32_t>    bonus_rate;
@@ -59,7 +59,7 @@ namespace graphene { namespace chain {
       public_key_type   block_signing_key;
       asset             pledge;
       string            url;
-      optional< extension<witness::ext> > extensions;
+      optional< extension<pledge_mining::ext> > extensions;
 
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
@@ -96,7 +96,7 @@ namespace graphene { namespace chain {
       /// The new URL.
       optional< string          >  new_url;
 
-      optional< extension<witness::ext> > extensions;
+      optional< extension<pledge_mining::ext> > extensions;
 
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
@@ -205,37 +205,6 @@ namespace graphene { namespace chain {
       }
    };
 
-   /**
-   * @brief common account pledge asset to witness, 
-   * @brief part of witness pay is divided among common accounts according to the pledge amount.
-   * @ingroup operations
-   */
-   struct account_pledge_update_operation : public base_operation
-   {
-      struct fee_parameters_type
-      {
-         uint64_t fee = 0;
-         uint64_t min_real_fee = 0;
-         uint16_t min_rf_percent = 0;
-         extensions_type   extensions;
-      };
-
-      fee_type            fee;
-      account_uid_type    pledge_account;
-      account_uid_type    witness;
-      share_type          new_pledge;
-
-      extensions_type     extensions;
-
-      account_uid_type  fee_payer_uid()const { return pledge_account; }
-      void              validate()const;
-      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
-      {
-         // need active authority
-         a.insert(pledge_account);
-      }
-   };
-
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::witness_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
@@ -254,8 +223,4 @@ FC_REFLECT( graphene::chain::witness_collect_pay_operation, (fee)(account)(pay)(
 FC_REFLECT( graphene::chain::witness_report_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::witness_report_operation, (fee)(reporter)(first_block)(second_block)(extensions) )
 
-FC_REFLECT( graphene::chain::account_pledge_update_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT( graphene::chain::account_pledge_update_operation, (fee)(pledge_account)(witness)(new_pledge)(extensions))
-
-FC_REFLECT( graphene::chain::witness::ext, (can_pledge)(bonus_rate))
-
+FC_REFLECT( graphene::chain::pledge_mining::ext, (can_pledge)(bonus_rate))

@@ -40,6 +40,7 @@
 #include <graphene/chain/transaction_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
+#include <graphene/chain/pledge_mining_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -52,6 +53,7 @@
 #include <graphene/chain/proposal_evaluator.hpp>
 #include <graphene/chain/transfer_evaluator.hpp>
 #include <graphene/chain/witness_evaluator.hpp>
+#include <graphene/chain/pledge_mining_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -150,8 +152,8 @@ const uint8_t custom_vote_object::type_id;
 const uint8_t cast_custom_vote_object::space_id;
 const uint8_t cast_custom_vote_object::type_id;
 
-const uint8_t witness_pledge_object::space_id;
-const uint8_t witness_pledge_object::type_id;
+const uint8_t pledge_mining_object::space_id;
+const uint8_t pledge_mining_object::type_id;
 
 void database::initialize_evaluators()
 {
@@ -207,6 +209,7 @@ void database::initialize_evaluators()
    register_evaluator<custom_vote_cast_evaluator>();
    register_evaluator<balance_lock_update_evaluator>();
    register_evaluator<account_pledge_update_evaluator>();
+   register_evaluator<pledge_bonus_collect_evaluator>();
 }
 
 void database::initialize_indexes()

@@ -75,10 +75,15 @@ namespace graphene { namespace chain {
 
          ///account pledge asset to witness switch
          bool                can_pledge = false;
-         ///part of witness pay as a bonus to pledge account 
+         ///part of witness pay as a bonus that divided to pledge account 
          uint32_t            bonus_rate;
          ///account pledge asset to witness, total
-         uint64_t            total_pledge_to_witness;
+         uint64_t            total_mining_pledge;
+         ///total pledge to witness changed, set to true
+         bool                is_pledge_changed = false;
+         ///map<head block num, bonus_per_pledge>
+         map<uint32_t, share_type> bonus_per_pledge;
+         share_type          unhandled_bonus;
    };
 
    struct by_account;
@@ -231,41 +236,6 @@ namespace graphene { namespace chain {
     */
    typedef generic_index<witness_vote_object, witness_vote_multi_index_type> witness_vote_index;
 
-
-   /**
-   * @brief This class represents a account pledge asset to witness on the object graph
-   * @ingroup object
-   * @ingroup protocol
-   */
-   class witness_pledge_object : public graphene::db::abstract_object<witness_pledge_object>
-   {
-      public:
-         static const uint8_t space_id = implementation_ids;
-         static const uint8_t type_id = impl_witness_pledge_object_type;
-
-         account_uid_type     pledge_account;
-         account_uid_type     witness;
-         uint64_t             pledge;
-   };
-
-   struct by_pledge_account;
-
-   /**
-   * @ingroup object_index
-   */
-   typedef multi_index_container<
-      witness_pledge_object,
-      indexed_by<
-         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_pledge_account>, member< witness_pledge_object, account_uid_type, &witness_pledge_object::pledge_account > >
-      >
-   > witness_pledge_multi_index_type;
-
-   /**
-   * @ingroup object_index
-   */
-   typedef generic_index<witness_pledge_object, witness_pledge_multi_index_type> witness_pledge_index;
-
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
@@ -293,7 +263,10 @@ FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (url)
                     (can_pledge)
                     (bonus_rate)
-                    (total_pledge_to_witness)
+                    (total_mining_pledge)
+                    (is_pledge_changed)
+                    (bonus_per_pledge)
+                    (unhandled_bonus)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::witness_vote_object, (graphene::db::object),
@@ -301,10 +274,4 @@ FC_REFLECT_DERIVED( graphene::chain::witness_vote_object, (graphene::db::object)
                     (voter_sequence)
                     (witness_uid)
                     (witness_sequence)
-                  )
-
-FC_REFLECT_DERIVED( graphene::chain::witness_pledge_object, (graphene::db::object),
-                    (pledge_account)
-                    (witness)
-                    (pledge)
                   )

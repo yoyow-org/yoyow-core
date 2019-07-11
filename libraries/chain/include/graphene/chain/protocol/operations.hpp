@@ -34,6 +34,7 @@
 #include <graphene/chain/protocol/transfer.hpp>
 #include <graphene/chain/protocol/witness.hpp>
 #include <graphene/chain/protocol/balance_lock.hpp>
+#include <graphene/chain/protocol/pledge_mining.hpp>
 
 namespace graphene { namespace chain {
 
@@ -94,7 +95,8 @@ namespace graphene { namespace chain {
             custom_vote_create_operation,
             custom_vote_cast_operation,
             balance_lock_update_operation,
-            account_pledge_update_operation
+            pledge_mining_update_operation,
+            pledge_bonus_collect_operation
          > operation;
 
    /// @} // operations group

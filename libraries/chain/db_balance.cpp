@@ -29,6 +29,8 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/hardfork.hpp>
 
+#include <fc/uint128.hpp>
+
 namespace graphene { namespace chain {
 
 asset database::get_balance(account_uid_type owner, asset_aid_type asset_id) const
@@ -108,7 +110,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
                                 - account_stats.total_platform_pledge
                                 - account_stats.locked_balance_for_feepoint 
                                 - account_stats.releasing_locked_feepoint
-                                - account_stats.total_pledge_to_witness
+                                - account_stats.total_mining_pledge
                                 - account_stats.total_committee_member_pledge;
          FC_ASSERT( available_balance >= -delta.amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
@@ -150,17 +152,56 @@ void database::adjust_balance(account_uid_type account, asset delta )
    
 } FC_CAPTURE_AND_RETHROW( (account)(delta) ) }
 
-void database::deposit_witness_pay(const witness_object& wit, share_type amount)
+void database::deposit_witness_pay(const witness_object& wit, share_type amount, scheduled_witness_type wit_type)
 {
    FC_ASSERT( amount >= 0 );
 
    if( amount == 0 )
       return;
 
+   //TODO need modify
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    const auto& account_stats = get_account_statistics_by_uid( wit.account );
-   modify( account_stats, [&](account_statistics_object& s) {
-      s.uncollected_witness_pay += amount;
-   } );
+
+   if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge || wit.total_mining_pledge == 0)
+   {
+      modify(account_stats, [&](account_statistics_object& s) {
+         s.uncollected_witness_pay += amount;
+      });
+
+      if (wit.total_mining_pledge == 0 && wit.is_pledge_changed)
+      {
+         modify(wit, [&](witness_object& w) {
+            w.is_pledge_changed = false;
+            w.unhandled_bonus = 0;
+            w.bonus_per_pledge.clear();
+         });
+      }
+   }
+   else
+   {
+      share_type pledge_bonus = ((fc::uint128_t)amount.value * wit.bonus_rate / GRAPHENE_100_PERCENT).to_uint64();
+      share_type witness_pay = amount - pledge_bonus;
+      modify(account_stats, [&](account_statistics_object& s) {
+         s.uncollected_witness_pay += witness_pay;
+      });
+      if (wit.is_pledge_changed)
+      {
+         fc::uint128_t handled_bonus = (fc::uint128_t)(wit.unhandled_bonus + pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION;
+         share_type value = (handled_bonus / wit.total_mining_pledge).to_uint64();
+         modify(wit, [&](witness_object& w) {
+            w.is_pledge_changed = false;
+            w.unhandled_bonus = 0;
+            w.bonus_per_pledge.emplace(head_block_num(), value);
+         });
+      }
+      else
+      {
+         modify(wit, [&](witness_object& w) {
+            w.unhandled_bonus += pledge_bonus;
+         });
+      }
+   }
 
    return;
 }

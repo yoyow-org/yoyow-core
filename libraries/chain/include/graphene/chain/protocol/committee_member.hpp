@@ -252,6 +252,7 @@ namespace graphene { namespace chain {
        optional< uint32_t        >    unlocked_balance_release_delay;
        optional< uint64_t        >    min_pledge_to_witness;
        optional< uint32_t        >    pledge_to_witness_release_delay;
+       optional< uint32_t        >    max_pledge_mining_bonus_rate;
 
        void validate()const;
     };
@@ -440,7 +441,8 @@ FC_REFLECT(graphene::chain::committee_updatable_content_parameters,
             (content_award_skip_slots)
             (unlocked_balance_release_delay)
             (min_pledge_to_witness)
-            (pledge_to_witness_release_delay))
+            (pledge_to_witness_release_delay)
+            (max_pledge_mining_bonus_rate))
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )
