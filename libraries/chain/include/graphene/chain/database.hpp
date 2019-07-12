@@ -334,8 +334,8 @@ namespace graphene { namespace chain {
          const witness_object& get_witness_by_uid( account_uid_type uid )const;
          const witness_object* find_witness_by_uid( account_uid_type uid )const;
 
-         const pledge_mining_object& get_witness_pledge_by_pledge_account(account_uid_type pledge_account)const;
-         const pledge_mining_object* find_witness_pledge_by_pledge_account(account_uid_type pledge_account)const;
+         const pledge_mining_object& get_pledge_mining_by_pledge_account(account_uid_type pledge_account)const;
+         const pledge_mining_object* find_pledge_mining_by_pledge_account(account_uid_type pledge_account)const;
 
          const witness_vote_object* find_witness_vote( account_uid_type voter_uid,
                                                        uint32_t         voter_sequence,

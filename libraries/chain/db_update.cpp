@@ -590,13 +590,16 @@ void database::release_mining_pledge()
    auto itr = idx.begin();
    while (itr != idx.end() && itr->mining_pledge_release_block_number <= head_num)
    {
+      auto pledge_mining_obj = get_pledge_mining_by_pledge_account(itr->owner);
+      remove(pledge_mining_obj);
+
       modify(*itr, [&](account_statistics_object& s) {
          s.total_mining_pledge -= s.releasing_mining_pledge;
          s.releasing_mining_pledge = 0;
          s.mining_pledge_release_block_number = -1;
       });
-      itr = idx.begin();
-      //TODO clear witness_pledge_object
+      
+      itr = idx.begin();     
    }
 }
 

@@ -161,14 +161,19 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
 
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    const auto& account_stats = get_account_statistics_by_uid( wit.account );
-   if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge || wit.total_mining_pledge == 0)
+   if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge)
+   {
+      modify(account_stats, [&](account_statistics_object& s) {
+         s.uncollected_witness_pay += amount;
+      });
+   }
+   else if (wit.total_mining_pledge == 0)
    {
       modify(account_stats, [&](account_statistics_object& s) {
          s.uncollected_witness_pay += amount;
       });
 
-      if (wit_type == scheduled_by_pledge && wit.total_mining_pledge == 0 && wit.is_pledge_changed)
-      {
+      if (wit.is_pledge_changed) {
          modify(wit, [&](witness_object& w) {
             w.is_pledge_changed = false;
             w.unhandled_bonus = 0;

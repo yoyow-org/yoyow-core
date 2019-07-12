@@ -17,7 +17,7 @@ void_result account_pledge_update_evaluator::do_evaluate(const pledge_mining_upd
       account_stats = &d.get_account_statistics_by_uid(op.pledge_account); // check if the pledge account exists
       witness_obj = &d.get_witness_by_uid(op.witness);
       FC_ASSERT(witness_obj->can_pledge, "witness ${witness} can not pledge", ("witness", op.witness));
-      pledge_mining_obj = d.find_witness_pledge_by_pledge_account(op.pledge_account);
+      pledge_mining_obj = d.find_pledge_mining_by_pledge_account(op.pledge_account);
       
       if (pledge_mining_obj)
       {

@@ -191,7 +191,7 @@ void database::update_witness_schedule()
          bool reset_by_pledge_time = false;
          for( auto& wit : by_pledge_processed )
          {
-            fc::uint128_t new_time = new_by_pledge_time + GRAPHENE_VIRTUAL_LAP_LENGTH / ( wit->average_pledge + 1 );
+            fc::uint128_t new_time = new_by_pledge_time + GRAPHENE_VIRTUAL_LAP_LENGTH / (wit->average_pledge + wit->total_mining_pledge + 1);
             if( new_time < new_by_pledge_time ) // overflow
             {
                reset_by_pledge_time = true;

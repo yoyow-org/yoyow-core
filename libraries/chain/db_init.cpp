@@ -252,7 +252,7 @@ void database::initialize_indexes()
    add_index< primary_index<custom_vote_index                             > >();
    add_index< primary_index<cast_custom_vote_index                        > >();
    add_index< primary_index<account_auth_platform_index                   > >();
-   add_index< primary_index<witness_pledge_index                          > >();
+   add_index< primary_index<pledge_mining_index                           > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();
