@@ -9,7 +9,7 @@
 
 namespace graphene { namespace chain {
 
-void_result account_pledge_update_evaluator::do_evaluate(const pledge_mining_update_operation& op)
+void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_update_operation& op)
 {
    try {
       database& d = db();
@@ -31,7 +31,7 @@ void_result account_pledge_update_evaluator::do_evaluate(const pledge_mining_upd
 
       if (op.new_pledge > 0)
       {
-         auto min_pledge_to_witness = d.get_global_properties().parameters.get_award_params().min_pledge_to_witness;
+         auto min_pledge_to_witness = d.get_global_properties().parameters.get_award_params().min_mining_pledge;
          FC_ASSERT(op.new_pledge.value >= min_pledge_to_witness,
                    "Insufficient pledge: provided ${p}, need ${r}",
                    ("p", d.to_pretty_core_string(op.new_pledge))
@@ -65,7 +65,7 @@ void_result account_pledge_update_evaluator::do_evaluate(const pledge_mining_upd
    } FC_CAPTURE_AND_RETHROW((op))
 }
 
-void_result account_pledge_update_evaluator::do_apply(const pledge_mining_update_operation& op)
+void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_operation& op)
 {
    try {
       database& d = db();

@@ -208,7 +208,7 @@ void database::initialize_evaluators()
    register_evaluator<custom_vote_create_evaluator>();
    register_evaluator<custom_vote_cast_evaluator>();
    register_evaluator<balance_lock_update_evaluator>();
-   register_evaluator<account_pledge_update_evaluator>();
+   register_evaluator<pledge_mining_update_evaluator>();
    register_evaluator<pledge_bonus_collect_evaluator>();
 }
 

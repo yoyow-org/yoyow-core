@@ -1156,8 +1156,8 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                v.content_award_skip_slots = *pv.content_award_skip_slots;
             if (pv.unlocked_balance_release_delay.valid())
                v.unlocked_balance_release_delay = *pv.unlocked_balance_release_delay;
-            if (pv.min_pledge_to_witness.valid())
-               v.min_pledge_to_witness = *pv.min_pledge_to_witness;
+            if (pv.min_mining_pledge.valid())
+               v.min_mining_pledge = *pv.min_mining_pledge;
             if (pv.pledge_to_witness_release_delay.valid())
                v.pledge_to_witness_release_delay = *pv.pledge_to_witness_release_delay;
             if (pv.max_pledge_mining_bonus_rate.valid())

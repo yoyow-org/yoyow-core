@@ -7,7 +7,7 @@
 
 namespace graphene { namespace chain {
 
-   class account_pledge_update_evaluator : public evaluator < account_pledge_update_evaluator >
+   class pledge_mining_update_evaluator : public evaluator < pledge_mining_update_evaluator >
    {
       public:
          typedef pledge_mining_update_operation operation_type;
