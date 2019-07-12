@@ -74,9 +74,10 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
 
       share_type delta_to_update_witness_obj = 0;
+      share_type send_bonus = 0;
       if (pledge_mining_obj)
       {
-         d.update_pledge_mining_bonus_to_account(*witness_obj, *pledge_mining_obj);
+         send_bonus = d.update_pledge_mining_bonus_to_account(*witness_obj, *pledge_mining_obj);
          if (op.new_pledge > 0)//update pledge to witness
          {
             share_type delta = op.new_pledge - account_stats->total_mining_pledge;
@@ -154,6 +155,8 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
       d.modify(*witness_obj, [&](witness_object& o) {
          o.total_mining_pledge += delta_to_update_witness_obj.value;
          o.is_pledge_changed = true;
+         if (send_bonus > 0)
+            o.already_distribute_bonus += send_bonus;
       });
 
       return void_result();

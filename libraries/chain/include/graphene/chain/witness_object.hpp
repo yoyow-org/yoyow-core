@@ -84,6 +84,8 @@ namespace graphene { namespace chain {
          ///map<head block num, bonus_per_pledge>
          map<uint32_t, share_type> bonus_per_pledge;
          share_type          unhandled_bonus;
+         share_type          need_distribute_bonus;
+         share_type          already_distribute_bonus;
 
          bool is_pledge_mining_bonus()const {
             if (total_mining_pledge > 0 && !bonus_per_pledge.empty())
@@ -277,6 +279,8 @@ FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (is_pledge_changed)
                     (bonus_per_pledge)
                     (unhandled_bonus)
+                    (need_distribute_bonus)
+                    (already_distribute_bonus)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::witness_vote_object, (graphene::db::object),

@@ -53,6 +53,9 @@ struct fee_parameter_get_approve_threshold_visitor
 uint16_t committee_proposal_object::get_approve_threshold(const uint8_t enable_hard_fork_type)const
 {
    uint16_t threshold = 0;
+   if (enable_hard_fork_type >= ENABLE_HEAD_FORK_05)
+      threshold = std::max(threshold, GRAPHENE_CPPT_FEE_DEFAULT);
+      
    for( const auto& item : items )
    {
       if( item.which() == committee_proposal_item_type::tag< committee_update_account_priviledge_item_type >::value )
@@ -152,11 +155,6 @@ uint16_t committee_proposal_object::get_approve_threshold(const uint8_t enable_h
          if( pv.platform_avg_pledge_update_interval.valid() )
             threshold = std::max( threshold, GRAPHENE_CPPT_PARAM_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL    );
 
-      }
-      else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
-      {
-         if (enable_hard_fork_type >= ENABLE_HEAD_FORK_05)
-            threshold = std::max(threshold, GRAPHENE_CPPT_FEE_DEFAULT);
       }
    }
    return threshold;

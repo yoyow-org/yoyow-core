@@ -197,11 +197,12 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
       if (wit.is_pledge_changed)
       {
          fc::uint128_t handled_bonus = (fc::uint128_t)(wit.unhandled_bonus + pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION;
-         share_type value = (handled_bonus / wit.total_mining_pledge).to_uint64();
+         share_type bonus_per_pledge = (handled_bonus / wit.total_mining_pledge).to_uint64();
          modify(wit, [&](witness_object& w) {
             w.is_pledge_changed = false;
             w.unhandled_bonus = 0;
-            w.bonus_per_pledge.emplace(head_block_num(), value);
+            w.need_distribute_bonus += pledge_bonus;
+            w.bonus_per_pledge.emplace(head_block_num(), bonus_per_pledge);
          });
       }
       else
@@ -210,6 +211,7 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
          {
             modify(wit, [&](witness_object& w) {
                w.unhandled_bonus += pledge_bonus;
+               w.need_distribute_bonus += pledge_bonus;
             });
          }  
       }
