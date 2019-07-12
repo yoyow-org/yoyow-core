@@ -84,6 +84,13 @@ namespace graphene { namespace chain {
          ///map<head block num, bonus_per_pledge>
          map<uint32_t, share_type> bonus_per_pledge;
          share_type          unhandled_bonus;
+
+         bool is_pledge_mining_bonus()const {
+            if (total_mining_pledge > 0 && !bonus_per_pledge.empty())
+               return true;
+            else
+               return false;
+            }
    };
 
    struct by_account;
@@ -93,6 +100,7 @@ namespace graphene { namespace chain {
    struct by_valid;
    struct by_pledge;
    struct by_votes;
+   struct by_pledge_mining_bonus;
 
    /**
     * @ingroup object_index
@@ -173,7 +181,9 @@ namespace graphene { namespace chain {
                std::less< account_uid_type >,
                std::less< uint32_t >
             >
-         >
+         >,
+         ordered_non_unique< tag<by_pledge_mining_bonus>, 
+            const_mem_fun<witness_object, bool, &witness_object::is_pledge_mining_bonus  >>
       >
    > witness_multi_index_type;
 

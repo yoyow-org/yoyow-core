@@ -547,7 +547,7 @@ void database::_apply_block( const signed_block& next_block )
    process_content_platform_awards();
    process_platform_voted_awards();
    if (head_block_num() % 10000 == 0)
-      update_pledge_bonus();
+      update_pledge_mining_bonus();
 
    clear_unnecessary_objects();
 

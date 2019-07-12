@@ -76,7 +76,7 @@ void_result account_pledge_update_evaluator::do_apply(const pledge_mining_update
       share_type delta_to_update_witness_obj = 0;
       if (pledge_mining_obj)
       {
-         d.update_pledge_bonus_to_account(*witness_obj, *pledge_mining_obj);
+         d.update_pledge_mining_bonus_to_account(*witness_obj, *pledge_mining_obj);
          if (op.new_pledge > 0)//update pledge to witness
          {
             share_type delta = op.new_pledge - account_stats->total_mining_pledge;

@@ -159,17 +159,15 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
    if( amount == 0 )
       return;
 
-   //TODO need modify
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    const auto& account_stats = get_account_statistics_by_uid( wit.account );
-
    if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge || wit.total_mining_pledge == 0)
    {
       modify(account_stats, [&](account_statistics_object& s) {
          s.uncollected_witness_pay += amount;
       });
 
-      if (wit.total_mining_pledge == 0 && wit.is_pledge_changed)
+      if (wit_type == scheduled_by_pledge && wit.total_mining_pledge == 0 && wit.is_pledge_changed)
       {
          modify(wit, [&](witness_object& w) {
             w.is_pledge_changed = false;
@@ -180,11 +178,17 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
    }
    else
    {
-      share_type pledge_bonus = ((fc::uint128_t)amount.value * wit.bonus_rate / GRAPHENE_100_PERCENT).to_uint64();
-      share_type witness_pay = amount - pledge_bonus;
+      share_type witness_pay = amount;
+      share_type pledge_bonus = 0;
+      if (wit.bonus_rate > 0)
+      {
+         pledge_bonus = ((fc::uint128_t)amount.value * wit.bonus_rate / GRAPHENE_100_PERCENT).to_uint64();
+         witness_pay = amount - pledge_bonus;
+      }    
       modify(account_stats, [&](account_statistics_object& s) {
          s.uncollected_witness_pay += witness_pay;
       });
+
       if (wit.is_pledge_changed)
       {
          fc::uint128_t handled_bonus = (fc::uint128_t)(wit.unhandled_bonus + pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION;
@@ -197,9 +201,12 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
       }
       else
       {
-         modify(wit, [&](witness_object& w) {
-            w.unhandled_bonus += pledge_bonus;
-         });
+         if (pledge_bonus > 0)// when bonus_rate == 0, pledge_bonus == 0
+         {
+            modify(wit, [&](witness_object& w) {
+               w.unhandled_bonus += pledge_bonus;
+            });
+         }  
       }
    }
 

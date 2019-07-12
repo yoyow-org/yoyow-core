@@ -45,7 +45,7 @@ namespace graphene { namespace chain {
    /**
    * @ingroup object_index
    */
-   typedef generic_index<pledge_mining_object, pledge_mining_multi_index_type> witness_pledge_index;
+   typedef generic_index<pledge_mining_object, pledge_mining_multi_index_type> pledge_mining_index;
 
 } } // graphene::chain
 

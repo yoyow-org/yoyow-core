@@ -1470,34 +1470,36 @@ void database::adjust_platform_votes( const platform_object& platform, share_typ
    } );
 }
 
-void database::update_pledge_bonus()
+void database::update_pledge_mining_bonus()
 {
-   const auto& wit_idx = get_index_type<witness_index>().indices().get<by_id>();
-   auto wit_itr = wit_idx.begin();
+   const auto& wit_idx = get_index_type<witness_index>().indices().get<by_pledge_mining_bonus>();
+   auto wit_itr = wit_idx.lower_bound(true);
+   vector<std::reference_wrapper<const witness_object>> refs;
    while (wit_itr != wit_idx.end())
    {
-      if (wit_itr->bonus_rate != 0 && wit_itr->total_mining_pledge == 0)
+      const auto& wit_pledge_idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+      auto wit_pledge_itr = wit_pledge_idx.lower_bound(wit_itr->account);
+      while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == wit_itr->account)
       {
-         const auto& wit_pledge_idx = get_index_type<witness_pledge_index>().indices().get<by_pledge_witness>();
-         auto wit_pledge_itr = wit_pledge_idx.lower_bound(wit_itr->account);
-         while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == wit_itr->account)
-         {
-            update_pledge_bonus_to_account(*wit_itr, *wit_pledge_itr);
-            ++wit_pledge_itr;
-         }
+         update_pledge_mining_bonus_to_account(*wit_itr, *wit_pledge_itr);
+         ++wit_pledge_itr;
       }
-      //TODO modify, because itr can changed
-      modify(*wit_itr, [&](witness_object& w)
-      {
-         //w.is_pledge_changed = false;
-         w.unhandled_bonus = 0;
-         w.bonus_per_pledge.clear();
-      });
+      refs.emplace_back(std::cref(*wit_itr));
       ++wit_itr;
    }
+
+   std::for_each(refs.begin(), refs.end(), [&](const witness_object& witness_obj)
+   {
+      modify(witness_obj, [&](witness_object& wit)
+      {
+         //w.is_pledge_changed = false;
+         wit.unhandled_bonus = 0;
+         wit.bonus_per_pledge.clear();
+      });
+   });
 }
 
-void database::update_pledge_bonus_to_account(const witness_object& witness_obj, const pledge_mining_object& pledge_mining_obj)
+void database::update_pledge_mining_bonus_to_account(const witness_object& witness_obj, const pledge_mining_object& pledge_mining_obj)
 {
    if (pledge_mining_obj.pledge == 0)
       return;
