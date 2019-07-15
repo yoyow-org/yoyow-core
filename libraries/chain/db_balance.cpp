@@ -187,8 +187,8 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
       share_type pledge_bonus = 0;
       if (wit.bonus_rate > 0)
       {
-         pledge_bonus = ((fc::uint128_t)amount.value * wit.bonus_rate * wit.total_mining_pledge 
-            / ((wit.pledge + wit.total_mining_pledge) * GRAPHENE_100_PERCENT)).to_uint64();
+         pledge_bonus = ((fc::bigint)amount.value * wit.bonus_rate * wit.total_mining_pledge
+            / ((wit.pledge + wit.total_mining_pledge) * GRAPHENE_100_PERCENT)).to_int64();
          witness_pay = amount - pledge_bonus;
       }    
       modify(account_stats, [&](account_statistics_object& s) {

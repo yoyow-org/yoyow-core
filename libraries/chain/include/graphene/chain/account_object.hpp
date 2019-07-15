@@ -134,14 +134,6 @@ namespace graphene { namespace chain {
          * coins pledge to witness for bonus form witness pay.
          */
          share_type total_mining_pledge;
-         /**
-         * coins that are requested to be released but not yet unlocked.
-         */
-         share_type releasing_mining_pledge;
-         /**
-         * block number that releasing pledges to witness will be finally unlocked.
-         */
-         uint32_t mining_pledge_release_block_number = -1;
 
          /**
           * how many times have this account created witness object
@@ -706,7 +698,6 @@ namespace graphene { namespace chain {
    struct by_committee_member_pledge_release;
    struct by_platform_pledge_release;
    struct by_locked_balance_release;
-   struct by_pledge_to_witness_release;
 
    /**
     * @ingroup object_index
@@ -741,13 +732,6 @@ namespace graphene { namespace chain {
             composite_key<
                account_statistics_object,
                member<account_statistics_object, uint32_t, &account_statistics_object::feepoint_unlock_block_number>,
-               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
-         >
-         >,
-         ordered_unique< tag<by_pledge_to_witness_release>,
-            composite_key<
-               account_statistics_object,
-               member<account_statistics_object, uint32_t, &account_statistics_object::mining_pledge_release_block_number>,
                member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
          >
          >
@@ -884,7 +868,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
                     (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
                     (locked_balance_for_feepoint)(releasing_locked_feepoint)(feepoint_unlock_block_number)
-                    (total_mining_pledge)(releasing_mining_pledge)(mining_pledge_release_block_number)
+                    (total_mining_pledge)
                     (last_witness_sequence)(uncollected_witness_pay)
                     (uncollected_pledge_bonus)
                     (witness_last_confirmed_block_num)

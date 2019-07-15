@@ -201,18 +201,18 @@ const witness_object* database::find_witness_by_uid( account_uid_type uid )const
       return nullptr;
 }
 
-const pledge_mining_object& database::get_pledge_mining_by_pledge_account(account_uid_type pledge_account)const
+const pledge_mining_object& database::get_pledge_mining(account_uid_type witness, account_uid_type pledge_account)const
 {
-   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_account>();
-   auto itr = idx.find(pledge_account);
-   FC_ASSERT(itr != idx.end(), "witness pledge ${uid} not found.", ("uid", pledge_account));
+   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto itr = idx.find(std::make_tuple(witness, pledge_account));
+   FC_ASSERT(itr != idx.end(), "account ${uid} pledge to witness ${wid}not found.", ("wid", witness)("uid", pledge_account));
    return *itr;
 }
 
-const pledge_mining_object* database::find_pledge_mining_by_pledge_account(account_uid_type pledge_account)const
+const pledge_mining_object* database::find_pledge_mining(account_uid_type witness, account_uid_type pledge_account)const
 {
-   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_account>();
-   auto itr = idx.find(pledge_account);
+   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto itr = idx.find(std::make_tuple(witness, pledge_account));
    if (itr != idx.end())
       return &(*itr);
    else

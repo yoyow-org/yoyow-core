@@ -586,19 +586,24 @@ void database::release_mining_pledge()
 {
    const auto head_num = head_block_num();
    auto block_time = head_block_time();
-   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_pledge_to_witness_release>();
+   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_mining_release>();
    auto itr = idx.begin();
    while (itr != idx.end() && itr->mining_pledge_release_block_number <= head_num)
    {
-      auto pledge_mining_obj = get_pledge_mining_by_pledge_account(itr->owner);
-      remove(pledge_mining_obj);
-
-      modify(*itr, [&](account_statistics_object& s) {
-         s.total_mining_pledge -= s.releasing_mining_pledge;
-         s.releasing_mining_pledge = 0;
-         s.mining_pledge_release_block_number = -1;
+      modify(get_account_statistics_by_uid(itr->pledge_account), [&](account_statistics_object& s) {
+         s.total_mining_pledge -= itr->releasing_mining_pledge;
       });
-      
+      if (itr->total_mining_pledge > itr->releasing_mining_pledge)
+      {
+         modify(*itr, [&](pledge_mining_object& s) {
+            s.total_mining_pledge -= itr->releasing_mining_pledge;
+            s.releasing_mining_pledge = 0;
+            s.mining_pledge_release_block_number = -1;
+         });
+      }
+      else
+         remove(*itr);
+         
       itr = idx.begin();     
    }
 }

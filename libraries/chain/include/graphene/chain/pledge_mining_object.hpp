@@ -25,10 +25,16 @@ namespace graphene { namespace chain {
          uint64_t             pledge;
 
          uint32_t             last_bonus_block_num = 0;
+         ///coins pledge to witness for bonus form witness pay.
+         share_type           total_mining_pledge;
+         ///coins that are requested to be released but not yet unlocked.
+         share_type           releasing_mining_pledge;
+         ///block number that releasing pledges to witness will be finally unlocked.
+         uint32_t             mining_pledge_release_block_number = -1;
    };
 
-   struct by_pledge_account;
    struct by_pledge_witness;
+   struct by_pledge_mining_release;
 
    /**
    * @ingroup object_index
@@ -37,8 +43,19 @@ namespace graphene { namespace chain {
       pledge_mining_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_pledge_account>, member< pledge_mining_object, account_uid_type, &pledge_mining_object::pledge_account > >,
-         ordered_non_unique< tag<by_pledge_witness>, member< pledge_mining_object, account_uid_type, &pledge_mining_object::witness > >
+         ordered_unique< tag<by_pledge_witness>,
+            composite_key<
+            pledge_mining_object,
+            member<pledge_mining_object, account_uid_type, &pledge_mining_object::witness>,
+            member<pledge_mining_object, account_uid_type, &pledge_mining_object::pledge_account>
+         >
+         >,
+         ordered_non_unique< tag<by_pledge_mining_release>,
+            composite_key<
+            pledge_mining_object,
+            member<pledge_mining_object, uint32_t, &pledge_mining_object::mining_pledge_release_block_number>
+         >
+         >
       >
    > pledge_mining_multi_index_type;
 
@@ -54,4 +71,7 @@ FC_REFLECT_DERIVED( graphene::chain::pledge_mining_object, (graphene::db::object
                     (witness)
                     (pledge)
                     (last_bonus_block_num)
+                    (total_mining_pledge)
+                    (releasing_mining_pledge)
+                    (mining_pledge_release_block_number)
                   )
