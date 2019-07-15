@@ -1691,6 +1691,12 @@ void database::process_content_platform_awards()
       bool can_award = dpo.budget_pool >= (params.total_content_award_amount + params.total_platform_content_award_amount);
       if (can_award)
       {
+         //notify witness plugin skip block
+         modify(dpo, [&](dynamic_global_property_object& _dpo)
+         {
+            _dpo.content_award_skip_flag = true;
+         });
+
          share_type total_csaf_amount = 0;
          share_type total_effective_csaf_amount = 0;
          map<account_uid_type, share_type> platform_csaf_amount;
@@ -1889,7 +1895,6 @@ void database::process_content_platform_awards()
          _dpo.last_content_award_time = block_time;
          _dpo.next_content_award_time = block_time + params.content_award_interval;
          ++_dpo.current_active_post_sequence;
-         _dpo.content_award_done = true;
 
          if (actual_awards > 0)
             _dpo.budget_pool -= actual_awards;
@@ -1897,11 +1902,11 @@ void database::process_content_platform_awards()
 
       clear_active_post();
    }
-   else if (dpo.content_award_done)
+   else if (dpo.content_award_skip_flag)
    {
       modify(dpo, [&](dynamic_global_property_object& _dpo)
       {
-         _dpo.content_award_done = false;
+         _dpo.content_award_skip_flag = false;
       });
    }
 }

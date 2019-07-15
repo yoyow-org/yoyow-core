@@ -94,7 +94,7 @@ namespace graphene { namespace chain {
          share_type                      resign_witness_pledge_before_05 = 0;
          uint8_t                         enabled_hardfork_version = ENABLE_HEAD_FORK_NONE;
          share_type                      by_pledge_witness_pay_per_block = 0;
-         bool							 content_award_done = false;
+         bool							 content_award_skip_flag = false;
          /**
           *  Every time a block is missed this increases by
           *  RECENTLY_MISSED_COUNT_INCREMENT,
@@ -171,7 +171,7 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
                     (resign_witness_pledge_before_05)
                     (enabled_hardfork_version)
                     (by_pledge_witness_pay_per_block)
-                    (content_award_done)
+                    (content_award_skip_flag)
    )
 
 FC_REFLECT_DERIVED( graphene::chain::global_property_object, (graphene::db::object),
