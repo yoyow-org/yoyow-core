@@ -1158,8 +1158,8 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                v.unlocked_balance_release_delay = *pv.unlocked_balance_release_delay;
             if (pv.min_mining_pledge.valid())
                v.min_mining_pledge = *pv.min_mining_pledge;
-            if (pv.pledge_to_witness_release_delay.valid())
-               v.pledge_to_witness_release_delay = *pv.pledge_to_witness_release_delay;
+            if (pv.mining_pledge_release_delay.valid())
+               v.mining_pledge_release_delay = *pv.mining_pledge_release_delay;
             if (pv.max_pledge_mining_bonus_rate.valid())
                v.max_pledge_mining_bonus_rate = *pv.max_pledge_mining_bonus_rate;
          });

@@ -101,7 +101,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
             {
                d.modify(*account_stats, [&](account_statistics_object& s) {
                   s.releasing_mining_pledge -= delta;
-                  s.witness_pledge_release_block_number = d.head_block_num() + params.pledge_to_witness_release_delay;
+                  s.witness_pledge_release_block_number = d.head_block_num() + params.mining_pledge_release_delay;
                });
             }
 
@@ -115,7 +115,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          {
             d.modify(*account_stats, [&](account_statistics_object& s) {
                s.releasing_mining_pledge = s.total_mining_pledge;
-               s.mining_pledge_release_block_number = d.head_block_num() + params.pledge_to_witness_release_delay;
+               s.mining_pledge_release_block_number = d.head_block_num() + params.mining_pledge_release_delay;
             });
 
             d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
