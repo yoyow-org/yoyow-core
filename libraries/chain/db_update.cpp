@@ -1484,7 +1484,18 @@ void database::update_pledge_mining_bonus()
    vector<std::reference_wrapper<const witness_object>> refs;
    while (wit_itr != wit_idx.end())
    {
-      update_pledge_mining_bonus_by_witness(*wit_itr, false);
+      share_type send_bonus = 0;
+      const auto& wit_pledge_idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+      auto wit_pledge_itr = wit_pledge_idx.lower_bound(wit_itr->account);
+      while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == wit_itr->account)
+      {
+         send_bonus += update_pledge_mining_bonus_to_account(*wit_itr, *wit_pledge_itr);
+         ++wit_pledge_itr;
+      }
+      modify(get_account_statistics_by_uid(wit_itr->account), [&](account_statistics_object& o)
+      {
+         o.uncollected_witness_pay += (wit_itr->need_distribute_bonus - wit_itr->already_distribute_bonus - send_bonus);
+      });
       refs.emplace_back(std::cref(*wit_itr));
       ++wit_itr;
    }
@@ -1500,38 +1511,6 @@ void database::update_pledge_mining_bonus()
          wit.bonus_per_pledge.clear();
       });
    });
-}
-
-void database::update_pledge_mining_bonus_by_witness(const witness_object& witness, bool change_witness)
-{
-   if (head_block_num() < witness.get_bonus_block_num())
-      return;
-   
-   share_type send_bonus = 0;
-   const auto& wit_pledge_idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
-   auto wit_pledge_itr = wit_pledge_idx.lower_bound(witness.account);
-   while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == witness.account)
-   {
-      send_bonus += update_pledge_mining_bonus_to_account(witness, *wit_pledge_itr);
-      ++wit_pledge_itr;
-   }
-   modify(get_account_statistics_by_uid(witness.account), [&](account_statistics_object& o)
-   {
-      o.uncollected_witness_pay += (witness.need_distribute_bonus - witness.already_distribute_bonus - send_bonus);
-   });
-
-   if (change_witness) 
-   {
-      modify(witness, [&](witness_object& wit)
-      {
-         //w.is_pledge_changed = false;
-         wit.unhandled_bonus = 0;
-         wit.need_distribute_bonus = 0;
-         wit.already_distribute_bonus = 0;
-         wit.bonus_per_pledge.clear();
-         wit.last_update_bonus_block_num = head_block_num();
-      });
-   }  
 }
 
 share_type database::update_pledge_mining_bonus_to_account(const witness_object& witness_obj, const pledge_mining_object& pledge_mining_obj)
