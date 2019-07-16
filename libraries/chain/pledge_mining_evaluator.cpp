@@ -37,12 +37,8 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
                    ("p", d.to_pretty_core_string(op.new_pledge))
                    ("r", d.to_pretty_core_string(min_pledge_to_witness)));
 
-         share_type need_reduced_balance = account_stats->total_mining_pledge;
          if (pledge_mining_obj)
-         {
             FC_ASSERT(op.new_pledge.value != pledge_mining_obj->pledge, "new_pledge specified but did not change");
-            need_reduced_balance = account_stats->total_mining_pledge - pledge_mining_obj->total_mining_pledge;
-         }
 
          auto available_balance = account_stats->core_balance
                                 - account_stats->core_leased_out
@@ -50,10 +46,9 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
                                 - account_stats->locked_balance_for_feepoint
                                 - account_stats->releasing_locked_feepoint
                                 - account_stats->total_committee_member_pledge
-                                - account_stats->total_witness_pledge
-                                - need_reduced_balance;
+                                - account_stats->total_witness_pledge;
 
-         FC_ASSERT(available_balance >= op.new_pledge,
+         FC_ASSERT(available_balance+pledge_mining_obj->total_unrelease_pledge() >= op.new_pledge,
             "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
             ("a", op.pledge_account)
             ("b", d.to_pretty_core_string(available_balance))
@@ -76,55 +71,19 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
       const auto& params = d.get_global_properties().parameters.get_award_params();
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
 
-      share_type delta_to_update_obj = 0;
+      share_type delta_pledge_to_witness = 0;
       share_type send_bonus = 0;
       if (pledge_mining_obj)
       {
          send_bonus = d.update_pledge_mining_bonus_to_account(*witness_obj, *pledge_mining_obj);
-         if (op.new_pledge > 0)//update pledge to witness
-         {
-            share_type delta = op.new_pledge - pledge_mining_obj->total_mining_pledge;
-            if (delta > 0)//more pledge to witness
-            {
-               d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {
-                  obj.pledge = op.new_pledge.value;
-                  if (obj.releasing_mining_pledge > delta)
-                     obj.releasing_mining_pledge -= delta;
-                  else
-                  {
-                     obj.total_mining_pledge = op.new_pledge;
-                     if (obj.releasing_mining_pledge > 0)
-                     {
-                        obj.releasing_mining_pledge = 0;
-                        obj.mining_pledge_release_block_number = -1;
-                     }
-                  }
-               });
-
-               d.modify(*account_stats, [&](account_statistics_object& s) {
-                  s.total_mining_pledge += delta;
-               });
-            }
-            else//less pledge to witness
-            {
-               d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {
-                  obj.pledge = op.new_pledge.value;
-                  obj.releasing_mining_pledge -= delta;
-                  obj.mining_pledge_release_block_number = d.head_block_num() + params.mining_pledge_release_delay;
-               });
-            }
-
-            delta_to_update_obj = delta;
-         }
-         else//new_pledge ==0 ,cancel pledge to witness
-         {
-            delta_to_update_obj = -pledge_mining_obj->pledge;
-            d.modify(*pledge_mining_obj, [&](pledge_mining_object& s) {
-               s.pledge = 0;
-               s.releasing_mining_pledge = s.total_mining_pledge;
-               s.mining_pledge_release_block_number = d.head_block_num() + params.mining_pledge_release_delay;
-            });
-         }
+         share_type delta_available_balance=0;
+         delta_pledge_to_witness=op.new_pledge-pledge_mining_obj->pledge;
+         d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {
+            delta_available_balance=obj.update_pledge(op.new_pledge, d.head_block_num() + params.mining_pledge_release_delay);
+         });
+         d.modify(*account_stats, [&](account_statistics_object& s) {
+            s.total_mining_pledge += delta_available_balance;
+         });
       }
       else//create pledge witness object
       {
@@ -138,22 +97,22 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          });
 
          d.modify(*account_stats, [&](account_statistics_object& s) {
-            s.total_mining_pledge += op.new_pledge;
+            s.total_mining_pledge = op.new_pledge;
          });
 
-         delta_to_update_obj = op.new_pledge;
+         delta_pledge_to_witness = op.new_pledge;
       }
 
       //update witness object
       d.modify(*witness_obj, [&](witness_object& obj) {
-         obj.total_mining_pledge += delta_to_update_obj.value;
+         obj.total_mining_pledge += delta_pledge_to_witness.value;
          obj.is_pledge_changed = true;
          if (send_bonus > 0)
             obj.already_distribute_bonus += send_bonus;
       });
       //update dynamic global property object
       d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
-         _dpo.total_witness_pledge += delta_to_update_obj;
+         _dpo.total_witness_pledge += delta_pledge_to_witness;
       });
 
       return void_result();

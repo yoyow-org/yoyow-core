@@ -22,7 +22,7 @@ namespace graphene { namespace chain {
 
          account_uid_type     pledge_account;
          account_uid_type     witness;
-         uint64_t             pledge;
+         share_type           pledge;
 
          uint32_t             last_bonus_block_num = 0;
          ///coins pledge to witness for bonus form witness pay.
@@ -31,6 +31,26 @@ namespace graphene { namespace chain {
          share_type           releasing_mining_pledge;
          ///block number that releasing pledges to witness will be finally unlocked.
          uint32_t             mining_pledge_release_block_number = -1;
+      
+         //return the delta pledge need to subtract from account balance
+         share_type update_pledge(share_type new_pledge,uint32_t new_relase_num){
+            
+            auto delta=new_pledge-(pledge+releasing_mining_pledge);
+            auto delta_releasing=pledge-new_pledge;
+            pledge=new_pledge;
+            if(delta>=0){
+               releasing_mining_pledge=0;
+               mining_pledge_release_block_number=-1;
+               return delta;
+            }else{
+               releasing_mining_pledge+=delta_releasing;
+               if(delta_releasing>0)//releasing adding
+                  mining_pledge_release_block_number=new_relase_num;// new releasing will extension the old releasing release time
+               return 0;
+            }
+         }
+         share_type total_unrelease_pledge()const {return pledge+releasing_mining_pledge;}
+   private:
    };
 
    struct by_pledge_witness;

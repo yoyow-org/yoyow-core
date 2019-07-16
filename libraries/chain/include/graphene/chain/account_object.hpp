@@ -133,7 +133,7 @@ namespace graphene { namespace chain {
          /**
          * coins pledge to witness for bonus form witness pay.
          */
-         share_type total_mining_pledge;
+         share_type total_mining_pledge=0;
 
          /**
           * how many times have this account created witness object

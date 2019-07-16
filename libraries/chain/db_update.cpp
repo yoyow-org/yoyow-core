@@ -1526,7 +1526,7 @@ share_type database::update_pledge_mining_bonus_to_account(const witness_object&
       share_type total_bonus_per_pledge = std::accumulate(itr, witness_obj.bonus_per_pledge.end(), 0, 
          [](uint64_t bonus, std::pair<uint32_t, share_type> p) {return bonus + p.second.value; });
 
-      total_bonus = ((uint128_t)total_bonus_per_pledge.value * pledge_mining_obj.pledge
+      total_bonus = ((uint128_t)total_bonus_per_pledge.value * pledge_mining_obj.pledge.value
          / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
       if (total_bonus > 0)
       {
