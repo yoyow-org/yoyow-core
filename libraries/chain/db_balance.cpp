@@ -204,6 +204,8 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
             w.unhandled_bonus = 0;
             w.need_distribute_bonus += pledge_bonus;
             w.bonus_per_pledge.emplace(head_block_num(), bonus_per_pledge);
+            if (w.last_update_bonus_block_num == 0)//up to now, witness not update pledge mining bonus 
+               w.last_update_bonus_block_num = head_block_num();
          });
       }
       else

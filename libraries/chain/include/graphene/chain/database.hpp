@@ -536,6 +536,7 @@ namespace graphene { namespace chain {
          void update_platform_avg_pledge( const platform_object& pla );
          void adjust_platform_votes( const platform_object& platform, share_type delta );
          void update_pledge_mining_bonus();
+         void update_pledge_mining_bonus_by_witness(const witness_object& witness, bool change_witness = true);
          share_type update_pledge_mining_bonus_to_account(const witness_object& witness_obj, const pledge_mining_object& pledge_mining_obj);
 
 

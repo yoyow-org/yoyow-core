@@ -86,12 +86,13 @@ namespace graphene { namespace chain {
          share_type          unhandled_bonus;
          share_type          need_distribute_bonus;
          share_type          already_distribute_bonus;
+         uint32_t            last_update_bonus_block_num = 0;
 
-         bool is_pledge_mining_bonus()const {
+         uint32_t get_bonus_block_num()const {
             if (total_mining_pledge > 0 && !bonus_per_pledge.empty())
-               return true;
+               return last_update_bonus_block_num + 10000;
             else
-               return false;
+               return -1;
             }
    };
 
@@ -185,7 +186,9 @@ namespace graphene { namespace chain {
             >
          >,
          ordered_non_unique< tag<by_pledge_mining_bonus>, 
-            const_mem_fun<witness_object, bool, &witness_object::is_pledge_mining_bonus  >>
+            const_mem_fun<witness_object, uint32_t, &witness_object::get_bonus_block_num  >,
+            std::greater<uint32_t>
+         >
       >
    > witness_multi_index_type;
 
@@ -281,6 +284,7 @@ FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (unhandled_bonus)
                     (need_distribute_bonus)
                     (already_distribute_bonus)
+                    (last_update_bonus_block_num)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::witness_vote_object, (graphene::db::object),

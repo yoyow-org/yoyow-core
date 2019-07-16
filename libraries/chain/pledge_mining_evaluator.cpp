@@ -46,9 +46,11 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
                                 - account_stats->locked_balance_for_feepoint
                                 - account_stats->releasing_locked_feepoint
                                 - account_stats->total_committee_member_pledge
-                                - account_stats->total_witness_pledge;
+                                - account_stats->total_witness_pledge
+                                - account_stats->total_mining_pledge;
 
-         FC_ASSERT(available_balance+pledge_mining_obj->total_unrelease_pledge() >= op.new_pledge,
+         available_balance = available_balance + (pledge_mining_obj ? pledge_mining_obj->total_unrelease_pledge() : 0);
+         FC_ASSERT(available_balance >= op.new_pledge,
             "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
             ("a", op.pledge_account)
             ("b", d.to_pretty_core_string(available_balance))
@@ -85,19 +87,18 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
             s.total_mining_pledge += delta_available_balance;
          });
       }
-      else//create pledge witness object
+      else//create pledge mining object
       {
          d.create<pledge_mining_object>([&](pledge_mining_object& obj){
             obj.pledge_account = op.pledge_account;
             obj.witness = op.witness;
             obj.pledge = op.new_pledge.value;
-            obj.total_mining_pledge = op.new_pledge.value;
             if (!witness_obj->bonus_per_pledge.empty())
                obj.last_bonus_block_num = witness_obj->bonus_per_pledge.rbegin()->first;
          });
 
          d.modify(*account_stats, [&](account_statistics_object& s) {
-            s.total_mining_pledge = op.new_pledge;
+            s.total_mining_pledge += op.new_pledge;
          });
 
          delta_pledge_to_witness = op.new_pledge;

@@ -69,6 +69,8 @@ namespace graphene { namespace chain {
       uint64_t    min_mining_pledge                   = GRAPHENE_DEFAULT_MIN_MINING_PLEDGE;
       uint32_t    mining_pledge_release_delay         = GRAPHENE_DEFAULT_MINING_PLEDGE_RELEASE_DELAY;
       uint32_t    max_pledge_mining_bonus_rate        = GRAPHENE_DEFAULT_MAX_PLEDGE_MINING_BONUS_RATE;
+
+      uint32_t    score_earning_rate = 2500;
 	 };
 
    struct chain_parameters

@@ -593,15 +593,14 @@ void database::release_mining_pledge()
       modify(get_account_statistics_by_uid(itr->pledge_account), [&](account_statistics_object& s) {
          s.total_mining_pledge -= itr->releasing_mining_pledge;
       });
-      if (itr->total_mining_pledge > itr->releasing_mining_pledge)
+      if (itr->pledge > 0)
       {
          modify(*itr, [&](pledge_mining_object& s) {
-            s.total_mining_pledge -= itr->releasing_mining_pledge;
             s.releasing_mining_pledge = 0;
             s.mining_pledge_release_block_number = -1;
          });
       }
-      else
+      else//pledge == 0, need delete object
          remove(*itr);
          
       itr = idx.begin();     
@@ -1481,22 +1480,11 @@ void database::adjust_platform_votes( const platform_object& platform, share_typ
 void database::update_pledge_mining_bonus()
 {
    const auto& wit_idx = get_index_type<witness_index>().indices().get<by_pledge_mining_bonus>();
-   auto wit_itr = wit_idx.lower_bound(true);
+   auto wit_itr = wit_idx.lower_bound(head_block_num());
    vector<std::reference_wrapper<const witness_object>> refs;
    while (wit_itr != wit_idx.end())
    {
-      share_type send_bonus = 0;
-      const auto& wit_pledge_idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
-      auto wit_pledge_itr = wit_pledge_idx.lower_bound(wit_itr->account);
-      while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == wit_itr->account)
-      {
-         send_bonus += update_pledge_mining_bonus_to_account(*wit_itr, *wit_pledge_itr);
-         ++wit_pledge_itr;
-      }
-      modify(get_account_statistics_by_uid(wit_itr->account), [&](account_statistics_object& o)
-      {
-         o.uncollected_witness_pay += (wit_itr->need_distribute_bonus - wit_itr->already_distribute_bonus - send_bonus);
-      });
+      update_pledge_mining_bonus_by_witness(*wit_itr, false);
       refs.emplace_back(std::cref(*wit_itr));
       ++wit_itr;
    }
@@ -1506,12 +1494,44 @@ void database::update_pledge_mining_bonus()
       modify(witness_obj, [&](witness_object& wit)
       {
          //w.is_pledge_changed = false;
-         wit.unhandled_bonus = 0;        
+         wit.unhandled_bonus = 0;
          wit.need_distribute_bonus = 0;
          wit.already_distribute_bonus = 0;
          wit.bonus_per_pledge.clear();
       });
    });
+}
+
+void database::update_pledge_mining_bonus_by_witness(const witness_object& witness, bool change_witness)
+{
+   if (head_block_num() < witness.get_bonus_block_num())
+      return;
+   
+   share_type send_bonus = 0;
+   const auto& wit_pledge_idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto wit_pledge_itr = wit_pledge_idx.lower_bound(witness.account);
+   while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == witness.account)
+   {
+      send_bonus += update_pledge_mining_bonus_to_account(witness, *wit_pledge_itr);
+      ++wit_pledge_itr;
+   }
+   modify(get_account_statistics_by_uid(witness.account), [&](account_statistics_object& o)
+   {
+      o.uncollected_witness_pay += (witness.need_distribute_bonus - witness.already_distribute_bonus - send_bonus);
+   });
+
+   if (change_witness) 
+   {
+      modify(witness, [&](witness_object& wit)
+      {
+         //w.is_pledge_changed = false;
+         wit.unhandled_bonus = 0;
+         wit.need_distribute_bonus = 0;
+         wit.already_distribute_bonus = 0;
+         wit.bonus_per_pledge.clear();
+         wit.last_update_bonus_block_num = head_block_num();
+      });
+   }  
 }
 
 share_type database::update_pledge_mining_bonus_to_account(const witness_object& witness_obj, const pledge_mining_object& pledge_mining_obj)
@@ -1746,6 +1766,7 @@ void database::process_content_platform_awards()
                (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
 
             flat_map<account_uid_type, std::pair<share_type, share_type>> platform_receiptor_award;
+            std::map<account_uid_type, share_type> registrar_and_referrer_award;
             for (auto itr = post_effective_casf.begin(); itr != post_effective_casf.end(); ++itr)
             {
                share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
@@ -1818,8 +1839,17 @@ void database::process_content_platform_awards()
                   {
                      obj.profits = to_add;
                   });
-                  ///adjust_balance(score_obj.from_account_uid, asset(to_add));
-                  adjust_balance_map[score_obj.from_account_uid] += to_add;
+
+                  //registrar and referrer get part of earning
+                  if (block_time >= HARDFORK_0_5_TIME)
+                  {
+                     share_type to_registrar_and_referrer = to_add * params.score_earning_rate / GRAPHENE_100_PERCENT;
+                     registrar_and_referrer_award[score_obj.from_account_uid] += to_registrar_and_referrer;
+                     adjust_balance_map[score_obj.from_account_uid] += (to_add - to_registrar_and_referrer);
+                  }
+                  else
+                     adjust_balance_map[score_obj.from_account_uid] += to_add;
+
                   actual_score_earned += to_add;
                }
 
@@ -1850,6 +1880,20 @@ void database::process_content_platform_awards()
                         0,
                         p.second.second);
                   });
+               }
+            }
+
+            for (const auto& r : registrar_and_referrer_award)
+            {
+               if (auto account_obj = find_account_by_uid(r.first))
+               {
+                  share_type to_registrar = ((uint128_t)r.second.value * account_obj->reg_info.registrar_percent 
+                     / GRAPHENE_100_PERCENT).to_uint64();
+                  share_type to_referrer = r.second - to_registrar;
+                  if (account_obj->reg_info.registrar != GRAPHENE_NULL_ACCOUNT_UID)
+                     adjust_balance_map[account_obj->reg_info.registrar] += to_registrar;
+                  if (account_obj->reg_info.referrer != GRAPHENE_NULL_ACCOUNT_UID)
+                     adjust_balance_map[account_obj->reg_info.referrer] += to_referrer;
                }
             }
          }
