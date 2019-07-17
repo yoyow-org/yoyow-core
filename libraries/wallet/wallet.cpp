@@ -3144,6 +3144,54 @@ signed_transaction account_cancel_auth_platform(string account,
       } FC_CAPTURE_AND_RETHROW((lock_balance_account)(lock_balance_amount)(csaf_fee)(broadcast))
    }
 
+   signed_transaction update_mining_pledge(string pledge_account,
+      string witness,
+      uint64_t new_pledge,
+      bool csaf_fee,
+      bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         account_uid_type pledge_account_uid = get_account_uid(pledge_account);
+         account_uid_type witness_uid = get_account_uid(witness);
+
+         pledge_mining_update_operation pledge_mining_update_op;
+         pledge_mining_update_op.pledge_account = pledge_account_uid;
+         pledge_mining_update_op.witness = witness_uid;
+         pledge_mining_update_op.new_pledge = new_pledge;
+
+         signed_transaction tx;
+         tx.operations.push_back(pledge_mining_update_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((pledge_account)(witness)(new_pledge)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction collect_pledge_mining_bonus(string collect_account,
+      uint64_t bonus_amount,
+      bool csaf_fee,
+      bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         account_uid_type collect_account_uid = get_account_uid(collect_account);
+
+         pledge_bonus_collect_operation pledge_bonus_collect_op;
+         pledge_bonus_collect_op.account = collect_account_uid;
+         pledge_bonus_collect_op.bonus = bonus_amount;
+
+         signed_transaction tx;
+         tx.operations.push_back(pledge_bonus_collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((collect_account)(bonus_amount)(csaf_fee)(broadcast))
+   }
+
    signed_transaction approve_proposal(
       const string& fee_paying_account,
       const string& proposal_id,
@@ -4711,6 +4759,23 @@ signed_transaction wallet_api::update_lock_balance(string lock_balance_account,
                                        bool broadcast)
 {
    return my->update_lock_balance(lock_balance_account, lock_balance_amount, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::update_mining_pledge(string pledge_account,
+                                                    string witness,
+                                                    uint64_t new_pledge,
+                                                    bool csaf_fee,
+                                                    bool broadcast)
+{
+   return my->update_mining_pledge(pledge_account, witness, new_pledge, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::collect_pledge_mining_bonus(string collect_account,
+                                                           uint64_t bonus_amount,
+                                                           bool csaf_fee,
+                                                           bool broadcast)
+{
+   return my->collect_pledge_mining_bonus(collect_account, bonus_amount, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::approve_proposal(

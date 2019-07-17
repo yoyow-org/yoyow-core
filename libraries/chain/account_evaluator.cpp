@@ -58,6 +58,11 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
    const auto& referrer = d.get_account_by_uid( op.reg_info.referrer );
    FC_ASSERT( referrer.is_full_member, "The referrer must be a valid platform or full member." );
 
+   if (d.head_block_time() >= HARDFORK_0_5_TIME)
+   {
+      FC_ASSERT(op.reg_info.referrer_percent + op.reg_info.registrar_percent == GRAPHENE_100_PERCENT, 
+         "The referrer percent  and registrar percent must be equal to 100%");
+   }
 /*
    if( d.head_block_num() > 0 )
    {

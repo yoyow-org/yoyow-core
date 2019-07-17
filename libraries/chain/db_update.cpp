@@ -1166,6 +1166,8 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                v.mining_pledge_release_delay = *pv.mining_pledge_release_delay;
             if (pv.max_pledge_mining_bonus_rate.valid())
                v.max_pledge_mining_bonus_rate = *pv.max_pledge_mining_bonus_rate;
+            if (pv.registrar_referrer_rate_from_score.valid())
+               v.registrar_referrer_rate_from_score = *pv.registrar_referrer_rate_from_score;
          });
       }
 
@@ -1822,7 +1824,7 @@ void database::process_content_platform_awards()
                   //registrar and referrer get part of earning
                   if (block_time >= HARDFORK_0_5_TIME)
                   {
-                     share_type to_registrar_and_referrer = to_add * params.score_earning_rate / GRAPHENE_100_PERCENT;
+                     share_type to_registrar_and_referrer = to_add * params.registrar_referrer_rate_from_score / GRAPHENE_100_PERCENT;
                      registrar_and_referrer_award[score_obj.from_account_uid] += to_registrar_and_referrer;
                      adjust_balance_map[score_obj.from_account_uid] += (to_add - to_registrar_and_referrer);
                   }

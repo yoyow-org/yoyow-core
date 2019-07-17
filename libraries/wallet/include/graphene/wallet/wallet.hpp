@@ -1783,16 +1783,16 @@ class wallet_api
                                              string lock_balance_amount,
                                              bool csaf_fee = true,
                                              bool broadcast = false);
-   
-      signed_transaction mining_pledge(string mining_pledge_account,
-                                             string mining_pledge_amount,
-                                             string witness,
-                                             bool csaf_fee = true,
-                                             bool broadcast = false);
-   
-      signed_transaction pledge_bonus_collect(string mining_pledge_account,
+
+      signed_transaction update_mining_pledge(string   pledge_account,
+                                              string   witness,
+                                              uint64_t new_pledge,
                                               bool csaf_fee = true,
                                               bool broadcast = false);
+      signed_transaction collect_pledge_mining_bonus(string collect_account,
+                                                     uint64_t bonus_amount,
+                                                     bool csaf_fee = true,
+                                                     bool broadcast = false);
          
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -2033,6 +2033,6 @@ FC_API( graphene::wallet::wallet_api,
         (list_account_auth_platform_by_account)
         (get_global_properties_extensions)
         (update_lock_balance)
-        (mining_pledge)
-        (pledge_bonus_collect)
+        (update_mining_pledge)
+        (collect_pledge_mining_bonus)
       )

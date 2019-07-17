@@ -241,6 +241,9 @@ void committee_updatable_content_parameters::validate()const
    if (max_pledge_mining_bonus_rate.valid())
       FC_ASSERT(*max_pledge_mining_bonus_rate >= 1000 && *max_pledge_mining_bonus_rate <= 9000,
                "max pledge to witness mining rate should be in range 10-90%");
+   if (registrar_referrer_rate_from_score.valid())
+      FC_ASSERT(*registrar_referrer_rate_from_score >= 0 && *registrar_referrer_rate_from_score <= 2500,
+      "registrar referrer rate from score should be in range 0-25%");
 }
 
 void committee_proposal_create_operation::validate()const
