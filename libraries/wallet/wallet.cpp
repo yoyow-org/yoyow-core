@@ -4778,6 +4778,27 @@ signed_transaction wallet_api::collect_pledge_mining_bonus(string collect_accoun
    return my->collect_pledge_mining_bonus(collect_account, bonus_amount, csaf_fee, broadcast);
 }
 
+signed_transaction wallet_api::create_limit_order(string           seller,
+                                                  asset_aid_type   sell_asset_id,
+                                                  share_type       sell_amount,
+                                                  asset_aid_type   min_receive_asset_id,
+                                                  share_type       min_receive_amount,
+                                                  uint32_t         expiration,
+                                                  bool             fill_or_kill,
+                                                  bool             broadcast)
+{
+    return my->create_limit_order(seller, sell_asset_id, sell_amount, min_receive_asset_id, min_receive_amount, expiration, fill_or_kill, broadcast);
+}
+
+signed_transaction wallet_api::cancel_limit_order(string               seller,
+                                                  limit_order_id_type  order_id,
+                                                  bool                 broadcast)
+{
+    return my->cancel_limit_order(seller, order_id, broadcast);
+}
+
+
+
 signed_transaction wallet_api::approve_proposal(
    const string& fee_paying_account,
    const string& proposal_id,

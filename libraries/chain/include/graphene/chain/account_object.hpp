@@ -57,6 +57,7 @@ namespace graphene { namespace chain {
          /** Total operations related to this account that has been removed from the database. */
          uint32_t                            removed_ops = 0;
 
+         share_type total_core_in_orders; // add for limit order
          /**
           * Prepaid fee.
           */
@@ -862,6 +863,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     //(most_recent_op)
                     (total_ops)
                     (removed_ops)
+                    (total_core_in_orders)
                     (prepaid)(csaf)
                     (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)

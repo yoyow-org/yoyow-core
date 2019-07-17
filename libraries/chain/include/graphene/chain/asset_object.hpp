@@ -65,7 +65,7 @@ namespace graphene { namespace chain {
          share_type current_supply;
          //share_type confidential_supply; ///< total asset held in confidential balances
          share_type accumulated_fees; ///< fees accumulate to be paid out over time
-         //share_type fee_pool;         ///< in core asset
+         share_type fee_pool;         ///< in core asset
    };
 
    /**
@@ -96,7 +96,7 @@ namespace graphene { namespace chain {
          bool can_change_max_supply()const { return options.flags & change_max_supply; }
 
          /// @return true if this asset charges a fee for the issuer on market operations; false otherwise
-         //bool charges_market_fees()const { return options.flags & charge_market_fee; }
+         bool charges_market_fees()const { return options.flags & charge_market_fee; }
          /// @return true if this asset may only be transferred to/from the issuer or market orders
          bool is_transfer_restricted()const { return options.flags & transfer_restricted; }
          /// @return true if the issuer can transfer asset back to himself

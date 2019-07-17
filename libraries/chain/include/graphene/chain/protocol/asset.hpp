@@ -28,6 +28,7 @@
 namespace graphene { namespace chain {
 
    extern const int64_t scaled_precision_lut[];
+   struct price;
 
    struct asset
    {
@@ -94,6 +95,8 @@ namespace graphene { namespace chain {
          FC_ASSERT( precision < 19 );
          return scaled_precision_lut[ precision ];
       }
+
+      asset multiply_and_round_up(const price& p)const; ///< Multiply and round up
    };
 
    /**
@@ -151,7 +154,70 @@ namespace graphene { namespace chain {
    bool  operator != ( const price& a, const price& b );
    asset operator *  ( const asset& a, const price& b );
 
+   struct price_feed
+   {
+       /**
+       *  Required maintenance collateral is defined
+       *  as a fixed point number with a maximum value of 10.000
+       *  and a minimum value of 1.000.  (denominated in GRAPHENE_COLLATERAL_RATIO_DENOM)
+       *
+       *  A black swan event occurs when value_of_collateral equals
+       *  value_of_debt, to avoid a black swan a margin call is
+       *  executed when value_of_debt * required_maintenance_collateral
+       *  equals value_of_collateral using rate.
+       *
+       *  Default requirement is $1.75 of collateral per $1 of debt
+       *
+       *  BlackSwan ---> SQR ---> MCR ----> SP
+       */
+       ///@{
+       /**
+       * Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL
+       */
+       price settlement_price;
+
+       /// Price at which automatically exchanging this asset for CORE from fee pool occurs (used for paying fees)
+       price core_exchange_rate;
+
+       /** Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM */
+       uint16_t maintenance_collateral_ratio = GRAPHENE_DEFAULT_MAINTENANCE_COLLATERAL_RATIO;
+
+       /** Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM */
+       uint16_t maximum_short_squeeze_ratio = GRAPHENE_DEFAULT_MAX_SHORT_SQUEEZE_RATIO;
+
+       /**
+       *  When updating a call order the following condition must be maintained:
+       *
+       *  debt * maintenance_price() < collateral
+       *  debt * settlement_price    < debt * maintenance
+       *  debt * maintenance_price() < debt * max_short_squeeze_price()
+       price maintenance_price()const;
+       */
+
+       /** When selling collateral to pay off debt, the least amount of debt to receive should be
+       *  min_usd = max_short_squeeze_price() * collateral
+       *
+       *  This is provided to ensure that a black swan cannot be trigged due to poor liquidity alone, it
+       *  must be confirmed by having the max_short_squeeze_price() move below the black swan price.
+       */
+       price max_short_squeeze_price()const;
+       ///@}
+
+       friend bool operator == (const price_feed& a, const price_feed& b)
+       {
+           return std::tie(a.settlement_price, a.maintenance_collateral_ratio, a.maximum_short_squeeze_ratio) ==
+               std::tie(b.settlement_price, b.maintenance_collateral_ratio, b.maximum_short_squeeze_ratio);
+       }
+
+       void validate() const;
+       bool is_for(asset_aid_type asset_id) const;
+   };
+
 } }
 
 FC_REFLECT( graphene::chain::asset, (amount)(asset_id) )
 FC_REFLECT( graphene::chain::price, (base)(quote) )
+
+#define GRAPHENE_PRICE_FEED_FIELDS (settlement_price)(maintenance_collateral_ratio)(maximum_short_squeeze_ratio) \
+   (core_exchange_rate)
+FC_REFLECT(graphene::chain::price_feed, GRAPHENE_PRICE_FEED_FIELDS)

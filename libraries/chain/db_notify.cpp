@@ -371,6 +371,19 @@ struct get_impacted_account_uid_visitor
    {
       _impacted.insert(op.fee_payer_uid()); // fee payer
    }
+
+   void operator()(const limit_order_create_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // seller
+   }
+   void operator()(const limit_order_cancel_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // fee_paying_account
+   }
+   void operator()(const fill_order_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // account_id
+   }
 };
 
 void operation_get_impacted_account_uids( const operation& op, flat_set<account_uid_type>& result )
@@ -446,6 +459,11 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
            accounts.insert( aobj->platform );
            accounts.insert( aobj->poster );
            break;
+        }case limit_order_object_type:{
+            const auto& aobj = dynamic_cast<const limit_order_object*>(obj);
+            FC_ASSERT(aobj != nullptr);
+            accounts.insert(aobj->seller);
+            break;
         }
       }
    }

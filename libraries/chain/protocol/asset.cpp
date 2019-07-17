@@ -92,6 +92,26 @@ namespace graphene { namespace chain {
          FC_THROW_EXCEPTION( fc::assert_exception, "invalid asset * price", ("asset",a)("price",b) );
       }
 
+      asset asset::multiply_and_round_up(const price& b)const
+      {
+          const asset& a = *this;
+          if (a.asset_id == b.base.asset_id)
+          {
+              FC_ASSERT(b.base.amount.value > 0);
+              uint128_t result = (uint128_t(a.amount.value) * b.quote.amount.value + b.base.amount.value - 1) / b.base.amount.value;
+              FC_ASSERT(result <= GRAPHENE_MAX_SHARE_SUPPLY);
+              return asset(result.convert_to<int64_t>(), b.quote.asset_id);
+          }
+          else if (a.asset_id == b.quote.asset_id)
+          {
+              FC_ASSERT(b.quote.amount.value > 0);
+              uint128_t result = (uint128_t(a.amount.value) * b.base.amount.value + b.quote.amount.value - 1) / b.quote.amount.value;
+              FC_ASSERT(result <= GRAPHENE_MAX_SHARE_SUPPLY);
+              return asset(result.convert_to<int64_t>(), b.base.asset_id);
+          }
+          FC_THROW_EXCEPTION(fc::assert_exception, "invalid asset::multiply_and_round_up(price)", ("asset", a)("price", b));
+      }
+
       price operator / ( const asset& base, const asset& quote )
       { try {
          FC_ASSERT( base.asset_id != quote.asset_id );
@@ -138,6 +158,48 @@ namespace graphene { namespace chain {
          FC_ASSERT( quote.amount > share_type(0) );
          FC_ASSERT( base.asset_id != quote.asset_id );
       } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
+
+      void price_feed::validate() const
+      {
+          try {
+              if (!settlement_price.is_null())
+                  settlement_price.validate();
+              FC_ASSERT(maximum_short_squeeze_ratio >= GRAPHENE_MIN_COLLATERAL_RATIO);
+              FC_ASSERT(maximum_short_squeeze_ratio <= GRAPHENE_MAX_COLLATERAL_RATIO);
+              FC_ASSERT(maintenance_collateral_ratio >= GRAPHENE_MIN_COLLATERAL_RATIO);
+              FC_ASSERT(maintenance_collateral_ratio <= GRAPHENE_MAX_COLLATERAL_RATIO);
+              max_short_squeeze_price(); // make sure that it doesn't overflow
+
+              //FC_ASSERT( maintenance_collateral_ratio >= maximum_short_squeeze_ratio );
+          } FC_CAPTURE_AND_RETHROW((*this))
+      }
+
+      bool price_feed::is_for(asset_aid_type asset_id) const
+      {
+          try
+          {
+              if (!settlement_price.is_null())
+                  return (settlement_price.base.asset_id == asset_id);
+              if (!core_exchange_rate.is_null())
+                  return (core_exchange_rate.base.asset_id == asset_id);
+              // (null, null) is valid for any feed
+              return true;
+          }
+          FC_CAPTURE_AND_RETHROW((*this))
+      }
+
+      price price_feed::max_short_squeeze_price()const
+      {
+          // TODO replace the calculation with new operator*() and/or operator/(), could be a hardfork change due to edge cases
+          boost::rational<int128_t> sp(settlement_price.base.amount.value, settlement_price.quote.amount.value); //debt.amount.value,collateral.amount.value);
+          boost::rational<int128_t> ratio(GRAPHENE_COLLATERAL_RATIO_DENOM, maximum_short_squeeze_ratio);
+          auto cp = sp * ratio;
+
+          while (cp.numerator() > GRAPHENE_MAX_SHARE_SUPPLY || cp.denominator() > GRAPHENE_MAX_SHARE_SUPPLY)
+              cp = boost::rational<int128_t>((cp.numerator() >> 1) + (cp.numerator() & 1), (cp.denominator() >> 1) + (cp.denominator() & 1));
+
+          return (asset(cp.numerator().convert_to<int64_t>(), settlement_price.base.asset_id) / asset(cp.denominator().convert_to<int64_t>(), settlement_price.quote.asset_id));
+      }
 
 // compile-time table of powers of 10 using template metaprogramming
 

@@ -438,6 +438,48 @@ namespace graphene { namespace chain {
 
          //////////////////// db_notify.cpp ////////////////////
 
+         //////////////////// db_market.cpp ////////////////////
+
+         /// @{ @group Market Helpers
+         void cancel_limit_order(const limit_order_object& order, bool create_virtual_op = true, bool skip_cancel_fee = false);
+
+         /**
+         * @brief Process a new limit order through the markets
+         * @param order The new order to process
+         * @return true if order was completely filled; false otherwise
+         *
+         * This function takes a new limit order, and runs the markets attempting to match it with existing orders
+         * already on the books.
+         */
+         //bool apply_order_before_hardfork_625(const limit_order_object& new_order_object, bool allow_black_swan = true);
+         bool apply_order(const limit_order_object& new_order_object, bool allow_black_swan = true);
+
+         /**
+         * Matches the two orders, the first parameter is taker, the second is maker.
+         *
+         * @return a bit field indicating which orders were filled (and thus removed)
+         *
+         * 0 - no orders were matched
+         * 1 - taker was filled
+         * 2 - maker was filled
+         * 3 - both were filled
+         */
+         ///@{
+         int match(const limit_order_object& taker, const limit_order_object& maker, const price& trade_price);
+
+         /**
+         * @return true if the order was completely filled and thus freed.
+         */
+         bool fill_limit_order(const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
+             const price& fill_price, const bool is_maker);
+
+         // helpers to fill_order
+         void pay_order(const account_object& receiver, const asset& receives, const asset& pays);
+
+         asset calculate_market_fee(const asset_object& recv_asset, const asset& trade_amount);
+         asset pay_market_fees(const asset_object& recv_asset, const asset& receives);
+         asset pay_market_fees(const account_object& seller, const asset_object& recv_asset, const asset& receives);
+
       private:
          void notify_changed_objects();
 
@@ -500,6 +542,7 @@ namespace graphene { namespace chain {
          void update_last_irreversible_block();
          void clear_expired_transactions();
          void clear_expired_proposals();
+         void clear_expired_orders();
          void clear_active_post();
          void clear_unnecessary_objects();//advertising order, custom vote and cast custom vote
          void update_reduce_witness_csaf();//only execute once for HARDFORK_0_4_BLOCKNUM
@@ -509,6 +552,7 @@ namespace graphene { namespace chain {
          std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
               get_effective_csaf(const active_post_object& active_post);
          void clear_expired_scores();
+         void clear_expired_limit_orders();
          void update_maintenance_flag( bool new_maintenance_flag );
          void clear_expired_csaf_leases();
          void update_average_witness_pledges();

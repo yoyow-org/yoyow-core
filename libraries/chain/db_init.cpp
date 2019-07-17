@@ -35,6 +35,7 @@
 #include <graphene/chain/custom_vote_object.hpp>
 #include <graphene/chain/csaf_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
+#include <graphene/chain/market_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/transaction_object.hpp>
@@ -54,6 +55,7 @@
 #include <graphene/chain/transfer_evaluator.hpp>
 #include <graphene/chain/witness_evaluator.hpp>
 #include <graphene/chain/pledge_mining_evaluator.hpp>
+#include <graphene/chain/market_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -97,6 +99,12 @@ const uint8_t csaf_lease_object::type_id;
 
 const uint8_t global_property_object::space_id;
 const uint8_t global_property_object::type_id;
+
+const uint8_t limit_order_object::space_id;
+const uint8_t limit_order_object::type_id;
+
+//const uint8_t call_order_object::space_id;
+//const uint8_t call_order_object::type_id;
 
 const uint8_t operation_history_object::space_id;
 const uint8_t operation_history_object::type_id;
@@ -210,6 +218,8 @@ void database::initialize_evaluators()
    register_evaluator<balance_lock_update_evaluator>();
    register_evaluator<pledge_mining_update_evaluator>();
    register_evaluator<pledge_bonus_collect_evaluator>();
+   register_evaluator<limit_order_create_evaluator>();
+   register_evaluator<limit_order_cancel_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -231,6 +241,8 @@ void database::initialize_indexes()
    add_index< primary_index<committee_member_index> >();
    add_index< primary_index<committee_proposal_index> >();
    add_index< primary_index<witness_index> >();
+   add_index< primary_index<limit_order_index > >();
+   //add_index< primary_index<call_order_index > >();
 
    auto prop_index = add_index< primary_index<proposal_index > >();
    prop_index->add_secondary_index<required_approval_index>();

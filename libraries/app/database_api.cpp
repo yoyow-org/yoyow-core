@@ -266,6 +266,67 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
          });
       }
 
+      //const std::pair<asset_id_type, asset_id_type> get_order_market(const force_settlement_object& order)
+      //{
+      //    // TODO cache the result to avoid repeatly fetching from db
+      //    asset_id_type backing_id = order.balance.asset_id(_db).bitasset_data(_db).options.short_backing_asset;
+      //    auto tmp = std::make_pair(order.balance.asset_id, backing_id);
+      //    if (tmp.first > tmp.second) std::swap(tmp.first, tmp.second);
+      //    return tmp;
+      //}
+
+      vector<limit_order_object> get_limit_orders(const asset_id_type a, const asset_id_type b, const uint32_t limit)const
+      {
+          FC_ASSERT(limit <= 300);
+
+          const auto& limit_order_idx = _db.get_index_type<limit_order_index>();
+          const auto& limit_price_idx = limit_order_idx.indices().get<by_price>();
+
+          vector<limit_order_object> result;
+          result.reserve(limit * 2);
+
+          uint32_t count = 0;
+          auto limit_itr = limit_price_idx.lower_bound(price::max(a, b));
+          auto limit_end = limit_price_idx.upper_bound(price::min(a, b));
+          while (limit_itr != limit_end && count < limit)
+          {
+              result.push_back(*limit_itr);
+              ++limit_itr;
+              ++count;
+          }
+          count = 0;
+          limit_itr = limit_price_idx.lower_bound(price::max(b, a));
+          limit_end = limit_price_idx.upper_bound(price::min(b, a));
+          while (limit_itr != limit_end && count < limit)
+          {
+              result.push_back(*limit_itr);
+              ++limit_itr;
+              ++count;
+          }
+
+          return result;
+      }
+
+      template<typename T>
+      const std::pair<asset_id_type, asset_id_type> get_order_market(const T& order)
+      {
+          return order.get_market();
+      }
+
+      template<typename T>
+      void enqueue_if_subscribed_to_market(const object* obj, market_queue_type& queue, bool full_object = true)
+      {
+          const T* order = dynamic_cast<const T*>(obj);
+          FC_ASSERT(order != nullptr);
+
+          const auto& market = get_order_market(*order);
+
+          auto sub = _market_subscriptions.find(market);
+          if (sub != _market_subscriptions.end()) {
+              queue[market].emplace_back(full_object ? obj->to_variant() : fc::variant(obj->id, 1));
+          }
+      }
+
       void broadcast_updates( const vector<variant>& updates );
       void handle_object_changed(bool force_notify, bool full_object, const vector<object_id_type>& ids, const flat_set<account_uid_type>& impacted_accounts, std::function<const object*(object_id_type id)> find_object);
 
@@ -287,6 +348,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       boost::signals2::scoped_connection                                                   _removed_connection;
       boost::signals2::scoped_connection                                                   _applied_block_connection;
       boost::signals2::scoped_connection                                                   _pending_trx_connection;
+      map< pair<asset_aid_type, asset_aid_type>, std::function<void(const variant&)> >     _market_subscriptions;
       graphene::chain::database&                                                           _db;
 };
 
@@ -2520,6 +2582,47 @@ void database_api_impl::on_applied_block()
    }
 
    /// we need to ensure the database_api is not deleted for the life of the async operation
+   if (_market_subscriptions.size() == 0)
+       return;
+
+   const auto& ops = _db.get_applied_operations();
+   map< std::pair<asset_aid_type, asset_aid_type>, vector<pair<operation, operation_result>> > subscribed_markets_ops;
+   for (const optional< operation_history_object >& o_op : ops)
+   {
+       if (!o_op.valid())
+           continue;
+       const operation_history_object& op = *o_op;
+
+       optional< std::pair<asset_aid_type, asset_aid_type> > market;
+       switch (op.op.which())
+       {
+           /*  This is sent via the object_changed callback
+           case operation::tag<limit_order_create_operation>::value:
+           market = op.op.get<limit_order_create_operation>().get_market();
+           break;
+           */
+       case operation::tag<fill_order_operation>::value:
+           market = op.op.get<fill_order_operation>().get_market();
+           break;
+           /*
+           case operation::tag<limit_order_cancel_operation>::value:
+           */
+       default: break;
+       }
+       if (market.valid() && _market_subscriptions.count(*market))
+           // FIXME this may cause fill_order_operation be pushed before order creation
+           subscribed_markets_ops[*market].emplace_back(std::make_pair(op.op, op.result));
+   }
+   /// we need to ensure the database_api is not deleted for the life of the async operation
+   auto capture_this = shared_from_this();
+   fc::async([this, capture_this, subscribed_markets_ops](){
+       for (auto item : subscribed_markets_ops)
+       {
+           auto itr = _market_subscriptions.find(item.first);
+           if (itr != _market_subscriptions.end())
+               itr->second(fc::variant(item.second, GRAPHENE_NET_MAX_NESTED_OBJECTS));
+       }
+   });
 }
 
 } } // graphene::app

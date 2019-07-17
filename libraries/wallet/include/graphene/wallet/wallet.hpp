@@ -1794,6 +1794,19 @@ class wallet_api
                                                      bool csaf_fee = true,
                                                      bool broadcast = false);
          
+      signed_transaction create_limit_order(string           seller,
+                                            asset_aid_type   sell_asset_id,
+                                            share_type       sell_amount,
+                                            asset_aid_type   min_receive_asset_id,
+                                            share_type       min_receive_amount,
+                                            uint32_t         expiration,
+                                            bool             fill_or_kill,
+                                            bool             broadcast = false);
+
+      signed_transaction cancel_limit_order(string               seller,
+                                            limit_order_id_type  order_id,
+                                            bool                 broadcast = false);
+
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
       void dbg_generate_blocks( std::string debug_wif_key, uint32_t count );
@@ -2035,4 +2048,6 @@ FC_API( graphene::wallet::wallet_api,
         (update_lock_balance)
         (update_mining_pledge)
         (collect_pledge_mining_bonus)
+        (create_limit_order)
+        (cancel_limit_order)
       )

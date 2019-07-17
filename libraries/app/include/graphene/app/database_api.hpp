@@ -38,6 +38,8 @@
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/advertising_object.hpp>
+#include <graphene/chain/market_object.hpp>
+#include <graphene/market_history/market_history_plugin.hpp>
 
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
