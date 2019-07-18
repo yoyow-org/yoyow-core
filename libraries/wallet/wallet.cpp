@@ -3192,6 +3192,60 @@ signed_transaction account_cancel_auth_platform(string account,
       } FC_CAPTURE_AND_RETHROW((collect_account)(bonus_amount)(csaf_fee)(broadcast))
    }
 
+   signed_transaction create_limit_order(string           seller,
+      asset_aid_type   sell_asset_id,
+      share_type       sell_amount,
+      asset_aid_type   min_receive_asset_id,
+      share_type       min_receive_amount,
+      uint32_t         expiration,
+      bool             fill_or_kill,
+      bool             broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         account_uid_type account_uid = get_account_uid(seller);
+         time_point_sec expiration_time(expiration);
+         limit_order_create_operation create_op;
+         create_op.seller = account_uid;
+         create_op.amount_to_sell = asset(sell_amount, sell_asset_id);
+         create_op.min_to_receive = asset(min_receive_amount, min_receive_asset_id);
+         create_op.expiration = expiration_time;
+         create_op.fill_or_kill = fill_or_kill;
+
+         signed_transaction tx;
+         tx.operations.push_back(create_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((seller)(sell_asset_id)(sell_amount)(min_receive_asset_id)(min_receive_amount)(expiration)(fill_or_kill)(broadcast))
+   }
+
+   signed_transaction cancel_limit_order(string               seller,
+      limit_order_id_type  order_id,
+      bool                 broadcast)
+   {
+
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         account_uid_type account_uid = get_account_uid(seller);
+         limit_order_cancel_operation cancel_op;
+         cancel_op.fee_paying_account = account_uid;
+         cancel_op.order = order_id;
+
+         signed_transaction tx;
+         tx.operations.push_back(cancel_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((seller)(order_id)(broadcast))
+   }
+
+
    signed_transaction approve_proposal(
       const string& fee_paying_account,
       const string& proposal_id,
