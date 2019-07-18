@@ -1750,6 +1750,60 @@ void database_fixture::balance_lock_update(flat_set<fc::ecc::private_key> sign_k
    } FC_CAPTURE_AND_RETHROW((account)(amount))
 }
 
+void database_fixture::update_mining_pledge(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type pledge_account,
+   account_uid_type witness,
+   uint64_t new_pledge)
+{
+   try {
+
+      pledge_mining_update_operation pledge_mining_update_op;
+      pledge_mining_update_op.pledge_account = pledge_account;
+      pledge_mining_update_op.witness = witness;
+      pledge_mining_update_op.new_pledge = new_pledge;
+
+      signed_transaction tx;
+      tx.operations.push_back(pledge_mining_update_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((pledge_account)(witness)(new_pledge))
+}
+
+void database_fixture::create_witness(flat_set<fc::ecc::private_key> sign_keys, 
+   account_uid_type owner_account,
+   string url,
+   share_type pledge, 
+   graphene::chain::public_key_type signing_public_key,
+   graphene::chain::pledge_mining::ext ext)
+{
+   try {
+      witness_create_operation witness_create_op;
+      witness_create_op.account = owner_account;
+      witness_create_op.block_signing_key = signing_public_key;
+      witness_create_op.url = url;
+      witness_create_op.pledge = asset(pledge);
+      witness_create_op.extensions = extension<pledge_mining::ext>();
+      witness_create_op.extensions->value = ext;
+
+      signed_transaction tx;
+      tx.operations.push_back(witness_create_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(owner_account)(url)(pledge)(signing_public_key))
+}
+
 void database_fixture::update_witness(flat_set<fc::ecc::private_key> sign_keys,
    account_uid_type account,
    optional<public_key_type> new_signing_key,

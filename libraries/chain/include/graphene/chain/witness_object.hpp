@@ -76,11 +76,9 @@ namespace graphene { namespace chain {
          ///account pledge asset to witness switch
          bool                can_pledge = false;
          ///part of witness pay as a bonus that divided to pledge account 
-         uint32_t            bonus_rate;
+         uint32_t            bonus_rate = 0;
          ///account pledge asset to witness, total
-         uint64_t            total_mining_pledge;
-         ///total pledge to witness changed, set to true
-         bool                is_pledge_changed = false;
+         uint64_t            total_mining_pledge = 0;
          ///map<head block num, bonus_per_pledge>
          map<uint32_t, share_type> bonus_per_pledge;
          share_type          unhandled_bonus;
@@ -89,11 +87,27 @@ namespace graphene { namespace chain {
          uint32_t            last_update_bonus_block_num = 0;
 
          uint32_t get_bonus_block_num()const {
-            if (total_mining_pledge > 0 && !bonus_per_pledge.empty())
-               return last_update_bonus_block_num + 10000;
+            if (total_mining_pledge > 0 && (!bonus_per_pledge.empty() || unhandled_bonus > 0))
+               return last_update_bonus_block_num + 1000;
             else
                return -1;
             }
+
+         share_type accumulate_bonus_per_pledge(uint32_t start_block_num)const {
+            auto itr = bonus_per_pledge.lower_bound(start_block_num);
+            share_type result= std::accumulate(itr, bonus_per_pledge.end(), 0, 
+               [](uint64_t bonus, std::pair<uint32_t, share_type> p) {
+               return bonus + p.second.value; 
+            });
+            
+            if (unhandled_bonus > 0)
+            {
+               result = result + ((fc::uint128_t)unhandled_bonus.value* GRAPHENE_PLEDGE_BONUS_PRECISION
+                  / total_mining_pledge).to_uint64();
+            }
+
+            return result;
+         }
    };
 
    struct by_account;
@@ -279,7 +293,6 @@ FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (can_pledge)
                     (bonus_rate)
                     (total_mining_pledge)
-                    (is_pledge_changed)
                     (bonus_per_pledge)
                     (unhandled_bonus)
                     (need_distribute_bonus)

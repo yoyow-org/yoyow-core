@@ -470,6 +470,16 @@ struct database_fixture {
       set<uint8_t>          vote_result);
 
    void balance_lock_update(flat_set<fc::ecc::private_key> sign_keys, account_uid_type account, share_type amount);
+   void update_mining_pledge(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type pledge_account,
+      account_uid_type witness,
+      uint64_t new_pledge);
+   void create_witness(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type owner_account,
+      string url,
+      share_type pledge,
+      graphene::chain::public_key_type signing_public_key,
+      graphene::chain::pledge_mining::ext ext);
 
    void update_witness(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type account,

@@ -161,63 +161,34 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
 
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    const auto& account_stats = get_account_statistics_by_uid( wit.account );
-   if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge)
+   if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge || wit.total_mining_pledge == 0)
    {
       modify(account_stats, [&](account_statistics_object& s) {
          s.uncollected_witness_pay += amount;
       });
-   }
-   else if (wit.total_mining_pledge == 0)
-   {
-      modify(account_stats, [&](account_statistics_object& s) {
-         s.uncollected_witness_pay += amount;
-      });
-
-      if (wit.is_pledge_changed) {
-         modify(wit, [&](witness_object& w) {
-            w.is_pledge_changed = false;
-            w.unhandled_bonus = 0;
-            w.bonus_per_pledge.clear();
-         });
-      }
    }
    else
    {
       share_type witness_pay = amount;
-      share_type pledge_bonus = 0;
       if (wit.bonus_rate > 0)
       {
-         pledge_bonus = ((fc::bigint)amount.value * wit.bonus_rate * wit.total_mining_pledge
+         share_type pledge_bonus = ((fc::bigint)amount.value * wit.bonus_rate * wit.total_mining_pledge
             / ((wit.pledge + wit.total_mining_pledge) * GRAPHENE_100_PERCENT)).to_int64();
-         witness_pay = amount - pledge_bonus;
-      }    
-      modify(account_stats, [&](account_statistics_object& s) {
-         s.uncollected_witness_pay += witness_pay;
-      });
-
-      if (wit.is_pledge_changed)
-      {
-         fc::uint128_t handled_bonus = (fc::uint128_t)(wit.unhandled_bonus + pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION;
-         share_type bonus_per_pledge = (handled_bonus / wit.total_mining_pledge).to_uint64();
-         modify(wit, [&](witness_object& w) {
-            w.is_pledge_changed = false;
-            w.unhandled_bonus = 0;
-            w.need_distribute_bonus += pledge_bonus;
-            w.bonus_per_pledge.emplace(head_block_num(), bonus_per_pledge);
-            if (w.last_update_bonus_block_num == 0)//up to now, witness not update pledge mining bonus 
-               w.last_update_bonus_block_num = head_block_num();
-         });
-      }
-      else
-      {
-         if (pledge_bonus > 0)// when bonus_rate == 0, pledge_bonus == 0
+         if (pledge_bonus > 0)
          {
             modify(wit, [&](witness_object& w) {
                w.unhandled_bonus += pledge_bonus;
                w.need_distribute_bonus += pledge_bonus;
+               if (w.last_update_bonus_block_num == 0)//up to now, witness not update pledge mining bonus 
+                  w.last_update_bonus_block_num = head_block_num();
             });
          }  
-      }
+         witness_pay = amount - pledge_bonus;
+      }   
+
+      modify(account_stats, [&](account_statistics_object& s) {
+         s.uncollected_witness_pay += witness_pay;
+      });
    }
 
    return;

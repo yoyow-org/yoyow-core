@@ -1795,7 +1795,8 @@ void database::update_pledge_mining_bonus()
       auto wit_pledge_itr = wit_pledge_idx.lower_bound(wit_itr->account);
       while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == wit_itr->account)
       {
-         send_bonus += update_pledge_mining_bonus_to_account(*wit_itr, *wit_pledge_itr);
+         share_type bonus_per_pledge = wit_itr->accumulate_bonus_per_pledge(wit_pledge_itr->last_bonus_block_num + 1);
+         send_bonus += update_pledge_mining_bonus_to_account(*wit_pledge_itr, bonus_per_pledge);
          ++wit_pledge_itr;
       }
       modify(get_account_statistics_by_uid(wit_itr->account), [&](account_statistics_object& o)
@@ -1814,37 +1815,30 @@ void database::update_pledge_mining_bonus()
          wit.unhandled_bonus = 0;
          wit.need_distribute_bonus = 0;
          wit.already_distribute_bonus = 0;
+         wit.last_update_bonus_block_num = head_block_num();
          wit.bonus_per_pledge.clear();
       });
    });
 }
 
-share_type database::update_pledge_mining_bonus_to_account(const witness_object& witness_obj, const pledge_mining_object& pledge_mining_obj)
+share_type database::update_pledge_mining_bonus_to_account(const pledge_mining_object& pledge_mining_obj, share_type bonus_per_pledge)
 {
    if (pledge_mining_obj.pledge == 0)
       return 0;
 
-   share_type total_bonus = 0;
-   auto itr = witness_obj.bonus_per_pledge.lower_bound(pledge_mining_obj.last_bonus_block_num + 1);
-   if (itr != witness_obj.bonus_per_pledge.end())
+   share_type total_bonus = ((uint128_t)bonus_per_pledge.value * pledge_mining_obj.pledge.value
+      / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+   if (total_bonus > 0)
    {
-      share_type total_bonus_per_pledge = std::accumulate(itr, witness_obj.bonus_per_pledge.end(), 0, 
-         [](uint64_t bonus, std::pair<uint32_t, share_type> p) {return bonus + p.second.value; });
-
-      total_bonus = ((uint128_t)total_bonus_per_pledge.value * pledge_mining_obj.pledge.value
-         / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
-      if (total_bonus > 0)
+      modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](account_statistics_object& o)
       {
-         modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](account_statistics_object& o)
-         {
-            o.uncollected_pledge_bonus += total_bonus;
-         });
-      }
-      modify(pledge_mining_obj, [&](pledge_mining_object& o)
-      {
-         o.last_bonus_block_num = head_block_num();
+         o.uncollected_pledge_bonus += total_bonus;
       });
    }
+   modify(pledge_mining_obj, [&](pledge_mining_object& o)
+   {
+      o.last_bonus_block_num = head_block_num();
+   });
     
    return total_bonus;
 }

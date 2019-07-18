@@ -77,7 +77,8 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
       share_type send_bonus = 0;
       if (pledge_mining_obj)
       {
-         send_bonus = d.update_pledge_mining_bonus_to_account(*witness_obj, *pledge_mining_obj);
+         share_type bonus_per_pledge = witness_obj->accumulate_bonus_per_pledge(pledge_mining_obj->last_bonus_block_num + 1);
+         send_bonus = d.update_pledge_mining_bonus_to_account(*pledge_mining_obj, bonus_per_pledge);
          share_type delta_available_balance=0;
          delta_pledge_to_witness=op.new_pledge-pledge_mining_obj->pledge;
          d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {
@@ -106,10 +107,20 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
 
       //update witness object
       d.modify(*witness_obj, [&](witness_object& obj) {
+         if (obj.unhandled_bonus > 0)//until witness produce block, only execute first op
+         {
+            share_type bonus_per_pledge = ((fc::uint128_t)obj.unhandled_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
+               / obj.total_mining_pledge).to_uint64();
+            obj.bonus_per_pledge.emplace(d.head_block_num(), bonus_per_pledge);
+            obj.unhandled_bonus = 0;
+         }
+         
          obj.total_mining_pledge += delta_pledge_to_witness.value;
-         obj.is_pledge_changed = true;
+         if (obj.total_mining_pledge == 0) {//last account cancel pledge mining
+            obj.bonus_per_pledge.clear();
          if (send_bonus > 0)
             obj.already_distribute_bonus += send_bonus;
+         }
       });
       //update dynamic global property object
       d.modify(dpo, [&](dynamic_global_property_object& _dpo) {

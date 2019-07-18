@@ -60,7 +60,7 @@
 #define GRAPHENE_MIN_TRANSACTION_EXPIRATION_LIMIT (GRAPHENE_MAX_BLOCK_INTERVAL * 5) // 5 transactions per block
 #define GRAPHENE_BLOCKCHAIN_PRECISION                           uint64_t( 100000 )
 
-#define GRAPHENE_PLEDGE_BONUS_PRECISION                         uint64_t( 100000000 )
+#define GRAPHENE_PLEDGE_BONUS_PRECISION                         uint64_t( 1000000000000 )
 
 #define GRAPHENE_BLOCKCHAIN_PRECISION_DIGITS                    5
 #define GRAPHENE_DEFAULT_TRANSFER_FEE                           (1*GRAPHENE_BLOCKCHAIN_PRECISION)
