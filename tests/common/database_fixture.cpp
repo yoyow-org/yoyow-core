@@ -511,7 +511,9 @@ const account_object& database_fixture::create_account(
    )
 {
    trx.operations.push_back(make_account(uid, name, key));
+   set_expiration(db, trx);
    trx.validate();
+   
    processed_transaction ptx = db.push_transaction(trx, ~0);
    auto& result = db.get<account_object>(ptx.operation_results[0].get<object_id_type>());
    trx.operations.clear();
