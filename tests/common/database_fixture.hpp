@@ -488,6 +488,30 @@ struct database_fixture {
       optional<string> new_url
       );
 
+   void create_asset(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type issuer,
+      string           symbol,
+      uint8_t          precisions,
+      asset_options    options,
+      share_type       initial_supply
+      );
+
+   void create_limit_order(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type seller,
+      asset_aid_type   sell_asset_id,
+      share_type       sell_amount,
+      asset_aid_type   min_receive_asset_id,
+      share_type       min_receive_amount,
+      uint32_t         expiration,
+      bool             fill_or_kill
+      );
+
+   void cancel_limit_order(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type     seller,
+      limit_order_id_type  order_id
+      );
+
+
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);
 };

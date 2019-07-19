@@ -1831,6 +1831,95 @@ void database_fixture::update_witness(flat_set<fc::ecc::private_key> sign_keys,
    } FC_CAPTURE_AND_RETHROW((account)(new_signing_key)(new_pledge)(new_url))
 }
 
+void database_fixture::create_asset(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type issuer,
+   string           symbol,
+   uint8_t          precisions,
+   asset_options    options,
+   share_type       initial_supply
+   )
+{
+   try {
+      asset_create_operation create_op;
+      create_op.issuer = issuer;
+      create_op.symbol = symbol;
+      create_op.precision = precisions;
+      create_op.common_options = options;
+      if (initial_supply != 0)
+      {
+         create_op.extensions = extension<asset_create_operation::ext>();
+         create_op.extensions->value.initial_supply = initial_supply;
+      }
+
+      signed_transaction tx;
+      tx.operations.push_back(create_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((issuer)(symbol)(precisions)(options)(initial_supply))
+}
+
+void database_fixture::create_limit_order(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type seller,
+   asset_aid_type   sell_asset_id,
+   share_type       sell_amount,
+   asset_aid_type   min_receive_asset_id,
+   share_type       min_receive_amount,
+   uint32_t         expiration,
+   bool             fill_or_kill
+   )
+{
+   try {
+      time_point_sec expiration_time(expiration);
+      limit_order_create_operation create_op;
+      create_op.seller = seller;
+      create_op.amount_to_sell = asset(sell_amount, sell_asset_id);
+      create_op.min_to_receive = asset(min_receive_amount, min_receive_asset_id);
+      create_op.expiration = expiration_time;
+      create_op.fill_or_kill = fill_or_kill;
+
+      signed_transaction tx;
+      tx.operations.push_back(create_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((seller)(sell_asset_id)(sell_amount)(min_receive_asset_id)(min_receive_amount)(expiration)(fill_or_kill))
+}
+
+void database_fixture::cancel_limit_order(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type     seller,
+   limit_order_id_type  order_id
+   )
+{
+   try {
+      limit_order_cancel_operation cancel_op;
+      cancel_op.fee_paying_account = seller;
+      cancel_op.order = order_id;
+
+      signed_transaction tx;
+      tx.operations.push_back(cancel_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((seller)(order_id))
+}
+
+
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
 database_fixture::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)
 {

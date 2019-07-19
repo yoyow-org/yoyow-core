@@ -1336,9 +1336,9 @@ BOOST_AUTO_TEST_CASE(custom_vote_test)
          0, share_type(1000000), 1, 3, { "aa", "bb", "cc", "dd" });
 
 
-      /***************************************************
+      //***************************************************
       must start non_consensus custom vote, or check error
-      ***************************************************/
+      //***************************************************
       const auto& idx = db.get_index_type<custom_vote_index>().indices().get<by_id>();
       const auto& obj = *(idx.begin());
       BOOST_CHECK(obj.custom_vote_creater == u_9000_id);
@@ -1577,5 +1577,64 @@ BOOST_AUTO_TEST_CASE(csaf_lease_test)
    }
 }
 
+BOOST_AUTO_TEST_CASE(limit_order_test)
+{
+   try{
+      ACTORS((1000)(2000)(3000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      transfer(committee_account, u_1000_id, _core(30000));
+      transfer(committee_account, u_2000_id, _core(30000));
+      transfer(committee_account, u_3000_id, _core(30000));
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+      add_csaf_for_account(u_3000_id, 10000);
+
+
+      asset_options options;
+      options.max_supply = 10000000000000;
+      options.market_fee_percent = 0;
+      options.max_market_fee = 0;
+      options.issuer_permissions = 15;
+      options.flags = 0;
+      //options.whitelist_authorities = ;
+      //options.blacklist_authorities = ;
+      //options.whitelist_markets = ;
+      //options.blacklist_markets = ;
+      options.description = "test asset";
+      //options.extensions = ;
+
+      create_asset({u_1000_private_key}, u_1000_id, "ABC", 5, options, share_type(10000000000000));
+      const asset_object& ast = db.get_asset_by_aid(1);
+      BOOST_CHECK(ast.symbol == "ABC");
+      BOOST_CHECK(ast.precision == 5);
+      BOOST_CHECK(ast.issuer == u_1000_id);
+      BOOST_CHECK(ast.options.max_supply == 10000000000000);
+      BOOST_CHECK(ast.options.flags == 0);
+
+      asset ast1 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast1.asset_id == 1);
+      BOOST_CHECK(ast1.amount == 10000000000000);
+
+      create_limit_order({ u_1000_private_key }, u_1000_id, 1, 1000000, 0, 1000, 1569859200, false);
+      create_limit_order({ u_2000_private_key }, u_2000_id, 0, 1000, 1, 1000000, 1569859200, false);
+
+      asset ast2 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast2.asset_id == 1);
+      BOOST_CHECK(ast2.amount == 9999999000000);
+      asset ast3 = db.get_balance(u_2000_id, 1);
+      BOOST_CHECK(ast3.asset_id == 1);
+      BOOST_CHECK(ast3.amount == 1000000);
+
+
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
 
 BOOST_AUTO_TEST_SUITE_END()
