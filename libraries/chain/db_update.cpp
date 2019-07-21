@@ -943,6 +943,8 @@ void database::clear_resigned_witness_votes()
          }
       }
 
+      //clear pledge mining object
+      clear_pledge_mining(*wit_itr);
       remove( *wit_itr );
 
       wit_itr = wit_idx.begin();
@@ -1906,6 +1908,20 @@ void database::update_platform_avg_pledge( const platform_object& pla )
    if( old_avg_pledge != pla.average_pledge )
    {
       // TODO: Adjust distribution logic
+   }
+}
+
+void database::clear_pledge_mining(const witness_object& wit)
+{
+   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_id>();
+   auto itr = idx.begin();
+   while (itr != idx.end())
+   {
+      modify(get_account_statistics_by_uid(itr->pledge_account), [&](account_statistics_object& s) {
+         s.total_mining_pledge -= (itr->releasing_mining_pledge + itr->pledge);
+      });
+      remove(*itr);
+      itr = idx.begin();
    }
 }
 
