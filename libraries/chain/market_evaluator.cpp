@@ -148,4 +148,31 @@ asset limit_order_cancel_evaluator::do_apply(const limit_order_cancel_operation&
 
    return refunded;
 } FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result market_fee_collect_evaluator::do_evaluate(const market_fee_collect_operation& o)
+{
+   try {
+      database& d = db();
+      FC_ASSERT(d.head_block_time() >= HARDFORK_0_5_TIME, "Can only collect market fee after HARDFORK_0_5_TIME");
+      _account = &d.get_account_statistics_by_uid(o.account);
+      auto iter = _account->uncollected_market_fees.find(o.asset_aid);
+      FC_ASSERT(iter != _account->uncollected_market_fees.end(), "there is no available asset to collect.");
+      FC_ASSERT(iter->second >= o.amount, "not enough amount to collect. just ${n} available.", ("n", iter->second));
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((o))
+}
+
+void_result market_fee_collect_evaluator::do_apply(const market_fee_collect_operation& o)
+{
+   try {
+      database& d = db();
+      if (_account){
+         auto iter = _account->uncollected_market_fees.find(o.asset_aid);
+         asset ast(iter->second, iter->first);
+         d.adjust_balance(o.account, ast);
+      }
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((o))
+}
+
 } } // graphene::chain

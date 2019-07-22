@@ -50,7 +50,7 @@ namespace graphene { namespace chain {
        struct fee_parameters_type
        {
            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint32_t price_per_kbyte = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint16_t min_rf_percent = 10000;
            extensions_type   extensions;
@@ -99,7 +99,7 @@ namespace graphene { namespace chain {
        struct fee_parameters_type
        {
            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint32_t price_per_kbyte = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint16_t min_rf_percent = 10000;
            extensions_type   extensions;
@@ -133,7 +133,7 @@ namespace graphene { namespace chain {
        struct fee_parameters_type
        {
            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint32_t price_per_kbyte = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint64_t min_real_fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint16_t min_rf_percent = 10000;
            extensions_type   extensions;
@@ -167,14 +167,44 @@ namespace graphene { namespace chain {
           a.insert(account_id);
       }
    };
+
+   struct market_fee_collect_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee = 0;
+         uint16_t min_rf_percent = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type          fee;
+      account_uid_type  account;
+
+      /// The asset to collect
+      asset_aid_type    asset_aid;
+      share_type        amount;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return account; }
+      void              validate()const;
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
+      {
+         // need active authority
+         a.insert(account);
+      }
+   };
 } } // graphene::chain
 
 FC_REFLECT(graphene::chain::limit_order_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::limit_order_cancel_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::fill_order_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions)) // VIRTUAL
+FC_REFLECT(graphene::chain::market_fee_collect_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 
 
 FC_REFLECT( graphene::chain::limit_order_create_operation,(fee)(seller)(amount_to_sell)(min_to_receive)(expiration)(fill_or_kill)(extensions))
 FC_REFLECT( graphene::chain::limit_order_cancel_operation,(fee)(fee_paying_account)(order)(extensions) )
 FC_REFLECT( graphene::chain::fill_order_operation, (fee)(order_id)(account_id)(pays)(receives)(fill_price)(is_maker) )
-
+FC_REFLECT( graphene::chain::market_fee_collect_operation, (fee)(account)(asset_aid)(amount)(extensions))

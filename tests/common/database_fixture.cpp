@@ -1919,6 +1919,54 @@ void database_fixture::cancel_limit_order(flat_set<fc::ecc::private_key> sign_ke
    } FC_CAPTURE_AND_RETHROW((seller)(order_id))
 }
 
+void database_fixture::collect_market_fee(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type     account,
+   asset_aid_type       asset_aid,
+   share_type           amount
+   )
+{
+   try {
+      market_fee_collect_operation collect_op;
+      collect_op.account = account;
+      collect_op.asset_aid = asset_aid;
+      collect_op.amount = amount;
+
+      signed_transaction tx;
+      tx.operations.push_back(collect_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((account)(asset_aid)(amount))
+}
+
+void database_fixture::asset_claim_fees(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type     issuer,
+   asset_aid_type       asset_aid,
+   share_type           amount_to_claim
+   )
+{
+   try {
+      asset_claim_fees_operation collect_op;
+      collect_op.issuer = issuer;
+      collect_op.amount_to_claim = asset(amount_to_claim, asset_aid);
+
+      signed_transaction tx;
+      tx.operations.push_back(collect_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((issuer)(asset_aid)(amount_to_claim))
+}
 
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
 database_fixture::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)

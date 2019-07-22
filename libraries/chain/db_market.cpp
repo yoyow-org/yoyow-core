@@ -501,47 +501,72 @@ asset database::pay_market_fees(const account_object& seller, const asset_object
    //Don't dirty undo state if not actually collecting any fees
    if (issuer_fees.amount > 0)
    {
-      // calculate and pay rewards
       asset reward = recv_asset.amount(0);
+      if (recv_asset.options.extensions.valid()){
+         const auto reward_percent = recv_asset.options.extensions->value.reward_percent;
+         if (reward_percent && *reward_percent){
+            const auto reward_value = detail::calculate_percent(issuer_fees.amount, *reward_percent);
+            if (reward_value > 0){
+               reward = recv_asset.amount(reward_value);
+               FC_ASSERT(reward < issuer_fees, "Market reward should be less than issuer fees");
 
+               // calculate and pay rewards
+               const auto referrer_rewards_percentage = seller.reg_info.referrer_percent;
+               const auto registrar_rewards_percentage = seller.reg_info.registrar_percent;
+               FC_ASSERT(referrer_rewards_percentage + registrar_rewards_percentage == GRAPHENE_100_PERCENT);
+               const account_statistics_object& referrer_account = get_account_statistics_by_uid(seller.reg_info.referrer);
+               const account_statistics_object& registrar_account = get_account_statistics_by_uid(seller.reg_info.registrar);
+
+               share_type referrer_rewards_value = detail::calculate_percent(reward.amount, referrer_rewards_percentage);
+               modify(referrer_account, [&](account_statistics_object& obj){
+                  obj.add_uncollected_market_fee(recv_asset.asset_id, referrer_rewards_value);
+               });
+               share_type registrar_reward_value = reward.amount - referrer_rewards_value;
+               modify(registrar_account, [&](account_statistics_object& obj){
+                  obj.add_uncollected_market_fee(recv_asset.asset_id, registrar_reward_value);
+               });
+            }
+         }
+      }
       //auto is_rewards_allowed = [&recv_asset, &seller]() {
       //   const auto &white_list = recv_asset.options.extensions.value.whitelist_market_fee_sharing;
       //   return (!white_list || (*white_list).empty() || ((*white_list).find(seller.registrar) != (*white_list).end()));
       //};
 
       //if (is_rewards_allowed())
-      {
-         //const auto reward_percent = recv_asset.options.extensions.value.reward_percent;
-         //if (reward_percent && *reward_percent)
-         //{
-         //   const auto reward_value = detail::calculate_percent(issuer_fees.amount, *reward_percent);
-         //   if (reward_value > 0 && is_authorized_asset(*this, seller.registrar(*this), recv_asset))
-         //   {
-         //      reward = recv_asset.amount(reward_value);
-         //      FC_ASSERT(reward < issuer_fees, "Market reward should be less than issuer fees");
-         //      // cut referrer percent from reward
-         //      const auto referrer_rewards_percentage = seller.referrer_rewards_percentage;
-         //      const auto referrer_rewards_value = detail::calculate_percent(reward.amount, referrer_rewards_percentage);
-         //      auto registrar_reward = reward;
+      //{
+      //   const auto reward_percent = recv_asset.options.extensions.value.reward_percent;
+      //   if (reward_percent && *reward_percent)
+      //   {
+      //      const auto reward_value = detail::calculate_percent(issuer_fees.amount, *reward_percent);
+      //      if (reward_value > 0 && is_authorized_asset(*this, seller.registrar(*this), recv_asset))
+      //      {
+      //         reward = recv_asset.amount(reward_value);
+      //         FC_ASSERT(reward < issuer_fees, "Market reward should be less than issuer fees");
+      //         // cut referrer percent from reward
+      //         const auto referrer_rewards_percentage = seller.referrer_rewards_percentage;
+      //         const auto referrer_rewards_value = detail::calculate_percent(reward.amount, referrer_rewards_percentage);
+      //         auto registrar_reward = reward;
 
-         //      if (referrer_rewards_value > 0 && is_authorized_asset(*this, seller.referrer(*this), recv_asset))
-         //      {
-         //         FC_ASSERT(referrer_rewards_value <= reward.amount.value, "Referrer reward shouldn't be greater than total reward");
-         //         const asset referrer_reward = recv_asset.amount(referrer_rewards_value);
-         //         registrar_reward -= referrer_reward;
-         //         deposit_market_fee_vesting_balance(seller.referrer, referrer_reward);
-         //      }
-         //      deposit_market_fee_vesting_balance(seller.registrar, registrar_reward);
-         //   }
-         //}
-      }
+      //         if (referrer_rewards_value > 0 && is_authorized_asset(*this, seller.referrer(*this), recv_asset))
+      //         {
+      //            FC_ASSERT(referrer_rewards_value <= reward.amount.value, "Referrer reward shouldn't be greater than total reward");
+      //            const asset referrer_reward = recv_asset.amount(referrer_rewards_value);
+      //            registrar_reward -= referrer_reward;
+      //            deposit_market_fee_vesting_balance(seller.referrer, referrer_reward);
+      //         }
+      //         deposit_market_fee_vesting_balance(seller.registrar, registrar_reward);
+      //      }
+      //   }
+      //}
 
       const auto& recv_dyn_data = recv_asset.dynamic_asset_data_id(*this);
-      modify(recv_dyn_data, [&issuer_fees, &reward](asset_dynamic_data_object& obj){
-         obj.accumulated_fees += issuer_fees.amount - reward.amount;
-      });
+      share_type accumulated_fee = issuer_fees.amount - reward.amount;
+      if (accumulated_fee > 0)
+         modify(recv_dyn_data, [&](asset_dynamic_data_object& obj){
+         obj.accumulated_fees += accumulated_fee;
+         });
    }
-
    return issuer_fees;
 }
 

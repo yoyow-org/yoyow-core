@@ -511,6 +511,18 @@ struct database_fixture {
       limit_order_id_type  order_id
       );
 
+   void collect_market_fee(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type     account,
+      asset_aid_type       asset_aid,
+      share_type           amount
+      );
+
+   void asset_claim_fees(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type     issuer,
+      asset_aid_type       asset_aid,
+      share_type           amount_to_claim
+      );
+
 
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);

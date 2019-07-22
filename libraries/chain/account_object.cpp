@@ -129,6 +129,17 @@ void account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_
       coin_seconds_earned_last_update = now_rounded;
 }
 
+void account_statistics_object::add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount)
+{
+   auto iter = uncollected_market_fees.find(asset_aid);
+   if (iter != uncollected_market_fees.end()){
+      iter->second += amount;
+   }
+   else{
+      uncollected_market_fees.insert(std::make_pair(asset_aid, amount));
+   }
+}
+
 set<account_uid_type> account_member_index::get_account_members(const account_object& a)const
 {
    set<account_uid_type> result;

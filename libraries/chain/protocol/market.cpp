@@ -72,4 +72,12 @@ void fill_order_operation::validate()const
     FC_ASSERT(!"virtual operation");
 }
 
+void market_fee_collect_operation::validate()const
+{
+   validate_op_fee(fee, "market_fee_collect ");
+   validate_account_uid(account, "fee_paying_account ");
+
+   FC_ASSERT(amount > 0, "amount should more than 0. ");
+}
+
 } } // graphene::chain

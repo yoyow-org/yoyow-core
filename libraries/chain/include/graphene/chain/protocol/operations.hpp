@@ -100,7 +100,8 @@ namespace graphene { namespace chain {
             pledge_bonus_collect_operation,
             limit_order_create_operation,
             limit_order_cancel_operation,
-            fill_order_operation  // VIRTUAL
+            fill_order_operation,  // VIRTUAL
+            market_fee_collect_operation
          > operation;
 
    /// @} // operations group

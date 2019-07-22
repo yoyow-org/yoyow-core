@@ -152,6 +152,11 @@ namespace graphene { namespace chain {
          share_type uncollected_pledge_bonus;
 
          /**
+         * uncollected fee by market trading.
+         */
+         map<asset_aid_type, share_type> uncollected_market_fees;
+
+         /**
           * last produced block number
           */
          uint64_t witness_last_confirmed_block_num = 0;
@@ -266,6 +271,8 @@ namespace graphene { namespace chain {
           * coin_seconds_earned_last_update fields with new data
           */
          void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now);
+
+         void add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount);
    };
 
    /**
@@ -873,6 +880,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (total_mining_pledge)
                     (last_witness_sequence)(uncollected_witness_pay)
                     (uncollected_pledge_bonus)
+                    (uncollected_market_fees)
                     (witness_last_confirmed_block_num)
                     (witness_last_aslot)
                     (witness_total_produced)

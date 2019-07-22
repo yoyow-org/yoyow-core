@@ -28,6 +28,11 @@
 
 namespace graphene { namespace chain {
 
+   struct additional_asset_options
+   {
+      optional<uint16_t>   reward_percent;
+   };
+   typedef extension<additional_asset_options> additional_asset_options_t;
    /// Checks whether a ticker symbol is valid.
    /// @param symbol a ticker symbol
    void validate_asset_symbol( const string& symbol );
@@ -73,7 +78,7 @@ namespace graphene { namespace chain {
        */
       string description;
 
-      extensions_type extensions;
+      optional<additional_asset_options_t> extensions;
 
       /// How much size for calculating data fee
       inline uint64_t data_size_for_fee() const
@@ -299,6 +304,7 @@ namespace graphene { namespace chain {
 FC_REFLECT( graphene::chain::asset_claim_fees_operation, (fee)(issuer)(amount_to_claim)(extensions) )
 FC_REFLECT( graphene::chain::asset_claim_fees_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 
+FC_REFLECT(graphene::chain::additional_asset_options, (reward_percent))
 FC_REFLECT( graphene::chain::asset_options,
             (max_supply)
             (market_fee_percent)

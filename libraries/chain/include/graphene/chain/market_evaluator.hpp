@@ -75,4 +75,15 @@ namespace graphene { namespace chain {
          const limit_order_object* _order;
    };
 
+   class market_fee_collect_evaluator : public evaluator<market_fee_collect_evaluator>
+   {
+   public:
+      typedef market_fee_collect_operation operation_type;
+
+      void_result do_evaluate(const market_fee_collect_operation& o);
+      void_result do_apply(const market_fee_collect_operation& o);
+
+      const account_statistics_object* _account;
+   };
+
 } } // graphene::chain
