@@ -88,7 +88,7 @@ namespace graphene { namespace chain {
 
          uint32_t get_bonus_block_num()const {
             if (total_mining_pledge > 0 && (!bonus_per_pledge.empty() || unhandled_bonus > 0))
-               return last_update_bonus_block_num + 1000;
+               return last_update_bonus_block_num + 10000;
             else
                return -1;
             }

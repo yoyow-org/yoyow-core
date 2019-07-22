@@ -115,11 +115,21 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
             obj.unhandled_bonus = 0;
          }
          
-         obj.total_mining_pledge += delta_pledge_to_witness.value;
-         if (obj.total_mining_pledge == 0) {//last account cancel pledge mining
-            obj.bonus_per_pledge.clear();
          if (send_bonus > 0)
             obj.already_distribute_bonus += send_bonus;
+         obj.total_mining_pledge += delta_pledge_to_witness.value;
+
+         if (obj.total_mining_pledge == 0)//last account cancel pledge mining
+         { 
+            if (obj.need_distribute_bonus > obj.already_distribute_bonus)
+            {
+               d.modify(d.get_account_statistics_by_uid(obj.account), [&](account_statistics_object& s) {
+                  s.uncollected_witness_pay += (obj.need_distribute_bonus - obj.already_distribute_bonus);
+               });
+            }
+            obj.need_distribute_bonus = 0;
+            obj.already_distribute_bonus = 0;
+            obj.bonus_per_pledge.clear();
          }
       });
       //update dynamic global property object
