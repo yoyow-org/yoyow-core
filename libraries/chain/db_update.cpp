@@ -1913,16 +1913,25 @@ void database::update_platform_avg_pledge( const platform_object& pla )
 
 void database::clear_pledge_mining(const witness_object& wit)
 {
-   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_id>();
-   auto itr = idx.begin();
-   while (itr != idx.end())
+   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto itr = idx.lower_bound(wit.account);
+   share_type release_pledge = 0;
+   while (itr != idx.end() && itr->witness == wit.account)
    {
       modify(get_account_statistics_by_uid(itr->pledge_account), [&](account_statistics_object& s) {
          s.total_mining_pledge -= (itr->releasing_mining_pledge + itr->pledge);
       });
-      remove(*itr);
-      itr = idx.begin();
+      release_pledge += itr->pledge;
+      auto tmp_itr = itr;
+      ++itr;
+      remove(*tmp_itr);
    }
+
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   modify(dpo, [&](dynamic_global_property_object& _dpo)
+   {
+      _dpo.total_witness_pledge -= release_pledge;
+   });
 }
 
 void database::clear_resigned_platform_votes()
