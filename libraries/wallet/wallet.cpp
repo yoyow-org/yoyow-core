@@ -1363,6 +1363,8 @@ public:
                                                   string pledge_amount,
                                                   string pledge_asset_symbol,
                                                   string url,
+                                                  optional<bool> can_pledge,
+                                                  optional<uint32_t> bonus_rate,
                                                   bool csaf_fee,
                                                   bool broadcast /* = false */)
    { try {
@@ -1379,6 +1381,11 @@ public:
       witness_create_op.block_signing_key = block_signing_key;
       witness_create_op.pledge = asset_obj->amount_from_string( pledge_amount );
       witness_create_op.url = url;
+      witness_create_op.extensions = graphene::chain::extension<pledge_mining::ext>();
+      pledge_mining::ext exts;
+      exts.can_pledge = can_pledge;
+      exts.bonus_rate = bonus_rate;
+      witness_create_op.extensions->value = exts;
 
       signed_transaction tx;
       tx.operations.push_back( witness_create_op );
@@ -1386,7 +1393,8 @@ public:
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (owner_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(csaf_fee)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW((owner_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(can_pledge)(bonus_rate)(csaf_fee)(broadcast))
+   }
 
    signed_transaction create_witness(string owner_account,
                                      string url,
@@ -1602,6 +1610,8 @@ signed_transaction account_cancel_auth_platform(string account,
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        optional<bool> can_pledge,
+                                        optional<uint32_t> bonus_rate,
                                         bool csaf_fee,
                                         bool broadcast /* = false */)
    { try {
@@ -1623,6 +1633,11 @@ signed_transaction account_cancel_auth_platform(string account,
       witness_update_op.new_signing_key = block_signing_key;
       witness_update_op.new_pledge = pledge;
       witness_update_op.new_url = url;
+      witness_update_op.extensions = graphene::chain::extension<pledge_mining::ext>();
+      pledge_mining::ext exts;
+      exts.can_pledge = can_pledge;
+      exts.bonus_rate = bonus_rate;
+      witness_update_op.extensions->value = exts;
 
       signed_transaction tx;
       tx.operations.push_back( witness_update_op );
@@ -1630,7 +1645,7 @@ signed_transaction account_cancel_auth_platform(string account,
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (witness_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(csaf_fee)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (witness_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(can_pledge)(bonus_rate)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_witness(string witness_name,
                                      string url,
@@ -3246,6 +3261,61 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
 
+   signed_transaction collect_market_fee(string               account,
+      string               asset_symbol,
+      string               amount,
+      bool                 csaf_fee = true,
+      bool                 broadcast = false
+      )
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         optional<asset_object_with_data> asset_to_reserve = find_asset(asset_symbol);
+         FC_ASSERT(asset_to_reserve.valid(), "Can not find asset ${a}", ("a", asset_symbol));
+
+         account_uid_type account_uid = get_account_uid(account);
+         market_fee_collect_operation collect_op;
+         collect_op.account = account_uid;
+         collect_op.asset_aid = asset_to_reserve->asset_id;
+         collect_op.amount = asset_to_reserve->amount_from_string(amount).amount;
+
+         signed_transaction tx;
+         tx.operations.push_back(collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((account)(asset_symbol)(amount)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction asset_claim_fees(string               issuer,
+      string               asset_symbol,
+      string               amount_to_claim,
+      bool                 csaf_fee = true,
+      bool                 broadcast = false
+      )
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         optional<asset_object_with_data> asset_to_reserve = find_asset(asset_symbol);
+         FC_ASSERT(asset_to_reserve.valid(), "Can not find asset ${a}", ("a", asset_symbol));
+
+         account_uid_type account_uid = get_account_uid(issuer);
+         asset_claim_fees_operation collect_op;
+         collect_op.issuer = account_uid;
+         collect_op.amount_to_claim = asset_to_reserve->amount_from_string(amount_to_claim);
+
+         signed_transaction tx;
+         tx.operations.push_back(collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((issuer)(asset_symbol)(amount_to_claim)(csaf_fee)(broadcast))
+   }
+
    signed_transaction approve_proposal(
       const string& fee_paying_account,
       const string& proposal_id,
@@ -4154,10 +4224,12 @@ signed_transaction wallet_api::create_witness(string owner_account,
                                               string pledge_amount,
                                               string pledge_asset_symbol,
                                               string url,
+                                              optional<bool> can_pledge,
+                                              optional<uint32_t> bonus_rate,
                                               bool csaf_fee,
                                               bool broadcast /* = false */)
 {
-   return my->create_witness_with_details(owner_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, csaf_fee, broadcast);
+   return my->create_witness_with_details(owner_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, can_pledge, bonus_rate, csaf_fee, broadcast);
    //return my->create_witness(owner_account, url, broadcast);
 }
 
@@ -4222,10 +4294,12 @@ signed_transaction wallet_api::update_witness(
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        optional<bool> can_pledge,
+                                        optional<uint32_t> bonus_rate,
                                         bool csaf_fee,
                                         bool broadcast /* = false */)
 {
-   return my->update_witness_with_details(witness_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, csaf_fee, broadcast);
+   return my->update_witness_with_details(witness_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, can_pledge, bonus_rate, csaf_fee, broadcast);
    //return my->update_witness(witness_name, url, block_signing_key, broadcast);
 }
 
@@ -4851,7 +4925,25 @@ signed_transaction wallet_api::cancel_limit_order(string               seller,
     return my->cancel_limit_order(seller, order_id, broadcast);
 }
 
+signed_transaction wallet_api::collect_market_fee(string               account,
+                                                  string               asset_symbol,
+                                                  string               amount,
+                                                  bool                 csaf_fee,
+                                                  bool                 broadcast
+                                                  )
+{
+   return my->collect_market_fee(account, asset_symbol, amount, csaf_fee, broadcast);
+}
 
+signed_transaction wallet_api::asset_claim_fees(string               issuer,
+                                                string               asset_symbol,
+                                                string               amount_to_claim,
+                                                bool                 csaf_fee,
+                                                bool                 broadcast
+                                                )
+{
+   return my->asset_claim_fees(issuer, asset_symbol, amount_to_claim, csaf_fee, broadcast);
+}
 
 signed_transaction wallet_api::approve_proposal(
    const string& fee_paying_account,

@@ -1023,6 +1023,8 @@ class wallet_api
                                         string pledge_amount,
                                         string pledge_asset_symbol,
                                         string url,
+                                        optional<bool> can_pledge,
+                                        optional<uint32_t> bonus_rate,
                                         bool csaf_fee = true,
                                         bool broadcast = false);
 
@@ -1043,6 +1045,8 @@ class wallet_api
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        optional<bool> can_pledge,
+                                        optional<uint32_t> bonus_rate,
                                         bool csaf_fee = true,
                                         bool broadcast = false);
 
@@ -1807,6 +1811,20 @@ class wallet_api
                                             limit_order_id_type  order_id,
                                             bool                 broadcast = false);
 
+      signed_transaction collect_market_fee(string               account,
+                                            string               asset_symbol,
+                                            string               amount,
+                                            bool                 csaf_fee = true,
+                                            bool                 broadcast = false
+                                            );
+
+      signed_transaction asset_claim_fees(string               issuer,
+                                          string               asset_symbol,
+                                          string               amount_to_claim,
+                                          bool                 csaf_fee = true,
+                                          bool                 broadcast = false
+                                          );
+
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
       void dbg_generate_blocks( std::string debug_wif_key, uint32_t count );
@@ -2048,6 +2066,10 @@ FC_API( graphene::wallet::wallet_api,
         (update_lock_balance)
         (update_mining_pledge)
         (collect_pledge_mining_bonus)
+
+        //market
         (create_limit_order)
         (cancel_limit_order)
+        (collect_market_fee)
+        (asset_claim_fees)
       )
