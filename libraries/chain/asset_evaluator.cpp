@@ -37,6 +37,10 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
 { try {
    database& d = db();
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only use asset_create after HARDFORK_0_3_TIME" );
+   if (d.head_block_time() < HARDFORK_0_5_TIME){
+      FC_ASSERT(op.common_options.market_fee_percent == 0, "market_fee_percent need to be 0");
+      FC_ASSERT(op.common_options.max_market_fee == 0, "max_market_fee need to be 0");
+   }
 
    const auto& chain_parameters = d.get_global_properties().parameters;
    FC_ASSERT( op.common_options.whitelist_authorities.size() <= chain_parameters.maximum_asset_whitelist_authorities,
@@ -174,6 +178,10 @@ void_result asset_update_evaluator::do_evaluate(const asset_update_operation& o)
 
    database& d = db();
    FC_ASSERT( d.head_block_time() >= HARDFORK_0_3_TIME, "Can only use asset_update after HARDFORK_0_3_TIME" );
+   if (d.head_block_time() < HARDFORK_0_5_TIME){
+      FC_ASSERT(o.new_options.market_fee_percent == 0, "market_fee_percent need to be 0");
+      FC_ASSERT(o.new_options.max_market_fee == 0, "max_market_fee need to be 0");
+   }
 
    const asset_object& a = d.get_asset_by_aid( o.asset_to_update );
    auto a_copy = a;

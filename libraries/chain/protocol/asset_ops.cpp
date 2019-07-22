@@ -156,8 +156,8 @@ void asset_issue_operation::validate()const
 void asset_options::validate()const
 {
    // TODO move to evaluator when enabling market
-   FC_ASSERT( market_fee_percent == 0, "market_fee_percent need to be 0" );
-   FC_ASSERT( max_market_fee == 0, "max_market_fee need to be 0" );
+   //FC_ASSERT( market_fee_percent == 0, "market_fee_percent need to be 0" );
+   //FC_ASSERT( max_market_fee == 0, "max_market_fee need to be 0" );
 
    FC_ASSERT( max_supply > 0, "max_supply should be positive" );
    FC_ASSERT( max_supply <= GRAPHENE_MAX_SHARE_SUPPLY,
