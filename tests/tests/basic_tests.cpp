@@ -45,97 +45,6 @@ using namespace graphene::db;
 
 BOOST_FIXTURE_TEST_SUITE( basic_tests, database_fixture )
 
-/**
- * Verify that names are RFC-1035 compliant https://tools.ietf.org/html/rfc1035
- * https://github.com/cryptonomex/graphene/issues/15
- */
-BOOST_AUTO_TEST_CASE( valid_name_test )
-{
-   BOOST_CHECK( !is_valid_name( "a" ) );
-   BOOST_CHECK( !is_valid_name( "A" ) );
-   BOOST_CHECK( !is_valid_name( "0" ) );
-   BOOST_CHECK( !is_valid_name( "." ) );
-   BOOST_CHECK( !is_valid_name( "-" ) );
-
-   BOOST_CHECK( !is_valid_name( "aa" ) );
-   BOOST_CHECK( !is_valid_name( "aA" ) );
-   BOOST_CHECK( !is_valid_name( "a0" ) );
-   BOOST_CHECK( !is_valid_name( "a." ) );
-   BOOST_CHECK( !is_valid_name( "a-" ) );
-
-   BOOST_CHECK( is_valid_name( "aaa" ) );
-   BOOST_CHECK( !is_valid_name( "aAa" ) );
-   BOOST_CHECK( is_valid_name( "a0a" ) );
-   BOOST_CHECK( !is_valid_name( "a.a" ) );
-   BOOST_CHECK( is_valid_name( "a-a" ) );
-
-   BOOST_CHECK( is_valid_name( "aa0" ) );
-   BOOST_CHECK( !is_valid_name( "aA0" ) );
-   BOOST_CHECK( is_valid_name( "a00" ) );
-   BOOST_CHECK( !is_valid_name( "a.0" ) );
-   BOOST_CHECK( is_valid_name( "a-0" ) );
-
-   BOOST_CHECK(  is_valid_name( "aaa-bbb-ccc" ) );
-   BOOST_CHECK(  is_valid_name( "aaa-bbb.ccc" ) );
-
-   BOOST_CHECK( !is_valid_name( "aaa,bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_name( "aaa_bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_name( "aaa-BBB-ccc" ) );
-
-   BOOST_CHECK( !is_valid_name( "1aaa-bbb" ) );
-   BOOST_CHECK( !is_valid_name( "-aaa-bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_name( ".aaa-bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_name( "/aaa-bbb-ccc" ) );
-
-   BOOST_CHECK( !is_valid_name( "aaa-bbb-ccc-" ) );
-   BOOST_CHECK( !is_valid_name( "aaa-bbb-ccc." ) );
-   BOOST_CHECK( !is_valid_name( "aaa-bbb-ccc.." ) );
-   BOOST_CHECK( !is_valid_name( "aaa-bbb-ccc/" ) );
-
-   BOOST_CHECK( !is_valid_name( "aaa..bbb-ccc" ) );
-   BOOST_CHECK( is_valid_name( "aaa.bbb-ccc" ) );
-   BOOST_CHECK( is_valid_name( "aaa.bbb.ccc" ) );
-
-   BOOST_CHECK(  is_valid_name( "aaa--bbb--ccc" ) );
-   BOOST_CHECK( !is_valid_name( "xn--sandmnnchen-p8a.d" ) );
-   BOOST_CHECK(  is_valid_name( "xn--sandmnnchen-p8a.de" ) );
-   BOOST_CHECK( !is_valid_name( "xn-sandmnnchen-p8a.d" ) );
-   BOOST_CHECK(  is_valid_name( "xn-sandmnnchen-p8a.de" ) );
-
-   BOOST_CHECK(  is_valid_name( "this-label-has-less-than-64-char.acters-63-to-be-really-precise" ) );
-   BOOST_CHECK( !is_valid_name( "this-label-has-more-than-63-char.act.ers-64-to-be-really-precise" ) );
-   BOOST_CHECK( !is_valid_name( "none.of.these.labels.has.more.than-63.chars--but.still.not.valid" ) );
-}
-
-BOOST_AUTO_TEST_CASE( valid_symbol_test )
-{
-   BOOST_CHECK( !is_valid_symbol( "A" ) );
-   BOOST_CHECK( !is_valid_symbol( "a" ) );
-   BOOST_CHECK( !is_valid_symbol( "0" ) );
-   BOOST_CHECK( !is_valid_symbol( "." ) );
-
-   BOOST_CHECK( !is_valid_symbol( "AA" ) );
-   BOOST_CHECK( !is_valid_symbol( "Aa" ) );
-   BOOST_CHECK( !is_valid_symbol( "A0" ) );
-   BOOST_CHECK( !is_valid_symbol( "A." ) );
-
-   BOOST_CHECK( is_valid_symbol( "AAA" ) );
-   BOOST_CHECK( !is_valid_symbol( "AaA" ) );
-   BOOST_CHECK( is_valid_symbol( "A0A" ) );
-   BOOST_CHECK( is_valid_symbol( "A.A" ) );
-
-   BOOST_CHECK( !is_valid_symbol( "A..A" ) );
-   BOOST_CHECK( !is_valid_symbol( "A.A." ) );
-   BOOST_CHECK( !is_valid_symbol( "A.A.A" ) );
-
-   BOOST_CHECK( is_valid_symbol( "AAAAAAAAAAAAAAAA" ) );
-   BOOST_CHECK( !is_valid_symbol( "AAAAAAAAAAAAAAAAA" ) );
-   BOOST_CHECK( is_valid_symbol( "A.AAAAAAAAAAAAAA" ) );
-   BOOST_CHECK( !is_valid_symbol( "A.AAAAAAAAAAAA.A" ) );
-
-   BOOST_CHECK( is_valid_symbol( "AAA000AAA" ) );
-}
-
 BOOST_AUTO_TEST_CASE( memo_test )
 { try {
    memo_data m;
@@ -155,10 +64,6 @@ BOOST_AUTO_TEST_CASE( memo_test )
    BOOST_CHECK_EQUAL(m.get_message(receiver, sender.get_public_key()), "Hello, world!");
 } FC_LOG_AND_RETHROW() }
 
-BOOST_AUTO_TEST_CASE( exceptions )
-{
-   GRAPHENE_CHECK_THROW(FC_THROW_EXCEPTION(balance_claim_invalid_claim_amount, "Etc"), balance_claim_invalid_claim_amount);
-}
 
 BOOST_AUTO_TEST_CASE( scaled_precision )
 {
