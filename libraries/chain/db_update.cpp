@@ -2187,6 +2187,8 @@ void database::process_content_platform_awards()
                }
             }
 
+            //registrar and referrer bonus from score earning
+            map<account_uid_type, share_type> bonus_map;
             for (const auto& r : registrar_and_referrer_award)
             {
                if (auto account_obj = find_account_by_uid(r.first))
@@ -2195,10 +2197,18 @@ void database::process_content_platform_awards()
                      / GRAPHENE_100_PERCENT).to_uint64();
                   share_type to_referrer = r.second - to_registrar;
                   if (account_obj->reg_info.registrar != GRAPHENE_NULL_ACCOUNT_UID)
-                     adjust_balance_map[account_obj->reg_info.registrar] += to_registrar;
+                     bonus_map[account_obj->reg_info.registrar] += to_registrar;
                   if (account_obj->reg_info.referrer != GRAPHENE_NULL_ACCOUNT_UID)
-                     adjust_balance_map[account_obj->reg_info.referrer] += to_referrer;
+                     bonus_map[account_obj->reg_info.referrer] += to_referrer;
                }
+            }
+            for (const auto& r : bonus_map)
+            {
+               modify(get_account_statistics_by_uid(r.first), [&](account_statistics_object& s)
+               {
+                  s.uncollected_score_bonus += r.second;
+               });
+               actual_awards += r.second;
             }
          }
 

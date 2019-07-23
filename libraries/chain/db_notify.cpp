@@ -372,6 +372,11 @@ struct get_impacted_account_uid_visitor
       _impacted.insert(op.fee_payer_uid()); // fee payer
    }
 
+   void operator()(const score_bonus_collect_operation& op)
+   {
+      _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
+
    void operator()(const limit_order_create_operation& op)
    {
        _impacted.insert(op.fee_payer_uid()); // seller

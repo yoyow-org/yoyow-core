@@ -921,27 +921,17 @@ public:
       account_object referrer_account_object =
          this->get_account(referrer_account);
 
-      // TODO review
-      /*
-      account_id_type registrar_account_id = registrar_account_object.id;
-
-      account_object referrer_account_object =
-            this->get_account( referrer_account );
-      account_create_op.referrer = referrer_account_object.id;
-      account_create_op.referrer_percent = uint16_t( referrer_percent * GRAPHENE_1_PERCENT );
-
-      account_create_op.registrar = registrar_account_id;
-      */
+      account_create_op.reg_info.referrer = referrer_account_object.uid;
+      account_create_op.reg_info.referrer_percent = uint16_t(referrer_percent * GRAPHENE_1_PERCENT);
+      account_create_op.reg_info.registrar = registrar_account_object.uid;
+      account_create_op.reg_info.registrar_percent = uint16_t((100 - referrer_percent) * GRAPHENE_1_PERCENT);
+      
       account_create_op.name = name;
       account_create_op.owner = authority(1, owner, 1);
       account_create_op.active = authority(1, active, 1);
       account_create_op.secondary = authority(1, owner, 1);
       account_create_op.memo_key = active;
       account_create_op.uid = graphene::chain::calc_account_uid(seed);
-      account_reg_info reg_info;
-      reg_info.registrar = registrar_account_object.uid;
-      reg_info.referrer = referrer_account_object.uid;
-      account_create_op.reg_info = reg_info;
 
       signed_transaction tx;
 
@@ -3207,6 +3197,28 @@ signed_transaction account_cancel_auth_platform(string account,
       } FC_CAPTURE_AND_RETHROW((collect_account)(bonus_amount)(csaf_fee)(broadcast))
    }
 
+   signed_transaction collect_score_bonus(string collect_account,
+      uint64_t bonus_amount,
+      bool csaf_fee,
+      bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         account_uid_type collect_account_uid = get_account_uid(collect_account);
+
+         score_bonus_collect_operation score_bonus_collect_op;
+         score_bonus_collect_op.account = collect_account_uid;
+         score_bonus_collect_op.bonus = bonus_amount;
+
+         signed_transaction tx;
+         tx.operations.push_back(score_bonus_collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((collect_account)(bonus_amount)(csaf_fee)(broadcast))
+   }
+
    signed_transaction create_limit_order(string           seller,
       asset_aid_type   sell_asset_id,
       share_type       sell_amount,
@@ -4904,6 +4916,14 @@ signed_transaction wallet_api::collect_pledge_mining_bonus(string collect_accoun
                                                            bool broadcast)
 {
    return my->collect_pledge_mining_bonus(collect_account, bonus_amount, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::collect_score_bonus(string collect_account,
+                                                   uint64_t bonus_amount,
+                                                   bool csaf_fee,
+                                                   bool broadcast)
+{
+   return my->collect_score_bonus(collect_account, bonus_amount, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::create_limit_order(string           seller,

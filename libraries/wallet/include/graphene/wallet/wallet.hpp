@@ -1797,6 +1797,11 @@ class wallet_api
                                                      uint64_t bonus_amount,
                                                      bool csaf_fee = true,
                                                      bool broadcast = false);
+
+      signed_transaction collect_score_bonus(string collect_account,
+                                             uint64_t bonus_amount,
+                                             bool csaf_fee = true,
+                                             bool broadcast = false);
          
       signed_transaction create_limit_order(string           seller,
                                             asset_aid_type   sell_asset_id,
@@ -2066,6 +2071,7 @@ FC_API( graphene::wallet::wallet_api,
         (update_lock_balance)
         (update_mining_pledge)
         (collect_pledge_mining_bonus)
+        (collect_score_bonus)
 
         //market
         (create_limit_order)

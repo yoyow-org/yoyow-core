@@ -1345,4 +1345,33 @@ object_id_type license_create_evaluator::do_apply(const operation_type& op)
 
 } FC_CAPTURE_AND_RETHROW((op)) }
 
+void_result score_bonus_collect_evaluator::do_evaluate(const score_bonus_collect_operation& op)
+{
+   try {
+      database& d = db();
+      account_stats = &d.get_account_statistics_by_uid(op.account);
+
+      FC_ASSERT(account_stats->uncollected_score_bonus >= op.bonus,
+         "Can not collect so much: have ${b}, requested ${r}",
+         ("b", d.to_pretty_core_string(account_stats->uncollected_score_bonus))
+         ("r", d.to_pretty_core_string(op.bonus)));
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result score_bonus_collect_evaluator::do_apply(const score_bonus_collect_operation& op)
+{
+   try {
+      database& d = db();
+
+      d.adjust_balance(op.account, asset(op.bonus));
+      d.modify(*account_stats, [&](account_statistics_object& s) {
+         s.uncollected_score_bonus -= op.bonus;
+      });
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((op))
+}
+
 } } // graphene::chain

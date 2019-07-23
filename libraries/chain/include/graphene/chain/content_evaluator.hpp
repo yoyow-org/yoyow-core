@@ -129,4 +129,15 @@ namespace graphene { namespace chain {
 
          const account_statistics_object* platform_ant = nullptr;
    };
+
+   class score_bonus_collect_evaluator : public evaluator < score_bonus_collect_evaluator >
+   {
+   public:
+      typedef score_bonus_collect_operation operation_type;
+
+      void_result do_evaluate(const score_bonus_collect_operation& o);
+      void_result do_apply(const score_bonus_collect_operation& o);
+
+      const account_statistics_object* account_stats = nullptr;
+   };
 } } // graphene::chain

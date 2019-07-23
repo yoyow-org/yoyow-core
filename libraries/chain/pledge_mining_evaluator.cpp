@@ -163,7 +163,7 @@ void_result pledge_bonus_collect_evaluator::do_apply(const pledge_bonus_collect_
 
       d.adjust_balance(op.account, asset(op.bonus));
       d.modify(*account_stats, [&](account_statistics_object& s) {
-         s.uncollected_witness_pay -= op.bonus;
+         s.uncollected_pledge_bonus -= op.bonus;
       });
 
       return void_result();
