@@ -155,6 +155,10 @@ namespace graphene { namespace chain {
          * uncollected fee by market trading.
          */
          map<asset_aid_type, share_type> uncollected_market_fees;
+         /**
+         * uncollected bonus, registrar and referrer form score
+         */
+         share_type uncollected_score_bonus;
 
          /**
           * last produced block number
@@ -881,6 +885,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (last_witness_sequence)(uncollected_witness_pay)
                     (uncollected_pledge_bonus)
                     (uncollected_market_fees)
+                    (uncollected_score_bonus)
                     (witness_last_confirmed_block_num)
                     (witness_last_aslot)
                     (witness_total_produced)

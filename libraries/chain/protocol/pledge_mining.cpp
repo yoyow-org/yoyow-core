@@ -16,7 +16,7 @@ void pledge_mining_update_operation::validate() const
 void pledge_bonus_collect_operation::validate() const
 {
    validate_op_fee(fee, "pledge bonus collecting ");
-   validate_account_uid(account, "witness ");
+   validate_account_uid(account, "pledge account ");
    validate_positive_core_asset(bonus, "bonus");
 }
 
