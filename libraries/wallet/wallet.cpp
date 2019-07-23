@@ -921,27 +921,17 @@ public:
       account_object referrer_account_object =
          this->get_account(referrer_account);
 
-      // TODO review
-      /*
-      account_id_type registrar_account_id = registrar_account_object.id;
-
-      account_object referrer_account_object =
-            this->get_account( referrer_account );
-      account_create_op.referrer = referrer_account_object.id;
-      account_create_op.referrer_percent = uint16_t( referrer_percent * GRAPHENE_1_PERCENT );
-
-      account_create_op.registrar = registrar_account_id;
-      */
+      account_create_op.reg_info.referrer = referrer_account_object.uid;
+      account_create_op.reg_info.referrer_percent = uint16_t(referrer_percent * GRAPHENE_1_PERCENT);
+      account_create_op.reg_info.registrar = registrar_account_object.uid;
+      account_create_op.reg_info.registrar_percent = uint16_t((100 - referrer_percent) * GRAPHENE_1_PERCENT);
+      
       account_create_op.name = name;
       account_create_op.owner = authority(1, owner, 1);
       account_create_op.active = authority(1, active, 1);
       account_create_op.secondary = authority(1, owner, 1);
       account_create_op.memo_key = active;
       account_create_op.uid = graphene::chain::calc_account_uid(seed);
-      account_reg_info reg_info;
-      reg_info.registrar = registrar_account_object.uid;
-      reg_info.referrer = referrer_account_object.uid;
-      account_create_op.reg_info = reg_info;
 
       signed_transaction tx;
 

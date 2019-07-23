@@ -198,4 +198,35 @@
 	   cast_custom_vote test2 test1 1 [2, 3, 4] true true
 	   cast_custom_vote test3 test1 1 [0, 1, 2, 4] true true
 	   transfer test1 test2 5000 YOYO "" true true
-
+	   
+	   ###############################################################################################
+	   
+	   create_witness test1 YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj 50000 YOYO "www.witness.com" true 30 5000 true true
+	   
+	   update_witness test1 null null null "www.witness1.com.cn" null 3000 true true
+	   
+	   
+	   ###############################################################################################
+	   
+	   register_account test2 YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT YYW5KWYNAJYFf7Y9qQBoTr2E1gzKzBBKtBZA2uC1WTnBenG8JsNBT init init 50 121 true true
+       register_account test3 YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv YYW7JpFyMc3m95w2NiVuPBeESVLavfqe9qcAi7zemE2ov1uPAWpqv init init 50 122 true true
+	   
+	   register_account test1 YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj init init 50 120 true true
+	   
+	   
+	   create_asset test2  ABC 5 {max_supply : 10000000000000,market_fee_percent : 1000,max_market_fee : 20,issuer_permissions : 15,flags : 1,whitelist_authorities : [],blacklist_authorities : [],whitelist_markets : [],blacklist_markets : [],description : "create test asset",extensions : { reward_percent : 5000 } }  10000000000000 true true
+       
+	   create_asset test3  CBA 5 {max_supply : 10000000000000,market_fee_percent : 1000,max_market_fee : 20,issuer_permissions : 15,flags : 1,whitelist_authorities : [],blacklist_authorities : [],whitelist_markets : [],blacklist_markets : [],description : "create test asset",extensions : { reward_percent : 5000 } }  10000000000000 true true
+	   
+	   
+       list_assets 0 10
+	   
+	   list_account_balances test2
+	   list_account_balances test3
+	   
+	   create_limit_order test2 1 10000 2 50000 1579862861 false true
+	   
+	   create_limit_order test3 2 50000 1 10000 1579862861 false true
+	   
+	   
+	   

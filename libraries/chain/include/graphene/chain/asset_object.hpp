@@ -173,7 +173,7 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::asset_dynamic_data_object, (graphene::db::object),
-                    (asset_id)(current_supply)(accumulated_fees) )
+   (asset_id)(current_supply)(accumulated_fees)(fee_pool))
 
 FC_REFLECT_DERIVED( graphene::chain::asset_object, (graphene::db::object),
                     (asset_id)
