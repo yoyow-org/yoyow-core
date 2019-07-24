@@ -39,8 +39,8 @@ namespace graphene { namespace chain {
       account_uid_type referrer = GRAPHENE_NULL_ACCOUNT_UID;
 
       /// The percentages go to the registrar and the referrer.
-      uint16_t        registrar_percent = 0;
-      uint16_t        referrer_percent = 0;
+      uint16_t        registrar_percent = GRAPHENE_100_PERCENT/2;
+      uint16_t        referrer_percent = GRAPHENE_100_PERCENT/2;
       asset           allowance_per_article;
       asset           max_share_per_article;
       asset           max_share_total;

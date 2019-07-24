@@ -277,6 +277,22 @@ namespace graphene { namespace chain {
          void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now);
 
          void add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount);
+      
+         //use for operation that transfer property,
+         share_type available_core_balance()const{
+            return core_balance
+               - core_leased_out
+               - total_witness_pledge
+               - total_platform_pledge
+               - locked_balance_for_feepoint
+               - releasing_locked_feepoint
+               - total_mining_pledge
+               - total_committee_member_pledge;
+         }
+         share_type total_uncollected_core_balance()const{
+            auto itr=uncollected_market_fees.find(0);
+            return uncollected_witness_pay+uncollected_score_bonus+uncollected_pledge_bonus+(itr!=uncollected_market_fees.end()?itr->second:share_type(0));
+         }
    };
 
    /**
