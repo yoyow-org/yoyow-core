@@ -339,7 +339,7 @@ void database::update_witness_avg_pledge( const witness_object& wit )
    {
       modify( wit, [&]( witness_object& w )
       {
-         const auto need_time = ( GRAPHENE_VIRTUAL_LAP_LENGTH - w.by_pledge_position ) / ( w.average_pledge + 1 );
+         const auto need_time = ( GRAPHENE_VIRTUAL_LAP_LENGTH - w.by_pledge_position ) / ( w.average_pledge + w.total_mining_pledge + 1 );
          w.by_pledge_scheduled_time = w.by_pledge_position_last_update + need_time;
          // check for overflow
          if( w.by_pledge_scheduled_time < wso.current_by_pledge_time )
@@ -363,7 +363,7 @@ void database::reset_witness_by_pledge_schedule()
       {
          w.by_pledge_position             = fc::uint128_t();
          w.by_pledge_position_last_update = fc::uint128_t();
-         w.by_pledge_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.average_pledge + 1 );
+         w.by_pledge_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.average_pledge + w.total_mining_pledge + 1 );
       } );
    }
 }
