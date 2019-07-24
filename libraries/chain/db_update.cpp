@@ -2145,9 +2145,9 @@ void database::process_content_platform_awards()
                   });
 
                   //registrar and referrer get part of earning
-                  if (block_time >= HARDFORK_0_5_TIME)
+                  if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
                   {
-                     share_type to_registrar_and_referrer = to_add * params.registrar_referrer_rate_from_score / GRAPHENE_100_PERCENT;
+                     share_type to_registrar_and_referrer = ((uint128_t)to_add.value * params.registrar_referrer_rate_from_score / GRAPHENE_100_PERCENT).to_uint64();
                      registrar_and_referrer_award[score_obj.from_account_uid] += to_registrar_and_referrer;
                      adjust_balance_map[score_obj.from_account_uid] += (to_add - to_registrar_and_referrer);
                   }

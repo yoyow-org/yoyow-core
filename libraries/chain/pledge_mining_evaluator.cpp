@@ -13,7 +13,8 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
 {
    try {
       database& d = db();
-      FC_ASSERT(d.head_block_time() >= HARDFORK_0_5_TIME, "Can only pledge mining to witness after HARDFORK_0_5_TIME");
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      FC_ASSERT(dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05, "Can only pledge mining to witness after HARDFORK_0_5_TIME");
       account_stats = &d.get_account_statistics_by_uid(op.pledge_account); // check if the pledge account exists
       witness_obj = &d.get_witness_by_uid(op.witness);
       FC_ASSERT(witness_obj->can_pledge, "witness ${witness} can not pledge", ("witness", op.witness));
