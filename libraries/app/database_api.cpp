@@ -110,6 +110,15 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                                                                  const account_uid_type lower_bound_platform,
                                                                                  const uint32_t limit)const;
 
+      //pledge mining
+      vector<pledge_mining_object> list_pledge_mining_by_witness(const account_uid_type witness,
+         const account_uid_type lower_bound_account,
+         const uint32_t limit)const;
+
+      vector<pledge_mining_object> list_pledge_mining_by_account(const account_uid_type account,
+         const account_uid_type lower_bound_witness,
+         const uint32_t limit)const;
+
       // CSAF
       vector<csaf_lease_object> get_csaf_leases_by_from( const account_uid_type from,
                                                          const account_uid_type lower_bound_to,
@@ -1063,6 +1072,56 @@ vector<account_auth_platform_object> database_api_impl::list_account_auth_platfo
    return objs;
 }
 
+
+vector<pledge_mining_object> database_api::list_pledge_mining_by_witness(const account_uid_type witness,
+   const account_uid_type lower_bound_account,
+   const uint32_t limit)const
+{
+   return my->list_pledge_mining_by_witness(witness, lower_bound_account, limit);
+}
+
+vector<pledge_mining_object> database_api_impl::list_pledge_mining_by_witness(const account_uid_type witness,
+   const account_uid_type lower_bound_account,
+   const uint32_t limit)const
+{
+   FC_ASSERT(limit <= 100);
+   vector<pledge_mining_object> result;
+   const auto& idx = _db.get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto itr = idx.lower_bound(std::make_tuple(witness, lower_bound_account));
+   uint32_t count = 0;
+   while (itr != idx.end() && itr->witness == witness && count < limit)
+   {
+      result.emplace_back(*itr);
+      ++itr;
+      ++count;
+   }
+   return result;
+}
+
+vector<pledge_mining_object> database_api::list_pledge_mining_by_account(const account_uid_type account,
+   const account_uid_type lower_bound_witness,
+   const uint32_t limit)const
+{
+   return my->list_pledge_mining_by_account(account, lower_bound_witness, limit);
+}
+
+vector<pledge_mining_object> database_api_impl::list_pledge_mining_by_account(const account_uid_type account,
+   const account_uid_type lower_bound_witness,
+   const uint32_t limit)const
+{
+   FC_ASSERT(limit <= 100);
+   vector<pledge_mining_object> result;
+   const auto& idx = _db.get_index_type<pledge_mining_index>().indices().get<by_pledge_account>();
+   auto itr = idx.lower_bound(std::make_tuple(account, lower_bound_witness));
+   uint32_t count = 0;
+   while (itr != idx.end() && itr->pledge_account == account && count < limit)
+   {
+      result.emplace_back(*itr);
+      ++itr;
+      ++count;
+   }
+   return result;
+}
 
 uint64_t database_api::get_account_count()const
 {

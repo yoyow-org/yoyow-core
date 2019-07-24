@@ -52,6 +52,7 @@ namespace graphene { namespace chain {
    };
 
    struct by_pledge_witness;
+   struct by_pledge_account;
    struct by_pledge_mining_release;
 
    /**
@@ -66,6 +67,13 @@ namespace graphene { namespace chain {
             pledge_mining_object,
             member<pledge_mining_object, account_uid_type, &pledge_mining_object::witness>,
             member<pledge_mining_object, account_uid_type, &pledge_mining_object::pledge_account>
+         >
+         >,
+         ordered_unique< tag<by_pledge_account>,
+            composite_key<
+            pledge_mining_object,
+            member<pledge_mining_object, account_uid_type, &pledge_mining_object::pledge_account>,
+            member<pledge_mining_object, account_uid_type, &pledge_mining_object::witness>
          >
          >,
          ordered_non_unique< tag<by_pledge_mining_release>,

@@ -3124,6 +3124,26 @@ signed_transaction account_cancel_auth_platform(string account,
       } FC_CAPTURE_AND_RETHROW((account)(lower_bound_platform)(limit))
    }
 
+   vector<pledge_mining_object> list_pledge_mining_by_witness(string   witness,
+                                                              account_uid_type   lower_bound_account,
+                                                              uint32_t limit)
+   {
+      try {
+         account_uid_type witness_uid = get_account_uid(witness);
+         return _remote_db->list_pledge_mining_by_witness(witness_uid, lower_bound_account, limit);
+      } FC_CAPTURE_AND_RETHROW((witness)(lower_bound_account)(limit))
+   }
+
+   vector<pledge_mining_object> list_pledge_mining_by_account(string   account,
+                                                              account_uid_type   lower_bound_witness,
+                                                              uint32_t limit)
+   {
+      try {
+         account_uid_type account_uid = get_account_uid(account);
+         return _remote_db->list_pledge_mining_by_account(account_uid, lower_bound_witness, limit);
+      } FC_CAPTURE_AND_RETHROW((account)(lower_bound_witness)(limit))
+   }
+
    signed_transaction update_lock_balance(
       string lock_balance_account,
       string lock_balance_amount,
@@ -4891,6 +4911,20 @@ vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_a
                                                                                        uint32_t limit)
 {
    return my->list_account_auth_platform_by_account(account, lower_bound_platform, limit);
+}
+
+vector<pledge_mining_object> wallet_api::list_pledge_mining_by_witness(string   witness,
+                                                                       account_uid_type   lower_bound_account,
+                                                                       uint32_t limit)
+{
+   return my->list_pledge_mining_by_witness(witness, lower_bound_account, limit);
+}
+
+vector<pledge_mining_object> wallet_api::list_pledge_mining_by_account(string   account,
+                                                                       account_uid_type   lower_bound_witness,
+                                                                       uint32_t limit)
+{
+   return my->list_pledge_mining_by_witness(account, lower_bound_witness, limit);
 }
 
 signed_transaction wallet_api::update_lock_balance(string lock_balance_account,

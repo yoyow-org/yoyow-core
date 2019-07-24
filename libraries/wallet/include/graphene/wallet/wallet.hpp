@@ -1783,6 +1783,14 @@ class wallet_api
                                                                                  account_uid_type   lower_bound_platform,
                                                                                  uint32_t limit = 100);
 
+      vector<pledge_mining_object> list_pledge_mining_by_witness(string   witness,
+                                                                 account_uid_type   lower_bound_account,
+                                                                 uint32_t limit = 100);
+
+      vector<pledge_mining_object> list_pledge_mining_by_account(string   account,
+                                                                 account_uid_type   lower_bound_witness,
+                                                                 uint32_t limit = 100);
+
       signed_transaction update_lock_balance(string lock_balance_account,
                                              string lock_balance_amount,
                                              bool csaf_fee = true,
@@ -2071,6 +2079,8 @@ FC_API( graphene::wallet::wallet_api,
         (update_lock_balance)
         (update_mining_pledge)
         (collect_pledge_mining_bonus)
+        (list_pledge_mining_by_witness)
+        (list_pledge_mining_by_account)
         (collect_score_bonus)
 
         //market
