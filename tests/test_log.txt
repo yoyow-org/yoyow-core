@@ -23,6 +23,14 @@
 	{"private_key":"5J2nZArL1yiVzJUoHwMR4fuSsAVVV6EgTbGw8DjFTL1qi6P8NQs","public_key":"YYW8BVzoM36ocAMo42DPsNaG1fFo19XicEmCs5CfKhSmMMkaBfAAb"},
 	{"private_key":"5KbuHNCM1wxA5wM3nCXV4V3Dj7Rgs94wpvv5KxcFBuQPJH4XH8U","public_key":"YYW8K2cMvr5omtmvbAGxfqi1zN2XZMqoBwpLPfN87ivT644Ft5xmg"},
 	{"private_key":"5JTpqf39D5ev1u1ub6BDceVFxmm12bZKLwssFCdKCQVUhNosgU9","public_key":"YYW7Gmfo2vvqNVc9WWoZdsH6m9mpt6iQozeSf2jqwwKAm1ZVDYdt7"},
+	
+	
+	{"private_key":"5JaoAmi56oAtFLsEGwbnH692NNSVsEPgXfTqsW9BHoMSnZS7hyt","public_key":"YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx","address":{"addr":"cdd8b03e820eb587e024327750ea33cf6546d74d"}},
+    {"private_key":"5KkBzMVf6WSxZgZpQfkdNoTANxCm3w6j5ryH6yBBszh3W3DxDXL","public_key":"YYW5eJUgbWzjAd4Pwn2ZftYg77GubCPt5sA2kjSaTGEaBzv1AhGqP","address":{"addr":"6e18dd9495d7b1d0f7949f66854c336274bb0c7f"}},
+    {"private_key":"5Jk833tgi8FMueToaQMVnhAxibeDMz1vN2vThprr4v4eUbhviHm","public_key":"YYW4vD5afoAHHq6BkovGHuRJVWc79YaFAV2iDgaSczbhsdP6jZskr","address":{"addr":"6deb3db69c0f3d6d9bf75d7d7594ce662e0beee9"}},
+    {"private_key":"5JDrz4g2tu7b3zPuQgGepSPtqaAo6zSdqwDGd79LSoRG317VABv","public_key":"YYW53wVhW7DdDQKEy7bqBPYHDR4hMoACxR45ZY9zNSj9MuwgNWftA","address":{"addr":"751cffbb3c99d275b46830c5e7f41ea03380254e"}},
+    {"private_key":"5KNryGaCnmjFCpHRkn4evhWMe8PCbs7WGhWRBKRG359i7G7FZ9d","public_key":"YYW85kRtmZ9Xo7U7viXPKtHEz5NvRNtmPsUKY1yqRdU5ENTCQTWxK","address":{"addr":"99dd403e11a7fb0423f53c3db5141289a647c053"}},
+    {"private_key":"5KHQ5a4EyAerCFEWtjDRtgZb5SEYE6DiNGHyB7PRAfNp8NQ6xsY","public_key":"YYW7RTXCbALzTDVMJ6y7XWD4Ki942o7WCdVfbhYzj1Y8UbYmF843b","address":{"addr":"22876b30e139ae633804f55aad2161ff078307a1"}},
 
 
     register_account test1 YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj init init 0 120 true true
@@ -75,8 +83,8 @@
        collect_csaf init platform_account1  1000 YOYO 1545289965 true true
        collect_csaf init platform_account2 1000 YOYO 1545289965 true true
 	   
-#3.    transfer init test1 100000 YOYO "" true true
-       transfer init test2 100000 YOYO "" true true
+#3.    transfer init test1 1000000 YOYO "" true true
+       transfer init test2 1000000 YOYO "" true true
        transfer init test3 100000 YOYO "" true true
        transfer init test4 100000 YOYO "" true true
        transfer init test5 100000 YOYO "" true true
@@ -199,6 +207,8 @@
 	   cast_custom_vote test3 test1 1 [0, 1, 2, 4] true true
 	   transfer test1 test2 5000 YOYO "" true true
 	   
+	   
+12.	   
 	   ###############################################################################################
 	   
 	   create_witness test1 YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj 50000 YOYO "www.witness.com" true 30 5000 true true
@@ -229,4 +239,11 @@
 	   create_limit_order test3 2 50000 1 10000 1579862861 false true
 	   
 	   
-	   
+
+#13.   register_account  witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx init init 0 140 true true
+       import_key        witness1 5JaoAmi56oAtFLsEGwbnH692NNSVsEPgXfTqsW9BHoMSnZS7hyt
+	   transfer init witness1 1000000 YOYO "" true true
+	   collect_csaf init witness1 1000 YOYO 1545289965 true true
+	   create_witness    witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx 500000 YOYO "pledge mining test" true 6000 true true
+	   update_mining_pledge test1 witness1 50000000000 true true
+	   update_mining_pledge test2 witness1 50000000000 true true
