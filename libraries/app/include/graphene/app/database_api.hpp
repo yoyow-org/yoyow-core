@@ -40,6 +40,7 @@
 #include <graphene/chain/advertising_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/market_history/market_history_plugin.hpp>
+#include <graphene/chain/pledge_mining_object.hpp>
 
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
@@ -345,6 +346,17 @@ class database_api
       vector<account_auth_platform_object> list_account_auth_platform_by_account(const account_uid_type account, 
                                                                                  const account_uid_type lower_bound_platform, 
                                                                                  const uint32_t limit)const;
+      /////////////////////////
+      // pledge mining //
+      /////////////////////////
+
+      vector<pledge_mining_object> list_pledge_mining_by_witness(const account_uid_type witness,
+         const account_uid_type lower_bound_account,
+         const uint32_t limit)const;
+
+      vector<pledge_mining_object> list_pledge_mining_by_account(const account_uid_type account,
+         const account_uid_type lower_bound_witness,
+         const uint32_t limit)const;
 
       //////////////
       // Balances //
@@ -675,19 +687,7 @@ class database_api
        *  @return the set of proposed transactions relevant to the specified account id.
        */
       vector<proposal_object> get_proposed_transactions( account_uid_type uid )const;
-   
-      ///**
-      // * @param account minging pledger
-      // * @return the set of accouts that mining pledge to.
-      // */
-      //vector<account_uid_type> get_mining_pledge_to(account_uid_type account)const;
-   
-      ///**
-      // * @param account minging pledger
-      // * @param witness minging pledg to witness
-      // * @return the set of pledge mining detail that a account mining pledge to a witness.
-      // */
-      //vector<pledge_mining_object> get_mining_pledge(account_uid_type account,account_uid_type witness)const;
+  
    private:
       std::shared_ptr< database_api_impl > my;
 };
@@ -852,6 +852,6 @@ FC_API( graphene::app::database_api,
    //(get_proposed_transactions)
 
    //mining pledger
-   //(get_mining_pledge_to)
-   //(get_mining_pledge)
+   (list_pledge_mining_by_witness)
+   (list_pledge_mining_by_account)
 )

@@ -239,10 +239,10 @@ void committee_updatable_content_parameters::validate()const
       FC_ASSERT(*platform_award_interval <= 86400*365, "platform award interval must be less than or equal to one year");
 
    if (max_pledge_mining_bonus_rate.valid())
-      FC_ASSERT(*max_pledge_mining_bonus_rate >= 1000 && *max_pledge_mining_bonus_rate <= 9000,
+      FC_ASSERT(*max_pledge_mining_bonus_rate >= 10 * GRAPHENE_1_PERCENT && *max_pledge_mining_bonus_rate <= (GRAPHENE_100_PERCENT - 10 * GRAPHENE_1_PERCENT),
                "max pledge to witness mining rate should be in range 10-90%");
    if (registrar_referrer_rate_from_score.valid())
-      FC_ASSERT(*registrar_referrer_rate_from_score >= 0 && *registrar_referrer_rate_from_score <= 2500,
+      FC_ASSERT(*registrar_referrer_rate_from_score >= 0 && *registrar_referrer_rate_from_score <= 25 * GRAPHENE_1_PERCENT,
       "registrar referrer rate from score should be in range 0-25%");
 }
 
