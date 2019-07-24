@@ -167,8 +167,16 @@ void_result market_fee_collect_evaluator::do_apply(const market_fee_collect_oper
    try {
       database& d = db();
       if (_account){
-         auto iter = _account->uncollected_market_fees.find(o.asset_aid);
-         asset ast(iter->second, iter->first);
+         d.modify(*_account, [&](account_statistics_object& s) {
+            auto iter = s.uncollected_market_fees.find(o.asset_aid);
+            if (iter->second == o.amount){
+               s.uncollected_market_fees.erase(iter);
+            }
+            else{
+               iter->second -= o.amount;
+            }
+         });
+         asset ast(o.amount, o.asset_aid);
          d.adjust_balance(o.account, ast);
       }
       return void_result();
