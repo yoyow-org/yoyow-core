@@ -667,6 +667,22 @@ void database::update_account_permission()
    }
 }
 
+void database::update_account_reg_info()
+{
+   const auto& account_idx = get_index_type<account_index>().indices();
+   for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
+   {
+      modify(*itr, [&](account_object& a) {
+         if (a.reg_info.registrar == GRAPHENE_NULL_ACCOUNT_UID)
+            a.reg_info.registrar = account_uid_type(224373708);
+         if (a.reg_info.referrer == GRAPHENE_NULL_ACCOUNT_UID)
+            a.reg_info.referrer = account_uid_type(23080);
+         a.reg_info.registrar_percent == GRAPHENE_100_PERCENT / 2;
+         a.reg_info.referrer == GRAPHENE_100_PERCENT / 2;
+      });
+   }
+}
+
 void database::update_account_feepoint()
 {
    const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
@@ -2191,16 +2207,11 @@ void database::process_content_platform_awards()
             map<account_uid_type, share_type> bonus_map;
             for (const auto& r : registrar_and_referrer_award)
             {
-               if (auto account_obj = find_account_by_uid(r.first))
-               {
-                  share_type to_registrar = ((uint128_t)r.second.value * account_obj->reg_info.registrar_percent 
-                     / GRAPHENE_100_PERCENT).to_uint64();
-                  share_type to_referrer = r.second - to_registrar;
-                  if (account_obj->reg_info.registrar != GRAPHENE_NULL_ACCOUNT_UID)
-                     bonus_map[account_obj->reg_info.registrar] += to_registrar;
-                  if (account_obj->reg_info.referrer != GRAPHENE_NULL_ACCOUNT_UID)
-                     bonus_map[account_obj->reg_info.referrer] += to_referrer;
-               }
+               auto account_obj = get_account_by_uid(r.first);
+               share_type to_registrar = ((uint128_t)r.second.value * account_obj.reg_info.registrar_percent
+                  / GRAPHENE_100_PERCENT).to_uint64();
+               bonus_map[account_obj.reg_info.registrar] += to_registrar;
+               bonus_map[account_obj.reg_info.referrer] += (r.second - to_registrar);
             }
             for (const auto& r : bonus_map)
             {

@@ -4924,7 +4924,7 @@ vector<pledge_mining_object> wallet_api::list_pledge_mining_by_account(string   
                                                                        account_uid_type   lower_bound_witness,
                                                                        uint32_t limit)
 {
-   return my->list_pledge_mining_by_witness(account, lower_bound_witness, limit);
+   return my->list_pledge_mining_by_account(account, lower_bound_witness, limit);
 }
 
 signed_transaction wallet_api::update_lock_balance(string lock_balance_account,
