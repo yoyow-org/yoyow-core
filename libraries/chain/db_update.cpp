@@ -1607,8 +1607,7 @@ void database::check_invariants()
 
    for (const asset_object& asset_obj : get_index_type<asset_index>().indices())
    {
-      const auto& dasset_obj = asset_obj.dynamic_asset_data_id(this);
-      total_balances[asset_obj.asset_id] += dasset_obj.accumulated_fees;
+      total_balances[asset_obj.asset_id] += asset_obj.dynamic_data(*this).accumulated_fees.value;
    }
 
    for (const witness_object& witness_obj : get_index_type<witness_index>().indices())
@@ -1630,7 +1629,7 @@ void database::check_invariants()
 
    for (const asset_object& asset_obj : get_index_type<asset_index>().indices())
    {
-      FC_ASSERT(total_balances[asset_obj.asset_id].value == asset_obj.dynamic_asset_data_id(this).current_supply.value);
+      FC_ASSERT(total_balances[asset_obj.asset_id].value == asset_obj.dynamic_data(*this).current_supply.value);
    }
 
    /////////////////////////////////////////////////////////////////////////////////////////////////////
