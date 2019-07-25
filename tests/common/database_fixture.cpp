@@ -191,6 +191,16 @@ void database_fixture::verify_asset_supplies(const database& db)
    }
    total_balances[GRAPHENE_CORE_ASSET_AID] += db.get_dynamic_global_properties().budget_pool;
    //total_balances[GRAPHENE_CORE_ASSET_AID] += db.get_dynamic_global_properties().witness_budget;
+   
+   //advertising released balance
+   const auto& adt_idx = db.get_index_type<advertising_order_index>().indices().get<by_advertising_order_state>();
+   auto advertising_itr = adt_idx.lower_bound(advertising_undetermined);
+   while (advertising_itr != adt_idx.end() && advertising_itr->status == advertising_undetermined)
+   {
+      total_balances[GRAPHENE_CORE_ASSET_AID] += advertising_itr->released_balance;
+      ++advertising_itr;
+   }
+
 
    for (const asset_object& asset_obj : db.get_index_type<asset_index>().indices())
    {
