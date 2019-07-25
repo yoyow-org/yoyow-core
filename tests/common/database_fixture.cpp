@@ -187,7 +187,7 @@ void database_fixture::verify_asset_supplies(const database& db)
 
    for (const witness_object& witness_obj : db.get_index_type<witness_index>().indices())
    {
-      total_balances[GRAPHENE_CORE_ASSET_AID] += witness_obj.unhandled_bonus;
+      total_balances[GRAPHENE_CORE_ASSET_AID] += (witness_obj.need_distribute_bonus - witness_obj.already_distribute_bonus);
    }
    total_balances[GRAPHENE_CORE_ASSET_AID] += db.get_dynamic_global_properties().budget_pool;
    //total_balances[GRAPHENE_CORE_ASSET_AID] += db.get_dynamic_global_properties().witness_budget;
