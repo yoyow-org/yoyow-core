@@ -49,10 +49,10 @@ namespace graphene { namespace chain {
    {
        struct fee_parameters_type
        {
-           uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION / 10;
            uint32_t price_per_kbyte = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint64_t min_real_fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint16_t min_rf_percent = 10000;
+           uint64_t min_real_fee = 0;
+           uint16_t min_rf_percent = 0;
            extensions_type   extensions;
        };
 
@@ -98,10 +98,10 @@ namespace graphene { namespace chain {
    {
        struct fee_parameters_type
        {
-           uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION / 100;
            uint32_t price_per_kbyte = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint64_t min_real_fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint16_t min_rf_percent = 10000;
+           uint64_t min_real_fee = 0;
+           uint16_t min_rf_percent = 0;
            extensions_type   extensions;
        };
 
@@ -132,10 +132,10 @@ namespace graphene { namespace chain {
    {
        struct fee_parameters_type
        {
-           uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+           uint64_t fee = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
            uint32_t price_per_kbyte = 0 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint64_t min_real_fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-           uint16_t min_rf_percent = 10000;
+           uint64_t min_real_fee = 0;
+           uint16_t min_rf_percent = 0;
            extensions_type   extensions;
        };
 

@@ -115,7 +115,7 @@ void database::cancel_limit_order( const limit_order_object& order, bool create_
 
    // refund funds in order
    auto refunded = order.amount_for_sale();
-   if( refunded.asset_id == asset_aid_type() )
+   if( refunded.asset_id == GRAPHENE_CORE_ASSET_AID )
    {
       if( seller_acc_stats == nullptr )
          /*seller_acc_stats = &order.seller( *this ).statistics( *this );*/
@@ -447,12 +447,12 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
 void database::pay_order( const account_object& receiver, const asset& receives, const asset& pays )
 {
    const auto& balances = receiver.statistics(*this);
-   modify( balances, [&]( account_statistics_object& b ){
-       if (pays.asset_id == GRAPHENE_CORE_ASSET_AID)
-       {
-          b.total_core_in_orders -= pays.amount;
-       }
-   });
+   if (pays.asset_id == GRAPHENE_CORE_ASSET_AID)
+   {
+      modify(balances, [&](account_statistics_object& b){
+         b.total_core_in_orders -= pays.amount;
+      });
+   }
    adjust_balance(receiver.uid, receives);
 }
 

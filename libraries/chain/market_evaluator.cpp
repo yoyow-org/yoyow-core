@@ -99,12 +99,11 @@ void_result limit_order_create_evaluator::do_evaluate(const limit_order_create_o
 object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_operation& op)
 { try {
    const auto& seller_stats = _seller->statistics(db());
-   db().modify(seller_stats, [&](account_statistics_object& bal) {
-       if( op.amount_to_sell.asset_id == GRAPHENE_CORE_ASSET_AID )
-       {
-          bal.total_core_in_orders += op.amount_to_sell.amount;
-       }
-   });
+   if (op.amount_to_sell.asset_id == GRAPHENE_CORE_ASSET_AID){
+      db().modify(seller_stats, [&](account_statistics_object& bal) {
+         bal.total_core_in_orders += op.amount_to_sell.amount;
+      });
+   }
 
    db().adjust_balance(op.seller, -op.amount_to_sell);
 
@@ -166,19 +165,17 @@ void_result market_fee_collect_evaluator::do_apply(const market_fee_collect_oper
 {
    try {
       database& d = db();
-      if (_account){
-         d.modify(*_account, [&](account_statistics_object& s) {
-            auto iter = s.uncollected_market_fees.find(o.asset_aid);
-            if (iter->second == o.amount){
-               s.uncollected_market_fees.erase(iter);
-            }
-            else{
-               iter->second -= o.amount;
-            }
-         });
-         asset ast(o.amount, o.asset_aid);
-         d.adjust_balance(o.account, ast);
-      }
+      d.modify(*_account, [&](account_statistics_object& s) {
+         auto iter = s.uncollected_market_fees.find(o.asset_aid);
+         if (iter->second == o.amount){
+            s.uncollected_market_fees.erase(iter);
+         }
+         else{
+            iter->second -= o.amount;
+         }
+      });
+      asset ast(o.amount, o.asset_aid);
+      d.adjust_balance(o.account, ast);
       return void_result();
    } FC_CAPTURE_AND_RETHROW((o))
 }

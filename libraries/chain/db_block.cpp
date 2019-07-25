@@ -526,6 +526,7 @@ void database::_apply_block( const signed_block& next_block )
    clear_expired_transactions();
    clear_expired_proposals();
    clear_expired_scores();
+   clear_expired_limit_orders();
 
    //dlog("after update_withdraw_permissions");
    clear_expired_csaf_leases();

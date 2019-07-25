@@ -780,7 +780,7 @@ void database::clear_expired_limit_orders()
    while (!limit_order_expiration_index.empty() && limit_order_expiration_index.begin()->expiration <= head_block_time())
    {
       const limit_order_object& limit_order = *limit_order_expiration_index.begin();
-      remove(limit_order);
+      cancel_limit_order(limit_order);
    }
 }
 
