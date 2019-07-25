@@ -1573,7 +1573,7 @@ void database::check_invariants()
       FC_ASSERT( s.platform_pledge_release_block_number > head_num );
 
       total_core_balance += s.core_balance;
-      total_core_non_bal += ( s.prepaid + s.uncollected_witness_pay );
+      total_core_non_bal += ( s.prepaid + s.uncollected_witness_pay + s.uncollected_pledge_bonus + s.uncollected_score_bonus);
       total_core_leased_in += s.core_leased_in;
       total_core_leased_out += s.core_leased_out;
       total_core_witness_pledge += ( s.total_witness_pledge - s.releasing_witness_pledge );
@@ -1587,6 +1587,12 @@ void database::check_invariants()
          total_voting_core_balance += s.core_balance;
       }
    }
+
+   for (const witness_object& witness_obj : get_index_type<witness_index>().indices())
+   {
+      total_core_non_bal += (witness_obj.need_distribute_bonus - witness_obj.already_distribute_bonus);
+   }
+
    FC_ASSERT( total_core_leased_in == total_core_leased_out );
 
    share_type total_advertising_released = 0;
