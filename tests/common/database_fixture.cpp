@@ -185,7 +185,12 @@ void database_fixture::verify_asset_supplies(const database& db)
       //total_balances[asset_obj.asset_id] += dasset_obj.confidential_supply.value;
    }
 
-   total_balances[GRAPHENE_CORE_ASSET_AID] += db.get_dynamic_global_properties().witness_budget;
+   for (const witness_object& witness_obj : db.get_index_type<witness_index>().indices())
+   {
+      total_balances[GRAPHENE_CORE_ASSET_AID] += witness_obj.unhandled_bonus;
+   }
+   total_balances[GRAPHENE_CORE_ASSET_AID] += db.get_dynamic_global_properties().budget_pool;
+   //total_balances[GRAPHENE_CORE_ASSET_AID] += db.get_dynamic_global_properties().witness_budget;
 
    for (const asset_object& asset_obj : db.get_index_type<asset_index>().indices())
    {

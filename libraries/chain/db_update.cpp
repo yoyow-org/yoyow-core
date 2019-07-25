@@ -677,8 +677,8 @@ void database::update_account_reg_info()
             a.reg_info.registrar = account_uid_type(224373708);
          if (a.reg_info.referrer == GRAPHENE_NULL_ACCOUNT_UID)
             a.reg_info.referrer = account_uid_type(23080);
-         a.reg_info.registrar_percent == GRAPHENE_100_PERCENT / 2;
-         a.reg_info.referrer == GRAPHENE_100_PERCENT / 2;
+         a.reg_info.registrar_percent = GRAPHENE_100_PERCENT / 2;
+         a.reg_info.referrer = GRAPHENE_100_PERCENT / 2;
       });
    }
 }
