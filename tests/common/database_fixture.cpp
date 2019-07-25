@@ -91,7 +91,7 @@ database_fixture::database_fixture()
             init_account_priv_key.get_public_key(),
             init_account_priv_key.get_public_key(),
             init_account_priv_key.get_public_key(),
-            true);
+            true, true, true);
          genesis_state.initial_committee_candidates.push_back({ name });
          genesis_state.initial_witness_candidates.push_back({ name, init_account_priv_key.get_public_key() });
       }
@@ -359,7 +359,8 @@ account_create_operation database_fixture::make_account(
       reg.allowance_per_article = asset(10000);
       reg.max_share_per_article = asset(5000);
       reg.max_share_total = asset(1000);
-      reg.registrar = GRAPHENE_NULL_ACCOUNT_UID;
+      reg.registrar = genesis_state.initial_accounts.at(0).uid;
+      reg.referrer = genesis_state.initial_accounts.at(0).uid;
       reg.referrer_percent=GRAPHENE_100_PERCENT/2;
       reg.registrar_percent=GRAPHENE_100_PERCENT-reg.referrer_percent;
 
