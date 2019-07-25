@@ -1540,6 +1540,11 @@ void database::check_invariants()
    FC_ASSERT( wso.next_schedule_block_num > head_num );
    //if( head_block_num() >= 1285 ) { idump( (dpo) ); }
 
+   map<asset_aid_type, share_type> total_balances;
+   const auto& balance_index = get_index_type<account_balance_index>().indices();
+   for (const account_balance_object& b : balance_index)
+      total_balances[b.asset_type] += b.balance;
+
    share_type total_core_balance = 0;
    share_type total_core_non_bal = dpo.budget_pool;
    share_type total_core_leased_in = 0;
@@ -1572,8 +1577,14 @@ void database::check_invariants()
       FC_ASSERT( s.releasing_platform_pledge >= 0 );
       FC_ASSERT( s.platform_pledge_release_block_number > head_num );
 
+      for (const auto & p : s.uncollected_market_fees)
+         total_balances[p.first] += p.second;
+
+      auto iter_fee = s.uncollected_market_fees.find(GRAPHENE_CORE_ASSET_AID);
+      share_type uncollect_market_fee = iter_fee != s.uncollected_market_fees.end() ? iter_fee->second : 0;
+
       total_core_balance += s.core_balance;
-      total_core_non_bal += ( s.prepaid + s.uncollected_witness_pay + s.uncollected_pledge_bonus + s.uncollected_score_bonus);
+      total_core_non_bal += (s.prepaid + s.uncollected_witness_pay + s.uncollected_pledge_bonus + s.uncollected_score_bonus + uncollect_market_fee);
       total_core_leased_in += s.core_leased_in;
       total_core_leased_out += s.core_leased_out;
       total_core_witness_pledge += ( s.total_witness_pledge - s.releasing_witness_pledge );
@@ -1586,6 +1597,18 @@ void database::check_invariants()
          ++total_voting_accounts;
          total_voting_core_balance += s.core_balance;
       }
+   }
+
+   for (const limit_order_object& o : get_index_type<limit_order_index>().indices())
+   {
+      asset for_sale = o.amount_for_sale();
+      total_balances[for_sale.asset_id] += for_sale.amount;
+   }
+
+   for (const asset_object& asset_obj : get_index_type<asset_index>().indices())
+   {
+      const auto& dasset_obj = asset_obj.dynamic_asset_data_id(this);
+      total_balances[asset_obj.asset_id] += dasset_obj.accumulated_fees;
    }
 
    for (const witness_object& witness_obj : get_index_type<witness_index>().indices())
@@ -1603,10 +1626,14 @@ void database::check_invariants()
        total_advertising_released += advertising_iter->released_balance;
        ++advertising_iter;
    }
+   total_balances[GRAPHENE_CORE_ASSET_AID] += total_advertising_released + total_core_non_bal;
 
-   share_type current_supply = get_core_asset().dynamic_data(*this).current_supply;
-   FC_ASSERT( total_core_balance + total_core_non_bal + total_advertising_released == current_supply);
+   for (const asset_object& asset_obj : get_index_type<asset_index>().indices())
+   {
+      FC_ASSERT(total_balances[asset_obj.asset_id].value == asset_obj.dynamic_asset_data_id(this).current_supply.value);
+   }
 
+   /////////////////////////////////////////////////////////////////////////////////////////////////////
    share_type total_core_leased = 0;
    const auto& csaf_lease_idx = get_index_type<csaf_lease_index>().indices();
    for( const auto& s: csaf_lease_idx )
