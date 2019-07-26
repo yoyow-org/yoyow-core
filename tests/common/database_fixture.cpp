@@ -112,6 +112,7 @@ database_fixture::database_fixture()
       //mhplugin->plugin_startup();
 
       db.adjust_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, db.get_balance(GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID));
+      db.adjust_balance(GRAPHENE_NULL_ACCOUNT_UID, -db.get_balance(GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID));
       generate_block();
 
       set_expiration(db, trx);
