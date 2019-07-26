@@ -405,19 +405,20 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       auto _core = [&](int64_t x) -> asset
       {  return asset(x*prec);    };
 
-
       for (int i = 0; i < 5; ++i)
          add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
       transfer(committee_account, u_9000_id, _core(100000));
-      generate_blocks(10);
+      //to remain_budget_pool can reward enough
+      generate_blocks(200000);
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
       committee_update_global_content_parameter_item_type item;
-      item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
-      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
+      item.value = { 300, 300, 1000, 31536000, 10, 10000000000, 10000000000, 10000000000, 1000, 100 };
+      auto execute_proposal_head_block = db.head_block_num() + 100;
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, execute_proposal_head_block, voting_opinion_type::opinion_for, execute_proposal_head_block, execute_proposal_head_block);
       for (int i = 1; i < 5; ++i)
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
-      generate_blocks(89);
+      generate_blocks(102);
 
       collect_csaf_from_committee(u_9000_id, 1000);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
@@ -445,7 +446,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          //transfer(committee_account, a.first, _core(100000));
          collect_csaf_from_committee(a.first, 100);
          account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
-         account_manage(GRAPHENE_NULL_ACCOUNT_UID, a.first, options);
+         //account_manage(GRAPHENE_NULL_ACCOUNT_UID, a.first, options);
          auto b = db.get_account_by_uid(a.first);
       }
       for (auto a : score_map2)
@@ -453,7 +454,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          //transfer(committee_account, a.first, _core(100000));
          collect_csaf_from_committee(a.first, 100);
          account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
-         account_manage(GRAPHENE_NULL_ACCOUNT_UID, a.first, options);
+         //account_manage(GRAPHENE_NULL_ACCOUNT_UID, a.first, options);
       }
 
       for (auto a : score_map1)
@@ -467,7 +468,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
 
       generate_blocks(100);
 
-      uint128_t award_average = (uint128_t)10000000000000 * 300 / (86400 * 365);
+      uint128_t award_average = (uint128_t)10000000000 * 300 / (86400 * 365);
 
       uint128_t post_earned = award_average;
       uint128_t score_earned = post_earned * GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO / GRAPHENE_100_PERCENT;
@@ -489,13 +490,21 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       }
       auto result = get_effective_csaf(scores, 50 * 20 + 10 * 20);
       share_type total_score_balance = 0;
+      share_type total_reg_balance = 0;
       for (auto a : std::get<0>(result))
       {
          auto balance = score_earned.convert_to<uint64_t>() * std::get<1>(a) / std::get<1>(result);
          auto score_act = db.get_account_statistics_by_uid(std::get<0>(a));
+         share_type to_reg = balance * 25 / 100;
+         share_type to_score = balance - to_reg;
          total_score_balance += balance;
-         BOOST_CHECK(score_act.core_balance == balance);
+         total_reg_balance += to_reg;
+         BOOST_CHECK(score_act.core_balance == to_score);
       }
+
+      //check registar and referer balance
+      auto reg_act = db.get_account_statistics_by_uid(genesis_state.initial_accounts.at(0).uid);
+      BOOST_CHECK(reg_act.uncollected_score_bonus == total_reg_balance);
 
       auto platform_act = db.get_account_statistics_by_uid(u_9000_id);
       auto platform_core_balance = receiptor_earned.convert_to<uint64_t>() - poster_earned + award_average.convert_to<uint64_t>() + 10000000000;
@@ -519,7 +528,6 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       throw;
    }
 }
-
 
 //test api: process_platform_voted_awards()
 BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
@@ -1742,6 +1750,7 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
    }
 }
 
+
 BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
 {
    try{
@@ -1946,6 +1955,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
             auto mining_obj = db.find_pledge_mining(u_1000_id, u_3001_id);
             BOOST_CHECK(mining_obj == nullptr);
          }
+         verify_asset_supplies(db);
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
