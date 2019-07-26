@@ -78,6 +78,10 @@ database_fixture::database_fixture()
       boost::program_options::variables_map options;
 
       genesis_state.initial_timestamp = time_point_sec(GRAPHENE_TESTING_GENESIS_TIMESTAMP);
+      genesis_state.initial_account_balances.emplace_back(
+         GRAPHENE_NULL_ACCOUNT_UID,
+         GRAPHENE_SYMBOL, 
+         500000000000000);
 
       genesis_state.initial_active_witnesses = 10;
       const int reserved_accounts = 10;
@@ -107,6 +111,7 @@ database_fixture::database_fixture()
       ahplugin->plugin_startup();
       //mhplugin->plugin_startup();
 
+      db.adjust_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, db.get_balance(GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID));
       generate_block();
 
       set_expiration(db, trx);

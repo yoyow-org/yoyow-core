@@ -1742,13 +1742,13 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
    }
 }
 
-BOOST_AUTO_TEST_CASE(pledge_mining)
+BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
 {
    try{
-
-
-      {
          ACTORS((1000)(2000)(3001));
+
+         const auto& core_asset = db.get_core_asset();
+         const auto& core_dyn_data = core_asset.dynamic_data(db);
 
          const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
          auto _core = [&](int64_t x) -> asset
@@ -1946,11 +1946,16 @@ BOOST_AUTO_TEST_CASE(pledge_mining)
             auto mining_obj = db.find_pledge_mining(u_1000_id, u_3001_id);
             BOOST_CHECK(mining_obj == nullptr);
          }
-      }
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
 
-
-
-      {
+BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
+{
+   try{
          ACTORS((1000)(2000)(3001));
 
          const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
@@ -1998,10 +2003,16 @@ BOOST_AUTO_TEST_CASE(pledge_mining)
          auto wit_pay2 = dpo.by_pledge_witness_pay_per_block.value * wit2.total_produced - bonus2;
          BOOST_CHECK(witness_act1.uncollected_witness_pay == wit_pay1);
          BOOST_CHECK(witness_act2.uncollected_witness_pay == wit_pay2);
-      }
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
 
-
-      {
+BOOST_AUTO_TEST_CASE(pledge_mining_test_3)
+{
+   try{
          ACTORS((1000)(2000)(3001));
 
          const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
@@ -2079,8 +2090,6 @@ BOOST_AUTO_TEST_CASE(pledge_mining)
          auto account2 = db.get_account_statistics_by_uid(u_3001_id);
          auto account_uncollect_bonus = bonus1 + bonus2;
          BOOST_CHECK(account2.uncollected_pledge_bonus == account_uncollect_bonus);
-
-      }
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
