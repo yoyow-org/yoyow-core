@@ -191,6 +191,7 @@ void database::update_witness_schedule()
          bool reset_by_pledge_time = false;
          for( auto& wit : by_pledge_processed )
          {
+            //total_mining_pledge defalt value is 0 ,so don`t need hardfork logic
             fc::uint128_t new_time = new_by_pledge_time + GRAPHENE_VIRTUAL_LAP_LENGTH / (wit->average_pledge + wit->total_mining_pledge + 1);
             if( new_time < new_by_pledge_time ) // overflow
             {
