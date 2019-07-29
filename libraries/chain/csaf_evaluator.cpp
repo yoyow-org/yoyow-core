@@ -139,11 +139,13 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
       
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify(*from_stats, [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+            s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
          s.core_leased_out += delta;
       });
       d.modify(*to_stats, [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+            s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
          s.core_leased_in += delta;
       });
    }
