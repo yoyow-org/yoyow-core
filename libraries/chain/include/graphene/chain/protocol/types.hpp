@@ -191,7 +191,6 @@ namespace graphene { namespace chain {
       impl_cast_custom_vote_object_type,
       impl_account_auth_platform_object_type,
       impl_pledge_mining_object_type,
-      //impl_asset_bitasset_data_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
    };
 
@@ -213,7 +212,6 @@ namespace graphene { namespace chain {
    class account_auth_platform_object;
    class pledge_mining_object;
    class limit_order_object;
-   //class call_order_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -226,13 +224,11 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, operation_history_object_type,  operation_history_object>     operation_history_id_type;
    typedef object_id< protocol_ids, active_post_object_type,		  active_post_object>			  active_post_id_type;
    typedef object_id< protocol_ids, limit_order_object_type,        limit_order_object>           limit_order_id_type;
-   //typedef object_id< protocol_ids, call_order_object_type,         call_order_object>            call_order_id_type;
 
    // implementation types
    class global_property_object;
    class dynamic_global_property_object;
    class asset_dynamic_data_object;
-   //class asset_bitasset_data_object;
    class account_balance_object;
    class account_statistics_object;
    class voter_object;
@@ -251,7 +247,6 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_global_property_object_type,  global_property_object>                    global_property_id_type;
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,  dynamic_global_property_object>    dynamic_global_property_id_type;
    typedef object_id< implementation_ids, impl_asset_dynamic_data_type,      asset_dynamic_data_object>                 asset_dynamic_data_id_type;
-   //typedef object_id< implementation_ids, impl_asset_bitasset_data_type,     asset_bitasset_data_object>                    asset_bitasset_data_id_type;
    typedef object_id< implementation_ids, impl_account_balance_object_type,  account_balance_object>                    account_balance_id_type;
    typedef object_id< implementation_ids, impl_account_statistics_object_type,account_statistics_object>                account_statistics_id_type;
    typedef object_id< implementation_ids, impl_voter_object_type,            voter_object>                              voter_id_type;
@@ -420,7 +415,6 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_cast_custom_vote_object_type)
                  (impl_account_auth_platform_object_type)
                  (impl_pledge_mining_object_type)
-                 //(impl_asset_bitasset_data_type)
                  (IMPL_OBJECT_TYPE_COUNT)
                )
 
@@ -437,7 +431,6 @@ FC_REFLECT_TYPENAME( graphene::chain::proposal_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::operation_history_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::active_post_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::limit_order_id_type)
-//FC_REFLECT_TYPENAME( graphene::chain::call_order_id_type)
 
 FC_REFLECT_TYPENAME( graphene::chain::global_property_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::dynamic_global_property_id_type )

@@ -284,7 +284,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       //    return tmp;
       //}
 
-      vector<limit_order_object> get_limit_orders(const asset_id_type a, const asset_id_type b, const uint32_t limit)const
+      vector<limit_order_object> get_limit_orders(const asset_aid_type a, const asset_aid_type b, const uint32_t limit)const
       {
           FC_ASSERT(limit <= 300);
 
@@ -314,26 +314,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
           }
 
           return result;
-      }
-
-      template<typename T>
-      const std::pair<asset_id_type, asset_id_type> get_order_market(const T& order)
-      {
-          return order.get_market();
-      }
-
-      template<typename T>
-      void enqueue_if_subscribed_to_market(const object* obj, market_queue_type& queue, bool full_object = true)
-      {
-          const T* order = dynamic_cast<const T*>(obj);
-          FC_ASSERT(order != nullptr);
-
-          const auto& market = get_order_market(*order);
-
-          auto sub = _market_subscriptions.find(market);
-          if (sub != _market_subscriptions.end()) {
-              queue[market].emplace_back(full_object ? obj->to_variant() : fc::variant(obj->id, 1));
-          }
       }
 
       void broadcast_updates( const vector<variant>& updates );
