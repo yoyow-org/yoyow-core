@@ -146,6 +146,8 @@ void_result pledge_bonus_collect_evaluator::do_evaluate(const pledge_bonus_colle
 {
    try {
       database& d = db();
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      FC_ASSERT(dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05, "Can only collect pledge bonus after HARDFORK_0_5_TIME");
       account_stats = &d.get_account_statistics_by_uid(op.account);
 
       FC_ASSERT(account_stats->uncollected_pledge_bonus >= op.bonus,

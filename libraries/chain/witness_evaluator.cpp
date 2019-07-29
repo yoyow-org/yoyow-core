@@ -60,7 +60,8 @@ void_result witness_create_evaluator::do_evaluate( const witness_create_operatio
    const witness_object* maybe_found = d.find_witness_by_uid( op.account );
    FC_ASSERT( maybe_found == nullptr, "This account is already a witness" );
 
-   if (op.extensions.valid() && op.extensions->value.bonus_rate.valid())
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 && op.extensions.valid() && op.extensions->value.bonus_rate.valid())
    {
       auto bonus_rate = *(op.extensions->value.bonus_rate);
       auto max_pledge_mining_bonus_rate = global_params.get_award_params().max_pledge_mining_bonus_rate;
@@ -77,6 +78,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
    const auto& global_params = d.get_global_properties().parameters;
 
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
    const auto& new_witness_object = d.create<witness_object>( [&]( witness_object& wit ){
       wit.account             = op.account;
       wit.name                = account_obj->name;
@@ -94,7 +96,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
       wit.url                 = op.url;
 
-      if (op.extensions.valid())
+      if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 && op.extensions.valid())
       {
          auto witness_ext = op.extensions->value;
          if (witness_ext.can_pledge.valid())
@@ -106,7 +108,6 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
    const uint64_t csaf_window = global_params.csaf_accumulate_window;
    auto block_time = d.head_block_time();
-   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.last_witness_sequence += 1;
       if( s.releasing_witness_pledge > op.pledge.amount )
@@ -183,7 +184,8 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
    if( op.new_url.valid() )
       FC_ASSERT( *op.new_url != witness_obj->url, "new_url specified but did not change" );
 
-   if (op.extensions.valid())
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 && op.extensions.valid())
    {
       auto witness_ext = op.extensions->value;
       if (witness_ext.can_pledge.valid()) 
@@ -209,6 +211,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
    database& d = db();
 
    const auto& global_params = d.get_global_properties().parameters;
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
 
    if( !op.new_pledge.valid() ) // change url or key
    {
@@ -232,7 +235,6 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          wit.by_vote_scheduled_time = fc::uint128_t::max_value();
       });
       share_type delta = op.new_pledge->amount - witness_obj->pledge;
-      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05){
          d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
             _dpo.total_witness_pledge += delta;
@@ -252,7 +254,6 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       {
          const uint64_t csaf_window = global_params.csaf_accumulate_window;
          auto block_time = d.head_block_time();
-         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
          d.modify( *account_stats, [&](account_statistics_object& s) {
             if( s.releasing_witness_pledge > delta )
                s.releasing_witness_pledge -= delta;
@@ -291,7 +292,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          if( op.new_url.valid() )
             wit.url = *op.new_url;
 
-         if (op.extensions.valid())
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 && op.extensions.valid())
          {
             auto witness_ext = op.extensions->value;
             if (witness_ext.can_pledge.valid())
@@ -301,7 +302,6 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          }
       });
 
-      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
          _dpo.total_witness_pledge += delta;
       });
