@@ -136,9 +136,9 @@ namespace graphene { namespace chain {
       };
 
       struct fee_parameters_type {
-         uint64_t symbol3          = uint64_t(3)*10000* GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint64_t symbol4          = uint64_t(2)*10000* GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint64_t long_symbol      = uint64_t(1)*10000* GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t symbol3          = uint64_t(10)*10000*10000 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t symbol4          = uint64_t(10)*10000*10000 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t long_symbol      = uint64_t(10)*10000*10000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t min_real_fee     = 0;
          uint16_t min_rf_percent   = GRAPHENE_100_PERCENT;
