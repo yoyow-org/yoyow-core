@@ -630,7 +630,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
    auto to_check_transaction = [&](){
        for (const auto& op : trx.operations)
        {
-           if (//op.which() == operation::tag< transfer_operation >::value ||
+           if (op.which() == operation::tag< transfer_operation >::value ||
                op.which() == operation::tag< post_operation >::value || 
                op.which() == operation::tag< post_update_operation >::value ||
                op.which() == operation::tag< reward_proxy_operation >::value || 
