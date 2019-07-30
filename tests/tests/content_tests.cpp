@@ -1595,38 +1595,51 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
       auto _core = [&](int64_t x) -> asset
       {  return asset(x*prec);    };
 
-      transfer(committee_account, u_1000_id, _core(30000));
-      transfer(committee_account, u_2000_id, _core(30000));
-      transfer(committee_account, u_3000_id, _core(30000));
+      auto balance_u_1000_0=_core(30000);
+      auto balance_u_2000_0=_core(30000);
+      auto balance_u_3000_0=_core(30000);
+      
+      transfer(committee_account, u_1000_id, balance_u_1000_0);
+      transfer(committee_account, u_2000_id, balance_u_2000_0);
+      transfer(committee_account, u_3000_id, balance_u_3000_0);
       add_csaf_for_account(u_1000_id, 10000);
       add_csaf_for_account(u_2000_id, 10000);
       add_csaf_for_account(u_3000_id, 10000);
+      
+      auto registrar_percent=60*GRAPHENE_1_PERCENT;
+      auto referrer_percent = 40*GRAPHENE_1_PERCENT;
+      
       const account_object& ant_obj1= db.get_account_by_uid(u_1000_id);
       db.modify(ant_obj1, [&](account_object& s) {
          s.reg_info.registrar = u_1001_id;
          s.reg_info.referrer = u_1002_id;
-         s.reg_info.registrar_percent = 60*GRAPHENE_1_PERCENT;
-         s.reg_info.referrer_percent = 40*GRAPHENE_1_PERCENT;
+         s.reg_info.registrar_percent =registrar_percent;
+         s.reg_info.referrer_percent = referrer_percent;
       });
       const account_object& ant_obj2 = db.get_account_by_uid(u_2000_id);
       db.modify(ant_obj2, [&](account_object& s) {
          s.reg_info.registrar = u_2001_id;
          s.reg_info.referrer = u_2002_id;
-         s.reg_info.registrar_percent = 60 * GRAPHENE_1_PERCENT;
-         s.reg_info.referrer_percent = 40 * GRAPHENE_1_PERCENT;
+         s.reg_info.registrar_percent = registrar_percent;
+         s.reg_info.referrer_percent = referrer_percent;
       });
       const account_object& ant_obj3 = db.get_account_by_uid(u_3000_id);
       db.modify(ant_obj3, [&](account_object& s) {
          s.reg_info.registrar = u_3001_id;
          s.reg_info.referrer = u_3002_id;
-         s.reg_info.registrar_percent = 60 * GRAPHENE_1_PERCENT;
-         s.reg_info.referrer_percent = 40 * GRAPHENE_1_PERCENT;
+         s.reg_info.registrar_percent = registrar_percent;
+         s.reg_info.referrer_percent = referrer_percent;
       });
 
+      auto market_fee_percent=1*GRAPHENE_1_PERCENT;
+      auto market_reward_percent = 50 * GRAPHENE_1_PERCENT;
+      auto max_supply = 100000000*prec;
+      auto max_market_fee_1=20*prec;
+      auto max_market_fee_2=2000*prec;
       asset_options options;
-      options.max_supply = 100000000*prec;
-      options.market_fee_percent = 1*GRAPHENE_1_PERCENT;
-      options.max_market_fee = 20*prec;
+      options.max_supply = max_supply;
+      options.market_fee_percent = market_fee_percent;
+      options.max_market_fee = max_market_fee_1;
       options.issuer_permissions = 15;
       options.flags = charge_market_fee;
       //options.whitelist_authorities = ;
@@ -1636,58 +1649,82 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
       options.description = "test asset";
       options.extensions = graphene::chain::extension<additional_asset_options>();
       additional_asset_options exts;
-      exts.reward_percent = 50 * GRAPHENE_1_PERCENT;
+      exts.reward_percent = market_reward_percent;
       options.extensions->value = exts;
 
       const account_object commit_obj = db.get_account_by_uid(committee_account);
-
-      create_asset({ u_1000_private_key }, u_1000_id, "ABC", 5, options, share_type(100000000 * prec));
+      
+      auto initial_supply=share_type(100000000 * prec);
+      
+      create_asset({ u_1000_private_key }, u_1000_id, "ABC", 5, options, initial_supply);
       const asset_object& ast = db.get_asset_by_aid(1);
       BOOST_CHECK(ast.symbol == "ABC");
       BOOST_CHECK(ast.precision == 5);
       BOOST_CHECK(ast.issuer == u_1000_id);
-      BOOST_CHECK(ast.options.max_supply == 100000000 * prec);
+      BOOST_CHECK(ast.options.max_supply == max_supply);
       BOOST_CHECK(ast.options.flags == charge_market_fee);
       asset ast1 = db.get_balance(u_1000_id, 1);
       BOOST_CHECK(ast1.asset_id == 1);
-      BOOST_CHECK(ast1.amount == 100000000 * prec);
+      BOOST_CHECK(ast1.amount == initial_supply);
 
-      create_asset({ u_3000_private_key }, u_3000_id, "CBA", 5, options, share_type(100000000 * prec));
+      auto options2=options;
+      options2.max_market_fee = max_market_fee_2;
+      create_asset({ u_3000_private_key }, u_3000_id, "CBA", 5, options2, initial_supply);
       const asset_object& ast2 = db.get_asset_by_aid(2);
       BOOST_CHECK(ast2.symbol == "CBA");
       BOOST_CHECK(ast2.precision == 5);
       BOOST_CHECK(ast2.issuer == u_3000_id);
-      BOOST_CHECK(ast2.options.max_supply == 100000000 * prec);
+      BOOST_CHECK(ast2.options.max_supply == max_supply);
       BOOST_CHECK(ast2.options.flags == charge_market_fee);
       asset ast7 = db.get_balance(u_3000_id, 2);
       BOOST_CHECK(ast7.asset_id == 2);
-      BOOST_CHECK(ast7.amount == 100000000 * prec);
+      BOOST_CHECK(ast7.amount == initial_supply);
+      
+      
+      //full match market pair asset_0 and asset_1
+      auto expiration_time=fc::time_point::now().sec_since_epoch()+24*3600;
+      auto sell_asset_1_amount=10000*prec;
+      auto sell_asset_0_amount=1000*prec;
+      
+      auto balance_u_1000_1=initial_supply;
+      auto balance_u_2000_1=share_type(0);
+      auto balance_u_3000_2=initial_supply;
+      
+      create_limit_order({ u_1000_private_key }, u_1000_id, 1, sell_asset_1_amount, 0, sell_asset_0_amount, expiration_time, false);
+      create_limit_order({ u_2000_private_key }, u_2000_id, 0, sell_asset_0_amount, 1, sell_asset_1_amount, expiration_time, false);
 
-      create_limit_order({ u_1000_private_key }, u_1000_id, 1, 10000*prec, 0, 1000*prec, 1569859200, false);
-      create_limit_order({ u_2000_private_key }, u_2000_id, 0, 1000*prec, 1, 10000*prec, 1569859200, false);
 
-      asset ast21 = db.get_balance(u_1000_id, 1);
-      BOOST_CHECK(ast21.asset_id == 1);
-      BOOST_CHECK(ast21.amount == 99990000 * prec);
-      asset ast3 = db.get_balance(u_2000_id, 1);
-      BOOST_CHECK(ast3.asset_id == 1);
-      BOOST_CHECK(ast3.amount == 9980 * prec);
-
+      asset ast1000_1 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast1000_1.asset_id == 1);
+      balance_u_1000_1=balance_u_1000_1-sell_asset_1_amount;
+      BOOST_CHECK(ast1000_1.amount ==balance_u_1000_1);
+      
+      asset ast2000_1 = db.get_balance(u_2000_id, 1);
+      BOOST_CHECK(ast2000_1.asset_id == 1);
+      auto market_fee_asset_1=sell_asset_1_amount*market_fee_percent/GRAPHENE_100_PERCENT;
+      if(market_fee_asset_1>max_market_fee_1)
+         market_fee_asset_1=max_market_fee_1;
+      balance_u_2000_1=sell_asset_1_amount-market_fee_asset_1;
+      BOOST_CHECK(ast2000_1.amount ==balance_u_2000_1);
+      
+      auto registrar_r_1=(market_fee_asset_1*market_reward_percent/GRAPHENE_100_PERCENT)*registrar_percent/GRAPHENE_100_PERCENT;
+      auto referrer_r_1=(market_fee_asset_1*market_reward_percent/GRAPHENE_100_PERCENT)*referrer_percent/GRAPHENE_100_PERCENT;
+      auto asset_1_claim_fees=market_fee_asset_1*(GRAPHENE_100_PERCENT-market_reward_percent)/GRAPHENE_100_PERCENT;
+      
       const account_statistics_object& aso1 = db.get_account_statistics_by_uid(u_2001_id);
       auto iter1 = aso1.uncollected_market_fees.find(1);
       BOOST_CHECK(iter1 != aso1.uncollected_market_fees.end());
-      BOOST_CHECK(iter1->second == 6 * prec);
+      BOOST_CHECK(iter1->second == registrar_r_1);
       const account_statistics_object& aso2 = db.get_account_statistics_by_uid(u_2002_id);
       auto iter2 = aso2.uncollected_market_fees.find(1);
       BOOST_CHECK(iter2 != aso2.uncollected_market_fees.end());
-      BOOST_CHECK(iter2->second == 4 * prec);
-
+      BOOST_CHECK(iter2->second ==referrer_r_1);
+      
       const asset_dynamic_data_object& ast_dy_obj = db.get_asset_by_aid(1).dynamic_asset_data_id(db);
-      BOOST_CHECK(ast_dy_obj.accumulated_fees == 10 * prec);
+      BOOST_CHECK(ast_dy_obj.accumulated_fees == asset_1_claim_fees);
 
-
-      collect_market_fee({ u_2001_private_key }, u_2001_id, 1, 6*prec);
-      collect_market_fee({ u_2002_private_key }, u_2002_id, 1, 4*prec);
+      collect_market_fee({ u_2001_private_key }, u_2001_id, 1, registrar_r_1);
+      collect_market_fee({ u_2002_private_key }, u_2002_id, 1, referrer_r_1);
       asset ast4 = db.get_balance(u_2001_id, 1);
       BOOST_CHECK(ast4.asset_id == 1);
       BOOST_CHECK(ast4.amount == 6 * prec);
@@ -1695,54 +1732,83 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
       BOOST_CHECK(ast5.asset_id == 1);
       BOOST_CHECK(ast5.amount == 4 * prec);
 
-      asset_claim_fees({u_1000_private_key}, u_1000_id, 1, 10*prec);
+      asset_claim_fees({u_1000_private_key}, u_1000_id, 1, asset_1_claim_fees);
       const asset_dynamic_data_object& ast_dy_obj2 = db.get_asset_by_aid(1).dynamic_asset_data_id(db);
       BOOST_CHECK(ast_dy_obj2.accumulated_fees == 0);
-      asset ast6 = db.get_balance(u_1000_id, 1);
-      BOOST_CHECK(ast6.asset_id == 1);
-      BOOST_CHECK(ast6.amount == 99990010 * prec);
+      ast1000_1 = db.get_balance(u_1000_id, 1);
+      balance_u_1000_1+=asset_1_claim_fees;
+      BOOST_CHECK(ast1000_1.asset_id == 1);
+      BOOST_CHECK(ast1000_1.amount == balance_u_1000_1);
 
       ///////////////////////////////////////////////////////////////////////////////////////
 
-      create_limit_order({ u_1000_private_key }, u_1000_id, 1, 10000 * prec, 2, 20000 * prec, 1569859200, false);
-      create_limit_order({ u_3000_private_key }, u_3000_id, 2, 20000 * prec, 1, 10000 * prec, 1569859200, false);
+      sell_asset_1_amount=10000*prec;
+      auto sell_asset_2_amount=20000 * prec;
+      create_limit_order({ u_1000_private_key }, u_1000_id, 1, sell_asset_1_amount, 2, sell_asset_2_amount, expiration_time, false);
+      create_limit_order({ u_3000_private_key }, u_3000_id, 2, sell_asset_2_amount, 1, sell_asset_1_amount, expiration_time, false);
 
-      asset ast8 = db.get_balance(u_1000_id, 1);
-      BOOST_CHECK(ast8.asset_id == 1);
-      BOOST_CHECK(ast8.amount == 99980010 * prec);
-      asset ast9 = db.get_balance(u_1000_id, 2);
-      BOOST_CHECK(ast9.asset_id == 2);
-      BOOST_CHECK(ast9.amount == 19980 * prec);
+      ast1000_1 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast1000_1.asset_id == 1);
+      balance_u_1000_1=balance_u_1000_1-sell_asset_1_amount;
+      
+      BOOST_CHECK(ast1000_1.amount == balance_u_1000_1);
+      auto ast1000_2= db.get_balance(u_1000_id, 2);
+      BOOST_CHECK(ast1000_2.asset_id == 2);
+      
+      // to check overflow
+      auto market_fee_asset_2=sell_asset_2_amount*market_fee_percent/GRAPHENE_100_PERCENT;
+      if(market_fee_asset_2>max_market_fee_2)
+         market_fee_asset_2=max_market_fee_2;
+      auto balance_u_1000_2=sell_asset_2_amount-market_fee_asset_2;
+      BOOST_CHECK(ast1000_2.amount == balance_u_1000_2);
 
-      asset ast81 = db.get_balance(u_3000_id, 1);
-      BOOST_CHECK(ast81.asset_id == 1);
-      BOOST_CHECK(ast81.amount == 9980 * prec);
-      asset ast91 = db.get_balance(u_3000_id, 2);
-      BOOST_CHECK(ast91.asset_id == 2);
-      BOOST_CHECK(ast91.amount == 99980000 * prec);
+      asset ast3000_1 = db.get_balance(u_3000_id, 1);
+      BOOST_CHECK(ast3000_1.asset_id == 1);
+      
+      market_fee_asset_1=sell_asset_1_amount*market_fee_percent/GRAPHENE_100_PERCENT;
+      if(market_fee_asset_1>max_market_fee_1)
+         market_fee_asset_1=max_market_fee_1;
+      auto balance_u_3000_1=sell_asset_1_amount-market_fee_asset_1;
+      
+      BOOST_CHECK(ast3000_1.amount ==balance_u_3000_1);
+      
+      asset ast3000_2 = db.get_balance(u_3000_id, 2);
+      BOOST_CHECK(ast3000_2.asset_id == 2);
+      balance_u_3000_2-=sell_asset_2_amount;
+      BOOST_CHECK(ast3000_2.amount == balance_u_3000_2);
 
-      const asset_dynamic_data_object& ast_dy_obj3 = db.get_asset_by_aid(1).dynamic_asset_data_id(db);
-      BOOST_CHECK(ast_dy_obj3.accumulated_fees == 10 * prec);
-      const asset_dynamic_data_object& ast_dy_obj4 = db.get_asset_by_aid(2).dynamic_asset_data_id(db);
-      BOOST_CHECK(ast_dy_obj4.accumulated_fees == 10 * prec);
+      const asset_dynamic_data_object& ast_1_dy_obj = db.get_asset_by_aid(1).dynamic_asset_data_id(db);
+      asset_1_claim_fees=market_fee_asset_1*(GRAPHENE_100_PERCENT-market_reward_percent)/GRAPHENE_100_PERCENT;
+      BOOST_CHECK(ast_1_dy_obj.accumulated_fees == asset_1_claim_fees);
+      
+      auto asset_2_claim_fees=market_fee_asset_2*(GRAPHENE_100_PERCENT-market_reward_percent)/GRAPHENE_100_PERCENT;
+      const asset_dynamic_data_object& ast_2_dy_obj = db.get_asset_by_aid(2).dynamic_asset_data_id(db);
+      BOOST_CHECK(ast_2_dy_obj.accumulated_fees == asset_2_claim_fees);
 
+      registrar_r_1=(market_fee_asset_1*market_reward_percent/GRAPHENE_100_PERCENT)*registrar_percent/GRAPHENE_100_PERCENT;
+      referrer_r_1=(market_fee_asset_1*market_reward_percent/GRAPHENE_100_PERCENT)*referrer_percent/GRAPHENE_100_PERCENT;
+      
+      auto registrar_r_2=(market_fee_asset_2*market_reward_percent/GRAPHENE_100_PERCENT)*registrar_percent/GRAPHENE_100_PERCENT;
+      auto referrer_r_2=(market_fee_asset_2*market_reward_percent/GRAPHENE_100_PERCENT)*referrer_percent/GRAPHENE_100_PERCENT;
+      
       const account_statistics_object& aso3 = db.get_account_statistics_by_uid(u_3001_id);
       auto iter3 = aso3.uncollected_market_fees.find(1);
       BOOST_CHECK(iter3 != aso3.uncollected_market_fees.end());
-      BOOST_CHECK(iter3->second == 6 * prec);
+      BOOST_CHECK(iter3->second == registrar_r_1);
       const account_statistics_object& aso4 = db.get_account_statistics_by_uid(u_3002_id);
       auto iter4 = aso4.uncollected_market_fees.find(1);
       BOOST_CHECK(iter4 != aso4.uncollected_market_fees.end());
-      BOOST_CHECK(iter4->second == 4 * prec);
+      BOOST_CHECK(iter4->second == referrer_r_1);
 
       const account_statistics_object& aso5 = db.get_account_statistics_by_uid(u_1001_id);
       auto iter5 = aso5.uncollected_market_fees.find(2);
       BOOST_CHECK(iter5 != aso5.uncollected_market_fees.end());
-      BOOST_CHECK(iter5->second == 6 * prec);
+      BOOST_CHECK(iter5->second == registrar_r_2);
       const account_statistics_object& aso6 = db.get_account_statistics_by_uid(u_1002_id);
       auto iter6 = aso6.uncollected_market_fees.find(2);
       BOOST_CHECK(iter6 != aso6.uncollected_market_fees.end());
-      BOOST_CHECK(iter6->second == 4 * prec);
+      BOOST_CHECK(iter6->second == referrer_r_2);
+      
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
