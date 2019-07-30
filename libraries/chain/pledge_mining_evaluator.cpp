@@ -73,6 +73,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
 
       const auto& params = d.get_global_properties().parameters.get_award_params();
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      auto block_num = d.head_block_num();
 
       share_type delta_pledge_to_witness = 0;
       share_type send_bonus = 0;
@@ -83,7 +84,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          share_type delta_available_balance=0;
          delta_pledge_to_witness=op.new_pledge-pledge_mining_obj->pledge;
          d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {
-            delta_available_balance=obj.update_pledge(op.new_pledge, d.head_block_num() + params.mining_pledge_release_delay);
+            delta_available_balance = obj.update_pledge(op.new_pledge, block_num + params.mining_pledge_release_delay);
          });
          d.modify(*account_stats, [&](account_statistics_object& s) {
             s.total_mining_pledge += delta_available_balance;
@@ -95,8 +96,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
             obj.pledge_account = op.pledge_account;
             obj.witness = op.witness;
             obj.pledge = op.new_pledge.value;
-            if (!witness_obj->bonus_per_pledge.empty())
-               obj.last_bonus_block_num = witness_obj->bonus_per_pledge.rbegin()->first;
+            obj.last_bonus_block_num = block_num;
          });
 
          d.modify(*account_stats, [&](account_statistics_object& s) {
@@ -112,7 +112,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          {
             share_type bonus_per_pledge = ((fc::uint128_t)obj.unhandled_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
                / obj.total_mining_pledge).to_uint64();
-            obj.bonus_per_pledge.emplace(d.head_block_num(), bonus_per_pledge);
+            obj.bonus_per_pledge.emplace(block_num, bonus_per_pledge);
             obj.unhandled_bonus = 0;
          }
          
