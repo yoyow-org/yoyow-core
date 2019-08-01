@@ -237,7 +237,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       share_type delta = op.new_pledge->amount - witness_obj->pledge;
       if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05){
          d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
-            _dpo.total_witness_pledge += delta;
+            _dpo.total_witness_pledge += (delta - witness_obj->total_mining_pledge);
          });
       }
       else{

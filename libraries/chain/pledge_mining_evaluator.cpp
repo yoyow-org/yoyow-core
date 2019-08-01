@@ -80,7 +80,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
       if (pledge_mining_obj)
       {
          share_type bonus_per_pledge = witness_obj->accumulate_bonus_per_pledge(pledge_mining_obj->last_bonus_block_num + 1);
-         send_bonus = d.update_pledge_mining_bonus_to_account(*pledge_mining_obj, bonus_per_pledge);
+         send_bonus = d.update_pledge_mining_bonus_by_account(*pledge_mining_obj, bonus_per_pledge);
          share_type delta_available_balance=0;
          delta_pledge_to_witness=op.new_pledge-pledge_mining_obj->pledge;
          d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {

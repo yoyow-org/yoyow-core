@@ -960,6 +960,7 @@ void database::clear_resigned_witness_votes()
       }
 
       //clear pledge mining object
+      update_pledge_mining_bonus_by_witness(*wit_itr);
       clear_pledge_mining(*wit_itr);
       remove( *wit_itr );
 
@@ -1838,30 +1839,14 @@ void database::update_pledge_mining_bonus()
    const auto& wit_idx = get_index_type<witness_index>().indices().get<by_pledge_mining_bonus>();
    auto wit_itr = wit_idx.lower_bound(head_block_num());
    vector<std::reference_wrapper<const witness_object>> refs;
-   while (wit_itr != wit_idx.end())
-   {
-      share_type send_bonus = 0;
-      const auto& wit_pledge_idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
-      auto wit_pledge_itr = wit_pledge_idx.lower_bound(wit_itr->account);
-      while (wit_pledge_itr != wit_pledge_idx.end() && wit_pledge_itr->witness == wit_itr->account)
-      {
-         share_type bonus_per_pledge = wit_itr->accumulate_bonus_per_pledge(wit_pledge_itr->last_bonus_block_num + 1);
-         send_bonus += update_pledge_mining_bonus_to_account(*wit_pledge_itr, bonus_per_pledge);
-         ++wit_pledge_itr;
-      }
-      modify(get_account_statistics_by_uid(wit_itr->account), [&](account_statistics_object& o)
-      {
-         o.uncollected_witness_pay += (wit_itr->need_distribute_bonus - wit_itr->already_distribute_bonus - send_bonus);
-      });
+   while (wit_itr != wit_idx.end()) {
+      update_pledge_mining_bonus_by_witness(*wit_itr);
       refs.emplace_back(std::cref(*wit_itr));
       ++wit_itr;
    }
 
-   std::for_each(refs.begin(), refs.end(), [&](const witness_object& witness_obj)
-   {
-      modify(witness_obj, [&](witness_object& wit)
-      {
-         //w.is_pledge_changed = false;
+   std::for_each(refs.begin(), refs.end(), [&](const witness_object& witness_obj) {
+      modify(witness_obj, [&](witness_object& wit) {
          wit.unhandled_bonus = 0;
          wit.need_distribute_bonus = 0;
          wit.already_distribute_bonus = 0;
@@ -1871,22 +1856,38 @@ void database::update_pledge_mining_bonus()
    });
 }
 
-share_type database::update_pledge_mining_bonus_to_account(const pledge_mining_object& pledge_mining_obj, share_type bonus_per_pledge)
+void database::update_pledge_mining_bonus_by_witness(const witness_object& witness_obj)
+{
+   share_type send_bonus = 0;
+   const auto& pmg_idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto pmg_itr = pmg_idx.lower_bound(witness_obj.account);
+   while (pmg_itr != pmg_idx.end() && pmg_itr->witness == witness_obj.account)
+   {
+      share_type bonus_per_pledge = witness_obj.accumulate_bonus_per_pledge(pmg_itr->last_bonus_block_num + 1);
+      send_bonus += update_pledge_mining_bonus_by_account(*pmg_itr, bonus_per_pledge);
+      ++pmg_itr;
+   }
+   modify(get_account_statistics_by_uid(witness_obj.account), [&](account_statistics_object& o)
+   {
+      o.uncollected_witness_pay += (witness_obj.need_distribute_bonus 
+         - witness_obj.already_distribute_bonus 
+         - send_bonus);
+   });
+}
+
+share_type database::update_pledge_mining_bonus_by_account(const pledge_mining_object& pledge_mining_obj, share_type bonus_per_pledge)
 {
    if (pledge_mining_obj.pledge == 0)
       return 0;
 
    share_type total_bonus = ((uint128_t)bonus_per_pledge.value * pledge_mining_obj.pledge.value
       / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
-   if (total_bonus > 0)
-   {
-      modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](account_statistics_object& o)
-      {
+   if (total_bonus > 0) {
+      modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](account_statistics_object& o) {
          o.uncollected_pledge_bonus += total_bonus;
       });
    }
-   modify(pledge_mining_obj, [&](pledge_mining_object& o)
-   {
+   modify(pledge_mining_obj, [&](pledge_mining_object& o) {
       o.last_bonus_block_num = head_block_num();
    });
     
@@ -1963,23 +1964,15 @@ void database::clear_pledge_mining(const witness_object& wit)
 {
    const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
    auto itr = idx.lower_bound(wit.account);
-   share_type release_pledge = 0;
    while (itr != idx.end() && itr->witness == wit.account)
    {
       modify(get_account_statistics_by_uid(itr->pledge_account), [&](account_statistics_object& s) {
          s.total_mining_pledge -= (itr->releasing_mining_pledge + itr->pledge);
       });
-      release_pledge += itr->pledge;
       auto tmp_itr = itr;
       ++itr;
       remove(*tmp_itr);
    }
-
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   modify(dpo, [&](dynamic_global_property_object& _dpo)
-   {
-      _dpo.total_witness_pledge -= release_pledge;
-   });
 }
 
 void database::clear_resigned_platform_votes()
