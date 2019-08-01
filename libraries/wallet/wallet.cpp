@@ -3240,9 +3240,9 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction create_limit_order(string           seller,
-      asset_aid_type   sell_asset_id,
+      string           sell_asset_symbol,
       share_type       sell_amount,
-      asset_aid_type   min_receive_asset_id,
+      string           min_receive_asset_symbol,
       share_type       min_receive_amount,
       uint32_t         expiration,
       bool             fill_or_kill,
@@ -3250,13 +3250,17 @@ signed_transaction account_cancel_auth_platform(string account,
    {
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
+         optional<asset_object_with_data> asset_to_sell = find_asset(sell_asset_symbol);
+         FC_ASSERT(asset_to_sell.valid(), "Can not find asset ${a}", ("a", sell_asset_symbol));
+         optional<asset_object_with_data> asset_to_buy = find_asset(min_receive_asset_symbol);
+         FC_ASSERT(asset_to_buy.valid(), "Can not find asset ${a}", ("a", min_receive_asset_symbol));
 
          account_uid_type account_uid = get_account_uid(seller);
          time_point_sec expiration_time(expiration);
          limit_order_create_operation create_op;
          create_op.seller = account_uid;
-         create_op.amount_to_sell = asset(sell_amount, sell_asset_id);
-         create_op.min_to_receive = asset(min_receive_amount, min_receive_asset_id);
+         create_op.amount_to_sell = asset(sell_amount, asset_to_sell->asset_id);
+         create_op.min_to_receive = asset(min_receive_amount, asset_to_buy->asset_id);
          create_op.expiration = expiration_time;
          create_op.fill_or_kill = fill_or_kill;
 
@@ -3266,7 +3270,7 @@ signed_transaction account_cancel_auth_platform(string account,
          tx.validate();
 
          return sign_transaction(tx, broadcast);
-      } FC_CAPTURE_AND_RETHROW((seller)(sell_asset_id)(sell_amount)(min_receive_asset_id)(min_receive_amount)(expiration)(fill_or_kill)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((seller)(sell_asset_symbol)(sell_amount)(min_receive_asset_symbol)(min_receive_amount)(expiration)(fill_or_kill)(broadcast))
    }
 
    signed_transaction cancel_limit_order(string               seller,
@@ -4961,15 +4965,15 @@ signed_transaction wallet_api::collect_score_bonus(string collect_account,
 }
 
 signed_transaction wallet_api::create_limit_order(string           seller,
-                                                  asset_aid_type   sell_asset_id,
+                                                  string           sell_asset_symbol,
                                                   share_type       sell_amount,
-                                                  asset_aid_type   min_receive_asset_id,
+                                                  string           min_receive_asset_symbol,
                                                   share_type       min_receive_amount,
                                                   uint32_t         expiration,
                                                   bool             fill_or_kill,
                                                   bool             broadcast)
 {
-    return my->create_limit_order(seller, sell_asset_id, sell_amount, min_receive_asset_id, min_receive_amount, expiration, fill_or_kill, broadcast);
+   return my->create_limit_order(seller, sell_asset_symbol, sell_amount, min_receive_asset_symbol, min_receive_amount, expiration, fill_or_kill, broadcast);
 }
 
 signed_transaction wallet_api::cancel_limit_order(string               seller,

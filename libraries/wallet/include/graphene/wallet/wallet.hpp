@@ -1812,9 +1812,9 @@ class wallet_api
                                              bool broadcast = false);
          
       signed_transaction create_limit_order(string           seller,
-                                            asset_aid_type   sell_asset_id,
+                                            string           sell_asset_symbol,
                                             share_type       sell_amount,
-                                            asset_aid_type   min_receive_asset_id,
+                                            string           min_receive_asset_symbol,
                                             share_type       min_receive_amount,
                                             uint32_t         expiration,
                                             bool             fill_or_kill,
