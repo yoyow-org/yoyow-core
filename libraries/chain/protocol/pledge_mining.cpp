@@ -11,6 +11,7 @@ void pledge_mining_update_operation::validate() const
    validate_account_uid(pledge_account, "pledge account ");
    validate_account_uid(witness, "witness");
    validate_non_negative_amount(new_pledge, " new pledge amount");
+   FC_ASSERT(pledge_account != witness, "witness pledge mining to oneself is not allowed");
 }
 
 void pledge_bonus_collect_operation::validate() const
