@@ -1816,6 +1816,163 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
    }
 }
 
+BOOST_AUTO_TEST_CASE(limit_order_test2)
+{
+   try{
+      ACTORS((1000)(2000)(3000)(4000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      auto balance_u_1000_0 = _core(30000);
+      auto balance_u_2000_0 = _core(30000);
+      auto balance_u_3000_0 = _core(30000);
+      auto balance_u_4000_0 = _core(30000);
+
+      transfer(committee_account, u_1000_id, balance_u_1000_0);
+      transfer(committee_account, u_2000_id, balance_u_2000_0);
+      transfer(committee_account, u_3000_id, balance_u_3000_0);
+      transfer(committee_account, u_4000_id, balance_u_4000_0);
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+      add_csaf_for_account(u_3000_id, 10000);
+      add_csaf_for_account(u_4000_id, 10000);
+
+      auto market_fee_percent = 1 * GRAPHENE_1_PERCENT;
+      auto market_reward_percent = 50 * GRAPHENE_1_PERCENT;
+      auto max_supply = 100000000 * prec;
+      auto max_market_fee_1 = 20 * prec;
+      auto max_market_fee_2 = 2000 * prec;
+      asset_options options;
+      options.max_supply = max_supply;
+      options.market_fee_percent = market_fee_percent;
+      options.max_market_fee = max_market_fee_1;
+      options.issuer_permissions = 15;
+      options.flags = charge_market_fee;
+      //options.whitelist_authorities = ;
+      //options.blacklist_authorities = ;
+      //options.whitelist_markets = ;
+      //options.blacklist_markets = ;
+      options.description = "test asset";
+      options.extensions = graphene::chain::extension<additional_asset_options>();
+      additional_asset_options exts;
+      exts.reward_percent = market_reward_percent;
+      options.extensions->value = exts;
+
+      const account_object commit_obj = db.get_account_by_uid(committee_account);
+      auto initial_supply = share_type(100000000 * prec);
+      create_asset({ u_1000_private_key }, u_1000_id, "ABC", 5, options, initial_supply);
+      const asset_object& ast = db.get_asset_by_aid(1);
+      BOOST_CHECK(ast.symbol == "ABC");
+      BOOST_CHECK(ast.precision == 5);
+      BOOST_CHECK(ast.issuer == u_1000_id);
+      BOOST_CHECK(ast.options.max_supply == max_supply);
+      BOOST_CHECK(ast.options.flags == charge_market_fee);
+      asset ast1 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast1.asset_id == 1);
+      BOOST_CHECK(ast1.amount == initial_supply);
+
+      auto options2 = options;
+      options2.max_market_fee = max_market_fee_2;
+      create_asset({ u_2000_private_key }, u_2000_id, "CBA", 5, options2, initial_supply);
+      const asset_object& ast2 = db.get_asset_by_aid(2);
+      BOOST_CHECK(ast2.symbol == "CBA");
+      BOOST_CHECK(ast2.precision == 5);
+      BOOST_CHECK(ast2.issuer == u_2000_id);
+      BOOST_CHECK(ast2.options.max_supply == max_supply);
+      BOOST_CHECK(ast2.options.flags == charge_market_fee);
+      asset ast7 = db.get_balance(u_2000_id, 2);
+      BOOST_CHECK(ast7.asset_id == 2);
+      BOOST_CHECK(ast7.amount == initial_supply);
+
+
+      //test for less match
+      auto expiration_time = fc::time_point::now().sec_since_epoch() + 24 * 3600;
+      auto sell_asset_1_amount = 10000 * prec;
+      auto sell_asset_0_amount = 1000 * prec;
+
+      //u_1000 :  10000 ABC <---> 1000 YOYO
+      create_limit_order({ u_1000_private_key }, u_1000_id, 1, sell_asset_1_amount, 0, sell_asset_0_amount, expiration_time, false);
+      //u_3000 :  500 YOYO  <---> 5000 ABC
+      create_limit_order({ u_3000_private_key }, u_3000_id, 0, sell_asset_0_amount/2, 1, sell_asset_1_amount/2, expiration_time, false);
+
+      auto fee1 = (sell_asset_1_amount / 2)* market_fee_percent / GRAPHENE_100_PERCENT;
+      if (fee1 > max_market_fee_1) fee1 = max_market_fee_1;
+
+      asset ast1000_1 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast1000_1.asset_id == 1);
+      auto balance_u_1000_1 = initial_supply - sell_asset_1_amount;
+      BOOST_CHECK(ast1000_1.amount == balance_u_1000_1);
+
+      asset ast3000_1 = db.get_balance(u_3000_id, 1);
+      BOOST_CHECK(ast3000_1.asset_id == 1);
+      auto balance_u_3000_1 = sell_asset_1_amount / 2 - fee1;
+      BOOST_CHECK(ast3000_1.amount == balance_u_3000_1);
+
+      //u_4000 :  500 YOYO  <---> 5000 ABC
+      create_limit_order({ u_4000_private_key }, u_4000_id, 0, sell_asset_0_amount / 2, 1, sell_asset_1_amount / 2, expiration_time, false);
+
+      auto fee2 = (sell_asset_1_amount / 2)* market_fee_percent / GRAPHENE_100_PERCENT;
+      if (fee2 > max_market_fee_1) fee2 = max_market_fee_1;
+
+      asset ast1000_2 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast1000_2.asset_id == 1);
+      auto balance_u_1000_2 = initial_supply - sell_asset_1_amount / 2 - sell_asset_1_amount / 2;
+      BOOST_CHECK(ast1000_2.amount == balance_u_1000_2);
+
+      asset ast3000_2 = db.get_balance(u_3000_id, 1);
+      BOOST_CHECK(ast3000_2.asset_id == 1);
+      auto balance_u_3000_2 = sell_asset_1_amount / 2 - fee2;
+      BOOST_CHECK(ast3000_2.amount == balance_u_3000_2);
+
+      //test for less match 2
+
+      //u_1000 :  10000 ABC <---> 1000 CBA
+      create_limit_order({ u_1000_private_key }, u_1000_id, 1, sell_asset_1_amount, 2, sell_asset_0_amount, expiration_time, false);
+      //u_2000 :  500 CBA  <---> 5000 ABC
+      create_limit_order({ u_2000_private_key }, u_2000_id, 2, sell_asset_0_amount / 2, 1, sell_asset_1_amount / 2, expiration_time, false);
+
+      auto fee3 = (sell_asset_0_amount / 2)* market_fee_percent / GRAPHENE_100_PERCENT;
+      if (fee3 > max_market_fee_2) fee3 = max_market_fee_2;
+
+      asset ast1000_3 = db.get_balance(u_1000_id, 2);
+      BOOST_CHECK(ast1000_3.asset_id == 2);
+      auto balance_u_1000_3 = sell_asset_0_amount / 2 - fee3;
+      BOOST_CHECK(ast1000_3.amount == balance_u_1000_3);
+
+      auto fee4 = (sell_asset_1_amount / 2)* market_fee_percent / GRAPHENE_100_PERCENT;
+      if (fee4 > max_market_fee_1) fee4 = max_market_fee_1;
+
+      asset ast2000_1 = db.get_balance(u_2000_id, 1);
+      BOOST_CHECK(ast2000_1.asset_id == 1);
+      auto balance_u_2000_1 = sell_asset_1_amount / 2 - fee4;
+      BOOST_CHECK(ast2000_1.amount == balance_u_3000_1);
+
+      //u_2000 :  200 YOYO  <---> 2000 ABC
+      create_limit_order({ u_2000_private_key }, u_2000_id, 2, sell_asset_0_amount / 5, 1, sell_asset_1_amount / 5, expiration_time, false);
+
+      auto fee5 = (sell_asset_0_amount / 5)* market_fee_percent / GRAPHENE_100_PERCENT;
+      if (fee5 > max_market_fee_2) fee5 = max_market_fee_2;
+
+      asset ast1000_4 = db.get_balance(u_1000_id, 2);
+      BOOST_CHECK(ast1000_4.asset_id == 2);
+      auto balance_u_1000_4 = balance_u_1000_3 + sell_asset_0_amount / 5 - fee5;
+      BOOST_CHECK(ast1000_4.amount == balance_u_1000_4);
+
+      auto fee6 = (sell_asset_1_amount / 5)* market_fee_percent / GRAPHENE_100_PERCENT;
+      if (fee6 > max_market_fee_1) fee6 = max_market_fee_1;
+
+      asset ast2000_2 = db.get_balance(u_2000_id, 1);
+      BOOST_CHECK(ast2000_2.asset_id == 1);
+      auto balance_u_2000_2 = balance_u_2000_1 + sell_asset_1_amount / 5 - fee6;
+      BOOST_CHECK(ast2000_2.amount == balance_u_2000_2);
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
 
 BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
 {
