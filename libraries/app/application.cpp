@@ -130,6 +130,7 @@ namespace detail {
       fc::optional<fc::temp_file> _lock_file;
       bool _is_block_producer = false;
       bool _force_validate = false;
+      application_options _app_options;
 
       void reset_p2p_node(const fc::path& data_dir)
       { try {
@@ -322,6 +323,34 @@ namespace detail {
             genesis.initial_witness_candidates[i].block_signing_key = init_pubkey;
       }
 
+      void set_api_limit()
+      {
+         if (_options->count("api-limit-get-account-history-operations")) {
+            _app_options.api_limit_get_account_history_operations = _options->at("api-limit-get-account-history-operations").as<uint64_t>();
+         }
+         if (_options->count("api-limit-get-account-history")){
+            _app_options.api_limit_get_account_history = _options->at("api-limit-get-account-history").as<uint64_t>();
+         }
+         if (_options->count("api-limit-get-grouped-limit-orders")){
+            _app_options.api_limit_get_grouped_limit_orders = _options->at("api-limit-get-grouped-limit-orders").as<uint64_t>();
+         }
+         if (_options->count("api-limit-get-relative-account-history")){
+            _app_options.api_limit_get_relative_account_history = _options->at("api-limit-get-relative-account-history").as<uint64_t>();
+         }
+         if (_options->count("api-limit-get-account-history-by-operations")){
+            _app_options.api_limit_get_account_history_by_operations = _options->at("api-limit-get-account-history-by-operations").as<uint64_t>();
+         }
+         if (_options->count("api-limit-get-asset-holders")){
+            _app_options.api_limit_get_asset_holders = _options->at("api-limit-get-asset-holders").as<uint64_t>();
+         }
+         if (_options->count("api-limit-get-key-references")){
+            _app_options.api_limit_get_key_references = _options->at("api-limit-get-key-references").as<uint64_t>();
+         }
+         if (_options->count("api-limit-get-htlc-by")) {
+            _app_options.api_limit_get_htlc_by = _options->at("api-limit-get-htlc-by").as<uint64_t>();
+         }
+      }
+
       void startup()
       { try {
          fc::create_directories(_data_dir / "blockchain");
@@ -425,6 +454,14 @@ namespace detail {
             ilog( "All transaction signatures will be validated" );
             _force_validate = true;
          }
+
+         if (_options->count("enable-subscribe-to-all"))
+            _app_options.enable_subscribe_to_all = _options->at("enable-subscribe-to-all").as<bool>();
+
+         set_api_limit();
+
+         if (_active_plugins.find("market_history") != _active_plugins.end())
+            _app_options.has_market_history_plugin = true;
 
          if( _options->count("api-access") ) {
 
@@ -1111,6 +1148,11 @@ void application::startup_plugins()
    for( auto& entry : my->_active_plugins )
       entry.second->plugin_startup();
    return;
+}
+
+const application_options& application::get_options()
+{
+   return my->_app_options;
 }
 
 // namespace detail

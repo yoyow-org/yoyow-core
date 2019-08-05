@@ -5003,6 +5003,35 @@ signed_transaction wallet_api::asset_claim_fees(string               issuer,
    return my->asset_claim_fees(issuer, asset_symbol, amount_to_claim, csaf_fee, broadcast);
 }
 
+vector<bucket_object> wallet_api::get_market_history(string symbol1,
+                                                     string symbol2,
+                                                     uint32_t bucket,
+                                                     fc::time_point_sec start,
+                                                     fc::time_point_sec end)const
+{
+   return my->_remote_hist->get_market_history(symbol1, symbol2, bucket, start, end);
+}
+
+vector<limit_order_object> wallet_api::get_account_limit_orders(const string& name_or_id,
+                                                                const string &base,
+                                                                const string &quote,
+                                                                uint32_t limit,
+                                                                optional<limit_order_id_type> ostart_id,
+                                                                optional<price> ostart_price)
+{
+   return my->_remote_db->get_account_limit_orders(name_or_id, base, quote, limit, ostart_id, ostart_price);
+}
+
+vector<limit_order_object> wallet_api::get_limit_orders(std::string a, std::string b, uint32_t limit)const
+{
+   return my->_remote_db->get_limit_orders(a, b, limit);
+}
+
+order_book wallet_api::get_order_book(const string& base, const string& quote, unsigned limit)
+{
+   return(my->_remote_db->get_order_book(base, quote, limit));
+}
+
 signed_transaction wallet_api::approve_proposal(
    const string& fee_paying_account,
    const string& proposal_id,
