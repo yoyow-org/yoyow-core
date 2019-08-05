@@ -90,9 +90,9 @@
        transfer init test5 100000 YOYO "" true true
        transfer init test6 100000 YOYO "" true true
        transfer init test7 100000 YOYO "" true true
-       transfer init test8 100000 YOYO "" true true
-       transfer init test9 100000 YOYO "" true true
-       transfer init test10 100000 YOYO "" true true
+       transfer init test8 1000000 YOYO "" true true
+       transfer init test9 1000000 YOYO "" true true
+       transfer init test10 1000000 YOYO "" true true
 
        transfer init platform_account1 100000 YOYO "" true true
        transfer init platform_account2 100000 YOYO "" true true
@@ -240,10 +240,51 @@
 	   
 	   
 
-#13.   register_account  witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx init init 0 140 true true
+#13.   register_account  witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx init1 init2 0 140 true true
        import_key        witness1 5JaoAmi56oAtFLsEGwbnH692NNSVsEPgXfTqsW9BHoMSnZS7hyt
 	   transfer init witness1 1000000 YOYO "" true true
 	   collect_csaf init witness1 1000 YOYO 1545289965 true true
 	   create_witness    witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx 500000 YOYO "pledge mining test" true 6000 true true
 	   update_mining_pledge test1 witness1 50000000000 true true
 	   update_mining_pledge test2 witness1 50000000000 true true
+	   
+	   
+	   
+#14	   
+#14	   
+	   register_account  witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx init init1 0 140 true true
+	   register_account  witness2 YYW5eJUgbWzjAd4Pwn2ZftYg77GubCPt5sA2kjSaTGEaBzv1AhGqP YYW5eJUgbWzjAd4Pwn2ZftYg77GubCPt5sA2kjSaTGEaBzv1AhGqP init init2 0 141 true true
+	   register_account  witness3 YYW4vD5afoAHHq6BkovGHuRJVWc79YaFAV2iDgaSczbhsdP6jZskr YYW4vD5afoAHHq6BkovGHuRJVWc79YaFAV2iDgaSczbhsdP6jZskr init init3 0 142 true true	   
+	   register_account  witness4 YYW53wVhW7DdDQKEy7bqBPYHDR4hMoACxR45ZY9zNSj9MuwgNWftA YYW53wVhW7DdDQKEy7bqBPYHDR4hMoACxR45ZY9zNSj9MuwgNWftA init init4 0 143 true true
+	   
+	   import_key        witness1 5JaoAmi56oAtFLsEGwbnH692NNSVsEPgXfTqsW9BHoMSnZS7hyt
+	   import_key        witness2 5KkBzMVf6WSxZgZpQfkdNoTANxCm3w6j5ryH6yBBszh3W3DxDXL
+	   import_key        witness3 5Jk833tgi8FMueToaQMVnhAxibeDMz1vN2vThprr4v4eUbhviHm
+	   import_key        witness4 5JDrz4g2tu7b3zPuQgGepSPtqaAo6zSdqwDGd79LSoRG317VABv
+	   
+	   transfer init witness1 1000000 YOYO "" true true
+	   transfer init witness2 1000000 YOYO "" true true
+	   transfer init witness3 1000000 YOYO "" true true
+	   transfer init witness4 1000000 YOYO "" true true
+	   
+	   collect_csaf init witness1 1000 YOYO 1545289965 true true
+	   collect_csaf init witness2 1000 YOYO 1545289965 true true
+	   collect_csaf init witness3 1000 YOYO 1545289965 true true
+	   collect_csaf init witness4 1000 YOYO 1545289965 true true
+	   
+	   create_witness    witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx 500000 YOYO "pledge mining test1" true 6000 true true
+	   create_witness    witness2 YYW5eJUgbWzjAd4Pwn2ZftYg77GubCPt5sA2kjSaTGEaBzv1AhGqP 500000 YOYO "pledge mining test2" true 6000 true true
+	   create_witness    witness3 YYW4vD5afoAHHq6BkovGHuRJVWc79YaFAV2iDgaSczbhsdP6jZskr 500000 YOYO "pledge mining test3" true 6000 true true
+	   create_witness    witness4 YYW53wVhW7DdDQKEy7bqBPYHDR4hMoACxR45ZY9zNSj9MuwgNWftA 500000 YOYO "pledge mining test3" true 6000 true true
+	   
+	   update_mining_pledge test8  witness1 10000000000 false true
+	   update_mining_pledge test9  witness1 10000000000 false true
+	   update_mining_pledge test10 witness1 10000000000 false true
+	   
+	   update_mining_pledge test8  witness2 20000000000 false true
+	   update_mining_pledge test9  witness2 20000000000 false true
+	   update_mining_pledge test10 witness2 20000000000 false true
+	   
+	   update_mining_pledge test8  witness3 30000000000 false true
+	   update_mining_pledge test9  witness3 30000000000 false true
+	   update_mining_pledge test10 witness3 30000000000 false true
