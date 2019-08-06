@@ -5003,13 +5003,15 @@ signed_transaction wallet_api::asset_claim_fees(string               issuer,
    return my->asset_claim_fees(issuer, asset_symbol, amount_to_claim, csaf_fee, broadcast);
 }
 
-vector<bucket_object> wallet_api::get_market_history(string symbol1,
-                                                     string symbol2,
+vector<bucket_object> wallet_api::get_market_history(string   symbol1,
+                                                     string   symbol2,
                                                      uint32_t bucket,
-                                                     fc::time_point_sec start,
-                                                     fc::time_point_sec end)const
+                                                     uint32_t start,
+                                                     uint32_t end)const
 {
-   return my->_remote_hist->get_market_history(symbol1, symbol2, bucket, start, end);
+   time_point_sec start_time = time_point_sec(start);
+   time_point_sec end_time = time_point_sec(end);
+   return my->_remote_hist->get_market_history(symbol1, symbol2, bucket, start_time, end_time);
 }
 
 vector<limit_order_object> wallet_api::get_account_limit_orders(const string& name_or_id,
@@ -5031,6 +5033,39 @@ order_book wallet_api::get_order_book(const string& base, const string& quote, u
 {
    return(my->_remote_db->get_order_book(base, quote, limit));
 }
+
+market_ticker wallet_api::get_ticker(const string& base, const string& quote)const
+{
+   return my->_remote_db->get_ticker(base, quote);
+}
+
+market_volume wallet_api::get_24_volume(const string& base, const string& quote)const
+{
+   return my->_remote_db->get_24_volume(base, quote);
+}
+
+vector<market_ticker> wallet_api::get_top_markets(uint32_t limit)const
+{
+   return my->_remote_db->get_top_markets(limit);
+}
+
+vector<market_trade> wallet_api::get_trade_history(const string& base, const string& quote,
+                                                   uint32_t start, uint32_t stop,
+                                                   unsigned limit)const
+{
+   time_point_sec start_time = time_point_sec(start);
+   time_point_sec stop_time = time_point_sec(stop);
+   return my->_remote_db->get_trade_history(base, quote, start_time, stop_time, limit);
+}
+
+vector<market_trade> wallet_api::get_trade_history_by_sequence(const string& base, const string& quote,
+                                                               int64_t start, uint32_t stop,
+                                                               unsigned limit)const
+{
+   time_point_sec stop_time = time_point_sec(stop);
+   return my->_remote_db->get_trade_history_by_sequence(base, quote, start, stop_time, limit);
+}
+
 
 signed_transaction wallet_api::approve_proposal(
    const string& fee_paying_account,

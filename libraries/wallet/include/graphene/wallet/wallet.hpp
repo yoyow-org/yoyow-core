@@ -1838,11 +1838,11 @@ class wallet_api
                                           bool                 broadcast = false
                                           );
 
-      vector<bucket_object> get_market_history(string symbol, 
-                                               string symbol2, 
+      vector<bucket_object> get_market_history(string   symbol, 
+                                               string   symbol2, 
                                                uint32_t bucket, 
-                                               fc::time_point_sec start, 
-                                               fc::time_point_sec end
+                                               uint32_t start_time,
+                                               uint32_t end_time
                                                )const;
 
       /**
@@ -1873,6 +1873,17 @@ class wallet_api
       vector<limit_order_object> get_limit_orders(string a, string b, uint32_t limit)const;
 
       order_book get_order_book(const string& base, const string& quote, unsigned limit = 50);
+      market_ticker get_ticker(const string& base, const string& quote)const;
+      market_volume get_24_volume(const string& base, const string& quote)const;
+      vector<market_ticker> get_top_markets(uint32_t limit)const;
+
+      vector<market_trade> get_trade_history(const string& base, const string& quote,
+                                             uint32_t start_time, uint32_t stop_time,
+                                             unsigned limit = 100)const;
+      vector<market_trade> get_trade_history_by_sequence(const string& base, const string& quote,
+                                                         int64_t start, uint32_t stop_time,
+                                                         unsigned limit = 100)const;
+
 
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -2128,4 +2139,9 @@ FC_API( graphene::wallet::wallet_api,
         (get_account_limit_orders)
         (get_limit_orders)
         (get_order_book)
+        (get_ticker)
+        (get_24_volume)
+        (get_top_markets)
+        (get_trade_history)
+        (get_trade_history_by_sequence)
       )
