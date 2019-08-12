@@ -2,6 +2,7 @@ file(GLOB HEADERS "include/graphene/market_history/*.hpp")
 
 add_library( graphene_market_history 
              market_history_plugin.cpp
+			 ${HEADERS}
            )
 
 target_link_libraries( graphene_market_history graphene_chain graphene_app )
