@@ -1645,8 +1645,6 @@ class wallet_api
 
       vector<post_object> get_posts_by_platform_poster(string           platform_owner,
                                                        optional<string> poster,
-                                                       uint32_t         begin_time_range,
-                                                       uint32_t         end_time_range,
                                                        object_id_type   lower_bound_post,
                                                        uint32_t         limit);
 

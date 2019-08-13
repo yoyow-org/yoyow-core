@@ -584,7 +584,6 @@ class database_api
       // FIXME if limit is 100, will be buggy when too many posts in same second
       vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
                                                         optional<account_uid_type> poster,
-                                                        const std::pair<time_point_sec, time_point_sec> create_time_range,
                                                         const object_id_type lower_bound_post,
                                                         const uint32_t limit )const;
 

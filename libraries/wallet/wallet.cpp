@@ -2754,8 +2754,6 @@ signed_transaction account_cancel_auth_platform(string account,
 
    vector<post_object> get_posts_by_platform_poster(string           platform_owner,
                                                     optional<string> poster,
-                                                    time_point_sec   begin_time_range,
-                                                    time_point_sec   end_time_range,
                                                     object_id_type   lower_bound_post,
                                                     uint32_t         limit)
    {
@@ -2763,13 +2761,13 @@ signed_transaction account_cancel_auth_platform(string account,
          account_uid_type platform = get_account_uid(platform_owner);
          if (poster.valid()){
             account_uid_type poster_uid = get_account_uid(*poster);
-            return _remote_db->get_posts_by_platform_poster(platform, poster_uid, std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+            return _remote_db->get_posts_by_platform_poster(platform, poster_uid, lower_bound_post, limit);
          }
          else{
-            return _remote_db->get_posts_by_platform_poster(platform, optional<account_uid_type>(), std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+            return _remote_db->get_posts_by_platform_poster(platform, optional<account_uid_type>(), lower_bound_post, limit);
          }
 
-      } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(begin_time_range)(end_time_range)(lower_bound_post)(limit))
+      } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(lower_bound_post)(limit))
    }
 
    uint64_t get_posts_count(optional<string> platform, optional<string> poster)
@@ -4705,14 +4703,10 @@ post_object wallet_api::get_post(string platform_owner,
 
 vector<post_object> wallet_api::get_posts_by_platform_poster(string           platform_owner,
                                                              optional<string> poster,
-                                                             uint32_t         begin_time_range,
-                                                             uint32_t         end_time_range,
                                                              object_id_type   lower_bound_post,
                                                              uint32_t         limit)
 {
-   time_point_sec  begin_time(begin_time_range);
-   time_point_sec  end_time(end_time_range);
-   return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, lower_bound_post, limit);
+   return my->get_posts_by_platform_poster(platform_owner, poster, lower_bound_post, limit);
 }
 
 uint64_t wallet_api::get_posts_count(optional<string> platform, optional<string> poster)

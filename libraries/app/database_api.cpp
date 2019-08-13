@@ -141,7 +141,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                       const post_pid_type post_pid )const;
       vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       optional<account_uid_type> poster,
-                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const object_id_type lower_bound_post,
                                       const uint32_t limit )const;
       optional<score_object> get_score(const account_uid_type platform,
@@ -1943,33 +1942,26 @@ share_type database_api_impl::get_score_profit(account_uid_type account, uint32_
 
 vector<post_object> database_api::get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       optional<account_uid_type> poster,
-                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const object_id_type lower_bound_post,
                                       const uint32_t limit )const
 {
-   return my->get_posts_by_platform_poster(platform_owner, poster, create_time_range, lower_bound_post, limit);
+   return my->get_posts_by_platform_poster(platform_owner, poster, lower_bound_post, limit);
 }
 
 vector<post_object> database_api_impl::get_posts_by_platform_poster( const account_uid_type platform_owner,
                                       optional<account_uid_type> poster,
-                                      const std::pair<time_point_sec, time_point_sec> create_time_range,
                                       const object_id_type lower_bound_post,
                                       const uint32_t limit )const
 {
    FC_ASSERT(limit <= 100);
 
    vector<post_object> result;
-
-   const time_point_sec max_time = std::max(create_time_range.first, create_time_range.second);
-   const time_point_sec min_time = std::min(create_time_range.first, create_time_range.second);
-
    uint32_t count = 0;
 
    if (poster.valid()){
-      const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_poster_create_time>();
-      auto itr = post_idx.lower_bound(std::make_tuple(platform_owner, *poster));
-      while (itr != post_idx.end() && count < limit && (itr->id > lower_bound_post || itr->id == lower_bound_post) && itr->platform == platform_owner && itr->poster == *poster
-         && (itr->create_time >= min_time && itr->create_time <= max_time))
+      const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_poster>();
+      auto itr = post_idx.lower_bound(std::make_tuple(platform_owner, *poster, lower_bound_post));
+      while (itr != post_idx.end() && count < limit && itr->platform == platform_owner && itr->poster == *poster)
       {
          result.push_back(*itr);
          ++itr;
@@ -1977,10 +1969,9 @@ vector<post_object> database_api_impl::get_posts_by_platform_poster( const accou
       }
    }
    else{
-      const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_create_time>();
-      auto itr = post_idx.lower_bound(std::make_tuple(platform_owner));
-      while (itr != post_idx.end() && count < limit && (itr->id > lower_bound_post || itr->id == lower_bound_post) && itr->platform == platform_owner
-         && (itr->create_time >= min_time && itr->create_time <= max_time))
+      const auto& post_idx = _db.get_index_type<post_index>().indices().get<by_platform_id>();
+      auto itr = post_idx.lower_bound(std::make_tuple(platform_owner, lower_bound_post));
+      while (itr != post_idx.end() && count < limit && itr->platform == platform_owner)
       {
          result.push_back(*itr);
          ++itr;

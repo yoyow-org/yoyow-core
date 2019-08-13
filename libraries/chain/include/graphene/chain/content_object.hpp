@@ -293,8 +293,8 @@ namespace graphene { namespace chain {
 
 
    struct by_post_pid{};
-   struct by_platform_create_time{};
-   struct by_platform_poster_create_time{};
+   struct by_platform_id{};
+   struct by_platform_poster{};
 
    /**
     * @ingroup object_index
@@ -312,29 +312,25 @@ namespace graphene { namespace chain {
             >
          >,
          // TODO move non-consensus indexes to plugin
-         ordered_unique< tag<by_platform_create_time>,
+         ordered_unique< tag<by_platform_id>,
             composite_key<
                post_object,
                member< post_object, account_uid_type, &post_object::platform >,
-               member< post_object, time_point_sec,    &post_object::create_time >,
                member< object,      object_id_type,    &post_object::id>
             >,
             composite_key_compare< std::less<account_uid_type>,
-                                   std::greater<time_point_sec>,
                                    std::greater<object_id_type> >
 
          >,
-         ordered_unique< tag<by_platform_poster_create_time>,
+         ordered_unique< tag<by_platform_poster>,
             composite_key<
                post_object,
                member< post_object, account_uid_type, &post_object::platform >,
                member< post_object, account_uid_type,  &post_object::poster >,
-               member< post_object, time_point_sec,    &post_object::create_time >,
                member< object,      object_id_type,    &post_object::id>
             >,
             composite_key_compare< std::less<account_uid_type>,
                                    std::less<account_uid_type>,
-                                   std::greater<time_point_sec>,
                                    std::greater<object_id_type> >
 
          >
@@ -517,7 +513,11 @@ namespace graphene { namespace chain {
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::from_account_uid >,
                                   member< score_object, uint64_t,         &score_object::period_sequence >,
-                                  member< object,       object_id_type,   &object::id >>
+                                  member< object,       object_id_type,   &object::id >>,
+                                  composite_key_compare<
+                                  std::less<account_uid_type>,
+                                  std::less<uint64_t>,
+                                  std::greater<object_id_type >>
                                  >,
          ordered_unique< tag<by_post_pid>, 
                               composite_key<
@@ -533,8 +533,13 @@ namespace graphene { namespace chain {
                                   member< score_object, account_uid_type, &score_object::platform >,
                                   member< score_object, account_uid_type, &score_object::poster >,
                                   member< score_object, post_pid_type,    &score_object::post_pid >,
-                                  member< object,       object_id_type,   &object::id >
-                              > >,
+                                  member< object,       object_id_type,   &object::id >> ,
+                              composite_key_compare <
+                              std::less<account_uid_type>,
+                              std::less<account_uid_type>,
+                              std::less<post_pid_type>,
+                              std::greater < object_id_type >>
+                              > ,
          ordered_unique< tag<by_period_sequence>, 
                               composite_key<
                                   score_object,
@@ -549,7 +554,7 @@ namespace graphene { namespace chain {
                                   std::less<account_uid_type>,
                                   std::less<post_pid_type>,
                                   std::less<uint64_t>,
-                                  std::less<object_id_type >>
+                                  std::greater<object_id_type >>
                                   >,
 		  ordered_non_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
        >
