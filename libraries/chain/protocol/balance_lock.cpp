@@ -12,8 +12,7 @@ void balance_lock_update_operation::validate()const
    validate_op_fee(fee, "balance_lock_update");
    validate_account_uid(account, "lock balance account");
    validate_non_negative_amount(new_lock_balance, " new lock balance amount");
-
-   //FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
+   FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 } } // graphene::chain

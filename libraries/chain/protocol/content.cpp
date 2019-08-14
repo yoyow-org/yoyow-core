@@ -354,6 +354,7 @@ void score_bonus_collect_operation::validate() const
    validate_op_fee(fee, "pledge bonus collecting ");
    validate_account_uid(account, "registrar or referrer");
    validate_positive_core_asset(bonus, "bonus");
+   FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 } } // graphene::chain
