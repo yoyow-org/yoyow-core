@@ -41,6 +41,7 @@ void limit_order_create_operation::validate()const
     FC_ASSERT(min_to_receive.amount > 0);
     validate_op_fee(fee, "limit_order_create ");
     validate_account_uid(seller, "seller ");
+    FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 share_type limit_order_cancel_operation::calculate_fee(const fee_parameters_type& k)const
@@ -56,6 +57,7 @@ void limit_order_cancel_operation::validate()const
 {
     validate_op_fee(fee, "limit_order_cancel ");
     validate_account_uid(fee_paying_account, "fee_paying_account ");
+    FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 share_type fill_order_operation::calculate_fee(const fee_parameters_type& k)const
@@ -78,6 +80,7 @@ void market_fee_collect_operation::validate()const
    validate_account_uid(account, "fee_paying_account ");
 
    FC_ASSERT(amount > 0, "amount should more than 0. ");
+   FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
 }
 
 } } // graphene::chain

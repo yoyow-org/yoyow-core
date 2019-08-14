@@ -160,7 +160,6 @@ namespace graphene { namespace chain {
       operation_history_object_type,
       active_post_object_type,
       limit_order_object_type,
-      call_order_object_type,
 
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
@@ -387,7 +386,6 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (operation_history_object_type)
                  (active_post_object_type)
                  (limit_order_object_type)
-                 (call_order_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,
