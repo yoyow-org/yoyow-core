@@ -861,6 +861,9 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create_score after HARDFORK_0_4_TIME");
 
+      if (d.head_block_time() >= HARDFORK_0_5_TIME)
+         d.get_platform_by_owner(op.platform); // make sure pid exists
+
       const auto& global_params = d.get_global_properties().parameters.get_award_params();
       auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
       const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
@@ -954,6 +957,8 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
    try {
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only be reward after HARDFORK_0_4_TIME");
+      if (d.head_block_time() >= HARDFORK_0_5_TIME)
+         d.get_platform_by_owner(op.platform); // make sure pid exists
 
       d.get_account_by_uid(op.from_account_uid);// make sure uid exists
       const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
@@ -1070,6 +1075,8 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
    try {
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only be reward_proxy after HARDFORK_0_4_TIME");
+      if (d.head_block_time() >= HARDFORK_0_5_TIME)
+         d.get_platform_by_owner(op.platform); // make sure pid exists
 
       d.get_account_by_uid(op.from_account_uid);// make sure uid exists
       const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
@@ -1192,6 +1199,8 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
       database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buyout after HARDFORK_0_4_TIME");
       d.get_account_by_uid(op.from_account_uid);// make sure uid exists
+      if (d.head_block_time() >= HARDFORK_0_5_TIME)
+         d.get_platform_by_owner(op.platform); // make sure pid exists
 
       auto post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
       FC_ASSERT((post.permission_flags & post_object::Post_Permission_Buyout) > 0, "post_object ${p} not allowed to buyout.", ("p", op.post_pid));
@@ -1307,6 +1316,8 @@ void_result license_create_evaluator::do_evaluate(const operation_type& op)
 {try {
     const database& d = db();
     FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
+    if (d.head_block_time() >= HARDFORK_0_5_TIME)
+       d.get_platform_by_owner(op.platform); // make sure pid exists
 
     d.get_platform_by_owner(op.platform); // make sure pid exists
     platform_ant = &d.get_account_statistics_by_uid(op.platform);
