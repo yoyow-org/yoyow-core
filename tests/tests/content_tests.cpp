@@ -2189,7 +2189,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
 BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
 {
    try{
-         ACTORS((1000)(2000)(3001));
+         ACTORS((1000)(2000)(3001)(4001));
 
          const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
          auto _core = [&](int64_t x) -> asset
@@ -2198,6 +2198,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
          transfer(committee_account, u_2000_id, _core(600000));
 
          transfer(committee_account, u_3001_id, _core(600000));
+         transfer(committee_account, u_4001_id, _core(600000));
 
          add_csaf_for_account(u_1000_id, 10000);
          add_csaf_for_account(u_2000_id, 10000);
@@ -2209,12 +2210,12 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
          create_witness({ u_2000_private_key }, u_2000_id, "test pledge witness-2", 500000 * prec, u_2000_public_key, ext);
 
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 200000 * prec.value);
-         update_mining_pledge({ u_3001_private_key }, u_3001_id, u_2000_id, 100000 * prec.value);
+         update_mining_pledge({ u_3001_private_key }, u_4001_id, u_2000_id, 100000 * prec.value);
 
          generate_blocks(9000);
 
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 0);
-         update_mining_pledge({ u_3001_private_key }, u_3001_id, u_2000_id, 0);
+         update_mining_pledge({ u_3001_private_key }, u_4001_id, u_2000_id, 0);
 
          auto wit1 = db.get_witness_by_uid(u_1000_id);
          auto wit2 = db.get_witness_by_uid(u_2000_id);
@@ -2225,10 +2226,12 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
          share_type pledge_bonus2 = ((fc::bigint)(dpo.by_pledge_witness_pay_per_block.value) * 6000 * 100000 * prec.value
             / (600000 * prec.value * GRAPHENE_100_PERCENT)).to_int64();
 
-         auto account = db.get_account_statistics_by_uid(u_3001_id);
+         auto account_3001 = db.get_account_statistics_by_uid(u_3001_id);
          auto bonus1 = wit1.total_produced * pledge_bonus1;
+         BOOST_CHECK(account_3001.uncollected_pledge_bonus == bonus1);
+         auto account_4001 = db.get_account_statistics_by_uid(u_4001_id);
          auto bonus2 = wit2.total_produced * pledge_bonus2;
-         BOOST_CHECK(account.uncollected_pledge_bonus == bonus1 + bonus2);
+         BOOST_CHECK(account_4001.uncollected_pledge_bonus == bonus2);
 
          auto witness_act1 = db.get_account_statistics_by_uid(u_1000_id);
          auto witness_act2 = db.get_account_statistics_by_uid(u_2000_id);
@@ -2236,6 +2239,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
          auto wit_pay2 = dpo.by_pledge_witness_pay_per_block.value * wit2.total_produced - bonus2;
          BOOST_CHECK(witness_act1.uncollected_witness_pay == wit_pay1);
          BOOST_CHECK(witness_act2.uncollected_witness_pay == wit_pay2);
+         
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
@@ -2246,83 +2250,141 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
 BOOST_AUTO_TEST_CASE(pledge_mining_test_3)
 {
    try{
-         ACTORS((1000)(2000)(3001));
+      ACTORS((1000)(2000)(3001));
 
-         const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
-         auto _core = [&](int64_t x) -> asset
-         {  return asset(x*prec);    };
-         transfer(committee_account, u_1000_id, _core(600000));
-         transfer(committee_account, u_2000_id, _core(600000));
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+      transfer(committee_account, u_1000_id, _core(600000));
+      transfer(committee_account, u_2000_id, _core(600000));
 
-         transfer(committee_account, u_3001_id, _core(600000));
+      transfer(committee_account, u_3001_id, _core(600000));
 
-         add_csaf_for_account(u_1000_id, 10000);
-         add_csaf_for_account(u_2000_id, 10000);
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
 
-         graphene::chain::pledge_mining::ext ext;
-         ext.can_pledge = true;
-         ext.bonus_rate = 6000;
-         create_witness({ u_1000_private_key }, u_1000_id, "test pledge witness-1", 500000 * prec, u_1000_public_key, ext);
-         update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 200000 * prec.value);
-         generate_blocks(5000);
+      graphene::chain::pledge_mining::ext ext;
+      ext.can_pledge = true;
+      ext.bonus_rate = 6000;
+      create_witness({ u_1000_private_key }, u_1000_id, "test pledge witness-1", 500000 * prec, u_1000_public_key, ext);
+      update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 200000 * prec.value);
+      generate_blocks(5000);
 
-         update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 100000 * prec.value);
+      update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 100000 * prec.value);
 
+      const dynamic_global_property_object& dpo = db.get_dynamic_global_properties();
+      auto last_witness_pay = dpo.by_pledge_witness_pay_per_block;
+      share_type pledge_bonus1 = ((fc::bigint)(dpo.by_pledge_witness_pay_per_block.value) * 6000 * 200000 * prec.value
+         / (700000 * prec.value * GRAPHENE_100_PERCENT)).to_int64();
+      auto wit1 = db.get_witness_by_uid(u_1000_id);
+      auto bonus1 = wit1.total_produced * pledge_bonus1;
+      auto account1 = db.get_account_statistics_by_uid(u_3001_id);
+      BOOST_CHECK(account1.uncollected_pledge_bonus == bonus1);
+
+      auto wit_pay1 = dpo.by_pledge_witness_pay_per_block.value * wit1.total_produced - bonus1;
+      auto witness_act1 = db.get_account_statistics_by_uid(u_1000_id);
+      BOOST_CHECK(witness_act1.uncollected_witness_pay == wit_pay1);
+
+      auto last_pledge_witness_pay = dpo.by_pledge_witness_pay_per_block;
+      auto last_produce_block = wit1.total_produced;
+      bool is_produce_block = false;
+      for (int i = 0; i < 20; ++i)
+      {
+         generate_block();
          const dynamic_global_property_object& dpo = db.get_dynamic_global_properties();
-         auto last_witness_pay = dpo.by_pledge_witness_pay_per_block;
-         share_type pledge_bonus1 = ((fc::bigint)(dpo.by_pledge_witness_pay_per_block.value) * 6000 * 200000 * prec.value
-            / (700000 * prec.value * GRAPHENE_100_PERCENT)).to_int64();
-         auto wit1 = db.get_witness_by_uid(u_1000_id);
-         auto bonus1 = wit1.total_produced * pledge_bonus1;
-         auto account1 = db.get_account_statistics_by_uid(u_3001_id);
-         BOOST_CHECK(account1.uncollected_pledge_bonus == bonus1);
-
-         auto wit_pay1 = dpo.by_pledge_witness_pay_per_block.value * wit1.total_produced - bonus1;
-         auto witness_act1 = db.get_account_statistics_by_uid(u_1000_id);
-         BOOST_CHECK(witness_act1.uncollected_witness_pay == wit_pay1);
-
-         auto last_pledge_witness_pay = dpo.by_pledge_witness_pay_per_block;
-         auto last_produce_block = wit1.total_produced;
-         bool is_produce_block = false;
-         for (int i = 0; i < 20; ++i)
+         if (last_pledge_witness_pay != dpo.by_pledge_witness_pay_per_block)
          {
-            generate_block();
-            const dynamic_global_property_object& dpo = db.get_dynamic_global_properties();
-            if (last_pledge_witness_pay != dpo.by_pledge_witness_pay_per_block)
-            {
-               auto witness = db.get_witness_by_uid(u_1000_id);
-               if (last_produce_block != db.get_witness_by_uid(u_1000_id).total_produced)
-                  is_produce_block = true;
-               break;
-            }
+            auto witness = db.get_witness_by_uid(u_1000_id);
+            if (last_produce_block != db.get_witness_by_uid(u_1000_id).total_produced)
+               is_produce_block = true;
+            break;
          }
+      }
 
-         auto block_num = db.get_witness_by_uid(u_1000_id).last_update_bonus_block_num + 10000 - db.head_block_num();
-         generate_blocks(block_num);
+      auto block_num = db.get_witness_by_uid(u_1000_id).last_update_bonus_block_num + 10000 - db.head_block_num();
+      generate_blocks(block_num);
 
-         auto wit2 = db.get_witness_by_uid(u_1000_id);
-         const dynamic_global_property_object& dpo2 = db.get_dynamic_global_properties();
-         share_type pledge_bonus2 = ((fc::bigint)(dpo2.by_pledge_witness_pay_per_block.value) * 6000 * 100000 * prec.value
+      auto wit2 = db.get_witness_by_uid(u_1000_id);
+      const dynamic_global_property_object& dpo2 = db.get_dynamic_global_properties();
+      share_type pledge_bonus2 = ((fc::bigint)(dpo2.by_pledge_witness_pay_per_block.value) * 6000 * 100000 * prec.value
+         / (600000 * prec.value * GRAPHENE_100_PERCENT)).to_int64();
+      share_type bonus_per_pledge = 0;
+      if (is_produce_block)
+      {
+         share_type bonus = ((fc::bigint)(last_witness_pay.value) * 6000 * 100000 * prec.value
             / (600000 * prec.value * GRAPHENE_100_PERCENT)).to_int64();
-         share_type bonus_per_pledge = 0;
-         if (is_produce_block)
-         {
-            share_type bonus = ((fc::bigint)(last_witness_pay.value) * 6000 * 100000 * prec.value
-               / (600000 * prec.value * GRAPHENE_100_PERCENT)).to_int64();
-            auto total_bonus = (wit2.total_produced - last_produce_block - 1) * pledge_bonus2 + bonus;
-            bonus_per_pledge = ((fc::uint128_t)total_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
-               / wit2.total_mining_pledge).to_uint64();
-         }
-         else
-            bonus_per_pledge = ((fc::uint128_t)((wit2.total_produced - last_produce_block) * pledge_bonus2).value * GRAPHENE_PLEDGE_BONUS_PRECISION
+         auto total_bonus = (wit2.total_produced - last_produce_block - 1) * pledge_bonus2 + bonus;
+         bonus_per_pledge = ((fc::uint128_t)total_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
             / wit2.total_mining_pledge).to_uint64();
+      }
+      else
+         bonus_per_pledge = ((fc::uint128_t)((wit2.total_produced - last_produce_block) * pledge_bonus2).value * GRAPHENE_PLEDGE_BONUS_PRECISION
+         / wit2.total_mining_pledge).to_uint64();
 
-         share_type bonus2 = ((fc::uint128_t)bonus_per_pledge.value * 100000 * prec.value
-            / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+      share_type bonus2 = ((fc::uint128_t)bonus_per_pledge.value * 100000 * prec.value
+         / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
 
-         auto account2 = db.get_account_statistics_by_uid(u_3001_id);
-         auto account_uncollect_bonus = bonus1 + bonus2;
-         BOOST_CHECK(account2.uncollected_pledge_bonus == account_uncollect_bonus);
+      auto account2 = db.get_account_statistics_by_uid(u_3001_id);
+      auto account_uncollect_bonus = bonus1 + bonus2;
+      BOOST_CHECK(account2.uncollected_pledge_bonus == account_uncollect_bonus);
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+
+//check check pledge mining, after resign witness
+BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
+{
+   try{
+      ACTORS((1000)(2000)(3001));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+      transfer(committee_account, u_1000_id, _core(600000));
+      transfer(committee_account, u_2000_id, _core(600000));
+
+      transfer(committee_account, u_3001_id, _core(600000));
+
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+
+      graphene::chain::pledge_mining::ext ext;
+      ext.can_pledge = true;
+      ext.bonus_rate = 6000;
+      create_witness({ u_1000_private_key }, u_1000_id, "test pledge witness-1", 500000 * prec, u_1000_public_key, ext);
+      create_witness({ u_2000_private_key }, u_2000_id, "test pledge witness-2", 500000 * prec, u_2000_public_key, ext);
+
+      update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 200000 * prec.value);
+
+      for (;;)
+      {
+         generate_blocks(11);
+         const auto& active_witnesses = db.get_global_properties().active_witnesses;
+         if (active_witnesses.count(u_1000_id) == 0) {
+            update_witness({ u_1000_private_key }, u_1000_id, optional<public_key_type>(), _core(0), optional<string>());
+            break;
+         }
+      }
+      //check pledge mining, after resign witness
+      generate_blocks(10);
+      const pledge_mining_object& pledge_mining_obj = db.get_pledge_mining(u_1000_id, u_3001_id);
+      BOOST_CHECK(pledge_mining_obj.pledge == 0);
+      BOOST_CHECK(pledge_mining_obj.releasing_mining_pledge == 200000 * prec);
+
+      auto pledge_act_3001 = db.get_account_statistics_by_uid(u_3001_id);
+      BOOST_CHECK(pledge_act_3001.total_mining_pledge == 200000 * prec);
+
+      generate_blocks(28800 * 7);
+
+      const pledge_mining_object* pledge_mining_obj_ptr = db.find_pledge_mining(u_1000_id, u_3001_id);
+      BOOST_CHECK(pledge_mining_obj_ptr == nullptr);
+      auto pledge_act_3001_2 = db.get_account_statistics_by_uid(u_3001_id);
+      BOOST_CHECK(pledge_act_3001_2.total_mining_pledge == 0);
+
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));

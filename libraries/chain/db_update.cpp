@@ -959,9 +959,9 @@ void database::clear_resigned_witness_votes()
          }
       }
 
-      //clear pledge mining object
       update_pledge_mining_bonus_by_witness(*wit_itr);
-      clear_pledge_mining(*wit_itr);
+      //before remove witness, update pledge mining to zero  
+      resign_pledge_mining(*wit_itr);
       remove( *wit_itr );
 
       wit_itr = wit_idx.begin();
@@ -1960,18 +1960,20 @@ void database::update_platform_avg_pledge( const platform_object& pla )
    }
 }
 
-void database::clear_pledge_mining(const witness_object& wit)
+void database::resign_pledge_mining(const witness_object& wit)
 {
+   const auto& params = get_global_properties().parameters.get_award_params();
    const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
    auto itr = idx.lower_bound(wit.account);
    while (itr != idx.end() && itr->witness == wit.account)
    {
-      modify(get_account_statistics_by_uid(itr->pledge_account), [&](account_statistics_object& s) {
-         s.total_mining_pledge -= (itr->releasing_mining_pledge + itr->pledge);
+      modify(*itr, [&](pledge_mining_object& s) {
+         s.releasing_mining_pledge += s.pledge;
+         s.pledge = 0;
+         s.mining_pledge_release_block_number = head_block_num() + params.mining_pledge_release_delay;
       });
-      auto tmp_itr = itr;
+
       ++itr;
-      remove(*tmp_itr);
    }
 }
 

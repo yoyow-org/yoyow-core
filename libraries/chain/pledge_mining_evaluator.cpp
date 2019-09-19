@@ -25,9 +25,13 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
          FC_ASSERT(pledge_mining_obj->pledge > 0, "account ${account} already cancel pledge to witness {witness}, pledge is not currently allowed",
             ("account", op.pledge_account)
             ("witness", op.witness));
-         FC_ASSERT(pledge_mining_obj->witness == op.witness, "account ${account} already pledge to witness {witness}, can not pledge to other",
-            ("account", op.pledge_account)
-            ("witness", pledge_mining_obj->witness));
+
+      } else {
+            const auto& idx = d.get_index_type<pledge_mining_index>().indices().get<by_pledge_account>();
+            auto itr = idx.lower_bound(op.pledge_account);   
+            FC_ASSERT(itr->pledge_account != op.pledge_account, "account ${account} already pledge to witness ${witness}, can not pledge to other",
+               ("account", op.pledge_account)
+               ("witness", itr->witness));
       }
 
       if (op.new_pledge > 0)
