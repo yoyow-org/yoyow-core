@@ -304,7 +304,6 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          advertising_aid_type last_advertising_sequence = 0;
          license_lid_type     last_license_sequence = 0;
 
-         map<pledge_balance_type, pledge_balance_id_type> pledge_balance_ids;
          /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds
