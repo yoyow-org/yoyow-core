@@ -2198,7 +2198,6 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
          transfer(committee_account, u_2000_id, _core(600000));
 
          transfer(committee_account, u_3001_id, _core(600000));
-         transfer(committee_account, u_4001_id, _core(600000));
 
          add_csaf_for_account(u_1000_id, 10000);
          add_csaf_for_account(u_2000_id, 10000);
@@ -2210,12 +2209,12 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
          create_witness({ u_2000_private_key }, u_2000_id, "test pledge witness-2", 500000 * prec, u_2000_public_key, ext);
 
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 200000 * prec.value);
-         update_mining_pledge({ u_3001_private_key }, u_4001_id, u_2000_id, 100000 * prec.value);
+         update_mining_pledge({ u_3001_private_key }, u_3001_id, u_2000_id, 100000 * prec.value);
 
          generate_blocks(9000);
 
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 0);
-         update_mining_pledge({ u_3001_private_key }, u_4001_id, u_2000_id, 0);
+         update_mining_pledge({ u_3001_private_key }, u_3001_id, u_2000_id, 0);
 
          auto wit1 = db.get_witness_by_uid(u_1000_id);
          auto wit2 = db.get_witness_by_uid(u_2000_id);
@@ -2228,10 +2227,8 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
 
          auto account_3001 = db.get_account_statistics_by_uid(u_3001_id);
          auto bonus1 = wit1.total_produced * pledge_bonus1;
-         BOOST_CHECK(account_3001.uncollected_pledge_bonus == bonus1);
-         auto account_4001 = db.get_account_statistics_by_uid(u_4001_id);
          auto bonus2 = wit2.total_produced * pledge_bonus2;
-         BOOST_CHECK(account_4001.uncollected_pledge_bonus == bonus2);
+         BOOST_CHECK(account_3001.uncollected_pledge_bonus == bonus1 + bonus2);
 
          auto witness_act1 = db.get_account_statistics_by_uid(u_1000_id);
          auto witness_act2 = db.get_account_statistics_by_uid(u_2000_id);
@@ -2378,12 +2375,19 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
       auto pledge_act_3001 = db.get_account_statistics_by_uid(u_3001_id);
       BOOST_CHECK(pledge_act_3001.total_mining_pledge == 200000 * prec);
 
+      update_mining_pledge({ u_3001_private_key }, u_3001_id, u_2000_id, 300000 * prec.value);
+
       generate_blocks(28800 * 7);
 
       const pledge_mining_object* pledge_mining_obj_ptr = db.find_pledge_mining(u_1000_id, u_3001_id);
       BOOST_CHECK(pledge_mining_obj_ptr == nullptr);
+
+      const pledge_mining_object* pledge_mining_obj_ptr2 = db.find_pledge_mining(u_2000_id, u_3001_id);
+      BOOST_CHECK(pledge_mining_obj_ptr2->releasing_mining_pledge == 0);
+      BOOST_CHECK(pledge_mining_obj_ptr2->pledge == 300000 * prec.value);
+
       auto pledge_act_3001_2 = db.get_account_statistics_by_uid(u_3001_id);
-      BOOST_CHECK(pledge_act_3001_2.total_mining_pledge == 0);
+      BOOST_CHECK(pledge_act_3001_2.total_mining_pledge == 300000 * prec.value);
 
    }
    catch (fc::exception& e) {
