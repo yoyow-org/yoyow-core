@@ -127,7 +127,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
       const auto& new_pledge_balance_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
          obj.type = pledge_balance_type::Witness;
          obj.asset_id = 0;
-         obj.pledge = op.pledge;
+         obj.pledge = op.pledge.amount;
       });
       d.modify(*account_stats, [&](account_statistics_object& s) {
          s.pledge_balance_ids.emplace(pledge_balance_type::Witness, new_pledge_balance_obj.id);
