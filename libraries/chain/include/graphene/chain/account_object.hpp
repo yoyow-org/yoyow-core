@@ -30,6 +30,53 @@
 namespace graphene { namespace chain {
    class database;
 
+   enum pledge_balance_type{
+      Witness,
+      Commitment,
+      Platform,
+      Lock_balance
+   };
+                      
+class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_object>{
+      
+   public:
+      static const uint8_t space_id = implementation_ids;
+      static const uint8_t type_id  = impl_pledge_balance_object_type;
+
+      pledge_balance_type  type;
+      asset_aid_type       asset_id;
+      share_type           pledge;
+      share_type           releasing_pledge;
+      ///block number that releasing pledges to witness will be finally unlocked.
+      uint32_t             pledge_release_block_number = -1;
+      //return the delta pledge need to subtract from account balance
+      share_type update_pledge(const asset &new_pledge,uint32_t new_relase_num){
+         FC_ASSERT(new_pledge.asset_id==asset_id,"erro asset id ");
+         auto delta=new_pledge.amount-(pledge+releasing_pledge);
+         auto delta_releasing=pledge-new_pledge.amount;
+         pledge=new_pledge.amount;
+         if(delta>=0){
+            releasing_pledge=0;
+            pledge_release_block_number=-1;
+            return delta;
+         }else{
+            releasing_pledge+=delta_releasing;
+            if(delta_releasing>0)//releasing adding
+               pledge_release_block_number=new_relase_num;// new releasing will extension the old releasing release time
+            return 0;
+         }
+      }
+      void new_releasing(const asset &new_releasing_pledge,uint32_t new_relase_num){
+         FC_ASSERT(new_releasing_pledge.asset_id==asset_id,"erro asset id ");
+         FC_ASSERT(pledge>=new_releasing_pledge.amount,"");
+         pledge-=new_releasing_pledge.amount;
+         releasing_pledge+=new_releasing_pledge.amount;
+         pledge_release_block_number=new_relase_num;
+         
+      }
+      share_type total_unrelease_pledge()const {return pledge+releasing_pledge;}
+      
+   };
    /**
     * @class account_statistics_object
     * @ingroup object
@@ -39,7 +86,6 @@ namespace graphene { namespace chain {
     * separating the account data that changes frequently from the account data that is mostly static, which will
     * minimize the amount of data that must be backed up as part of the undo history everytime a transfer is made.
     */
-
    class account_statistics_object : public graphene::db::abstract_object<account_statistics_object>
    {
       public:
@@ -277,6 +323,29 @@ namespace graphene { namespace chain {
          void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now);
 
          void add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount);
+      
+         template<class DB>
+         share_type get_all_pledge_balance(asset_aid_type asset_id,const DB& db){
+            share_type res=0;
+            for(const auto & _pledge_balance_id:pledge_balance_ids){
+               auto pledge_balance_obj=db.get(_pledge_balance_id);
+               if(pledge_balance_obj.asset_id==asset_id)
+                  res+=pledge_balance_obj.total_unrelease_pledge();
+            }
+            return  res;
+         }
+         template<class DB>
+         share_type get_pledge_balance(asset_aid_type asset_id,pledge_balance_type type,const DB& db){
+            if(pledge_balance_ids.count(type)!=0){
+               auto pledge_balance_obj=db.get(pledge_balance_ids[type]);
+               if(pledge_balance_obj.asset_id==asset_id)
+                  return pledge_balance_obj.total_unrelease_pledge();
+               
+            }
+            return  0;
+         }
+   private:
+      map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;
       
    };
 
@@ -554,9 +623,27 @@ namespace graphene { namespace chain {
          /** maps the referrer to the set of accounts that they have referred */
          map< account_uid_type, set<account_uid_type> > referred_by;
    };
-
+   
+   /**
+    * @ingroup object_index
+    */
+   struct by_pledge_type;
+   struct release_block_number;
+   
+   typedef multi_index_container<
+      pledge_balance_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+         ordered_non_unique< tag<by_pledge_type>,member< pledge_balance_object, pledge_balance_type, &pledge_balance_object::type > >,
+         ordered_non_unique< tag<release_block_number>,member< pledge_balance_object, uint32_t, &pledge_balance_object::pledge_release_block_number > >
+      >
+   > pledge_balance_object_multi_index_type;
+   
+   typedef generic_index<pledge_balance_object, pledge_balance_object_multi_index_type> pledge_balance_index;
+   
    struct by_account_asset;
    struct by_asset_balance;
+   
    /**
     * @ingroup object_index
     */
@@ -830,6 +917,15 @@ namespace graphene { namespace chain {
 
 }}
 
+FC_REFLECT_DERIVED(graphene::chain::pledge_balance_object,
+                   (graphene::db::object),
+                   (type)
+                   (asset_id)
+                   (pledge)
+                   (releasing_pledge)
+                   (pledge_release_block_number)
+                   )
+
 FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
                     //(membership_expiration_date)
@@ -910,3 +1006,4 @@ FC_REFLECT_DERIVED(graphene::chain::account_auth_platform_object,
                   (graphene::db::object),
                   (account)(platform)
                   (max_limit)(cur_used)(is_active)(permission_flags)(memo))
+

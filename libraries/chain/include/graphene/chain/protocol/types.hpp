@@ -160,7 +160,6 @@ namespace graphene { namespace chain {
       operation_history_object_type,
       active_post_object_type,
       limit_order_object_type,
-
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -190,6 +189,7 @@ namespace graphene { namespace chain {
       impl_cast_custom_vote_object_type,
       impl_account_auth_platform_object_type,
       impl_pledge_mining_object_type,
+      impl_pledge_balance_object_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
    };
 
@@ -242,6 +242,7 @@ namespace graphene { namespace chain {
    class chain_property_object;
    class witness_schedule_object;
    class score_object;
+   class pledge_balance_object;
 
    typedef object_id< implementation_ids, impl_global_property_object_type,  global_property_object>                    global_property_id_type;
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,  dynamic_global_property_object>    dynamic_global_property_id_type;
@@ -270,6 +271,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_cast_custom_vote_object_type, cast_custom_vote_object>                   cast_custom_vote_id_type;
    typedef object_id< implementation_ids, impl_account_auth_platform_object_type, account_auth_platform_object>         account_auth_platform_id_type;
    typedef object_id< implementation_ids, impl_pledge_mining_object_type,    pledge_mining_object>                      pledge_mining_id_type;
+   typedef object_id< implementation_ids, impl_pledge_balance_object_type,   pledge_balance_object>                     pledge_balance_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -413,6 +415,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_cast_custom_vote_object_type)
                  (impl_account_auth_platform_object_type)
                  (impl_pledge_mining_object_type)
+                //（impl_pledge_balance_object_type)
                  (IMPL_OBJECT_TYPE_COUNT)
                )
 
@@ -452,6 +455,7 @@ FC_REFLECT_TYPENAME( graphene::chain::transaction_obj_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::block_summary_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::account_transaction_history_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::pledge_mining_id_type)
+FC_REFLECT_TYPENAME( graphene::chain::pledge_balance_id_type)
 
 FC_REFLECT( graphene::chain::void_t, )
 
