@@ -110,20 +110,29 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    auto block_time = d.head_block_time();
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.last_witness_sequence += 1;
-      if( s.releasing_witness_pledge > op.pledge.amount )
-         s.releasing_witness_pledge -= op.pledge.amount;
-      else
-      {
-         if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
-             s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_04);
-         s.total_witness_pledge = op.pledge.amount;
-         if( s.releasing_witness_pledge > 0 )
-         {
-            s.releasing_witness_pledge = 0;
-            s.witness_pledge_release_block_number = -1;
-         }
-      }
+      auto releasing_pledge = s.get_releasing_pledge(0, pledge_balance_type::Witness, d);
+      if (releasing_pledge < op.pledge.amount && dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
+         s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_04);
    });
+
+   if (account_stats->pledge_balance_ids.count(pledge_balance_type::Witness))
+   {
+      const auto& wpb_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
+      uint32_t new_relase_num = d.head_block_num() + global_params.get_award_params().unlocked_balance_release_delay;
+      d.modify(wpb_obj, [&](pledge_balance_object& obj) {
+         obj.update_pledge(op.pledge, 0);//In this case, the second parameter is invalid
+      });
+   }
+   else {//create pledge_balance_obj
+      const auto& new_pledge_balance_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+         obj.type = pledge_balance_type::Witness;
+         obj.asset_id = 0;
+         obj.pledge = op.pledge;
+      });
+      d.modify(*account_stats, [&](account_statistics_object& s) {
+         s.pledge_balance_ids.emplace(pledge_balance_type::Witness, new_pledge_balance_obj.id);
+      });
+   }
 
    d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
       _dpo.total_witness_pledge += op.pledge.amount;
@@ -203,6 +212,10 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
       }      
    }
 
+   //check pledge balance object 
+   if (account_stats->pledge_balance_ids.count(pledge_balance_type::Witness) == 0)
+      FC_ASSERT(false, "pledge ba;ance object is nonexistent");
+
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -224,10 +237,11 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
    }
    else if( op.new_pledge->amount == 0 ) // resign
    {
-      d.modify( *account_stats, [&](account_statistics_object& s) {
-         s.releasing_witness_pledge = s.total_witness_pledge;
-         s.witness_pledge_release_block_number = d.head_block_num() + global_params.witness_pledge_release_delay;
+      const auto& wpb_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
+      d.modify(wpb_obj, [&](pledge_balance_object& obj) {
+         obj.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.witness_pledge_release_delay);
       });
+
       d.modify( *witness_obj, [&]( witness_object& wit ) {
          wit.is_valid = false; // will be processed later
          wit.average_pledge_next_update_block = -1;
@@ -255,28 +269,16 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          const uint64_t csaf_window = global_params.csaf_accumulate_window;
          auto block_time = d.head_block_time();
          d.modify( *account_stats, [&](account_statistics_object& s) {
-            if( s.releasing_witness_pledge > delta )
-               s.releasing_witness_pledge -= delta;
-            else
-            {
-               if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
-                   s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_04);
-               s.total_witness_pledge = op.new_pledge->amount;
-               if( s.releasing_witness_pledge > 0 )
-               {
-                  s.releasing_witness_pledge = 0;
-                  s.witness_pledge_release_block_number = -1;
-               }
-            }
+            auto releasing_pledge = s.get_releasing_pledge(0, pledge_balance_type::Witness, d);
+            if (releasing_pledge < delta && dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
+               s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_04);
          });
       }
-      else // less pledge
-      {
-         d.modify( *account_stats, [&](account_statistics_object& s) {
-            s.releasing_witness_pledge -= delta;
-            s.witness_pledge_release_block_number = d.head_block_num() + global_params.witness_pledge_release_delay;
-         });
-      }
+
+      const auto& wpb_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
+      d.modify(wpb_obj, [&](pledge_balance_object& obj) {
+         obj.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.witness_pledge_release_delay);
+      });
 
       // update position
       d.update_witness_avg_pledge( *witness_obj );

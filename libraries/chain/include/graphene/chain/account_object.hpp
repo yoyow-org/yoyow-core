@@ -43,8 +43,9 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id  = impl_pledge_balance_object_type;
 
+      //account_uid_type     owner;
       pledge_balance_type  type;
-      asset_aid_type       asset_id;
+      asset_aid_type       asset_id = 0;
       share_type           pledge;
       share_type           releasing_pledge;
       ///block number that releasing pledges to witness will be finally unlocked.
@@ -344,8 +345,18 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
             }
             return  0;
          }
-   private:
-      map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;
+         template<class DB>
+         share_type get_releasing_pledge(asset_aid_type asset_id, pledge_balance_type type, const DB& db){
+            if (pledge_balance_ids.count(type) != 0){
+               auto pledge_balance_obj = db.get(pledge_balance_ids[type]);
+               if (pledge_balance_obj.asset_id == asset_id)
+                  return pledge_balance_obj.releasing_pledge;
+
+            }
+            return  0;
+         }
+
+         map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;
       
    };
 

@@ -49,30 +49,26 @@ void_result balance_lock_update_evaluator::do_apply(const operation_type& op)
       const uint64_t csaf_window = global_params.csaf_accumulate_window;
       auto block_time = d.head_block_time();
 
-      // update account stats
-      share_type delta = op.new_lock_balance - account_stats->locked_balance_for_feepoint;
-      if (delta > 0)//more locked balance
-      {
-         d.modify(*account_stats, [&](account_statistics_object& s) {
-            s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_05);
-            s.locked_balance_for_feepoint = op.new_lock_balance;
+      d.modify(*account_stats, [&](account_statistics_object& s) {
+         s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_05);
+      });
 
-            if (s.releasing_locked_feepoint > delta)
-               s.releasing_locked_feepoint -= delta;           
-            else if (s.releasing_locked_feepoint > 0)
-            {
-               s.releasing_locked_feepoint = 0;
-               s.feepoint_unlock_block_number = -1;
-            }
-         });
-      }
-      else //less locked balance
+      if (account_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance)) 
       {
+         const auto& lock_balance_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));
+         uint32_t new_relase_num = d.head_block_num() + global_params.get_award_params().unlocked_balance_release_delay;
+         d.modify(lock_balance_obj, [&](pledge_balance_object& obj) {
+            obj.update_pledge(op.new_lock_balance, new_relase_num);
+        });
+      } 
+      else {//create pledge_balance_obj
+         const auto& new_pledge_balance_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+            obj.type = pledge_balance_type::Lock_balance;
+            obj.asset_id = 0;
+            obj.pledge = op.new_lock_balance;
+         });
          d.modify(*account_stats, [&](account_statistics_object& s) {
-            s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_05);
-            s.releasing_locked_feepoint -= delta;
-            s.locked_balance_for_feepoint = op.new_lock_balance;
-            s.feepoint_unlock_block_number = d.head_block_num() + global_params.get_award_params().unlocked_balance_release_delay;
+            s.pledge_balance_ids.emplace(pledge_balance_type::Lock_balance, new_pledge_balance_obj.id);
          });
       }
 
