@@ -27,6 +27,7 @@
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/transaction_evaluation_state.hpp>
+#include <graphene/chain/hardfork.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 
@@ -47,13 +48,19 @@ void_result committee_member_create_evaluator::do_evaluate( const committee_memb
                  ("p",d.to_pretty_string(op.pledge))
                  ("r",d.to_pretty_core_string(global_params.min_committee_member_pledge)) );
 
-   auto available_balance = account_stats->core_balance
-                          - account_stats->core_leased_out
-                          - account_stats->total_platform_pledge
-                          - account_stats->locked_balance_for_feepoint
-                          - account_stats->releasing_locked_feepoint
-                          - account_stats->total_mining_pledge
-                          - account_stats->total_witness_pledge; // releasing committee member pledge can be reused.
+   
+
+   share_type witness_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
+   share_type platfrom_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Platform, d);
+   share_type lock_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Lock_balance, d);
+
+   share_type available_balance = account_stats->core_balance
+                                - account_stats->core_leased_out
+                                - account_stats->total_mining_pledge
+                                - witness_pledge
+                                - platfrom_pledge
+                                - lock_pledge;
+
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
               ("a",op.account)
@@ -62,6 +69,11 @@ void_result committee_member_create_evaluator::do_evaluate( const committee_memb
 
    const committee_member_object* maybe_found = d.find_committee_member_by_uid( op.account );
    FC_ASSERT( maybe_found == nullptr, "This account is already a committee member" );
+
+   if (account_stats->pledge_balance_ids.count(pledge_balance_type::Commitment)){
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
+      FC_ASSERT(pledge_balance_obj.pledge == 0 && pledge_balance_obj.releasing_pledge != 0, "pledge_balance_object state is error. ");
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -82,20 +94,38 @@ object_id_type committee_member_create_evaluator::do_apply( const committee_memb
 
    });
 
-   d.modify( *account_stats, [&](account_statistics_object& s) {
+   d.modify(*account_stats, [&](account_statistics_object& s) {
       s.last_committee_member_sequence += 1;
-      if( s.releasing_committee_member_pledge > op.pledge.amount )
-         s.releasing_committee_member_pledge -= op.pledge.amount;
-      else
-      {
-         s.total_committee_member_pledge = op.pledge.amount;
-         if( s.releasing_committee_member_pledge > 0 )
-         {
-            s.releasing_committee_member_pledge = 0;
-            s.committee_member_pledge_release_block_number = -1;
-         }
-      }
    });
+
+   if (account_stats->pledge_balance_ids.count(pledge_balance_type::Commitment)){
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         if (s.releasing_pledge > op.pledge.amount)
+            s.releasing_pledge -= op.pledge.amount;
+         else
+         {
+            s.pledge = op.pledge.amount;
+            if (s.releasing_pledge > 0){
+               s.releasing_pledge = 0;
+               s.pledge_release_block_number = -1;
+            }
+         }
+      });
+   }
+   else{
+      auto ple_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+         obj.pledge = op.pledge.amount;
+         obj.asset_id = op.pledge.asset_id;
+         obj.type = pledge_balance_type::Commitment;
+         obj.releasing_pledge = 0;
+         obj.pledge_release_block_number = -1;
+      });
+
+      d.modify(*account_stats, [&](account_statistics_object& s) {
+         s.pledge_balance_ids.insert(std::make_pair(pledge_balance_type::Commitment, ple_obj.id));
+      });
+   }
 
    return new_committee_member_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -118,13 +148,17 @@ void_result committee_member_update_evaluator::do_evaluate( const committee_memb
 
          FC_ASSERT( op.new_pledge->amount != committee_member_obj->pledge, "new_pledge specified but did not change" );
 
-         auto available_balance = account_stats->core_balance
-                                - account_stats->core_leased_out
-                                - account_stats->total_witness_pledge // releasing committee member pledge can be reused.
-                                - account_stats->locked_balance_for_feepoint
-                                - account_stats->releasing_locked_feepoint
-                                - account_stats->total_mining_pledge
-                                - account_stats->total_platform_pledge;
+         share_type witness_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
+         share_type platfrom_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Platform, d);
+         share_type lock_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Lock_balance, d);
+
+         share_type available_balance = account_stats->core_balance
+                                      - account_stats->core_leased_out
+                                      - account_stats->total_mining_pledge
+                                      - witness_pledge
+                                      - platfrom_pledge
+                                      - lock_pledge;
+
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",op.account)
@@ -169,41 +203,22 @@ void_result committee_member_update_evaluator::do_apply( const committee_member_
       if( active_committee_members.find( op.account ) != active_committee_members.end() )
          pledge_release_block = dpo.next_committee_update_block + global_params.committee_member_pledge_release_delay;
 
-      d.modify( *account_stats, [&](account_statistics_object& s) {
-         s.releasing_committee_member_pledge = s.total_committee_member_pledge;
-         s.committee_member_pledge_release_block_number = pledge_release_block;
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         s.releasing_pledge = s.pledge;
+         s.pledge_release_block_number = pledge_release_block;
       });
+
       d.modify( *committee_member_obj, [&]( committee_member_object& com ) {
          com.is_valid = false; // will be processed later
       });
    }
    else // change pledge
    {
-      // update account stats
-      share_type delta = op.new_pledge->amount - committee_member_obj->pledge;
-      if( delta > 0 ) // more pledge
-      {
-         d.modify( *account_stats, [&](account_statistics_object& s) {
-            if( s.releasing_committee_member_pledge > delta )
-               s.releasing_committee_member_pledge -= delta;
-            else
-            {
-               s.total_committee_member_pledge = op.new_pledge->amount;
-               if( s.releasing_committee_member_pledge > 0 )
-               {
-                  s.releasing_committee_member_pledge = 0;
-                  s.committee_member_pledge_release_block_number = -1;
-               }
-            }
-         });
-      }
-      else // less pledge
-      {
-         d.modify( *account_stats, [&](account_statistics_object& s) {
-            s.releasing_committee_member_pledge -= delta;
-            s.committee_member_pledge_release_block_number = d.head_block_num() + global_params.committee_member_pledge_release_delay;
-         });
-      }
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         s.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.committee_member_pledge_release_delay);
+      });
 
       // update committee_member data
       d.modify( *committee_member_obj, [&]( committee_member_object& com ) {

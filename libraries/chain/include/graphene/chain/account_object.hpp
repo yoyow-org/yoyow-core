@@ -43,7 +43,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id  = impl_pledge_balance_object_type;
 
-      //account_uid_type     owner;
+      account_uid_type     owner;
       pledge_balance_type  type;
       asset_aid_type       asset_id = 0;
       share_type           pledge;
@@ -303,6 +303,8 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          custom_vote_vid_type last_custom_vote_sequence = 0; 
          advertising_aid_type last_advertising_sequence = 0;
          license_lid_type     last_license_sequence = 0;
+
+         map<pledge_balance_type, pledge_balance_id_type> pledge_balance_ids;
          /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds
@@ -326,7 +328,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          void add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount);
       
          template<class DB>
-         share_type get_all_pledge_balance(asset_aid_type asset_id,const DB& db){
+         share_type get_all_pledge_balance(asset_aid_type asset_id,const DB& db)const{
             share_type res=0;
             for(const auto & _pledge_balance_id:pledge_balance_ids){
                auto pledge_balance_obj=db.get(_pledge_balance_id);
@@ -336,15 +338,16 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
             return  res;
          }
          template<class DB>
-         share_type get_pledge_balance(asset_aid_type asset_id,pledge_balance_type type,const DB& db){
+         share_type get_pledge_balance(asset_aid_type asset_id,pledge_balance_type type,const DB& db)const{
             if(pledge_balance_ids.count(type)!=0){
-               auto pledge_balance_obj=db.get(pledge_balance_ids[type]);
+               auto pledge_balance_obj=db.get(pledge_balance_ids.at(type));
                if(pledge_balance_obj.asset_id==asset_id)
                   return pledge_balance_obj.total_unrelease_pledge();
                
             }
             return  0;
          }
+
          template<class DB>
          share_type get_releasing_pledge(asset_aid_type asset_id, pledge_balance_type type, const DB& db){
             if (pledge_balance_ids.count(type) != 0){
@@ -645,7 +648,6 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       pledge_balance_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_non_unique< tag<by_pledge_type>,member< pledge_balance_object, pledge_balance_type, &pledge_balance_object::type > >,
          ordered_non_unique< tag<release_block_number>,member< pledge_balance_object, uint32_t, &pledge_balance_object::pledge_release_block_number > >
       >
    > pledge_balance_object_multi_index_type;
@@ -928,8 +930,16 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
 
 }}
 
+FC_REFLECT_ENUM(graphene::chain::pledge_balance_type,
+   (Witness)
+   (Commitment)
+   (Platform)
+   (Lock_balance)
+   )
+
 FC_REFLECT_DERIVED(graphene::chain::pledge_balance_object,
                    (graphene::db::object),
+                   (owner)
                    (type)
                    (asset_id)
                    (pledge)

@@ -28,13 +28,15 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
                  ("p",d.to_pretty_string(op.pledge))
                  ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
 
+   share_type witness_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
+   share_type commitment_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Commitment, d);
+   share_type lock_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Lock_balance, d);
+
    auto available_balance = account_stats->core_balance
                           - account_stats->core_leased_out
-                          - account_stats->total_committee_member_pledge
-                          - account_stats->locked_balance_for_feepoint
-                          - account_stats->releasing_locked_feepoint
-                          - account_stats->total_mining_pledge
-                          - account_stats->total_witness_pledge;
+                          - commitment_pledge
+                          - lock_pledge
+                          - witness_pledge;
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
               ("a",op.account)
@@ -77,18 +79,36 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
 
    d.modify( *account_stats, [&](account_statistics_object& s) {
       s.last_platform_sequence += 1;
-      if( s.releasing_platform_pledge > op.pledge.amount.value )
-         s.releasing_platform_pledge -= op.pledge.amount.value;
-      else
-      {
-         s.total_platform_pledge = op.pledge.amount.value;
-         if( s.releasing_platform_pledge > 0 )
-         {
-            s.releasing_platform_pledge = 0;
-            s.platform_pledge_release_block_number = -1;
-         }
-      }
    });
+
+   if (account_stats->pledge_balance_ids.count(pledge_balance_type::Platform)){
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         if (s.releasing_pledge > op.pledge.amount)
+            s.releasing_pledge -= op.pledge.amount;
+         else
+         {
+            s.pledge = op.pledge.amount;
+            if (s.releasing_pledge > 0){
+               s.releasing_pledge = 0;
+               s.pledge_release_block_number = -1;
+            }
+         }
+      });
+   }
+   else{
+      auto ple_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+         obj.pledge = op.pledge.amount;
+         obj.asset_id = op.pledge.asset_id;
+         obj.type = pledge_balance_type::Platform;
+         obj.releasing_pledge = 0;
+         obj.pledge_release_block_number = -1;
+      });
+
+      d.modify(*account_stats, [&](account_statistics_object& s) {
+         s.pledge_balance_ids.insert(std::make_pair(pledge_balance_type::Platform, ple_obj.id));
+      });
+   }
 
    return new_platform_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -113,13 +133,15 @@ void_result platform_update_evaluator::do_evaluate( const platform_update_operat
                     ("p",d.to_pretty_string(*op.new_pledge))
                     ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
 
+         share_type witness_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
+         share_type commitment_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Commitment, d);
+         share_type lock_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Lock_balance, d);
+
          auto available_balance = account_stats->core_balance
                                 - account_stats->core_leased_out
-                                - account_stats->total_committee_member_pledge
-                                - account_stats->locked_balance_for_feepoint
-                                - account_stats->releasing_locked_feepoint
-                                - account_stats->total_mining_pledge
-                                - account_stats->total_witness_pledge;
+                                - commitment_pledge
+                                - lock_pledge
+                                - witness_pledge;
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",op.account)
@@ -171,10 +193,13 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    }
    else if( op.new_pledge->amount == 0 ) // resign
    {
-      d.modify( *account_stats, [&](account_statistics_object& s) {
-         s.releasing_platform_pledge = s.total_platform_pledge;
-         s.platform_pledge_release_block_number = d.head_block_num() + global_params.platform_pledge_release_delay;
+      uint32_t pledge_release_block = d.head_block_num() + global_params.platform_pledge_release_delay;
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         s.releasing_pledge = s.pledge;
+         s.pledge_release_block_number = pledge_release_block;
       });
+
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
          pfo.is_valid = false; // Processing will be delayed
       });
@@ -185,30 +210,10 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    else // change pledge
    {
       // update account stats
-      share_type delta = op.new_pledge->amount.value - platform_obj->pledge;
-      if( delta > 0 ) // Increase the mortgage
-      {
-         d.modify( *account_stats, [&](account_statistics_object& s) {
-            if( s.releasing_platform_pledge > delta )
-               s.releasing_platform_pledge -= delta.value;
-            else
-            {
-               s.total_platform_pledge = op.new_pledge->amount.value;
-               if( s.releasing_platform_pledge > 0 )
-               {
-                  s.releasing_platform_pledge = 0;
-                  s.platform_pledge_release_block_number = -1;
-               }
-            }
-         });
-      }
-      else // Reduce the mortgage
-      {
-         d.modify( *account_stats, [&](account_statistics_object& s) {
-            s.releasing_platform_pledge -= delta.value;
-            s.platform_pledge_release_block_number = d.head_block_num() + global_params.platform_pledge_release_delay;
-         });
-      }
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         s.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.platform_pledge_release_delay);
+      });
 
       // update platform data
       d.modify( *platform_obj, [&]( platform_object& pfo ) {

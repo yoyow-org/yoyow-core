@@ -553,6 +553,8 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
               break;
              case impl_account_auth_platform_object_type:
               break;
+             case impl_pledge_balance_object_type:
+              break;
       }
    }
 }

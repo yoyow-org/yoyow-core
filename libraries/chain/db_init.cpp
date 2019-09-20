@@ -163,6 +163,9 @@ const uint8_t cast_custom_vote_object::type_id;
 const uint8_t pledge_mining_object::space_id;
 const uint8_t pledge_mining_object::type_id;
 
+const uint8_t pledge_balance_object::space_id;
+const uint8_t pledge_balance_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -269,11 +272,11 @@ void database::initialize_indexes()
    add_index< primary_index<pledge_mining_index                           > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
+   add_index< primary_index<pledge_balance_index                          > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();
    add_index< primary_index<flat_index<  block_summary_object            >> >();
    add_index< primary_index<simple_index<chain_property_object          > > >();
    add_index< primary_index<simple_index<witness_schedule_object        > > >();
-
 }
 
 void database::init_genesis(const genesis_state_type& genesis_state)

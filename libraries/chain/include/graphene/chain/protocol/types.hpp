@@ -415,7 +415,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_cast_custom_vote_object_type)
                  (impl_account_auth_platform_object_type)
                  (impl_pledge_mining_object_type)
-                //（impl_pledge_balance_object_type)
+                 (impl_pledge_balance_object_type)
                  (IMPL_OBJECT_TYPE_COUNT)
                )
 
