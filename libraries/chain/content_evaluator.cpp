@@ -77,16 +77,7 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
    if (account_stats->pledge_balance_ids.count(pledge_balance_type::Platform)){
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
       d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         if (s.releasing_pledge > op.pledge.amount)
-            s.releasing_pledge -= op.pledge.amount;
-         else
-         {
-            s.pledge = op.pledge.amount;
-            if (s.releasing_pledge > 0){
-               s.releasing_pledge = 0;
-               s.pledge_release_block_number = -1;
-            }
-         }
+         s.update_pledge(op.pledge.amount, -1);
       });
    }
    else{
@@ -167,6 +158,14 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    const auto& global_params = d.get_global_properties().parameters;
    const account_object* account_obj = &d.get_account_by_uid( op.account );
 
+   if (op.new_pledge.valid()){
+      uint32_t pledge_release_block = d.head_block_num() + global_params.platform_pledge_release_delay;
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         s.update_pledge(*(op.new_pledge), pledge_release_block);
+      });
+   }
+
    if( !op.new_pledge.valid() ) // change url or name or extra_data
    {
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
@@ -180,13 +179,6 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    }
    else if( op.new_pledge->amount == 0 ) // resign
    {
-      uint32_t pledge_release_block = d.head_block_num() + global_params.platform_pledge_release_delay;
-      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
-      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         s.releasing_pledge = s.pledge;
-         s.pledge_release_block_number = pledge_release_block;
-      });
-
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
          pfo.is_valid = false; // Processing will be delayed
       });
@@ -196,12 +188,6 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    }
    else // change pledge
    {
-      // update account stats
-      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
-      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         s.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.platform_pledge_release_delay);
-      });
-
       // update platform data
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
          if( op.new_name.valid() )
