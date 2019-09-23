@@ -2419,17 +2419,21 @@ void database::process_pledge_balance_release()
       }
       else{
          const pledge_balance_object& pledge_obj = *pledge_idx.begin();
-         const account_statistics_object& ant = get_account_statistics_by_uid(pledge_obj.owner);
-         modify(ant, [&](account_statistics_object& a){
-            a.pledge_balance_ids.erase(pledge_obj.type);
-         });
+         if(pledge_obj.type==pledge_balance_type::Mine){
+            //Todo remove pledge_mine_object
+         }else{
+            const account_statistics_object& ant = get_account_statistics_by_uid(pledge_obj.superior_index);
+            modify(ant, [&](account_statistics_object& a){
+               a.pledge_balance_ids.erase(pledge_obj.type);
+            });
+         }
          remove(*itr_pledge);
       }
       
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
       if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04 && itr_pledge->type == pledge_balance_type::Witness){
          const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-         modify(get_account_statistics_by_uid(itr_pledge->owner), [&](account_statistics_object& s) {
+         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](account_statistics_object& s) {
                s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
          });
       }

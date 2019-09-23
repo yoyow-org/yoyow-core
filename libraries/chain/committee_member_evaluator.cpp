@@ -95,7 +95,7 @@ object_id_type committee_member_create_evaluator::do_apply( const committee_memb
    }
    else{
       auto ple_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
-         obj.owner = op.account;
+         obj.superior_index = op.account;
          obj.pledge = op.pledge.amount;
          obj.asset_id = op.pledge.asset_id;
          obj.type = pledge_balance_type::Commitment;

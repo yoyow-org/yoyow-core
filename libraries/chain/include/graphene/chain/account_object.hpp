@@ -33,7 +33,8 @@ namespace graphene { namespace chain {
       Witness,
       Commitment,
       Platform,
-      Lock_balance
+      Lock_balance,
+      Mine
    };
                       
 class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_object>{

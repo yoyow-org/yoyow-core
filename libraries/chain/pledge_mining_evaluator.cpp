@@ -64,10 +64,12 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          share_type bonus_per_pledge = witness_obj->accumulate_bonus_per_pledge(pledge_mining_obj->last_bonus_block_num + 1);
          send_bonus = d.update_pledge_mining_bonus_by_account(*pledge_mining_obj, bonus_per_pledge);
          share_type delta_available_balance=0;
-         delta_pledge_to_witness=op.new_pledge-pledge_mining_obj->pledge_id(d).pledge;
-         /*d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {
+         const pledge_balance_object& pledge_balance_obj=pledge_mining_obj->pledge_id(d);
+         delta_pledge_to_witness=op.new_pledge-pledge_balance_obj.pledge;
+      
+         d.modify(pledge_balance_obj, [&](pledge_balance_object& obj) {
             delta_available_balance = obj.update_pledge(op.new_pledge, block_num + params.mining_pledge_release_delay);
-         });*/
+         });
          d.modify(*account_stats, [&](account_statistics_object& s) {
             s.total_mining_pledge += delta_available_balance;
          });
