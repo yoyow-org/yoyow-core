@@ -348,14 +348,30 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          }
 
          template<class DB>
-         share_type get_releasing_pledge(asset_aid_type asset_id, pledge_balance_type type, const DB& db){
+         share_type get_releasing_pledge(asset_aid_type asset_id, pledge_balance_type type, const DB& db) const {
             if (pledge_balance_ids.count(type) != 0){
-               auto pledge_balance_obj = db.get(pledge_balance_ids[type]);
+               auto pledge_balance_obj = db.get(pledge_balance_ids.at(type));
                if (pledge_balance_obj.asset_id == asset_id)
                   return pledge_balance_obj.releasing_pledge;
 
             }
             return  0;
+         }
+
+         template<class DB>
+         share_type get_available_core_balance(pledge_balance_type exclude_type, const DB& db) const{
+            share_type unavailable_core_balance = 0;
+            for (const auto & type_id : pledge_balance_ids) {
+               if (type_id.first == exclude_type)
+                  continue;
+               const auto& pledge_balance_obj = db.get(type_id.second);
+               if (pledge_balance_obj.asset_id == GRAPHENE_CORE_ASSET_AID)
+                  unavailable_core_balance += pledge_balance_obj.total_unrelease_pledge();
+            }
+            //Lease out balance and Mining pledge not included in pledge_balance_ids
+            unavailable_core_balance += (core_leased_out + total_mining_pledge);
+
+            return core_balance - unavailable_core_balance;
          }
 
          map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;
