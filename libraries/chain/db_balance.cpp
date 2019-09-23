@@ -104,14 +104,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
       const account_statistics_object& account_stats = get_account_statistics_by_uid( account );
       if( delta.amount < 0 )
       {
-         auto available_balance = account_stats.core_balance
-                                - account_stats.core_leased_out
-                                - account_stats.total_witness_pledge
-                                - account_stats.total_platform_pledge
-                                - account_stats.locked_balance_for_feepoint 
-                                - account_stats.releasing_locked_feepoint
-                                - account_stats.total_mining_pledge
-                                - account_stats.total_committee_member_pledge;
+         auto available_balance = account_stats.get_available_core_balance(*this);
          FC_ASSERT( available_balance >= -delta.amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",account)

@@ -329,19 +329,18 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          share_type get_all_pledge_balance(asset_aid_type asset_id,const DB& db)const{
             share_type res=0;
             for(const auto & type_id:pledge_balance_ids){
-               pledge_balance_object pledge_balance_obj= db.get(type_id.second);
+               auto pledge_balance_obj = db.get(type_id.second);
                if(pledge_balance_obj.asset_id==asset_id)
                   res+=pledge_balance_obj.total_unrelease_pledge();
             }
-            return  res;
+            return res;
          }
          template<class DB>
          share_type get_pledge_balance(asset_aid_type asset_id,pledge_balance_type type,const DB& db)const{
             if(pledge_balance_ids.count(type)!=0){
                pledge_balance_object pledge_balance_obj=db.get(pledge_balance_ids.at(type));
                if(pledge_balance_obj.asset_id==asset_id)
-                  return pledge_balance_obj.total_unrelease_pledge();
-               
+                  return pledge_balance_obj.total_unrelease_pledge();     
             }
             return  0;
          }
@@ -352,7 +351,6 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
                auto pledge_balance_obj = db.get(pledge_balance_ids.at(type));
                if (pledge_balance_obj.asset_id == asset_id)
                   return pledge_balance_obj.releasing_pledge;
-
             }
             return  0;
          }
@@ -360,17 +358,23 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          template<class DB>
          share_type get_available_core_balance(pledge_balance_type exclude_type, const DB& db) const{
             share_type unavailable_core_balance = 0;
-            for (const auto & type_id : pledge_balance_ids) {
-               if (type_id.first == exclude_type)
+            for (const auto& type_id : pledge_balance_ids) {
+               if (exclude_type == type_id.first)
                   continue;
-               const auto& pledge_balance_obj = db.get(type_id.second);
-               if (pledge_balance_obj.asset_id == GRAPHENE_CORE_ASSET_AID)
+               auto pledge_balance_obj = db.get(type_id.second);
+               if (GRAPHENE_CORE_ASSET_AID == pledge_balance_obj.asset_id)
                   unavailable_core_balance += pledge_balance_obj.total_unrelease_pledge();
             }
             //Lease out balance and Mining pledge not included in pledge_balance_ids
             unavailable_core_balance += (core_leased_out + total_mining_pledge);
-
             return core_balance - unavailable_core_balance;
+         }
+
+         template<class DB>
+         share_type get_available_core_balance(const DB& db) const{
+            return core_balance - get_all_pledge_balance(GRAPHENE_CORE_ASSET_AID, db)
+                                - total_mining_pledge
+                                - core_leased_out;
          }
 
          map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;

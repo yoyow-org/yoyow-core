@@ -28,15 +28,8 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
                  ("p",d.to_pretty_string(op.pledge))
                  ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
 
-   share_type witness_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
-   share_type commitment_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Commitment, d);
-   share_type lock_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Lock_balance, d);
-
-   auto available_balance = account_stats->core_balance
-                          - account_stats->core_leased_out
-                          - commitment_pledge
-                          - lock_pledge
-                          - witness_pledge;
+   // releasing platform pledge can be reused.
+   auto available_balance = account_stats->get_available_core_balance(pledge_balance_type::Platform, d);
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
               ("a",op.account)
@@ -133,15 +126,8 @@ void_result platform_update_evaluator::do_evaluate( const platform_update_operat
                     ("p",d.to_pretty_string(*op.new_pledge))
                     ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
 
-         share_type witness_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
-         share_type commitment_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Commitment, d);
-         share_type lock_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Lock_balance, d);
-
-         auto available_balance = account_stats->core_balance
-                                - account_stats->core_leased_out
-                                - commitment_pledge
-                                - lock_pledge
-                                - witness_pledge;
+         // releasing platform pledge can be reused.
+         auto available_balance = account_stats->get_available_core_balance(pledge_balance_type::Platform, d);
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",op.account)

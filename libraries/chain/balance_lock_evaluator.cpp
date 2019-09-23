@@ -22,12 +22,8 @@ void_result balance_lock_update_evaluator::do_evaluate(const operation_type& op)
       {
          FC_ASSERT(op.new_lock_balance != account_stats->locked_balance_for_feepoint, "new_lock_balance specified but did not change");
 
-         auto available_balance = account_stats->core_balance
-            - account_stats->core_leased_out
-            - account_stats->total_platform_pledge
-            - account_stats->total_committee_member_pledge
-            - account_stats->total_mining_pledge
-            - account_stats->total_witness_pledge; // releasing balance can be reused.        
+         // releasing  locked balance can be reused.
+         auto available_balance = account_stats->get_available_core_balance(pledge_balance_type::Lock_balance, d);
          FC_ASSERT(available_balance >= op.new_lock_balance,
             "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
             ("a", op.account)
@@ -63,8 +59,9 @@ void_result balance_lock_update_evaluator::do_apply(const operation_type& op)
       } 
       else {//create pledge_balance_obj
          const auto& new_pledge_balance_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+            obj.owner = op.account;
             obj.type = pledge_balance_type::Lock_balance;
-            obj.asset_id = 0;
+            obj.asset_id = GRAPHENE_CORE_ASSET_AID;
             obj.pledge = op.new_lock_balance;
          });
          d.modify(*account_stats, [&](account_statistics_object& s) {

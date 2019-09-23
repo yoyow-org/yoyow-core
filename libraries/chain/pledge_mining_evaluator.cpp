@@ -31,15 +31,7 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
          if (pledge_mining_obj)
             FC_ASSERT(op.new_pledge.value != pledge_mining_obj->pledge, "new_pledge specified but did not change");
 
-         auto available_balance = account_stats->core_balance
-                                - account_stats->core_leased_out
-                                - account_stats->total_platform_pledge
-                                - account_stats->locked_balance_for_feepoint
-                                - account_stats->releasing_locked_feepoint
-                                - account_stats->total_committee_member_pledge
-                                - account_stats->total_witness_pledge
-                                - account_stats->total_mining_pledge;
-
+         auto available_balance = account_stats->get_available_core_balance(d);
          available_balance = available_balance + (pledge_mining_obj ? pledge_mining_obj->total_unrelease_pledge() : 0);
          FC_ASSERT(available_balance >= op.new_pledge,
             "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",

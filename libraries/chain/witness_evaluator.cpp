@@ -44,13 +44,8 @@ void_result witness_create_evaluator::do_evaluate( const witness_create_operatio
                  ("p",d.to_pretty_string(op.pledge))
                  ("r",d.to_pretty_core_string(global_params.min_witness_pledge)) );
 
-   auto available_balance = account_stats->core_balance
-                          - account_stats->core_leased_out
-                          - account_stats->total_platform_pledge
-                          - account_stats->locked_balance_for_feepoint
-                          - account_stats->releasing_locked_feepoint
-                          - account_stats->total_mining_pledge
-                          - account_stats->total_committee_member_pledge; // releasing witness pledge can be reused.
+   // releasing witness pledge can be reused.
+   auto available_balance = account_stats->get_available_core_balance(pledge_balance_type::Witness, d);
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
               ("a",op.account)
@@ -125,8 +120,9 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    }
    else {//create pledge_balance_obj
       const auto& new_pledge_balance_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+         obj.owner = op.account;
          obj.type = pledge_balance_type::Witness;
-         obj.asset_id = 0;
+         obj.asset_id = GRAPHENE_CORE_ASSET_AID;
          obj.pledge = op.pledge.amount;
       });
       d.modify(*account_stats, [&](account_statistics_object& s) {
@@ -162,13 +158,8 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
 
          FC_ASSERT( op.new_pledge->amount != witness_obj->pledge, "new_pledge specified but did not change" );
 
-         auto available_balance = account_stats->core_balance
-                                - account_stats->core_leased_out
-                                - account_stats->total_platform_pledge
-                                - account_stats->locked_balance_for_feepoint
-                                - account_stats->releasing_locked_feepoint
-                                - account_stats->total_mining_pledge
-                                - account_stats->total_committee_member_pledge; // releasing witness pledge can be reused.
+         // releasing witness pledge can be reused.
+         auto available_balance = account_stats->get_available_core_balance(pledge_balance_type::Witness, d);
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",op.account)
