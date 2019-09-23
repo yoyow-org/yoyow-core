@@ -852,7 +852,7 @@ void database::release_witness_pledges()
 {
    const auto head_num = head_block_num();
    const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-   auto block_time = head_block_time();
+   //auto block_time = head_block_time();
    const auto& idx = get_index_type<account_statistics_index>().indices().get<by_witness_pledge_release>();
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    auto itr = idx.begin();
@@ -888,10 +888,10 @@ void database::release_committee_member_pledges()
 void database::release_locked_balance()
 {
    const auto head_num = head_block_num();
-   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+   //const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
    const auto& idx = get_index_type<account_statistics_index>().indices().get<by_locked_balance_release>();
    auto itr = idx.begin();
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   //const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    while (itr != idx.end() && itr->feepoint_unlock_block_number <= head_num)
    {
       modify(*itr, [&](account_statistics_object& s) {
@@ -2394,6 +2394,44 @@ void database::process_platform_voted_awards()
             _dpo.next_platform_voted_award_time = time_point_sec(0);
          });
       }
+   }
+}
+
+void database::process_pledge_balance_release()
+{
+   const auto head_num = head_block_num();
+   const auto& pledge_idx = get_index_type<pledge_balance_index>().indices().get<release_block_number>();
+
+   //release pledge balance 
+   auto itr_pledge = pledge_idx.begin();
+   while (itr_pledge != pledge_idx.end() && itr_pledge->pledge_release_block_number <= head_num)
+   {
+      FC_ASSERT(itr_pledge->pledge >= itr_pledge->releasing_pledge, "pledge must more than releaseing_pledge. ");
+      if (itr_pledge->pledge > itr_pledge->releasing_pledge){
+         modify(*itr_pledge, [&](pledge_balance_object& s) {
+            s.pledge -= s.releasing_pledge;
+            s.releasing_pledge = 0;
+            s.pledge_release_block_number = -1;
+         });
+      }
+      else{
+         const pledge_balance_object& pledge_obj = *pledge_idx.begin();
+         const account_statistics_object& ant = get_account_statistics_by_uid(pledge_obj.owner);
+         modify(ant, [&](account_statistics_object& a){
+            a.pledge_balance_ids.erase(pledge_obj.type);
+         });
+         remove(*itr_pledge);
+      }
+      
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04 && itr_pledge->type == pledge_balance_type::Witness){
+         const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+         modify(get_account_statistics_by_uid(itr_pledge->owner), [&](account_statistics_object& s) {
+               s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
+         });
+      }
+
+      itr_pledge = pledge_idx.begin();
    }
 }
 

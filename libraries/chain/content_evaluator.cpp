@@ -91,6 +91,7 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
    }
    else{
       auto ple_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+         obj.owner = op.account;
          obj.pledge = op.pledge.amount;
          obj.asset_id = op.pledge.asset_id;
          obj.type = pledge_balance_type::Platform;
