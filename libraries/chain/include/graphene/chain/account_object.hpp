@@ -151,34 +151,6 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          fc::time_point_sec             coin_seconds_earned_last_update;
 
          /**
-          * coins locked as witness pledge.
-          */
-         share_type total_witness_pledge;
-
-         /**
-          * coins that are requested to be released from witness pledge but not yet unlocked.
-          */
-         share_type releasing_witness_pledge;
-
-         /**
-          * block number that releasing witness pledge will be finally unlocked.
-          */
-         uint32_t witness_pledge_release_block_number = -1;
-
-         /**
-         * coins locked for produce feepoint.
-         */
-         share_type locked_balance_for_feepoint;
-         /**
-         * coins that are requested to be released but not yet unlocked.
-         */
-         share_type releasing_locked_feepoint;
-         /**
-         * block number that releasing locked_balance_for_feepoint will be finally unlocked.
-         */
-         uint32_t feepoint_unlock_block_number = -1;
-
-         /**
          * coins pledge to witness for bonus form witness pay.
          */
          share_type total_mining_pledge=0;
@@ -238,21 +210,6 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          uint64_t witness_total_reported = 0;
 
          /**
-          * coins locked as committee member pledge.
-          */
-         share_type total_committee_member_pledge;
-
-         /**
-          * coins that are requested to be released from committee member pledge but not yet unlocked.
-          */
-         share_type releasing_committee_member_pledge;
-
-         /**
-          * block number that releasing committee member pledge will be finally unlocked.
-          */
-         uint32_t committee_member_pledge_release_block_number = -1;
-
-         /**
           * how many times have this account created committee member object
           */
          uint32_t last_committee_member_sequence = 0;
@@ -276,21 +233,6 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
           * Record how many times the platform object has been created (the latest platform serial number)
           */
          uint32_t last_platform_sequence = 0;
-         
-         /**
-          * Platform total deposit
-          */
-         share_type total_platform_pledge;
-
-         /**
-          * To refund the platform deposit
-          */
-         share_type releasing_platform_pledge;
-
-         /**
-          * block number that releasing platform pledge will be finally unlocked.
-          */
-         uint32_t platform_pledge_release_block_number = -1;
 
          /**
           * Record the last published article number
@@ -357,25 +299,16 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          }
 
          template<class DB>
-         share_type get_available_core_balance(pledge_balance_type exclude_type, const DB& db) const{
-            share_type unavailable_core_balance = 0;
-            for (const auto& type_id : pledge_balance_ids) {
-               if (exclude_type == type_id.first)
-                  continue;
-               auto pledge_balance_obj = db.get(type_id.second);
-               if (GRAPHENE_CORE_ASSET_AID == pledge_balance_obj.asset_id)
-                  unavailable_core_balance += pledge_balance_obj.total_unrelease_pledge();
-            }
-            //Lease out balance and Mining pledge not included in pledge_balance_ids
-            unavailable_core_balance += (core_leased_out + total_mining_pledge);
-            return core_balance - unavailable_core_balance;
-         }
-
-         template<class DB>
          share_type get_available_core_balance(const DB& db) const{
             return core_balance - get_all_pledge_balance(GRAPHENE_CORE_ASSET_AID, db)
                                 - total_mining_pledge
                                 - core_leased_out;
+         }
+
+         template<class DB>
+         share_type get_available_core_balance(pledge_balance_type exclude_type, const DB& db) const{
+            return get_available_core_balance(db) + 
+               get_pledge_balance(GRAPHENE_CORE_ASSET_AID, exclude_type, db);
          }
 
          map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;
@@ -838,35 +771,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       account_statistics_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_uid>, member<account_statistics_object, account_uid_type, &account_statistics_object::owner> >,
-         ordered_unique< tag<by_witness_pledge_release>,
-            composite_key<
-               account_statistics_object,
-               member<account_statistics_object, uint32_t, &account_statistics_object::witness_pledge_release_block_number>,
-               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
-            >
-         >,
-         ordered_unique< tag<by_committee_member_pledge_release>,
-            composite_key<
-               account_statistics_object,
-               member<account_statistics_object, uint32_t, &account_statistics_object::committee_member_pledge_release_block_number>,
-               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
-            >
-         >,
-         ordered_unique< tag<by_platform_pledge_release>,
-            composite_key<
-               account_statistics_object,
-               member<account_statistics_object, uint32_t, &account_statistics_object::platform_pledge_release_block_number>,
-               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
-            >
-         >,
-         ordered_unique< tag<by_locked_balance_release>,
-            composite_key<
-               account_statistics_object,
-               member<account_statistics_object, uint32_t, &account_statistics_object::feepoint_unlock_block_number>,
-               member<account_statistics_object, account_uid_type, &account_statistics_object::owner>
-         >
-         >
+         ordered_unique< tag<by_uid>, member<account_statistics_object, account_uid_type, &account_statistics_object::owner> >
       >
    > account_statistics_object_multi_index_type;
 
@@ -1016,8 +921,6 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (core_balance)(core_leased_in)(core_leased_out)
                     (average_coins)(average_coins_last_update)
                     (coin_seconds_earned)(coin_seconds_earned_last_update)
-                    (total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
-                    (locked_balance_for_feepoint)(releasing_locked_feepoint)(feepoint_unlock_block_number)
                     (total_mining_pledge)
                     (last_witness_sequence)(uncollected_witness_pay)
                     (uncollected_pledge_bonus)
@@ -1029,13 +932,9 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (witness_total_missed)
                     (witness_last_reported_block_num)
                     (witness_total_reported)
-                    (total_committee_member_pledge)(releasing_committee_member_pledge)(committee_member_pledge_release_block_number)
                     (last_committee_member_sequence)
                     (can_vote)(is_voter)(last_voter_sequence)
                     (last_platform_sequence)
-                    (total_platform_pledge)
-                    (releasing_platform_pledge)
-                    (platform_pledge_release_block_number)
                     (last_post_sequence)
                     (last_custom_vote_sequence)
                     (last_advertising_sequence)
