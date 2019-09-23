@@ -29,7 +29,6 @@
 
 namespace graphene { namespace chain {
    class database;
-
    enum pledge_balance_type{
       Witness,
       Commitment,
@@ -329,8 +328,8 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          template<class DB>
          share_type get_all_pledge_balance(asset_aid_type asset_id,const DB& db)const{
             share_type res=0;
-            for(const auto & _pledge_balance_id:pledge_balance_ids){
-               auto pledge_balance_obj=db.get(_pledge_balance_id);
+            for(const auto & type_id:pledge_balance_ids){
+               pledge_balance_object pledge_balance_obj= db.get(type_id.second);
                if(pledge_balance_obj.asset_id==asset_id)
                   res+=pledge_balance_obj.total_unrelease_pledge();
             }
@@ -339,7 +338,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          template<class DB>
          share_type get_pledge_balance(asset_aid_type asset_id,pledge_balance_type type,const DB& db)const{
             if(pledge_balance_ids.count(type)!=0){
-               auto pledge_balance_obj=db.get(pledge_balance_ids.at(type));
+               pledge_balance_object pledge_balance_obj=db.get(pledge_balance_ids.at(type));
                if(pledge_balance_obj.asset_id==asset_id)
                   return pledge_balance_obj.total_unrelease_pledge();
                
@@ -357,8 +356,15 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
             }
             return  0;
          }
-
-         map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;
+      template<class DB>
+      share_type get_available_core_balance(const DB& db)const{
+         return  core_balance
+         -core_leased_out
+         -total_mining_pledge;
+         -get_all_pledge_balance(GRAPHENE_CORE_ASSET_AID,db);
+      }
+      
+      map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;
       
    };
 

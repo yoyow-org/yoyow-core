@@ -47,20 +47,9 @@ void_result committee_member_create_evaluator::do_evaluate( const committee_memb
                  "Insufficient pledge: provided ${p}, need ${r}",
                  ("p",d.to_pretty_string(op.pledge))
                  ("r",d.to_pretty_core_string(global_params.min_committee_member_pledge)) );
-
    
-
-   share_type witness_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
-   share_type platfrom_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Platform, d);
-   share_type lock_pledge = account_stats->get_pledge_balance<database>(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Lock_balance, d);
-
-   share_type available_balance = account_stats->core_balance
-                                - account_stats->core_leased_out
-                                - account_stats->total_mining_pledge
-                                - witness_pledge
-                                - platfrom_pledge
-                                - lock_pledge;
-
+   //releasing committee member pledge can be reused.
+   share_type available_balance = account_stats->get_available_core_balance(d)+account_stats->get_pledge_balance(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Commitment, d);
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
               ("a",op.account)
