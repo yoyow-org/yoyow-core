@@ -90,20 +90,12 @@ object_id_type committee_member_create_evaluator::do_apply( const committee_memb
    if (account_stats->pledge_balance_ids.count(pledge_balance_type::Commitment)){
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
       d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         if (s.releasing_pledge > op.pledge.amount)
-            s.releasing_pledge -= op.pledge.amount;
-         else
-         {
-            s.pledge = op.pledge.amount;
-            if (s.releasing_pledge > 0){
-               s.releasing_pledge = 0;
-               s.pledge_release_block_number = -1;
-            }
-         }
+         s.update_pledge(op.pledge, -1);
       });
    }
    else{
       auto ple_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+         obj.owner = op.account;
          obj.pledge = op.pledge.amount;
          obj.asset_id = op.pledge.asset_id;
          obj.type = pledge_balance_type::Commitment;
@@ -186,8 +178,7 @@ void_result committee_member_update_evaluator::do_apply( const committee_member_
 
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
       d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         s.releasing_pledge = s.pledge;
-         s.pledge_release_block_number = pledge_release_block;
+         s.update_pledge(*(op.new_pledge), pledge_release_block);
       });
 
       d.modify( *committee_member_obj, [&]( committee_member_object& com ) {

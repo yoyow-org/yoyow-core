@@ -531,10 +531,12 @@ void database::_apply_block( const signed_block& next_block )
    //dlog("after update_withdraw_permissions");
    clear_expired_csaf_leases();
    update_average_witness_pledges();
-   release_witness_pledges();
-   release_committee_member_pledges();
-   release_platform_pledges();
-   release_locked_balance();
+   //release_witness_pledges();
+   //release_committee_member_pledges();
+   //release_platform_pledges();
+   //release_locked_balance();
+   process_pledge_balance_release();
+
    release_mining_pledge();
    clear_resigned_witness_votes();
    clear_resigned_committee_member_votes();

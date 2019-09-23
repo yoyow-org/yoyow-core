@@ -575,6 +575,7 @@ namespace graphene { namespace chain {
          void clear_resigned_platform_votes();
          void process_content_platform_awards();
          void process_platform_voted_awards();
+         void process_pledge_balance_release();
 
          void update_platform_avg_pledge( const account_uid_type uid );
          void resign_pledge_mining(const witness_object& wit);
