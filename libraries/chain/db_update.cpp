@@ -848,59 +848,59 @@ void database::update_average_witness_pledges()
    }
 }
 
-void database::release_witness_pledges()
-{
-   const auto head_num = head_block_num();
-   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-   //auto block_time = head_block_time();
-   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_witness_pledge_release>();
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   auto itr = idx.begin();
-   while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
-   {
-      modify(*itr, [&](account_statistics_object& s) {
-         if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
-            s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
-         s.total_witness_pledge -= s.releasing_witness_pledge;
-         s.releasing_witness_pledge = 0;
-         s.witness_pledge_release_block_number = -1;
-      });
-      itr = idx.begin();
-   }
-}
-
-void database::release_committee_member_pledges()
-{
-   const auto head_num = head_block_num();
-   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_committee_member_pledge_release>();
-   auto itr = idx.begin();
-   while( itr != idx.end() && itr->committee_member_pledge_release_block_number <= head_num )
-   {
-      modify( *itr, [&](account_statistics_object& s) {
-         s.total_committee_member_pledge -= s.releasing_committee_member_pledge;
-         s.releasing_committee_member_pledge = 0;
-         s.committee_member_pledge_release_block_number = -1;
-      });
-      itr = idx.begin();
-   }
-}
-
-void database::release_locked_balance()
-{
-   const auto head_num = head_block_num();
-   //const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_locked_balance_release>();
-   auto itr = idx.begin();
-   //const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   while (itr != idx.end() && itr->feepoint_unlock_block_number <= head_num)
-   {
-      modify(*itr, [&](account_statistics_object& s) {
-         s.releasing_locked_feepoint = 0;
-         s.feepoint_unlock_block_number = -1;
-      });
-      itr = idx.begin();
-   }
-}
+//void database::release_witness_pledges()
+//{
+//   const auto head_num = head_block_num();
+//   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+//   //auto block_time = head_block_time();
+//   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_witness_pledge_release>();
+//   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+//   auto itr = idx.begin();
+//   while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
+//   {
+//      modify(*itr, [&](account_statistics_object& s) {
+//         if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
+//            s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
+//         s.total_witness_pledge -= s.releasing_witness_pledge;
+//         s.releasing_witness_pledge = 0;
+//         s.witness_pledge_release_block_number = -1;
+//      });
+//      itr = idx.begin();
+//   }
+//}
+//
+//void database::release_committee_member_pledges()
+//{
+//   const auto head_num = head_block_num();
+//   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_committee_member_pledge_release>();
+//   auto itr = idx.begin();
+//   while( itr != idx.end() && itr->committee_member_pledge_release_block_number <= head_num )
+//   {
+//      modify( *itr, [&](account_statistics_object& s) {
+//         s.total_committee_member_pledge -= s.releasing_committee_member_pledge;
+//         s.releasing_committee_member_pledge = 0;
+//         s.committee_member_pledge_release_block_number = -1;
+//      });
+//      itr = idx.begin();
+//   }
+//}
+//
+//void database::release_locked_balance()
+//{
+//   const auto head_num = head_block_num();
+//   //const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+//   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_locked_balance_release>();
+//   auto itr = idx.begin();
+//   //const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+//   while (itr != idx.end() && itr->feepoint_unlock_block_number <= head_num)
+//   {
+//      modify(*itr, [&](account_statistics_object& s) {
+//         s.releasing_locked_feepoint = 0;
+//         s.feepoint_unlock_block_number = -1;
+//      });
+//      itr = idx.begin();
+//   }
+//}
 
 void database::release_mining_pledge()
 {
@@ -1567,16 +1567,23 @@ void database::check_invariants()
       FC_ASSERT( s.csaf >= 0 );
       FC_ASSERT( s.core_leased_in >= 0 );
       FC_ASSERT( s.core_leased_out >= 0 );
-      FC_ASSERT( s.total_witness_pledge >= s.releasing_witness_pledge );
-      FC_ASSERT( s.releasing_witness_pledge >= 0 );
-      FC_ASSERT( s.total_committee_member_pledge >= s.releasing_committee_member_pledge );
-      FC_ASSERT( s.releasing_committee_member_pledge >= 0 );
-      FC_ASSERT( s.uncollected_witness_pay >= 0 );
-      FC_ASSERT( s.witness_pledge_release_block_number > head_num );
-      FC_ASSERT( s.committee_member_pledge_release_block_number > head_num );
-      FC_ASSERT( s.total_platform_pledge >= s.releasing_platform_pledge );
-      FC_ASSERT( s.releasing_platform_pledge >= 0 );
-      FC_ASSERT( s.platform_pledge_release_block_number > head_num );
+
+      /* FC_ASSERT( s.total_witness_pledge >= s.releasing_witness_pledge );
+       FC_ASSERT( s.releasing_witness_pledge >= 0 );
+       FC_ASSERT( s.total_committee_member_pledge >= s.releasing_committee_member_pledge );
+       FC_ASSERT( s.releasing_committee_member_pledge >= 0 );
+       FC_ASSERT( s.uncollected_witness_pay >= 0 );
+       FC_ASSERT( s.witness_pledge_release_block_number > head_num );
+       FC_ASSERT( s.committee_member_pledge_release_block_number > head_num );
+       FC_ASSERT( s.total_platform_pledge >= s.releasing_platform_pledge );
+       FC_ASSERT( s.releasing_platform_pledge >= 0 );
+       FC_ASSERT( s.platform_pledge_release_block_number > head_num );*/
+
+      for (const auto& id : s.pledge_balance_ids)
+      {
+         auto pledge_balance_obj = get(id.second);
+         FC_ASSERT(pledge_balance_obj.pledge_release_block_number > head_num);
+      }
 
       for (const auto & p : s.uncollected_market_fees)
          total_balances[p.first] += p.second;
@@ -1588,10 +1595,13 @@ void database::check_invariants()
       total_core_non_bal += (s.prepaid + s.uncollected_witness_pay + s.uncollected_pledge_bonus + s.uncollected_score_bonus + uncollect_market_fee);
       total_core_leased_in += s.core_leased_in;
       total_core_leased_out += s.core_leased_out;
-      total_core_witness_pledge += ( s.total_witness_pledge - s.releasing_witness_pledge );
-      total_core_committee_member_pledge += ( s.total_committee_member_pledge - s.releasing_committee_member_pledge );
-      total_core_platform_pledge += (s.total_platform_pledge - s.releasing_platform_pledge );
-      FC_ASSERT( s.core_balance >= s.core_leased_out + s.total_witness_pledge + s.total_committee_member_pledge + s.total_platform_pledge );
+      if (s.pledge_balance_ids.count(pledge_balance_type::Witness))
+         total_core_witness_pledge += get(s.pledge_balance_ids.at(pledge_balance_type::Witness)).pledge;
+      if (s.pledge_balance_ids.count(pledge_balance_type::Commitment))
+         total_core_committee_member_pledge += get(s.pledge_balance_ids.at(pledge_balance_type::Commitment)).pledge;
+      if (s.pledge_balance_ids.count(pledge_balance_type::Platform))
+         total_core_platform_pledge += get(s.pledge_balance_ids.at(pledge_balance_type::Platform)).pledge;
+      FC_ASSERT(s.core_balance >= s.core_leased_out + s.total_mining_pledge + s.get_all_pledge_balance(GRAPHENE_CORE_ASSET_AID, *this));
 
       if( s.is_voter )
       {
@@ -1723,7 +1733,7 @@ void database::check_invariants()
          FC_ASSERT( s.by_vote_scheduled_time >= wso.current_by_vote_time );
          const auto& stats = get_account_statistics_by_uid( s.account );
          FC_ASSERT( stats.last_witness_sequence == s.sequence );
-         FC_ASSERT( stats.total_witness_pledge - stats.releasing_witness_pledge == s.pledge );
+         //FC_ASSERT( stats.total_witness_pledge - stats.releasing_witness_pledge == s.pledge );
          total_witness_pledges += s.pledge;
          total_witness_received_votes += s.total_votes;
       }
@@ -1740,7 +1750,7 @@ void database::check_invariants()
       {
          const auto& stats = get_account_statistics_by_uid( s.account );
          FC_ASSERT( stats.last_committee_member_sequence == s.sequence );
-         FC_ASSERT( stats.total_committee_member_pledge - stats.releasing_committee_member_pledge == s.pledge );
+         //FC_ASSERT( stats.total_committee_member_pledge - stats.releasing_committee_member_pledge == s.pledge );
          total_committee_member_pledges += s.pledge;
          total_committee_member_received_votes += s.total_votes;
       }
@@ -1758,7 +1768,7 @@ void database::check_invariants()
       {
          const auto& stats = get_account_statistics_by_uid( s.owner );
          FC_ASSERT( stats.last_platform_sequence == s.sequence );
-         FC_ASSERT( stats.total_platform_pledge - stats.releasing_platform_pledge == s.pledge );
+         //FC_ASSERT( stats.total_platform_pledge - stats.releasing_platform_pledge == s.pledge );
          total_platform_pledges += s.pledge;
          total_platform_received_votes += s.total_votes;
       }
@@ -1808,21 +1818,21 @@ void database::check_invariants()
    FC_ASSERT( total_platform_voted == total_platform_vote_objects );
 }
 
-void database::release_platform_pledges()
-{
-   const auto head_num = head_block_num();
-   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_platform_pledge_release>();
-   auto itr = idx.begin();
-   while( itr != idx.end() && itr->platform_pledge_release_block_number <= head_num )
-   {
-      modify( *itr, [&](account_statistics_object& s) {
-         s.total_platform_pledge -= s.releasing_platform_pledge;
-         s.releasing_platform_pledge = 0;
-         s.platform_pledge_release_block_number = -1;
-      });
-      itr = idx.begin();
-   }
-}
+//void database::release_platform_pledges()
+//{
+//   const auto head_num = head_block_num();
+//   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_platform_pledge_release>();
+//   auto itr = idx.begin();
+//   while( itr != idx.end() && itr->platform_pledge_release_block_number <= head_num )
+//   {
+//      modify( *itr, [&](account_statistics_object& s) {
+//         s.total_platform_pledge -= s.releasing_platform_pledge;
+//         s.releasing_platform_pledge = 0;
+//         s.platform_pledge_release_block_number = -1;
+//      });
+//      itr = idx.begin();
+//   }
+//}
 
 void database::adjust_platform_votes( const platform_object& platform, share_type delta )
 {

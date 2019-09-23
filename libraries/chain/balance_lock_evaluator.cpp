@@ -17,10 +17,13 @@ void_result balance_lock_update_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05, "Can only update balance lock after HARDFORK_0_5_TIME");
 
       account_stats = &d.get_account_statistics_by_uid(op.account);
+      if (account_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance))
+         pledge_balance_obj = &d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));
 
       if (op.new_lock_balance> 0)//change lock balance
       {
-         FC_ASSERT(op.new_lock_balance != account_stats->locked_balance_for_feepoint, "new_lock_balance specified but did not change");
+         if (pledge_balance_obj)
+            FC_ASSERT(op.new_lock_balance != pledge_balance_obj->pledge, "new_lock_balance specified but did not change");
 
          // releasing  locked balance can be reused.
          auto available_balance = account_stats->get_available_core_balance(pledge_balance_type::Lock_balance, d);
@@ -49,7 +52,7 @@ void_result balance_lock_update_evaluator::do_apply(const operation_type& op)
          s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_05);
       });
 
-      if (account_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance)) 
+      if (pledge_balance_obj != nullptr) 
       {
          const auto& lock_balance_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));
          uint32_t new_relase_num = d.head_block_num() + global_params.get_award_params().unlocked_balance_release_delay;

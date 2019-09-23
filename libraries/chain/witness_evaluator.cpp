@@ -113,7 +113,6 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    if (account_stats->pledge_balance_ids.count(pledge_balance_type::Witness))
    {
       const auto& wpb_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
-      uint32_t new_relase_num = d.head_block_num() + global_params.get_award_params().unlocked_balance_release_delay;
       d.modify(wpb_obj, [&](pledge_balance_object& obj) {
          obj.update_pledge(op.pledge, 0);//In this case, the second parameter is invalid
       });
@@ -205,7 +204,7 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
 
    //check pledge balance object 
    if (account_stats->pledge_balance_ids.count(pledge_balance_type::Witness) == 0)
-      FC_ASSERT(false, "pledge ba;ance object is nonexistent");
+      FC_ASSERT(false, "pledge balance object is nonexistent");
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -573,6 +572,10 @@ void_result witness_report_evaluator::do_evaluate( const witness_report_operatio
    FC_ASSERT( block_id_on_chain == op.first_block.id() || block_id_on_chain == op.second_block.id(),
               "Either first block or second block should be on current chain" );
 
+   //check pledge balance object 
+   if (account_stats->pledge_balance_ids.count(pledge_balance_type::Witness) == 0)
+      FC_ASSERT(false, "pledge balance object is nonexistent");
+
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -590,12 +593,13 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       });
    }
 
+   const auto& pledge_balance_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
    // check if need to deduct from pledge
-   share_type total = std::min( global_params.witness_report_pledge_deduction_amount, account_stats->total_witness_pledge );
+   share_type total = std::min(global_params.witness_report_pledge_deduction_amount, pledge_balance_obj.total_unrelease_pledge());
    if( total > 0 )
    {
       // something to deduct
-      share_type from_releasing = std::min( account_stats->releasing_witness_pledge, total );
+      share_type from_releasing = std::min(pledge_balance_obj.releasing_pledge, total);
       share_type from_pledge = total - from_releasing;
       // update account stats object
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
@@ -604,13 +608,15 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       d.modify( *account_stats, [&]( account_statistics_object& s ) {
          if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
              s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_04);
-         if( from_releasing > 0 )
-         {
-            s.releasing_witness_pledge -= from_releasing;
-            if( s.releasing_witness_pledge <= 0 )
-               s.witness_pledge_release_block_number = -1;
-         }
-         s.total_witness_pledge -= total;
+         d.modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
+            if (from_releasing > 0)
+            {
+               _pbo.releasing_pledge -= from_releasing;
+               if (_pbo.releasing_pledge <= 0)
+                  _pbo.pledge_release_block_number = -1;
+            }
+            _pbo.pledge -= from_pledge;
+         });
          s.witness_last_reported_block_num = reporting_block_num;
          s.witness_total_reported += 1;
       });

@@ -60,10 +60,10 @@ std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_sec
       effective_balance = core_balance + core_leased_in - core_leased_out;
       break;
    case ENABLE_HEAD_FORK_04 :
-      effective_balance = core_balance + core_leased_in - core_leased_out - total_witness_pledge;
+      //effective_balance = core_balance + core_leased_in - core_leased_out - total_witness_pledge;
       break;
    case ENABLE_HEAD_FORK_05 :
-      effective_balance = locked_balance_for_feepoint;
+      //effective_balance = locked_balance_for_feepoint;
       break;
    default:
       break;
