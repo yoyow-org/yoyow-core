@@ -59,7 +59,7 @@ void_result balance_lock_update_evaluator::do_apply(const operation_type& op)
       } 
       else {//create pledge_balance_obj
          const auto& new_pledge_balance_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
-            obj.owner = op.account;
+            obj.superior_index = op.account;
             obj.type = pledge_balance_type::Lock_balance;
             obj.asset_id = GRAPHENE_CORE_ASSET_AID;
             obj.pledge = op.new_lock_balance;

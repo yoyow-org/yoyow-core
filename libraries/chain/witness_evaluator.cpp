@@ -120,7 +120,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    }
    else {//create pledge_balance_obj
       const auto& new_pledge_balance_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
-         obj.owner = op.account;
+         obj.superior_index = op.account;
          obj.type = pledge_balance_type::Witness;
          obj.asset_id = GRAPHENE_CORE_ASSET_AID;
          obj.pledge = op.pledge.amount;

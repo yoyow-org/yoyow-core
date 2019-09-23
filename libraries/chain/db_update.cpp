@@ -904,6 +904,7 @@ void database::release_locked_balance()
 
 void database::release_mining_pledge()
 {
+   /*
    const auto head_num = head_block_num();
    auto block_time = head_block_time();
    const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_mining_release>();
@@ -925,6 +926,7 @@ void database::release_mining_pledge()
          
       itr = idx.begin();     
    }
+    */
 }
 
 void database::clear_resigned_witness_votes()
@@ -1877,10 +1879,10 @@ void database::update_pledge_mining_bonus_by_witness(const witness_object& witne
 
 share_type database::update_pledge_mining_bonus_by_account(const pledge_mining_object& pledge_mining_obj, share_type bonus_per_pledge)
 {
-   if (pledge_mining_obj.pledge == 0)
+   if (this->get(pledge_mining_obj.pledge_id).pledge == 0)
       return 0;
 
-   share_type total_bonus = ((uint128_t)bonus_per_pledge.value * pledge_mining_obj.pledge.value
+   share_type total_bonus = ((uint128_t)bonus_per_pledge.value * get(pledge_mining_obj.pledge_id).pledge.value
       / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
    if (total_bonus > 0) {
       modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](account_statistics_object& o) {
@@ -1967,10 +1969,11 @@ void database::resign_pledge_mining(const witness_object& wit)
    auto itr = idx.lower_bound(wit.account);
    while (itr != idx.end() && itr->witness == wit.account)
    {
-      modify(*itr, [&](pledge_mining_object& s) {
-         s.releasing_mining_pledge += s.pledge;
+      auto obj=get(itr->pledge_id);
+      modify(obj, [&](pledge_balance_object& s) {
+         s.releasing_pledge += s.pledge;
          s.pledge = 0;
-         s.mining_pledge_release_block_number = head_block_num() + params.mining_pledge_release_delay;
+         s.pledge_release_block_number = head_block_num() + params.mining_pledge_release_delay;
       });
 
       ++itr;

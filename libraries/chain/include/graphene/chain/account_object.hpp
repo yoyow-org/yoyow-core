@@ -42,7 +42,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id  = impl_pledge_balance_object_type;
 
-      account_uid_type     owner;
+      uint64_t             superior_index;
       pledge_balance_type  type;
       asset_aid_type       asset_id = 0;
       share_type           pledge;
@@ -957,7 +957,7 @@ FC_REFLECT_ENUM(graphene::chain::pledge_balance_type,
 
 FC_REFLECT_DERIVED(graphene::chain::pledge_balance_object,
                    (graphene::db::object),
-                   (owner)
+                   (superior_index)
                    (type)
                    (asset_id)
                    (pledge)

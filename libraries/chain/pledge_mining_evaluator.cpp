@@ -29,10 +29,10 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
                    ("r", d.to_pretty_core_string(min_pledge_to_witness)));
 
          if (pledge_mining_obj)
-            FC_ASSERT(op.new_pledge.value != pledge_mining_obj->pledge, "new_pledge specified but did not change");
+            FC_ASSERT(op.new_pledge!= d.get(pledge_mining_obj->pledge_id).pledge, "new_pledge specified but did not change");
 
          auto available_balance = account_stats->get_available_core_balance(d);
-         available_balance = available_balance + (pledge_mining_obj ? pledge_mining_obj->total_unrelease_pledge() : 0);
+         available_balance = available_balance+ (pledge_mining_obj ? pledge_mining_obj->pledge_id(d).total_unrelease_pledge() : 0);
          FC_ASSERT(available_balance >= op.new_pledge,
             "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
             ("a", op.pledge_account)
@@ -64,23 +64,29 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          share_type bonus_per_pledge = witness_obj->accumulate_bonus_per_pledge(pledge_mining_obj->last_bonus_block_num + 1);
          send_bonus = d.update_pledge_mining_bonus_by_account(*pledge_mining_obj, bonus_per_pledge);
          share_type delta_available_balance=0;
-         delta_pledge_to_witness=op.new_pledge-pledge_mining_obj->pledge;
-         d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {
+         delta_pledge_to_witness=op.new_pledge-pledge_mining_obj->pledge_id(d).pledge;
+         /*d.modify(*pledge_mining_obj, [&](pledge_mining_object& obj) {
             delta_available_balance = obj.update_pledge(op.new_pledge, block_num + params.mining_pledge_release_delay);
-         });
+         });*/
          d.modify(*account_stats, [&](account_statistics_object& s) {
             s.total_mining_pledge += delta_available_balance;
          });
       }
       else//create pledge mining object
       {
-         d.create<pledge_mining_object>([&](pledge_mining_object& obj){
+         auto pledge_balance_obj=d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+            obj.pledge = op.new_pledge.value;
+         });
+         auto pledge_mining_obj=d.create<pledge_mining_object>([&](pledge_mining_object& obj){
             obj.pledge_account = op.pledge_account;
             obj.witness = op.witness;
-            obj.pledge = op.new_pledge.value;
             obj.last_bonus_block_num = block_num;
+            obj.pledge_id=pledge_balance_obj.id;
          });
-
+         d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+            s.superior_index =pledge_mining_obj.id.instance();
+         });
+                                                 
          d.modify(*account_stats, [&](account_statistics_object& s) {
             s.total_mining_pledge += op.new_pledge;
          });
