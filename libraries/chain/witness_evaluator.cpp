@@ -105,7 +105,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    auto block_time = d.head_block_time();
    d.modify(*account_stats, [&](_account_statistics_object& s) {
       s.last_witness_sequence += 1;
-      auto releasing_pledge = s.get_releasing_pledge(0, pledge_balance_type::Witness, d);
+      auto releasing_pledge = s.get_releasing_pledge(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
       if (releasing_pledge < op.pledge.amount && dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
          s.update_coin_seconds_earned(csaf_window, block_time, d, ENABLE_HEAD_FORK_04);
    });
@@ -259,7 +259,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          const uint64_t csaf_window = global_params.csaf_accumulate_window;
          auto block_time = d.head_block_time();
          d.modify(*account_stats, [&](_account_statistics_object& s) {
-            auto releasing_pledge = s.get_releasing_pledge(0, pledge_balance_type::Witness, d);
+            auto releasing_pledge = s.get_releasing_pledge(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, d);
             if (releasing_pledge < delta && dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
                s.update_coin_seconds_earned(csaf_window, block_time, d, ENABLE_HEAD_FORK_04);
          });

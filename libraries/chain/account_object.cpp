@@ -60,18 +60,16 @@ std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_se
       effective_balance = core_balance + core_leased_in - core_leased_out;
       break;
    case ENABLE_HEAD_FORK_04 :
-      if (pledge_balance_ids.count(pledge_balance_type::Witness)) 
-      {
+      if (pledge_balance_ids.count(pledge_balance_type::Witness)) {
          effective_balance = core_balance + core_leased_in - core_leased_out -
-            get_pledge_balance(0, pledge_balance_type::Witness, db);
+            get_pledge_balance(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, db);
       } else
          effective_balance = core_balance + core_leased_in - core_leased_out;
       break;
    case ENABLE_HEAD_FORK_05 :
-      if (pledge_balance_ids.count(pledge_balance_type::Lock_balance))
-      {
+      if (pledge_balance_ids.count(pledge_balance_type::Lock_balance)) {
          auto pledge_balance_obj = pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
-         if (pledge_balance_obj.asset_id == 0)
+         if (GRAPHENE_CORE_ASSET_AID == pledge_balance_obj.asset_id)
             effective_balance = pledge_balance_obj.pledge;
       } 
       break;
