@@ -140,7 +140,7 @@ const optional<account_id_type> database::find_account_id_by_uid( account_uid_ty
    const auto& accounts_by_uid = get_index_type<account_index>().indices().get<by_uid>();
    auto itr = accounts_by_uid.find(uid);
    if( itr != accounts_by_uid.end() )
-      return itr->get_id();
+      return optional<account_id_type>(itr->get_id());
    else
       return optional<account_id_type>();
 }
