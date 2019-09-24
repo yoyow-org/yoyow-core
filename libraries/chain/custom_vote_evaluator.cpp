@@ -54,7 +54,7 @@ object_id_type custom_vote_create_evaluator::do_apply(const operation_type& op)
          obj.options = op.options;
       });
 
-      d.modify(*account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.last_custom_vote_sequence += 1;
       });
 

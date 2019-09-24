@@ -83,7 +83,7 @@ namespace graphene { namespace chain {
       void_result do_evaluate(const market_fee_collect_operation& o);
       void_result do_apply(const market_fee_collect_operation& o);
 
-      const account_statistics_object* _account;
+      const _account_statistics_object* _account;
    };
 
 } } // graphene::chain

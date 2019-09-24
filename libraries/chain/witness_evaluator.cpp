@@ -103,7 +103,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
 
    const uint64_t csaf_window = global_params.csaf_accumulate_window;
    auto block_time = d.head_block_time();
-   d.modify( *account_stats, [&](account_statistics_object& s) {
+   d.modify(*account_stats, [&](_account_statistics_object& s) {
       s.last_witness_sequence += 1;
       auto releasing_pledge = s.get_releasing_pledge(0, pledge_balance_type::Witness, d);
       if (releasing_pledge < op.pledge.amount && dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
@@ -124,7 +124,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
          obj.asset_id = GRAPHENE_CORE_ASSET_AID;
          obj.pledge = op.pledge.amount;
       });
-      d.modify(*account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.pledge_balance_ids.emplace(pledge_balance_type::Witness, new_pledge_balance_obj.id);
       });
    }
@@ -258,7 +258,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       {
          const uint64_t csaf_window = global_params.csaf_accumulate_window;
          auto block_time = d.head_block_time();
-         d.modify( *account_stats, [&](account_statistics_object& s) {
+         d.modify(*account_stats, [&](_account_statistics_object& s) {
             auto releasing_pledge = s.get_releasing_pledge(0, pledge_balance_type::Witness, d);
             if (releasing_pledge < delta && dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
                s.update_coin_seconds_earned(csaf_window, block_time, d, ENABLE_HEAD_FORK_04);
@@ -465,7 +465,7 @@ void_result witness_vote_update_evaluator::do_apply( const witness_vote_update_o
    }
    else // need to create a new voter object for this account
    {
-      d.modify( *account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.is_voter = true;
          s.last_voter_sequence += 1;
       });
@@ -530,7 +530,7 @@ void_result witness_collect_pay_evaluator::do_apply( const witness_collect_pay_o
    database& d = db();
 
    d.adjust_balance( op.account, op.pay );
-   d.modify( *account_stats, [&](account_statistics_object& s) {
+   d.modify(*account_stats, [&](_account_statistics_object& s) {
       s.uncollected_witness_pay -= op.pay.amount;
    });
 
@@ -605,7 +605,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
       auto block_time = d.head_block_time();
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-      d.modify( *account_stats, [&]( account_statistics_object& s ) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
              s.update_coin_seconds_earned(csaf_window, block_time, d, ENABLE_HEAD_FORK_04);
          d.modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
@@ -651,7 +651,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
    else
    {
       // nothing to deduct
-      d.modify( *account_stats, [&]( account_statistics_object& s ) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.witness_last_reported_block_num = reporting_block_num;
          s.witness_total_reported += 1;
       });

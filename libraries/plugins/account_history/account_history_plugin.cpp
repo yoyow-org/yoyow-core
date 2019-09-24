@@ -200,7 +200,7 @@ void account_history_plugin_impl::add_account_history( const account_uid_type ac
        obj.sequence = stats_obj.total_ops + 1;
        obj.next = stats_obj.most_recent_op;
    });
-   db.modify( stats_obj, [&]( account_statistics_object& obj ){
+   db.modify( stats_obj, [&]( _account_statistics_object& obj ){
        obj.most_recent_op = ath.id;
        obj.total_ops = ath.sequence;
    });
@@ -220,7 +220,7 @@ void account_history_plugin_impl::add_account_history( const account_uid_type ac
          const auto itr_remove = itr;
          ++itr;
          db.remove( *itr_remove );
-         db.modify( stats_obj, [&]( account_statistics_object& obj ){
+         db.modify( stats_obj, [&]( _account_statistics_object& obj ){
              obj.removed_ops = obj.removed_ops + 1;
          });
          // modify previous node's next pointer

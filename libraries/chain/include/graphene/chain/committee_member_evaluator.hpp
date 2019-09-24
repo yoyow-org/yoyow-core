@@ -35,7 +35,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const committee_member_create_operation& o );
          object_id_type do_apply( const committee_member_create_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const account_object* account_obj = nullptr;
    };
 
@@ -47,7 +47,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const committee_member_update_operation& o );
          void_result do_apply( const committee_member_update_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const committee_member_object* committee_member_obj = nullptr;
    };
 
@@ -59,7 +59,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const committee_member_vote_update_operation& o );
          void_result do_apply( const committee_member_vote_update_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const voter_object* voter_obj = nullptr;
          const voter_object* invalid_voter_obj = nullptr;
          const voter_object* invalid_current_proxy_voter_obj = nullptr;

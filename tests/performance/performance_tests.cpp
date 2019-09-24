@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(post_performance_test)
                                  post_object::Post_Permission_Comment |
                                  post_object::Post_Permission_Reward;
 
-    const account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(u_1000_id);
+    const _account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(u_1000_id);
     post_operation create_op;
     create_op.platform = u_9000_id;
     create_op.poster = u_1000_id;
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(comment_performance_test)
 
         extension.post_type = post_operation::Post_Type_Comment;
         for (uint32_t i = 0; i < cycles; ++i){
-            const account_statistics_object& comment_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
+            const _account_statistics_object& comment_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
             post_operation comment_op;
             comment_op.platform = u_9000_id;
             comment_op.poster = accounts[i];
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(forward_performance_test)
         //forward post test
         extension.post_type = post_operation::Post_Type_forward;
         for (uint32_t i = 0; i < cycles; ++i){
-            const account_statistics_object& forward_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
+            const _account_statistics_object& forward_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
             post_operation forward_op;
             forward_op.platform = u_9000_id;
             forward_op.poster = accounts[i];

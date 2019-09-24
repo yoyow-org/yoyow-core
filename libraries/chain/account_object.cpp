@@ -48,7 +48,7 @@ void account_balance_object::adjust_balance(const asset& delta)
    balance += delta.amount;
 }
 
-std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)const
+std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)const
 {
    fc::time_point_sec now_rounded((now.sec_since_epoch() / 60) * 60);
    // check average coins and max coin-seconds
@@ -119,7 +119,7 @@ std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_sec
    return std::make_pair(new_coin_seconds_earned, new_average_coins);
 }
 
-void account_statistics_object::update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)
+void _account_statistics_object::update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)
 {
    fc::time_point_sec now_rounded( ( now.sec_since_epoch() / 60 ) * 60 );
    if( now_rounded <= coin_seconds_earned_last_update && now_rounded <= average_coins_last_update )
@@ -131,7 +131,7 @@ void account_statistics_object::update_coin_seconds_earned(const uint64_t window
    average_coins_last_update = now_rounded;
 }
 
-void account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now)
+void _account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now)
 {
    fc::time_point_sec now_rounded( ( now.sec_since_epoch() / 60 ) * 60 );
    coin_seconds_earned = new_coin_seconds;
@@ -139,7 +139,7 @@ void account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_
       coin_seconds_earned_last_update = now_rounded;
 }
 
-void account_statistics_object::add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount)
+void _account_statistics_object::add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount)
 {
    auto iter = uncollected_market_fees.find(asset_aid);
    if (iter != uncollected_market_fees.end()){

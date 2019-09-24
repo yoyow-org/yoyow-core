@@ -44,13 +44,13 @@ BOOST_AUTO_TEST_CASE(witness_csaf_test)
       //###############################  before reduce witness csaf on hardfork_4_time
 
       collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
-      const account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(ants_1000.csaf == 1000 * prec);
 
       //###############################  reduce witness csaf on hardfork_4_time. need to modify hardfork_4_time and debug
 
       //collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
-      //const account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      //const _account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
       //BOOST_CHECK(ants_1000.csaf == 1000 * prec);
 
    }
@@ -70,12 +70,12 @@ BOOST_AUTO_TEST_CASE(collect_csaf_test)
 
       collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
 
-      const account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(ants_1000.csaf == 1000 * prec);
 
       //###############################################################
       collect_csaf_from_committee(u_2000_id, 1000);
-      const account_statistics_object& ants_2000 = db.get_account_statistics_by_uid(u_2000_id);
+      const _account_statistics_object& ants_2000 = db.get_account_statistics_by_uid(u_2000_id);
       BOOST_CHECK(ants_2000.csaf == 1000 * prec);
    }
    catch (const fc::exception& e)
@@ -675,7 +675,7 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
       add_csaf_for_account(u_1001_id, 10000);
       add_csaf_for_account(u_2000_id, 10000);
       add_csaf_for_account(u_9000_id, 10000);
-      const account_statistics_object& temp = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& temp = db.get_account_statistics_by_uid(u_1000_id);
 
       // make sure the database requires our fee to be nonzero
       enable_fees();
@@ -683,26 +683,26 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
       flat_set<fc::ecc::private_key> sign_keys;
       sign_keys.insert(u_1000_private_key);
       transfer_extension(sign_keys, u_1000_id, u_1000_id, _core(6000), "", true, false);
-      const account_statistics_object& ant1000 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& ant1000 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(ant1000.prepaid == 6000 * prec);
       BOOST_CHECK(ant1000.core_balance == 4000 * prec);
 
       transfer_extension(sign_keys, u_1000_id, u_1001_id, _core(5000), "", false, true);
-      const account_statistics_object& ant1000_1 = db.get_account_statistics_by_uid(u_1000_id);
-      const account_statistics_object& ant1001 = db.get_account_statistics_by_uid(u_1001_id);
+      const _account_statistics_object& ant1000_1 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& ant1001 = db.get_account_statistics_by_uid(u_1001_id);
       BOOST_CHECK(ant1000_1.prepaid == 1000 * prec);
       BOOST_CHECK(ant1001.core_balance == 15000 * prec);
 
       flat_set<fc::ecc::private_key> sign_keys1;
       sign_keys1.insert(u_1001_private_key);
       transfer_extension(sign_keys1, u_1001_id, u_1000_id, _core(15000), "", true, true);
-      const account_statistics_object& ant1000_2 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& ant1000_2 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(ant1000_2.prepaid == 1000 * prec);
       BOOST_CHECK(ant1000_2.core_balance == 19000 * prec);
 
       transfer_extension(sign_keys, u_1000_id, u_1001_id, _core(1000), "", false, false);
-      const account_statistics_object& ant1001_2 = db.get_account_statistics_by_uid(u_1001_id);
-      const account_statistics_object& ant1000_3 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& ant1001_2 = db.get_account_statistics_by_uid(u_1001_id);
+      const _account_statistics_object& ant1000_3 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(ant1001_2.prepaid == 1000 * prec);
       BOOST_CHECK(ant1000_3.prepaid == 0);
 
@@ -716,8 +716,8 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
          account_auth_platform_object::Platform_Permission_Content_Update);
       transfer_extension({ u_2000_private_key }, u_2000_id, u_2000_id, _core(10000), "", true, false);
       transfer_extension({ u_9000_private_key }, u_2000_id, u_9000_id, _core(1000), "", false, true);
-      const account_statistics_object& ant2000 = db.get_account_statistics_by_uid(u_2000_id);
-      const account_statistics_object& ant9000 = db.get_account_statistics_by_uid(u_9000_id);
+      const _account_statistics_object& ant2000 = db.get_account_statistics_by_uid(u_2000_id);
+      const _account_statistics_object& ant9000 = db.get_account_statistics_by_uid(u_9000_id);
       BOOST_CHECK(ant2000.prepaid == 9000 * prec);
       BOOST_CHECK(ant9000.core_balance == 1000 * prec);
 
@@ -1069,12 +1069,12 @@ BOOST_AUTO_TEST_CASE(forward_test)
          post_object::Post_Permission_Comment |
          post_object::Post_Permission_Reward);
 
-      const account_statistics_object& sobj1 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& sobj1 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(sobj1.prepaid == 17500 * prec);
-      const account_statistics_object& platform1 = db.get_account_statistics_by_uid(u_9000_id);
+      const _account_statistics_object& platform1 = db.get_account_statistics_by_uid(u_9000_id);
       BOOST_CHECK(platform1.prepaid == 2500 * prec);
       BOOST_CHECK(platform1.core_balance == 10000 * prec);
-      const account_statistics_object& sobj2 = db.get_account_statistics_by_uid(u_2000_id);
+      const _account_statistics_object& sobj2 = db.get_account_statistics_by_uid(u_2000_id);
       BOOST_CHECK(sobj2.prepaid == 0);
 
       if (do_by_platform){
@@ -1198,9 +1198,9 @@ BOOST_AUTO_TEST_CASE(buyout_test)
       BOOST_CHECK(iter2->second.buyout_ratio == 0);
       BOOST_CHECK(iter2->second.buyout_price == 0);
 
-      const account_statistics_object& sobj1 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object& sobj1 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(sobj1.prepaid == 11000 * prec);
-      const account_statistics_object& sobj2 = db.get_account_statistics_by_uid(u_2000_id);
+      const _account_statistics_object& sobj2 = db.get_account_statistics_by_uid(u_2000_id);
       BOOST_CHECK(sobj2.prepaid == 9000 * prec);
 
       if (do_by_platform){
@@ -1568,14 +1568,14 @@ BOOST_AUTO_TEST_CASE(csaf_lease_test)
       add_csaf_for_account(u_2000_id, 10000);
 
       csaf_lease({ u_1000_private_key }, u_1000_id, u_2000_id, 15000, time_point_sec(1562224400));
-      const account_statistics_object ant_1000 = db.get_account_statistics_by_uid(u_1000_id);
-      const account_statistics_object ant_2000 = db.get_account_statistics_by_uid(u_2000_id);
+      const _account_statistics_object ant_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object ant_2000 = db.get_account_statistics_by_uid(u_2000_id);
       BOOST_CHECK(ant_1000.core_leased_out == 15000*prec);
       BOOST_CHECK(ant_2000.core_leased_in == 15000 * prec);
 
       generate_blocks(28800);
-      const account_statistics_object ant_1000a = db.get_account_statistics_by_uid(u_1000_id);
-      const account_statistics_object ant_2000a = db.get_account_statistics_by_uid(u_2000_id);
+      const _account_statistics_object ant_1000a = db.get_account_statistics_by_uid(u_1000_id);
+      const _account_statistics_object ant_2000a = db.get_account_statistics_by_uid(u_2000_id);
       BOOST_CHECK(ant_1000a.core_leased_out == 0 * prec);
       BOOST_CHECK(ant_2000a.core_leased_in == 0 * prec);
 
@@ -1711,11 +1711,11 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
       auto referrer_r_1=(market_fee_asset_1*market_reward_percent/GRAPHENE_100_PERCENT)*referrer_percent/GRAPHENE_100_PERCENT;
       auto asset_1_claim_fees=market_fee_asset_1*(GRAPHENE_100_PERCENT-market_reward_percent)/GRAPHENE_100_PERCENT;
       
-      const account_statistics_object& aso1 = db.get_account_statistics_by_uid(u_2001_id);
+      const _account_statistics_object& aso1 = db.get_account_statistics_by_uid(u_2001_id);
       auto iter1 = aso1.uncollected_market_fees.find(1);
       BOOST_CHECK(iter1 != aso1.uncollected_market_fees.end());
       BOOST_CHECK(iter1->second == registrar_r_1);
-      const account_statistics_object& aso2 = db.get_account_statistics_by_uid(u_2002_id);
+      const _account_statistics_object& aso2 = db.get_account_statistics_by_uid(u_2002_id);
       auto iter2 = aso2.uncollected_market_fees.find(1);
       BOOST_CHECK(iter2 != aso2.uncollected_market_fees.end());
       BOOST_CHECK(iter2->second ==referrer_r_1);
@@ -1791,20 +1791,20 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
       auto registrar_r_2=(market_fee_asset_2*market_reward_percent/GRAPHENE_100_PERCENT)*registrar_percent/GRAPHENE_100_PERCENT;
       auto referrer_r_2=(market_fee_asset_2*market_reward_percent/GRAPHENE_100_PERCENT)*referrer_percent/GRAPHENE_100_PERCENT;
       
-      const account_statistics_object& aso3 = db.get_account_statistics_by_uid(u_3001_id);
+      const _account_statistics_object& aso3 = db.get_account_statistics_by_uid(u_3001_id);
       auto iter3 = aso3.uncollected_market_fees.find(1);
       BOOST_CHECK(iter3 != aso3.uncollected_market_fees.end());
       BOOST_CHECK(iter3->second == registrar_r_1);
-      const account_statistics_object& aso4 = db.get_account_statistics_by_uid(u_3002_id);
+      const _account_statistics_object& aso4 = db.get_account_statistics_by_uid(u_3002_id);
       auto iter4 = aso4.uncollected_market_fees.find(1);
       BOOST_CHECK(iter4 != aso4.uncollected_market_fees.end());
       BOOST_CHECK(iter4->second == referrer_r_1);
 
-      const account_statistics_object& aso5 = db.get_account_statistics_by_uid(u_1001_id);
+      const _account_statistics_object& aso5 = db.get_account_statistics_by_uid(u_1001_id);
       auto iter5 = aso5.uncollected_market_fees.find(2);
       BOOST_CHECK(iter5 != aso5.uncollected_market_fees.end());
       BOOST_CHECK(iter5->second == registrar_r_2);
-      const account_statistics_object& aso6 = db.get_account_statistics_by_uid(u_1002_id);
+      const _account_statistics_object& aso6 = db.get_account_statistics_by_uid(u_1002_id);
       auto iter6 = aso6.uncollected_market_fees.find(2);
       BOOST_CHECK(iter6 != aso6.uncollected_market_fees.end());
       BOOST_CHECK(iter6->second == referrer_r_2);

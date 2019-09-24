@@ -18,7 +18,7 @@ public:
    void_result do_evaluate(const operation_type& op);
    void_result do_apply(const operation_type& op);
 
-   const account_statistics_object* account_stats = nullptr; 
+   const _account_statistics_object* account_stats = nullptr;
    const pledge_balance_object* pledge_balance_obj = nullptr;
 };
 

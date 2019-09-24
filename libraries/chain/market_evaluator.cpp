@@ -100,7 +100,7 @@ object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_o
 { try {
    const auto& seller_stats = _seller->statistics(db());
    if (op.amount_to_sell.asset_id == GRAPHENE_CORE_ASSET_AID){
-      db().modify(seller_stats, [&](account_statistics_object& bal) {
+      db().modify(seller_stats, [&](_account_statistics_object& bal) {
          bal.total_core_in_orders += op.amount_to_sell.amount;
       });
    }
@@ -165,7 +165,7 @@ void_result market_fee_collect_evaluator::do_apply(const market_fee_collect_oper
 {
    try {
       database& d = db();
-      d.modify(*_account, [&](account_statistics_object& s) {
+      d.modify(*_account, [&](_account_statistics_object& s) {
          auto iter = s.uncollected_market_fees.find(o.asset_aid);
          if (iter->second == o.amount){
             s.uncollected_market_fees.erase(iter);
