@@ -78,6 +78,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
       {
          auto pledge_balance_obj=d.create<pledge_balance_object>([&](pledge_balance_object& obj){
             obj.pledge = op.new_pledge.value;
+            obj.type = pledge_balance_type::Mine;
          });
          auto pledge_mining_obj=d.create<pledge_mining_object>([&](pledge_mining_object& obj){
             obj.pledge_account = op.pledge_account;
