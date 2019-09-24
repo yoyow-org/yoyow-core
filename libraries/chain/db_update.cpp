@@ -2426,7 +2426,13 @@ void database::process_pledge_balance_release()
             s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
          });
       }
-      
+
+      if (itr_pledge->type == pledge_balance_type::Mine){
+         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](account_statistics_object& s) {
+            s.total_mining_pledge -= itr_pledge->releasing_pledge;
+         });
+      }
+
       FC_ASSERT(itr_pledge->pledge >= 0, "pledge_balance_object`s pledge must >= 0. ");
       if (itr_pledge->pledge > 0){
          modify(*itr_pledge, [&](pledge_balance_object& s) {

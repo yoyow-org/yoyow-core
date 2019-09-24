@@ -299,24 +299,9 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          }
 
          template<class DB>
-         share_type get_total_mine_pledge(asset_aid_type asset_id, const DB& db) const {
-            share_type total_mining_pledge = 0;
-            const auto& idx = db.get_index_type<pledge_mining_index>().indices().get<by_pledge_account>();
-            auto itr = idx.lower_bound(owner);
-            while (itr != idx.end() && itr->pledge_account == owner)
-            {
-               const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(itr->pledge_id);
-               if (asset_id == pledge_balance_obj.asset_id)
-                  total_mining_pledge += pledge_balance_obj.total_unrelease_pledge();
-               ++itr;
-            }
-            return  total_mining_pledge;
-         }
-
-         template<class DB>
          share_type get_available_core_balance(const DB& db) const{
             return core_balance - get_all_pledge_balance(GRAPHENE_CORE_ASSET_AID, db)
-                                - get_total_mine_pledge(GRAPHENE_CORE_ASSET_AID, db)
+                                - total_mining_pledge
                                 - core_leased_out;
          }
 
