@@ -63,7 +63,7 @@ void database::update_global_dynamic_data( const signed_block& b )
            if( w.last_confirmed_block_num + gpo.parameters.max_witness_inactive_blocks < b.block_num() )
               w.signing_key = public_key_type();
          });
-         modify( get_account_statistics_by_uid( witness_missed.account ), [&]( account_statistics_object& s ) {
+         modify(get_account_statistics_by_uid(witness_missed.account), [&](_account_statistics_object& s) {
            s.witness_total_missed++;
          });
       } 
@@ -162,7 +162,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
       _wit.last_confirmed_block_num = new_block.block_num();
    } );
 
-   modify( get_account_statistics_by_uid( signing_witness.account ), [&]( account_statistics_object& _stat )
+   modify(get_account_statistics_by_uid(signing_witness.account), [&](_account_statistics_object& _stat)
    {
       _stat.witness_last_aslot = new_block_aslot;
       _stat.witness_total_produced += 1;
@@ -648,8 +648,8 @@ void database::update_reduce_witness_csaf()
     const auto& witness_idx = get_index_type<witness_index>().indices();
     for (auto itr = witness_idx.begin(); itr != witness_idx.end(); ++itr)
     {
-        const account_statistics_object& statistics_obj = get_account_statistics_by_uid(itr->account);
-        modify(statistics_obj, [&](account_statistics_object& s) {
+        const _account_statistics_object& statistics_obj = get_account_statistics_by_uid(itr->account);
+        modify(statistics_obj, [&](_account_statistics_object& s) {
             s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_NONE);
         });
     }
@@ -690,7 +690,7 @@ void database::update_account_feepoint()
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
    {
-      modify(*itr, [&](account_statistics_object& s) {
+      modify(*itr, [&](_account_statistics_object& s) {
          s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_04);
       });
    }
@@ -821,12 +821,12 @@ void database::clear_expired_csaf_leases()
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    while( itr != idx.end() && itr->expiration <= head_time )
    {
-      modify(get_account_statistics_by_uid(itr->from), [&](account_statistics_object& s) {
+      modify(get_account_statistics_by_uid(itr->from), [&](_account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
             s.update_coin_seconds_earned(csaf_window, head_time, *this, dpo.enabled_hardfork_version);
          s.core_leased_out -= itr->amount;
       });
-      modify(get_account_statistics_by_uid(itr->to), [&](account_statistics_object& s) {
+      modify(get_account_statistics_by_uid(itr->to), [&](_account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
             s.update_coin_seconds_earned(csaf_window, head_time, *this, dpo.enabled_hardfork_version);
          s.core_leased_in -= itr->amount;
@@ -858,7 +858,7 @@ void database::update_average_witness_pledges()
 //   auto itr = idx.begin();
 //   while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
 //   {
-//      modify(*itr, [&](account_statistics_object& s) {
+//      modify(*itr, [&](_account_statistics_object& s) {
 //         if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
 //            s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
 //         s.total_witness_pledge -= s.releasing_witness_pledge;
@@ -876,7 +876,7 @@ void database::update_average_witness_pledges()
 //   auto itr = idx.begin();
 //   while( itr != idx.end() && itr->committee_member_pledge_release_block_number <= head_num )
 //   {
-//      modify( *itr, [&](account_statistics_object& s) {
+//      modify( *itr, [&](_account_statistics_object& s) {
 //         s.total_committee_member_pledge -= s.releasing_committee_member_pledge;
 //         s.releasing_committee_member_pledge = 0;
 //         s.committee_member_pledge_release_block_number = -1;
@@ -894,7 +894,7 @@ void database::update_average_witness_pledges()
 //   //const dynamic_global_property_object& dpo = get_dynamic_global_properties();
 //   while (itr != idx.end() && itr->feepoint_unlock_block_number <= head_num)
 //   {
-//      modify(*itr, [&](account_statistics_object& s) {
+//      modify(*itr, [&](_account_statistics_object& s) {
 //         s.releasing_locked_feepoint = 0;
 //         s.feepoint_unlock_block_number = -1;
 //      });
@@ -911,7 +911,7 @@ void database::release_mining_pledge()
    auto itr = idx.begin();
    while (itr != idx.end() && itr->mining_pledge_release_block_number <= head_num)
    {
-      modify(get_account_statistics_by_uid(itr->pledge_account), [&](account_statistics_object& s) {
+      modify(get_account_statistics_by_uid(itr->pledge_account), [&](_account_statistics_object& s) {
          s.total_mining_pledge -= itr->releasing_mining_pledge;
       });
       if (itr->pledge > 0)
@@ -1320,10 +1320,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
          }
          if( pv.can_vote.valid() )
          {
-            const account_statistics_object& st = get_account_statistics_by_uid( account_item.first );
+            const _account_statistics_object& st = get_account_statistics_by_uid(account_item.first);
             if( *pv.can_vote == false && st.is_voter == true )
                invalidate_voter( *find_voter( st.owner, st.last_voter_sequence )  );
-            modify( st, [&](account_statistics_object& a){
+            modify(st, [&](_account_statistics_object& a){
                a.can_vote = *pv.can_vote;
             });
          }
@@ -1827,7 +1827,7 @@ void database::check_invariants()
 //   auto itr = idx.begin();
 //   while( itr != idx.end() && itr->platform_pledge_release_block_number <= head_num )
 //   {
-//      modify( *itr, [&](account_statistics_object& s) {
+//      modify( *itr, [&](_account_statistics_object& s) {
 //         s.total_platform_pledge -= s.releasing_platform_pledge;
 //         s.releasing_platform_pledge = 0;
 //         s.platform_pledge_release_block_number = -1;
@@ -1879,7 +1879,7 @@ void database::update_pledge_mining_bonus_by_witness(const witness_object& witne
       send_bonus += update_pledge_mining_bonus_by_account(*pmg_itr, bonus_per_pledge);
       ++pmg_itr;
    }
-   modify(get_account_statistics_by_uid(witness_obj.account), [&](account_statistics_object& o)
+   modify(get_account_statistics_by_uid(witness_obj.account), [&](_account_statistics_object& o)
    {
       o.uncollected_witness_pay += (witness_obj.need_distribute_bonus 
          - witness_obj.already_distribute_bonus 
@@ -1895,7 +1895,7 @@ share_type database::update_pledge_mining_bonus_by_account(const pledge_mining_o
    share_type total_bonus = ((uint128_t)bonus_per_pledge.value * get(pledge_mining_obj.pledge_id).pledge.value
       / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
    if (total_bonus > 0) {
-      modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](account_statistics_object& o) {
+      modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](_account_statistics_object& o) {
          o.uncollected_pledge_bonus += total_bonus;
       });
    }
@@ -2255,7 +2255,7 @@ void database::process_content_platform_awards()
             }
             for (const auto& r : bonus_map)
             {
-               modify(get_account_statistics_by_uid(r.first), [&](account_statistics_object& s)
+               modify(get_account_statistics_by_uid(r.first), [&](_account_statistics_object& s)
                {
                   s.uncollected_score_bonus += r.second;
                });
@@ -2422,13 +2422,13 @@ void database::process_pledge_balance_release()
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
       if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04 && itr_pledge->type == pledge_balance_type::Witness){
          const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](account_statistics_object& s) {
+         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](_account_statistics_object& s) {
             s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_04);
          });
       }
 
       if (itr_pledge->type == pledge_balance_type::Mine){
-         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](account_statistics_object& s) {
+         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](_account_statistics_object& s) {
             s.total_mining_pledge -= itr_pledge->releasing_pledge;
          });
       }
@@ -2445,8 +2445,8 @@ void database::process_pledge_balance_release()
          if(pledge_obj.type==pledge_balance_type::Mine){
             remove(get(pledge_mining_id_type(pledge_obj.superior_index)));
          }else{
-            const account_statistics_object& ant = get_account_statistics_by_uid(pledge_obj.superior_index);
-            modify(ant, [&](account_statistics_object& a){
+            const _account_statistics_object& ant = get_account_statistics_by_uid(pledge_obj.superior_index);
+            modify(ant, [&](_account_statistics_object& a){
                a.pledge_balance_ids.erase(pledge_obj.type);
             });
          }

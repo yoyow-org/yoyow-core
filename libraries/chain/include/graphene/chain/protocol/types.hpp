@@ -229,7 +229,7 @@ namespace graphene { namespace chain {
    class dynamic_global_property_object;
    class asset_dynamic_data_object;
    class account_balance_object;
-   class account_statistics_object;
+   class _account_statistics_object;
    class voter_object;
    class witness_vote_object;
    class platform_vote_object;
@@ -248,7 +248,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,  dynamic_global_property_object>    dynamic_global_property_id_type;
    typedef object_id< implementation_ids, impl_asset_dynamic_data_type,      asset_dynamic_data_object>                 asset_dynamic_data_id_type;
    typedef object_id< implementation_ids, impl_account_balance_object_type,  account_balance_object>                    account_balance_id_type;
-   typedef object_id< implementation_ids, impl_account_statistics_object_type,account_statistics_object>                account_statistics_id_type;
+   typedef object_id< implementation_ids, impl_account_statistics_object_type, _account_statistics_object>              account_statistics_id_type;
    typedef object_id< implementation_ids, impl_voter_object_type,            voter_object>                              voter_id_type;
    typedef object_id< implementation_ids, impl_witness_vote_object_type,     witness_vote_object>                       witness_vote_id_type;
    typedef object_id< implementation_ids, impl_committee_member_vote_object_type,     committee_member_vote_object>     committee_member_vote_id_type;

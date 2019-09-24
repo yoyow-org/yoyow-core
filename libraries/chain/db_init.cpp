@@ -315,7 +315,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
        a.name = "proxy-to-self";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
@@ -334,7 +334,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          n.active.weight_threshold = 1;
          n.secondary.weight_threshold = 1;
          n.name = "committee-account";
-         n.statistics = create<account_statistics_object>( [&](account_statistics_object& s){
+         n.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){
             s.owner = n.uid;
             s.core_balance = GRAPHENE_MAX_SHARE_SUPPLY;
          }).id;
@@ -343,7 +343,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_WITNESS_ACCOUNT_UID;
        a.name = "witness-account";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
@@ -355,7 +355,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID;
        a.name = "relaxed-committee-account";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
@@ -367,7 +367,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_NULL_ACCOUNT_UID;
        a.name = "null-account";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
@@ -381,7 +381,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_TEMP_ACCOUNT_UID;
        a.name = "temp-account";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 0;
        a.active.weight_threshold = 0;
        a.secondary.weight_threshold = 0;

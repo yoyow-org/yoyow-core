@@ -877,7 +877,7 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       // fc::mutable_variant_object full_account;
       full_account acnt;
       acnt.account = *account;
-      acnt.statistics = account->statistics(_db);
+      acnt.statistics = _db.get_account_statistics_struct_by_uid(account->uid);//account->statistics(_db);
       auto reg = _db.find_account_by_uid( account->registrar );
       if(reg != nullptr)
          acnt.registrar_name = reg->name;
@@ -937,7 +937,7 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
       if (account == nullptr)
          continue;
 
-      auto& account_stats = _db.get_account_statistics_by_uid( uid );
+      auto& account_stats = _db.get_account_statistics_struct_by_uid( uid );
       full_account acnt;
       if( options.fetch_account_object.valid() && *options.fetch_account_object == true )
          acnt.account = *account;
@@ -1033,7 +1033,7 @@ account_statistics_object database_api::get_account_statistics_by_uid(account_ui
 
 account_statistics_object database_api_impl::get_account_statistics_by_uid(account_uid_type uid)const
 {
-    account_statistics_object account_stats = _db.get_account_statistics_by_uid(uid);
+    account_statistics_object account_stats = _db.get_account_statistics_struct_by_uid(uid);
     return account_stats;
 }
 

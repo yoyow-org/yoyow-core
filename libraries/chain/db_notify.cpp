@@ -495,7 +495,7 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
               accounts.insert( aobj->owner );
               break;
            } case impl_account_statistics_object_type:{
-              const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
+              const auto& aobj = dynamic_cast<const _account_statistics_object*>(obj);
               assert( aobj != nullptr );
               accounts.insert( aobj->owner );
               break;

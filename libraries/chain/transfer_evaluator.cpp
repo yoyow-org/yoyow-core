@@ -146,7 +146,7 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
    if (asset_from_balance.amount > 0)
       d.adjust_balance(*from_account, -asset_from_balance);
    if (asset_from_prepaid.amount > 0){
-      d.modify(*from_account_stats, [&](account_statistics_object& s)
+      d.modify(*from_account_stats, [&](_account_statistics_object& s)
       {
          s.prepaid -= asset_from_prepaid.amount;
       });
@@ -162,7 +162,7 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
    if (asset_to_balance.amount > 0)
       d.adjust_balance(*to_account, asset_to_balance);
    if (asset_to_prepaid.amount > 0)
-      d.modify(*to_account_stats, [&](account_statistics_object& s)
+      d.modify(*to_account_stats, [&](_account_statistics_object& s)
    {
       s.prepaid += asset_to_prepaid.amount;
    });

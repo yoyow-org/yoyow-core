@@ -101,7 +101,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
    // Update coin_seconds_earned and etc
    if( delta.asset_id == GRAPHENE_CORE_ASSET_AID )
    {
-      const account_statistics_object& account_stats = get_account_statistics_by_uid( account );
+      const _account_statistics_object& account_stats = get_account_statistics_by_uid(account);
       if( delta.amount < 0 )
       {
          auto available_balance = account_stats.get_available_core_balance(*this);
@@ -133,7 +133,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
       }
       const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-      modify( account_stats, [&](account_statistics_object& s) {
+      modify(account_stats, [&](_account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
             s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, dpo.enabled_hardfork_version);
          s.core_balance += delta.amount;
@@ -156,7 +156,7 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
    const auto& account_stats = get_account_statistics_by_uid( wit.account );
    if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge || wit.total_mining_pledge == 0)
    {
-      modify(account_stats, [&](account_statistics_object& s) {
+      modify(account_stats, [&](_account_statistics_object& s) {
          s.uncollected_witness_pay += amount;
       });
    }
@@ -179,7 +179,7 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
          witness_pay = amount - pledge_bonus;
       }   
 
-      modify(account_stats, [&](account_statistics_object& s) {
+      modify(account_stats, [&](_account_statistics_object& s) {
          s.uncollected_witness_pay += witness_pay;
       });
    }

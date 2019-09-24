@@ -70,7 +70,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          d.modify(pledge_balance_obj, [&](pledge_balance_object& obj) {
             delta_available_balance = obj.update_pledge(op.new_pledge, block_num + params.mining_pledge_release_delay);
          });
-         d.modify(*account_stats, [&](account_statistics_object& s) {
+         d.modify(*account_stats, [&](_account_statistics_object& s) {
             s.total_mining_pledge += delta_available_balance;
          });
       }
@@ -90,7 +90,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
             s.superior_index =pledge_mining_obj.id.instance();
          });
                                                  
-         d.modify(*account_stats, [&](account_statistics_object& s) {
+         d.modify(*account_stats, [&](_account_statistics_object& s) {
             s.total_mining_pledge += op.new_pledge;
          });
 
@@ -115,7 +115,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          { 
             if (obj.need_distribute_bonus > obj.already_distribute_bonus)
             {
-               d.modify(d.get_account_statistics_by_uid(obj.account), [&](account_statistics_object& s) {
+               d.modify(d.get_account_statistics_by_uid(obj.account), [&](_account_statistics_object& s) {
                   s.uncollected_witness_pay += (obj.need_distribute_bonus - obj.already_distribute_bonus);
                });
             }
@@ -156,7 +156,7 @@ void_result pledge_bonus_collect_evaluator::do_apply(const pledge_bonus_collect_
       database& d = db();
 
       d.adjust_balance(op.account, asset(op.bonus));
-      d.modify(*account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.uncollected_pledge_bonus -= op.bonus;
       });
 

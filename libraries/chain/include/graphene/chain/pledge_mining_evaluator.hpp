@@ -17,7 +17,7 @@ namespace graphene { namespace chain {
 
          const witness_object* witness_obj = nullptr;
          const pledge_mining_object* pledge_mining_obj = nullptr;
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
    };
 
    class pledge_bonus_collect_evaluator : public evaluator < pledge_bonus_collect_evaluator >
@@ -28,7 +28,7 @@ namespace graphene { namespace chain {
       void_result do_evaluate(const pledge_bonus_collect_operation& o);
       void_result do_apply(const pledge_bonus_collect_operation& o);
 
-      const account_statistics_object* account_stats = nullptr;
+      const _account_statistics_object* account_stats = nullptr;
    };
 
 } } // graphene::chain

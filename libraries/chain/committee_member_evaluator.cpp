@@ -83,7 +83,7 @@ object_id_type committee_member_create_evaluator::do_apply( const committee_memb
 
    });
 
-   d.modify(*account_stats, [&](account_statistics_object& s) {
+   d.modify(*account_stats, [&](_account_statistics_object& s) {
       s.last_committee_member_sequence += 1;
    });
 
@@ -103,7 +103,7 @@ object_id_type committee_member_create_evaluator::do_apply( const committee_memb
          obj.pledge_release_block_number = -1;
       });
 
-      d.modify(*account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.pledge_balance_ids.insert(std::make_pair(pledge_balance_type::Commitment, ple_obj.id));
       });
    }
@@ -366,7 +366,7 @@ void_result committee_member_vote_update_evaluator::do_apply( const committee_me
    }
    else // need to create a new voter object for this account
    {
-      d.modify( *account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.is_voter = true;
          s.last_voter_sequence += 1;
       });

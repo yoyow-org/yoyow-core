@@ -109,7 +109,7 @@ class account_update_proxy_evaluator : public evaluator<account_update_proxy_eva
       void_result do_evaluate( const account_update_proxy_operation& o );
       void_result do_apply( const account_update_proxy_operation& o );
 
-      const account_statistics_object* account_stats = nullptr;
+      const _account_statistics_object* account_stats = nullptr;
       const voter_object* voter_obj = nullptr;
       const voter_object* invalid_voter_obj = nullptr;
       const voter_object* current_proxy_voter_obj = nullptr;

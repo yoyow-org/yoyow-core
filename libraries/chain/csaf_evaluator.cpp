@@ -47,11 +47,11 @@ void_result csaf_collect_evaluator::do_apply( const csaf_collect_operation& o )
 { try {
    database& d = db();
 
-   d.modify( *from_stats, [&](account_statistics_object& s) {
+   d.modify(*from_stats, [&](_account_statistics_object& s) {
       s.set_coin_seconds_earned( available_coin_seconds - collecting_coin_seconds, o.time );
    });
 
-   d.modify( *to_stats, [&](account_statistics_object& s) {
+   d.modify(*to_stats, [&](_account_statistics_object& s) {
       s.csaf += o.amount.amount;
    });
 
@@ -131,12 +131,12 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
       
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-      d.modify(*from_stats, [&](account_statistics_object& s) {
+      d.modify(*from_stats, [&](_account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
             s.update_coin_seconds_earned(csaf_window, head_time, d, dpo.enabled_hardfork_version);
          s.core_leased_out += delta;
       });
-      d.modify(*to_stats, [&](account_statistics_object& s) {
+      d.modify(*to_stats, [&](_account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
             s.update_coin_seconds_earned(csaf_window, head_time, d, dpo.enabled_hardfork_version);
          s.core_leased_in += delta;

@@ -370,7 +370,7 @@ void database::invalidate_voter( const voter_object& voter )
    }
 
    // update account statistics
-   modify( get_account_statistics_by_uid( voter.uid ), [&](account_statistics_object& s) {
+   modify(get_account_statistics_by_uid(voter.uid), [&](_account_statistics_object& s) {
       s.is_voter = false;
    });
 
@@ -480,7 +480,7 @@ uint32_t database::process_invalid_proxied_voters( const voter_object& proxy, ui
       if( was_valid && itr->is_valid == false )
       {
          // update account statistics
-         modify( get_account_statistics_by_uid( itr->uid ), [&](account_statistics_object& s) {
+         modify(get_account_statistics_by_uid(itr->uid), [&](_account_statistics_object& s) {
             s.is_voter = false;
          });
       }

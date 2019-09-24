@@ -169,7 +169,7 @@ void database_fixture::verify_asset_supplies(const database& db)
 
    for (const account_balance_object& b : balance_index)
       total_balances[b.asset_type] += b.balance;
-   for (const account_statistics_object& a : statistics_index)
+   for (const _account_statistics_object& a : statistics_index)
    {
       reported_core_in_orders += a.total_core_in_orders;
       for(const auto & p:a.uncollected_market_fees)
@@ -927,7 +927,7 @@ vector< operation_history_object > database_fixture::get_operation_history(accou
 
 void database_fixture::add_csaf_for_account(account_uid_type account, share_type csaf)
 {
-   db.modify(db.get_account_statistics_by_uid(account), [&](account_statistics_object& s) {
+   db.modify(db.get_account_statistics_by_uid(account), [&](_account_statistics_object& s) {
       s.csaf += csaf * 100000;
    });
 }
@@ -1174,7 +1174,7 @@ void database_fixture::create_license(account_uid_type platform,
    flat_set<fc::ecc::private_key> sign_keys)
 {
    try {
-      const account_statistics_object& platform_obj = db.get_account_statistics_by_uid(platform);
+      const _account_statistics_object& platform_obj = db.get_account_statistics_by_uid(platform);
       license_create_operation create_op;
       create_op.license_lid = platform_obj.last_license_sequence + 1;
       create_op.platform = platform;
@@ -1289,7 +1289,7 @@ void database_fixture::create_post(flat_set<fc::ecc::private_key> sign_keys,
    post_operation::ext  exts)
 {
    try{
-      const account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(poster);
+      const _account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(poster);
       post_operation create_op;
       create_op.post_pid = poster_account_statistics.last_post_sequence + 1;
       create_op.platform = platform;
@@ -1609,7 +1609,7 @@ void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_ke
    uint32_t                       unit_time)
 {
    try {
-      const account_statistics_object& platform_obj = db.get_account_statistics_by_uid(platform);
+      const _account_statistics_object& platform_obj = db.get_account_statistics_by_uid(platform);
 
       advertising_create_operation create_op;
       create_op.platform = platform;

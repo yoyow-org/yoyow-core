@@ -29,7 +29,7 @@ object_id_type advertising_create_evaluator::do_apply(const operation_type& op)
 {
    try {
       database& d = db();
-      d.modify(*platform_ant, [&](account_statistics_object& s) {
+      d.modify(*platform_ant, [&](_account_statistics_object& s) {
          s.last_advertising_sequence += 1;
       });
       const auto& advertising_obj = d.create<advertising_object>([&](advertising_object& obj)

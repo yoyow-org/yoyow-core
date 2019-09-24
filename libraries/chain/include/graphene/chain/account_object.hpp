@@ -79,7 +79,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       
    };
    /**
-    * @class account_statistics_object
+    * @class _account_statistics_object
     * @ingroup object
     * @ingroup implementation
     *
@@ -87,7 +87,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
     * separating the account data that changes frequently from the account data that is mostly static, which will
     * minimize the amount of data that must be backed up as part of the undo history everytime a transfer is made.
     */
-   class account_statistics_object : public graphene::db::abstract_object<account_statistics_object>
+   class _account_statistics_object : public graphene::db::abstract_object<_account_statistics_object>
    {
       public:
          static const uint8_t space_id = implementation_ids;
@@ -313,6 +313,226 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
 
          map<pledge_balance_type,pledge_balance_id_type> pledge_balance_ids;
       
+   };
+
+
+   // copy struct from _account_statistics_object
+   struct account_statistics_object
+   {
+      uint8_t space_id = implementation_ids;
+      uint8_t type_id = impl_account_statistics_object_type;
+
+      account_uid_type  owner;
+
+      /**
+      * Keep the most recent operation as a root pointer to a linked list of the transaction history.
+      */
+      account_transaction_history_id_type most_recent_op;
+      /** Total operations related to this account. */
+      uint32_t                            total_ops = 0;
+      /** Total operations related to this account that has been removed from the database. */
+      uint32_t                            removed_ops = 0;
+
+      share_type total_core_in_orders; // add for limit order
+      /**
+      * Prepaid fee.
+      */
+      share_type prepaid;
+      /**
+      * Coin-seconds-as-fee.
+      */
+      share_type csaf;
+
+      /**
+      * Core balance.
+      */
+      share_type core_balance;
+
+      /**
+      * As-fee coins that leased from others to this account.
+      */
+      share_type core_leased_in;
+      /**
+      * As-fee coins that leased from this account to others.
+      */
+      share_type core_leased_out;
+
+      /**
+      * Tracks average coins for calculating csaf of this account. Lazy updating.
+      */
+      share_type                     average_coins;
+      /**
+      * Tracks the most recent time when @ref average_coins was updated.
+      */
+      fc::time_point_sec             average_coins_last_update;
+
+      /**
+      * Tracks the coin-seconds earned by this account. Lazy updating.
+      * actual_coin_seconds_earned = coin_seconds_earned + current_balance * (now - coin_seconds_earned_last_update)
+      */
+      // TODO maybe better to use a struct to store coin_seconds_earned and coin_seconds_earned_last_update
+      //      and related functions e.g. compute_coin_seconds_earned and update_coin_seconds_earned
+      fc::uint128_t                  coin_seconds_earned;
+
+      /**
+      * Tracks the most recent time when @ref coin_seconds_earned was updated.
+      */
+      fc::time_point_sec             coin_seconds_earned_last_update;
+
+      /**
+      * coins locked as witness pledge.
+      */
+      share_type total_witness_pledge;
+
+      /**
+      * coins that are requested to be released from witness pledge but not yet unlocked.
+      */
+      share_type releasing_witness_pledge;
+
+      /**
+      * block number that releasing witness pledge will be finally unlocked.
+      */
+      uint32_t witness_pledge_release_block_number = -1;
+
+      /**
+      * coins locked for produce feepoint.
+      */
+      share_type locked_balance_for_feepoint;
+      /**
+      * coins that are requested to be released but not yet unlocked.
+      */
+      share_type releasing_locked_feepoint;
+      /**
+      * block number that releasing locked_balance_for_feepoint will be finally unlocked.
+      */
+      uint32_t feepoint_unlock_block_number = -1;
+
+      /**
+      * coins pledge to witness for bonus form witness pay.
+      */
+      share_type total_mining_pledge = 0;
+
+      /**
+      * how many times have this account created witness object
+      */
+      uint32_t last_witness_sequence = 0;
+
+      /**
+      * uncollected witness pay.
+      */
+      share_type uncollected_witness_pay;
+
+      /**
+      * uncollected pledge to witness bonus.
+      */
+      share_type uncollected_pledge_bonus;
+
+      /**
+      * uncollected fee by market trading.
+      */
+      map<asset_aid_type, share_type> uncollected_market_fees;
+      /**
+      * uncollected bonus, registrar and referrer form score
+      */
+      share_type uncollected_score_bonus;
+
+      /**
+      * last produced block number
+      */
+      uint64_t witness_last_confirmed_block_num = 0;
+
+      /**
+      * last witness aslot
+      */
+      uint64_t witness_last_aslot = 0;
+
+      /**
+      * total blocks produced
+      */
+      uint64_t witness_total_produced = 0;
+
+      /**
+      * total blocks missed
+      */
+      uint64_t witness_total_missed = 0;
+
+      /**
+      * last reported block number
+      */
+      uint64_t witness_last_reported_block_num = 0;
+
+      /**
+      * total blocks reported
+      */
+      uint64_t witness_total_reported = 0;
+
+      /**
+      * coins locked as committee member pledge.
+      */
+      share_type total_committee_member_pledge;
+
+      /**
+      * coins that are requested to be released from committee member pledge but not yet unlocked.
+      */
+      share_type releasing_committee_member_pledge;
+
+      /**
+      * block number that releasing committee member pledge will be finally unlocked.
+      */
+      uint32_t committee_member_pledge_release_block_number = -1;
+
+      /**
+      * how many times have this account created committee member object
+      */
+      uint32_t last_committee_member_sequence = 0;
+
+      /**
+      * whether this account is permitted to be a governance voter.
+      */
+      bool can_vote = true;
+
+      /**
+      * whether this account is a governance voter.
+      */
+      bool is_voter = false;
+
+      /**
+      * how many times has this account became a voter
+      */
+      uint32_t last_voter_sequence = 0;
+
+      /**
+      * Record how many times the platform object has been created (the latest platform serial number)
+      */
+      uint32_t last_platform_sequence = 0;
+
+      /**
+      * Platform total deposit
+      */
+      share_type total_platform_pledge;
+
+      /**
+      * To refund the platform deposit
+      */
+      share_type releasing_platform_pledge;
+
+      /**
+      * block number that releasing platform pledge will be finally unlocked.
+      */
+      uint32_t platform_pledge_release_block_number = -1;
+
+      /**
+      * Record the last published article number
+      */
+      post_pid_type last_post_sequence = 0;
+
+      /**
+      * Record the last create custom vote number
+      */
+      custom_vote_vid_type last_custom_vote_sequence = 0;
+      advertising_aid_type last_advertising_sequence = 0;
+      license_lid_type     last_license_sequence = 0;
+
    };
 
    /**
@@ -768,17 +988,17 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
     * @ingroup object_index
     */
    typedef multi_index_container<
-      account_statistics_object,
+      _account_statistics_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_unique< tag<by_uid>, member<account_statistics_object, account_uid_type, &account_statistics_object::owner> >
+         ordered_unique< tag<by_uid>, member<_account_statistics_object, account_uid_type, &_account_statistics_object::owner> >
       >
    > account_statistics_object_multi_index_type;
 
    /**
     * @ingroup object_index
     */
-   typedef generic_index<account_statistics_object, account_statistics_object_multi_index_type> account_statistics_index;
+   typedef generic_index<_account_statistics_object, account_statistics_object_multi_index_type> account_statistics_index;
 
 
    class account_auth_platform_object : public graphene::db::abstract_object<account_auth_platform_object>
@@ -910,7 +1130,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_balance_object,
                     (graphene::db::object),
                     (owner)(asset_type)(balance) )
 
-FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
+FC_REFLECT_DERIVED( graphene::chain::_account_statistics_object,
                     (graphene::chain::object),
                     (owner)
                     //(most_recent_op)
@@ -939,6 +1159,41 @@ FC_REFLECT_DERIVED( graphene::chain::account_statistics_object,
                     (last_custom_vote_sequence)
                     (last_advertising_sequence)
                     (last_license_sequence)
+                    (pledge_balance_ids)
+                  )
+
+FC_REFLECT(graphene::chain::account_statistics_object,
+                  (owner)
+                  //(most_recent_op)
+                  (total_ops)
+                  (removed_ops)
+                  (total_core_in_orders)
+                  (prepaid)(csaf)
+                  (core_balance)(core_leased_in)(core_leased_out)
+                  (average_coins)(average_coins_last_update)
+                  (coin_seconds_earned)(coin_seconds_earned_last_update)
+                  (total_mining_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
+                  (locked_balance_for_feepoint)(releasing_locked_feepoint)(feepoint_unlock_block_number)
+                  (total_mining_pledge)
+                  (last_witness_sequence)(uncollected_witness_pay)
+                  (uncollected_pledge_bonus)
+                  (uncollected_market_fees)
+                  (uncollected_score_bonus)
+                  (witness_last_confirmed_block_num)
+                  (witness_last_aslot)
+                  (witness_total_produced)
+                  (witness_total_missed)
+                  (witness_last_reported_block_num)
+                  (witness_total_reported)
+                  (total_committee_member_pledge)(releasing_committee_member_pledge)(committee_member_pledge_release_block_number)
+                  (last_committee_member_sequence)
+                  (can_vote)(is_voter)(last_voter_sequence)
+                  (last_platform_sequence)
+                  (total_platform_pledge)(releasing_platform_pledge)(platform_pledge_release_block_number)
+                  (last_post_sequence)
+                  (last_custom_vote_sequence)
+                  (last_advertising_sequence)
+                  (last_license_sequence)
                   )
 
 FC_REFLECT_DERIVED(graphene::chain::account_auth_platform_object,

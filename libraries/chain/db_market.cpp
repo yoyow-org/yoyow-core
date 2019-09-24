@@ -58,7 +58,7 @@ void database::cancel_limit_order( const limit_order_object& order, bool create_
    // there are two scenarios when order is cancelled and need to create a virtual op:
    // 1. due to expiration: always deduct a fee if there is any fee deferred
    // 2. due to cull_small: deduct a fee after hard fork 604, but not before (will set skip_cancel_fee)
-   const account_statistics_object* seller_acc_stats = nullptr;
+   const _account_statistics_object* seller_acc_stats = nullptr;
    const asset_dynamic_data_object* fee_asset_dyn_data = nullptr;
    limit_order_cancel_operation vop;
    //share_type deferred_fee = order.deferred_fee;
@@ -79,7 +79,7 @@ void database::cancel_limit_order( const limit_order_object& order, bool create_
       //   {
       //      /*seller_acc_stats = &order.seller( *this ).statistics( *this );*/
       //       seller_acc_stats = &get_account_statistics_by_uid(order.seller);
-      //      modify( *seller_acc_stats, [&]( account_statistics_object& obj ) {
+      //      modify( *seller_acc_stats, [&]( _account_statistics_object& obj ) {
       //          obj.pay_fee(core_cancel_fee.amount, get_global_properties().parameters.cashback_vesting_threshold);
       //      } );
       //      deferred_fee -= core_cancel_fee.amount;
@@ -120,7 +120,7 @@ void database::cancel_limit_order( const limit_order_object& order, bool create_
       if( seller_acc_stats == nullptr )
          /*seller_acc_stats = &order.seller( *this ).statistics( *this );*/
           seller_acc_stats = &get_account_statistics_by_uid(order.seller);
-      modify( *seller_acc_stats, [&]( account_statistics_object& obj ) {
+      modify(*seller_acc_stats, [&](_account_statistics_object& obj) {
          obj.total_core_in_orders -= refunded.amount;
       });
    }
@@ -410,7 +410,7 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
    // conditional because cheap integer comparison may allow us to avoid two expensive modify() and object lookups
    //if( order.deferred_fee > 0 )
    //{
-   //   modify( seller.statistics(*this), [&]( account_statistics_object& statistics )
+   //   modify( seller.statistics(*this), [&]( _account_statistics_object& statistics )
    //   {
    //       statistics.pay_fee(order.deferred_fee, get_global_properties().parameters.cashback_vesting_threshold);
    //   } );
@@ -449,7 +449,7 @@ void database::pay_order( const account_object& receiver, const asset& receives,
    const auto& balances = receiver.statistics(*this);
    if (pays.asset_id == GRAPHENE_CORE_ASSET_AID)
    {
-      modify(balances, [&](account_statistics_object& b){
+      modify(balances, [&](_account_statistics_object& b){
          b.total_core_in_orders -= pays.amount;
       });
    }
@@ -514,15 +514,15 @@ asset database::pay_market_fees(const account_object& seller, const asset_object
                const auto referrer_rewards_percentage = seller.reg_info.referrer_percent;
                const auto registrar_rewards_percentage = seller.reg_info.registrar_percent;
                FC_ASSERT(referrer_rewards_percentage + registrar_rewards_percentage == GRAPHENE_100_PERCENT);
-               const account_statistics_object& referrer_account = get_account_statistics_by_uid(seller.reg_info.referrer);
-               const account_statistics_object& registrar_account = get_account_statistics_by_uid(seller.reg_info.registrar);
+               const _account_statistics_object& referrer_account = get_account_statistics_by_uid(seller.reg_info.referrer);
+               const _account_statistics_object& registrar_account = get_account_statistics_by_uid(seller.reg_info.registrar);
 
                share_type referrer_rewards_value = detail::calculate_percent(reward.amount, referrer_rewards_percentage);
-               modify(referrer_account, [&](account_statistics_object& obj){
+               modify(referrer_account, [&](_account_statistics_object& obj){
                   obj.add_uncollected_market_fee(recv_asset.asset_id, referrer_rewards_value);
                });
                share_type registrar_reward_value = reward.amount - referrer_rewards_value;
-               modify(registrar_account, [&](account_statistics_object& obj){
+               modify(registrar_account, [&](_account_statistics_object& obj){
                   obj.add_uncollected_market_fee(recv_asset.asset_id, registrar_reward_value);
                });
             }

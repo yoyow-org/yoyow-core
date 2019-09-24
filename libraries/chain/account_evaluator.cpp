@@ -121,7 +121,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
              obj.can_reply = true;
          }
 
-         obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.uid;}).id;
+         obj.statistics = d.create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = obj.uid; }).id;
    });
 
    return new_acnt_object.id;
@@ -593,7 +593,7 @@ void_result account_update_proxy_evaluator::do_apply( const account_update_proxy
    }
    else // need to create a new voter object for this account
    {
-      d.modify( *account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.is_voter = true;
          s.last_voter_sequence += 1;
       });

@@ -48,7 +48,7 @@ void_result balance_lock_update_evaluator::do_apply(const operation_type& op)
       const uint64_t csaf_window = global_params.csaf_accumulate_window;
       auto block_time = d.head_block_time();
 
-      d.modify(*account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.update_coin_seconds_earned(csaf_window, block_time,d, ENABLE_HEAD_FORK_05);
       });
 
@@ -67,7 +67,7 @@ void_result balance_lock_update_evaluator::do_apply(const operation_type& op)
             obj.asset_id = GRAPHENE_CORE_ASSET_AID;
             obj.pledge = op.new_lock_balance;
          });
-         d.modify(*account_stats, [&](account_statistics_object& s) {
+         d.modify(*account_stats, [&](_account_statistics_object& s) {
             s.pledge_balance_ids.emplace(pledge_balance_type::Lock_balance, new_pledge_balance_obj.id);
          });
       }
