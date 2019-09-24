@@ -48,7 +48,7 @@ void account_balance_object::adjust_balance(const asset& delta)
    balance += delta.amount;
 }
 
-std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const uint8_t enable_hard_fork_type)const
+std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)const
 {
    fc::time_point_sec now_rounded((now.sec_since_epoch() / 60) * 60);
    // check average coins and max coin-seconds
@@ -60,10 +60,20 @@ std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_sec
       effective_balance = core_balance + core_leased_in - core_leased_out;
       break;
    case ENABLE_HEAD_FORK_04 :
-      //effective_balance = core_balance + core_leased_in - core_leased_out - total_witness_pledge;
+      if (pledge_balance_ids.count(pledge_balance_type::Witness)) 
+      {
+         effective_balance = core_balance + core_leased_in - core_leased_out -
+            get_pledge_balance(0, pledge_balance_type::Witness, db);
+      } else
+         effective_balance = core_balance + core_leased_in - core_leased_out;
       break;
    case ENABLE_HEAD_FORK_05 :
-      //effective_balance = locked_balance_for_feepoint;
+      if (pledge_balance_ids.count(pledge_balance_type::Lock_balance))
+      {
+         auto pledge_balance_obj = pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+         if (pledge_balance_obj.asset_id == 0)
+            effective_balance = pledge_balance_obj.pledge;
+      } 
       break;
    default:
       break;
@@ -109,12 +119,12 @@ std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_sec
    return std::make_pair(new_coin_seconds_earned, new_average_coins);
 }
 
-void account_statistics_object::update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const uint8_t enable_hard_fork_type)
+void account_statistics_object::update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)
 {
    fc::time_point_sec now_rounded( ( now.sec_since_epoch() / 60 ) * 60 );
    if( now_rounded <= coin_seconds_earned_last_update && now_rounded <= average_coins_last_update )
       return;
-   const auto& result = compute_coin_seconds_earned( window, now_rounded , enable_hard_fork_type);
+   const auto& result = compute_coin_seconds_earned( window, now_rounded , db, enable_hard_fork_type);
    coin_seconds_earned = result.first;
    coin_seconds_earned_last_update = now_rounded;
    average_coins = result.second;

@@ -252,13 +252,13 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
           * are available.
           */
          // TODO use a public funtion to do this job as well as same job in vesting_balance_object
-         std::pair<fc::uint128_t, share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const uint8_t enable_hard_fork_type = ENABLE_HEAD_FORK_NONE)const;
+         std::pair<fc::uint128_t, share_type> compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type = ENABLE_HEAD_FORK_NONE)const;
          /**
           * Update coin_seconds_earned and
           * coin_seconds_earned_last_update fields due to passing of time
           */
          // TODO use a public funtion to do this job and same job in vesting_balance_object
-         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const uint8_t enable_hard_fork_type = ENABLE_HEAD_FORK_NONE);
+         void update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type = ENABLE_HEAD_FORK_NONE);
 
          /**
           * Update coin_seconds_earned and

@@ -650,7 +650,7 @@ void database::update_reduce_witness_csaf()
     {
         const account_statistics_object& statistics_obj = get_account_statistics_by_uid(itr->account);
         modify(statistics_obj, [&](account_statistics_object& s) {
-            s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_NONE);
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_NONE);
         });
     }
 }
@@ -691,7 +691,7 @@ void database::update_account_feepoint()
    for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
    {
       modify(*itr, [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
+         s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_04);
       });
    }
 }
@@ -823,12 +823,12 @@ void database::clear_expired_csaf_leases()
    {
       modify(get_account_statistics_by_uid(itr->from), [&](account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
-            s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+            s.update_coin_seconds_earned(csaf_window, head_time, *this, dpo.enabled_hardfork_version);
          s.core_leased_out -= itr->amount;
       });
       modify(get_account_statistics_by_uid(itr->to), [&](account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
-            s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+            s.update_coin_seconds_earned(csaf_window, head_time, *this, dpo.enabled_hardfork_version);
          s.core_leased_in -= itr->amount;
       });
       remove( *itr );
@@ -2423,7 +2423,7 @@ void database::process_pledge_balance_release()
       if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04 && itr_pledge->type == pledge_balance_type::Witness){
          const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
          modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](account_statistics_object& s) {
-            s.update_coin_seconds_earned(csaf_window, head_block_time(), ENABLE_HEAD_FORK_04);
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_04);
          });
       }
 

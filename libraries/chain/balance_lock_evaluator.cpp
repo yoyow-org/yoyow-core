@@ -49,7 +49,7 @@ void_result balance_lock_update_evaluator::do_apply(const operation_type& op)
       auto block_time = d.head_block_time();
 
       d.modify(*account_stats, [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_05);
+         s.update_coin_seconds_earned(csaf_window, block_time,d, ENABLE_HEAD_FORK_05);
       });
 
       if (pledge_balance_obj != nullptr) 

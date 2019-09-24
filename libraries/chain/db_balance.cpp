@@ -135,7 +135,7 @@ void database::adjust_balance(account_uid_type account, asset delta )
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
       modify( account_stats, [&](account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
-            s.update_coin_seconds_earned(csaf_window, head_block_time(), dpo.enabled_hardfork_version);
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, dpo.enabled_hardfork_version);
          s.core_balance += delta.amount;
       });
    }

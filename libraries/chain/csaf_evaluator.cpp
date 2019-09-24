@@ -29,7 +29,7 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
               "Time should not be earlier than 5 minutes before head block time" );
 
    const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-   available_coin_seconds = from_stats->compute_coin_seconds_earned(csaf_window, op.time, dpo.enabled_hardfork_version).first;
+   available_coin_seconds = from_stats->compute_coin_seconds_earned(csaf_window, op.time, d, dpo.enabled_hardfork_version).first;
 
    collecting_coin_seconds = fc::uint128_t(op.amount.amount.value) * global_params.csaf_rate;
 
@@ -133,12 +133,12 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify(*from_stats, [&](account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
-            s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+            s.update_coin_seconds_earned(csaf_window, head_time, d, dpo.enabled_hardfork_version);
          s.core_leased_out += delta;
       });
       d.modify(*to_stats, [&](account_statistics_object& s) {
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
-            s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_version);
+            s.update_coin_seconds_earned(csaf_window, head_time, d, dpo.enabled_hardfork_version);
          s.core_leased_in += delta;
       });
    }

@@ -107,7 +107,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
       s.last_witness_sequence += 1;
       auto releasing_pledge = s.get_releasing_pledge(0, pledge_balance_type::Witness, d);
       if (releasing_pledge < op.pledge.amount && dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
-         s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_04);
+         s.update_coin_seconds_earned(csaf_window, block_time, d, ENABLE_HEAD_FORK_04);
    });
 
    if (account_stats->pledge_balance_ids.count(pledge_balance_type::Witness))
@@ -261,7 +261,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          d.modify( *account_stats, [&](account_statistics_object& s) {
             auto releasing_pledge = s.get_releasing_pledge(0, pledge_balance_type::Witness, d);
             if (releasing_pledge < delta && dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
-               s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_04);
+               s.update_coin_seconds_earned(csaf_window, block_time, d, ENABLE_HEAD_FORK_04);
          });
       }
 
@@ -607,7 +607,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify( *account_stats, [&]( account_statistics_object& s ) {
          if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04)
-             s.update_coin_seconds_earned(csaf_window, block_time, ENABLE_HEAD_FORK_04);
+             s.update_coin_seconds_earned(csaf_window, block_time, d, ENABLE_HEAD_FORK_04);
          d.modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
             if (from_releasing > 0)
             {
