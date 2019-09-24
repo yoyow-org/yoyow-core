@@ -369,6 +369,8 @@ class database_api
 
       account_statistics_object get_account_statistics_by_uid(account_uid_type uid)const;
 
+      std::pair<fc::uint128_t, share_type> compute_coin_seconds_earned(const account_uid_type uid, const uint64_t window, const fc::time_point_sec now)const;
+
       /**
        * @brief Get an account by name
        * @param name name of the account to retrieve
@@ -972,6 +974,7 @@ FC_API( graphene::app::database_api,
    //(get_full_accounts)
    (get_full_accounts_by_uid)
    (get_account_statistics_by_uid)
+   (compute_coin_seconds_earned)
    (get_account_by_name)
    (get_account_references)
    //(lookup_account_names)

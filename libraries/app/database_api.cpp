@@ -1037,6 +1037,12 @@ account_statistics_object database_api_impl::get_account_statistics_by_uid(accou
     return account_stats;
 }
 
+std::pair<fc::uint128_t, share_type> database_api::compute_coin_seconds_earned(const account_uid_type uid, const uint64_t window, const fc::time_point_sec now)const
+{
+   const _account_statistics_object ant = my->_db.get_account_statistics_by_uid(uid);
+   auto para = my->_db.get_dynamic_global_properties();
+   return ant.compute_coin_seconds_earned(window, now, my->_db, para.enabled_hardfork_version);
+}
 
 optional<account_object> database_api::get_account_by_name( string name )const
 {

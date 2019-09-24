@@ -4388,7 +4388,7 @@ string wallet_api::compute_available_csaf(string account_name_or_uid)
    const auto& results = my->_remote_db->get_full_accounts_by_uid( uids, opt );
    auto& account = results.at( uid );
    const auto& global_params = my->get_global_properties().parameters;
-   auto csaf = account.statistics.compute_coin_seconds_earned( global_params.csaf_accumulate_window, time_point_sec(time_point::now()) ).first;
+   auto csaf = my->_remote_db->compute_coin_seconds_earned(uid, global_params.csaf_accumulate_window, time_point_sec(time_point::now())).first;
    auto ao = my->get_asset( GRAPHENE_CORE_ASSET_AID );
    auto s1 = global_params.max_csaf_per_account - account.statistics.csaf;
    auto s2 = (csaf / global_params.csaf_rate).to_uint64();
