@@ -938,7 +938,7 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
       if (account == nullptr)
          continue;
 
-      auto& account_stats = _db.get_account_statistics_struct_by_uid( uid );
+      const auto& account_stats = _db.get_account_statistics_struct_by_uid( uid );
       full_account acnt;
       if( options.fetch_account_object.valid() && *options.fetch_account_object == true )
          acnt.account = *account;
