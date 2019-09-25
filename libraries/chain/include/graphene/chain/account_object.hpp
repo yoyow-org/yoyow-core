@@ -78,8 +78,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          if (delta >= 0) {
             releasing_pledges.clear();
             return delta;
-         }
-         else {
+         } else {
             if (delta_releasing > 0)
                new_releasing(delta, new_relase_num, db);
             else
@@ -100,7 +99,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
             max_releasing_size = 20;
          if (releasing_pledges.size() == max_releasing_size)
          {
-            auto iter = releasing_pledges.rbegin();
+            auto iter = --releasing_pledges.end();
             auto last_releasing_pledge = iter->second;
             releasing_pledges.erase(iter);
             releasing_pledges[new_relase_num] = last_releasing_pledge + new_releasing_pledge.amount;
@@ -113,23 +112,22 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
 
       }
       share_type total_unrelease_pledge()const { return pledge + total_releasing_pledge; }
-private:
 
-   template< typename DB>
-   void reduce_releasing(share_type amount, const DB &db){
-      FC_ASSERT(total_releasing_pledge >= amount, " available releasing balance is not enough");
-      for (auto itr = releasing_pledges.rbegin(); itr != releasing_pledges.rend();){
-         if (itr->second <= amount){
-            amount -= itr->second;
-            releasing_pledges.erase(itr--);
+      template< typename DB>
+      void reduce_releasing(share_type amount, const DB &db){
+         FC_ASSERT(total_releasing_pledge >= amount, " available releasing balance is not enough");
+         for (auto itr = --releasing_pledges.end(); itr != --releasing_pledges.begin();){
+            if (itr->second <= amount){
+               amount -= itr->second;
+               releasing_pledges.erase(itr--);
+            }
+            else{
+               releasing_pledges[itr->first] -= amount;
+               break;
+            }
          }
-         else{
-            releasing_pledges[itr->first] -= amount;
-            break;
-         }
+         total_releasing_pledge -= amount;
       }
-      total_releasing_pledge -= amount;
-   }
       
    };
    /**
