@@ -2413,7 +2413,7 @@ void database::process_platform_voted_awards()
 void database::process_pledge_balance_release()
 {
    const auto head_num = head_block_num();
-   const auto& pledge_idx = get_index_type<pledge_balance_index>().indices().get<release_block_number>();
+   const auto& pledge_idx = get_index_type<pledge_balance_index>().indices().get<by_earliest_release_block_number>();
 
    //release pledge balance 
    auto itr_pledge = pledge_idx.begin();

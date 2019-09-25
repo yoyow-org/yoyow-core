@@ -77,7 +77,7 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
    if (account_stats->pledge_balance_ids.count(pledge_balance_type::Platform)){
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
       d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         s.update_pledge(op.pledge.amount, -1);
+         s.update_pledge(op.pledge.amount, -1,d);
       });
    }
    else{
@@ -162,7 +162,7 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
       uint32_t pledge_release_block = d.head_block_num() + global_params.platform_pledge_release_delay;
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
       d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         s.update_pledge(*(op.new_pledge), pledge_release_block);
+         s.update_pledge(*(op.new_pledge), pledge_release_block,d);
       });
    }
 

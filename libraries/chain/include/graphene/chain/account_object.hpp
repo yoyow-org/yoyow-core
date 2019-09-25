@@ -24,6 +24,7 @@
 #pragma once
 #include <graphene/chain/protocol/operations.hpp>
 #include <graphene/db/generic_index.hpp>
+#include <graphene/chain/hardfork.hpp>
 #include <boost/multi_index/composite_key.hpp>
 #include <numeric>
 
@@ -43,39 +44,86 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id  = impl_pledge_balance_object_type;
 
+      pledge_balance_object(){
+         releasing_pledges[uint32_t(-1)]=0;
+      }
       uint64_t             superior_index;
       pledge_balance_type  type;
       asset_aid_type       asset_id = 0;
       share_type           pledge;
-      share_type           releasing_pledge;
+      share_type           releasing_pledge=0;
       ///block number that releasing pledges to witness will be finally unlocked.
       uint32_t             pledge_release_block_number = -1;
-      //return the delta pledge need to subtract from account balance
-      share_type update_pledge(const asset &new_pledge,uint32_t new_relase_num){
-         FC_ASSERT(new_pledge.asset_id==asset_id,"erro asset id ");
-         auto delta=new_pledge.amount-(pledge+releasing_pledge);
-         auto delta_releasing=pledge-new_pledge.amount;
-         pledge=new_pledge.amount;
-         if(delta>=0){
-            releasing_pledge=0;
-            pledge_release_block_number=-1;
-            return delta;
-         }else{
-            releasing_pledge+=delta_releasing;
-            if(delta_releasing>0)//releasing adding
-               pledge_release_block_number=new_relase_num;// new releasing will extension the old releasing release time
-            return 0;
-         }
+   
+      map<uint32_t,share_type> releasing_pledges;//pledge_release_block_number=>releasing_pledge
+   
+      uint64_t earliest_release_block_number()const{
+         if(releasing_pledges.size()==0)
+            return uint32_t(-1);
+         else
+            return releasing_pledges.begin()->first;
       }
-      void new_releasing(const asset &new_releasing_pledge,uint32_t new_relase_num){
+      //return the delta pledge need to subtract from account balance
+      template< typename DB>
+      share_type update_pledge(const asset &new_pledge,uint32_t new_relase_num,const DB &db){
+
+         FC_ASSERT(new_pledge.asset_id==asset_id,"erro asset id ");
+         auto delta=new_pledge.amount-total_unrelease_pledge();
+         if(delta==0)
+            releasing_pledges.clear();
+         else if (delta>0)
+            new_releasing(delta,new_relase_num,db);
+         else if(delta<0)
+            reduce_releasing(-delta,db);
+         return delta;
+         
+      }
+   
+      template< typename DB>
+      void new_releasing(const asset &new_releasing_pledge,uint32_t new_relase_num,const DB &db){
+         
          FC_ASSERT(new_releasing_pledge.asset_id==asset_id,"erro asset id ");
          FC_ASSERT(pledge>=new_releasing_pledge.amount,"");
+         uint16_t max_releasing_size=0;
+         if(db.head_block_time() < HARDFORK_0_5_TIME)
+            max_releasing_size=20;
+         else
+            max_releasing_size=1;
+         if(releasing_pledges.size()==max_releasing_size)
+         {
+            auto iter = releasing_pledges.end(); iter--;
+            auto last_releasing_pledge=iter->second;
+            releasing_pledges.erase(iter);
+            releasing_pledges[new_relase_num]=last_releasing_pledge+new_releasing_pledge.amount;
+         }else if(releasing_pledges.size()<max_releasing_size){
+            if(releasing_pledges.find(new_relase_num)!=releasing_pledges.end())
+               releasing_pledges[new_relase_num]+=new_releasing_pledge.amount;
+            else
+               releasing_pledges[new_relase_num]=new_releasing_pledge.amount;
+         }
          pledge-=new_releasing_pledge.amount;
          releasing_pledge+=new_releasing_pledge.amount;
-         pledge_release_block_number=new_relase_num;
          
       }
       share_type total_unrelease_pledge()const {return pledge+releasing_pledge;}
+   private:
+   
+   template< typename DB>
+   void reduce_releasing(share_type amount,const DB &db){
+      
+      for(auto itr=--releasing_pledges.end();itr!=--releasing_pledges.begin();){
+         if(itr->second<=amount){
+            amount-=itr->second;
+            releasing_pledges.erase(itr--);
+         }
+         else{
+            releasing_pledges[itr->first]-=amount;
+            break;
+         }
+      }
+      pledge-=amount;
+      releasing_pledge+=amount;
+   }
       
    };
    /**
@@ -814,13 +862,13 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
     * @ingroup object_index
     */
    struct by_pledge_type;
-   struct release_block_number;
+   struct by_earliest_release_block_number;
    
    typedef multi_index_container<
       pledge_balance_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-         ordered_non_unique< tag<release_block_number>,member< pledge_balance_object, uint32_t, &pledge_balance_object::pledge_release_block_number > >
+         ordered_non_unique< tag<by_earliest_release_block_number>,const_mem_fun< pledge_balance_object, uint64_t, &pledge_balance_object::earliest_release_block_number > >
       >
    > pledge_balance_object_multi_index_type;
    
@@ -1089,6 +1137,7 @@ FC_REFLECT_DERIVED(graphene::chain::pledge_balance_object,
                    (pledge)
                    (releasing_pledge)
                    (pledge_release_block_number)
+                   (releasing_pledges)
                    )
 
 FC_REFLECT_DERIVED( graphene::chain::account_object,

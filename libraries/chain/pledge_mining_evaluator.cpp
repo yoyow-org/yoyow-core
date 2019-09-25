@@ -68,7 +68,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
          delta_pledge_to_witness=op.new_pledge-pledge_balance_obj.pledge;
       
          d.modify(pledge_balance_obj, [&](pledge_balance_object& obj) {
-            delta_available_balance = obj.update_pledge(op.new_pledge, block_num + params.mining_pledge_release_delay);
+            delta_available_balance = obj.update_pledge(op.new_pledge, block_num + params.mining_pledge_release_delay,d);
          });
          d.modify(*account_stats, [&](_account_statistics_object& s) {
             s.total_mining_pledge += delta_available_balance;

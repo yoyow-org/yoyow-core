@@ -114,7 +114,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    {
       const auto& wpb_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
       d.modify(wpb_obj, [&](pledge_balance_object& obj) {
-         obj.update_pledge(op.pledge, 0);//In this case, the second parameter is invalid
+         obj.update_pledge(op.pledge, 0,d);//In this case, the second parameter is invalid
       });
    }
    else {//create pledge_balance_obj
@@ -229,7 +229,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
    {
       const auto& wpb_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
       d.modify(wpb_obj, [&](pledge_balance_object& obj) {
-         obj.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.witness_pledge_release_delay);
+         obj.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.witness_pledge_release_delay,d);
       });
 
       d.modify( *witness_obj, [&]( witness_object& wit ) {
@@ -267,7 +267,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
 
       const auto& wpb_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
       d.modify(wpb_obj, [&](pledge_balance_object& obj) {
-         obj.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.witness_pledge_release_delay);
+         obj.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.witness_pledge_release_delay,d);
       });
 
       // update position

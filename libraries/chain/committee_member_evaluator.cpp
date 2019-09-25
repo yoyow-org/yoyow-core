@@ -90,7 +90,7 @@ object_id_type committee_member_create_evaluator::do_apply( const committee_memb
    if (account_stats->pledge_balance_ids.count(pledge_balance_type::Commitment)){
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
       d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         s.update_pledge(op.pledge, -1);
+         s.update_pledge(op.pledge, -1,d);
       });
    }
    else{
@@ -178,7 +178,7 @@ void_result committee_member_update_evaluator::do_apply( const committee_member_
 
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
       d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         s.update_pledge(*(op.new_pledge), pledge_release_block);
+         s.update_pledge(*(op.new_pledge), pledge_release_block,d);
       });
 
       d.modify( *committee_member_obj, [&]( committee_member_object& com ) {
@@ -189,7 +189,7 @@ void_result committee_member_update_evaluator::do_apply( const committee_member_
    {
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
       d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
-         s.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.committee_member_pledge_release_delay);
+         s.update_pledge(*(op.new_pledge), d.head_block_num() + global_params.committee_member_pledge_release_delay,d);
       });
 
       // update committee_member data
