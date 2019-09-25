@@ -1979,7 +1979,7 @@ void database::resign_pledge_mining(const witness_object& wit)
    auto itr = idx.lower_bound(wit.account);
    while (itr != idx.end() && itr->witness == wit.account)
    {
-      auto obj=get(itr->pledge_id);
+      const auto& obj=get(itr->pledge_id);
       modify(obj, [&](pledge_balance_object& s) {
          s.releasing_pledge += s.pledge;
          s.pledge = 0;
