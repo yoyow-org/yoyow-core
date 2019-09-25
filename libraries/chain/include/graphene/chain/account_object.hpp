@@ -1079,6 +1079,7 @@ FC_REFLECT_ENUM(graphene::chain::pledge_balance_type,
    (Commitment)
    (Platform)
    (Lock_balance)
+   (Mine)
    )
 
 FC_REFLECT_DERIVED(graphene::chain::pledge_balance_object,
