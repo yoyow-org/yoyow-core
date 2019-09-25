@@ -599,7 +599,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
    if( total > 0 )
    {
       // something to deduct
-      share_type from_releasing = std::min(pledge_balance_obj.releasing_pledge, total);
+      share_type from_releasing = std::min(pledge_balance_obj.total_releasing_pledge, total);
       share_type from_pledge = total - from_releasing;
       // update account stats object
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
@@ -611,9 +611,10 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          d.modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
             if (from_releasing > 0)
             {
-               _pbo.releasing_pledge -= from_releasing;
+               /*_pbo.releasing_pledge -= from_releasing;
                if (_pbo.releasing_pledge <= 0)
-                  _pbo.pledge_release_block_number = -1;
+                  _pbo.pledge_release_block_number = -1;*/
+               _pbo.reduce_releasing(from_releasing, d);
             }
             _pbo.pledge -= from_pledge;
          });

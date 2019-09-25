@@ -86,8 +86,6 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
          obj.pledge = op.pledge.amount;
          obj.asset_id = op.pledge.asset_id;
          obj.type = pledge_balance_type::Platform;
-         obj.releasing_pledge = 0;
-         obj.pledge_release_block_number = -1;
       });
 
       d.modify(*account_stats, [&](_account_statistics_object& s) {

@@ -61,7 +61,7 @@ void_result committee_member_create_evaluator::do_evaluate( const committee_memb
 
    if (account_stats->pledge_balance_ids.count(pledge_balance_type::Commitment)){
       const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Commitment));
-      FC_ASSERT(pledge_balance_obj.pledge == 0 && pledge_balance_obj.releasing_pledge != 0, "pledge_balance_object state is error. ");
+      FC_ASSERT(pledge_balance_obj.pledge == 0 , "pledge_balance_object state is error. ");
    }
 
    return void_result();
@@ -99,8 +99,6 @@ object_id_type committee_member_create_evaluator::do_apply( const committee_memb
          obj.pledge = op.pledge.amount;
          obj.asset_id = op.pledge.asset_id;
          obj.type = pledge_balance_type::Commitment;
-         obj.releasing_pledge = 0;
-         obj.pledge_release_block_number = -1;
       });
 
       d.modify(*account_stats, [&](_account_statistics_object& s) {

@@ -57,14 +57,13 @@ void_result balance_lock_update_evaluator::do_apply(const operation_type& op)
          const auto& lock_balance_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));
          uint32_t new_relase_num = d.head_block_num() + global_params.get_award_params().unlocked_balance_release_delay;
          d.modify(lock_balance_obj, [&](pledge_balance_object& obj) {
-            obj.update_pledge(op.new_lock_balance, new_relase_num);
+            obj.update_pledge(op.new_lock_balance, new_relase_num, d);
         });
       } 
       else {//create pledge_balance_obj
          const auto& new_pledge_balance_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
             obj.superior_index = op.account;
             obj.type = pledge_balance_type::Lock_balance;
-            obj.asset_id = GRAPHENE_CORE_ASSET_AID;
             obj.pledge = op.new_lock_balance;
          });
          d.modify(*account_stats, [&](_account_statistics_object& s) {

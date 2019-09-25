@@ -1584,7 +1584,10 @@ void database::check_invariants()
       for (const auto& id : s.pledge_balance_ids)
       {
          auto pledge_balance_obj = get(id.second);
-         FC_ASSERT(pledge_balance_obj.pledge_release_block_number > head_num);
+         //FC_ASSERT(pledge_balance_obj.pledge_release_block_number > head_num);
+         for (auto iter_pledge : pledge_balance_obj.releasing_pledges){
+            FC_ASSERT(iter_pledge.first > head_num);
+         }
       }
 
       for (const auto & p : s.uncollected_market_fees)
@@ -2415,7 +2418,7 @@ void database::process_pledge_balance_release()
 
    //release pledge balance 
    auto itr_pledge = pledge_idx.begin();
-   while (itr_pledge != pledge_idx.end() && itr_pledge->pledge_release_block_number <= head_num)
+   while (itr_pledge != pledge_idx.end() && itr_pledge->earliest_release_block_number() <= head_num)
    {
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
       if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04 && itr_pledge->type == pledge_balance_type::Witness){
@@ -2425,28 +2428,31 @@ void database::process_pledge_balance_release()
          });
       }
 
-      if (itr_pledge->type == pledge_balance_type::Mine){
-         account_uid_type pledge_miner = get(pledge_mining_id_type(itr_pledge->superior_index)).pledge_account;
-         modify(get_account_statistics_by_uid(pledge_miner), [&](_account_statistics_object& s) {
-            s.total_mining_pledge -= itr_pledge->total_releasing_pledge;
-         });
-      }
-
       FC_ASSERT(itr_pledge->pledge >= 0, "pledge_balance_object`s pledge must >= 0. ");
-      if (itr_pledge->pledge > 0){
-         modify(*itr_pledge, [&](pledge_balance_object& s) {
-            s.releasing_pledge = 0;
-            s.pledge_release_block_number = -1;
-         });
-      }
-      else{
-         const pledge_balance_object& pledge_obj = *pledge_idx.begin();
-         if(pledge_obj.type==pledge_balance_type::Mine){
-            remove(get(pledge_mining_id_type(pledge_obj.superior_index)));
-         }else{
-            const _account_statistics_object& ant = get_account_statistics_by_uid(pledge_obj.superior_index);
+      modify(*itr_pledge, [&](pledge_balance_object& s) {
+         auto itr = s.releasing_pledges.begin();
+         while (itr != s.releasing_pledges.end() && itr->first <= head_num){
+            FC_ASSERT(s.total_releasing_pledge >= itr->second, "total_releasing_pledge must more than single pledge. ");
+            s.total_releasing_pledge -= itr->second;
+            if (itr_pledge->type == pledge_balance_type::Mine){
+               account_uid_type pledge_miner = get(pledge_mining_id_type(itr_pledge->superior_index)).pledge_account;
+               modify(get_account_statistics_by_uid(pledge_miner), [&](_account_statistics_object& s) {
+                  s.total_mining_pledge -= itr->second;
+               });
+            }
+            s.releasing_pledges.erase(itr);
+            itr = s.releasing_pledges.begin();
+         }
+      });
+
+      if (itr_pledge->pledge == 0 && itr_pledge->releasing_pledges.size() == 0){
+         if (itr_pledge->type == pledge_balance_type::Mine){
+            remove(get(pledge_mining_id_type(itr_pledge->superior_index)));
+         }
+         else{
+            const _account_statistics_object& ant = get_account_statistics_by_uid(itr_pledge->superior_index);
             modify(ant, [&](_account_statistics_object& a){
-               a.pledge_balance_ids.erase(pledge_obj.type);
+               a.pledge_balance_ids.erase(itr_pledge->type);
             });
          }
          remove(*itr_pledge);

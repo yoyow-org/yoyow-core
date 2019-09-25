@@ -46,7 +46,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
 
       uint64_t             superior_index;
       pledge_balance_type  type;
-      asset_aid_type       asset_id = 0;
+      asset_aid_type       asset_id = GRAPHENE_CORE_ASSET_AID;
       share_type           pledge;
       share_type           total_releasing_pledge=0;
       map<uint32_t,share_type> releasing_pledges;//pledge_release_block_number=>releasing_pledge
@@ -57,6 +57,14 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          else
             return releasing_pledges.begin()->first;
       }
+
+      uint64_t last_release_block_number()const{
+         if (releasing_pledges.size() == 0)
+            return uint32_t(-1);
+         else
+            return (--releasing_pledges.end())->first;
+      }
+
       //return the delta pledge need to subtract from account balance
       template< typename DB>
       share_type update_pledge(const asset &new_pledge,uint32_t new_relase_num,const DB &db){
@@ -79,7 +87,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          FC_ASSERT(new_releasing_pledge.asset_id==asset_id,"erro asset id ");
          FC_ASSERT(pledge>=new_releasing_pledge.amount,"");
          uint16_t max_releasing_size=0;
-         if(db.head_block_time() < HARDFORK_0_5_TIME)
+         if (db.head_block_time() >= HARDFORK_0_5_TIME)//if (db.head_block_time() < HARDFORK_0_5_TIME)
             max_releasing_size=20;
          else
             max_releasing_size=1;
@@ -96,28 +104,27 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
                releasing_pledges[new_relase_num]=new_releasing_pledge.amount;
          }
          pledge-=new_releasing_pledge.amount;
-         releasing_pledge+=new_releasing_pledge.amount;
+         total_releasing_pledge += new_releasing_pledge.amount;
          
       }
-      share_type total_unrelease_pledge()const {return pledge+releasing_pledge;}
-   private:
+      share_type total_unrelease_pledge()const { return pledge + total_releasing_pledge; }
    
-   template< typename DB>
-   void reduce_releasing(share_type amount,const DB &db){
-      
-      for(auto itr=--releasing_pledges.end();itr!=--releasing_pledges.begin();){
-         if(itr->second<=amount){
-            amount-=itr->second;
-            releasing_pledges.erase(itr--);
+      template< typename DB>
+      void reduce_releasing(share_type amount,const DB &db){
+         
+         for(auto itr=--releasing_pledges.end();itr!=--releasing_pledges.begin();){
+            if(itr->second<=amount){
+               amount-=itr->second;
+               releasing_pledges.erase(itr--);
+            }
+            else{
+               releasing_pledges[itr->first]-=amount;
+               break;
+            }
          }
-         else{
-            releasing_pledges[itr->first]-=amount;
-            break;
-         }
+         pledge-=amount;
+         total_releasing_pledge += amount;
       }
-      pledge-=amount;
-      releasing_pledge+=amount;
-   }
       
    };
    /**
@@ -335,7 +342,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
             if (pledge_balance_ids.count(type) != 0){
                auto pledge_balance_obj = db.get(pledge_balance_ids.at(type));
                if (pledge_balance_obj.asset_id == asset_id)
-                  return pledge_balance_obj.releasing_pledge;
+                  return pledge_balance_obj.total_releasing_pledge;
             }
             return  0;
          }
