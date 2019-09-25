@@ -611,16 +611,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          d.modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
             if (from_releasing > 0)
             {
-               for (auto itr = --_pbo.releasing_pledges.end(); itr != --_pbo.releasing_pledges.begin();){
-                  if (itr->second <= from_releasing){
-                     from_releasing -= itr->second;
-                     _pbo.releasing_pledges.erase(itr--);
-                  }
-                  else{
-                     _pbo.releasing_pledges[itr->first] -= from_releasing;
-                     break;
-                  }
-               }
+               _pbo.reduce_releasing(from_releasing, d);
             }
             _pbo.pledge -= from_pledge;
          });
