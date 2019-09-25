@@ -73,17 +73,14 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          FC_ASSERT(new_pledge.asset_id == asset_id, "erro asset id ");
          auto delta = new_pledge.amount - total_unrelease_pledge();
          auto delta_releasing = pledge - new_pledge.amount;
-         auto pledge = new_pledge.amount;
+         pledge = new_pledge.amount;
 
          if (delta >= 0) {
             releasing_pledges.clear();
             return delta;
          } else {
-            if (delta_releasing > 0){
-               
+            if (delta_releasing > 0)
                new_releasing(delta_releasing, new_relase_num, db);
-               
-            }
             else
                reduce_releasing(-delta_releasing, db);
             return 0;
