@@ -153,7 +153,7 @@ const _account_statistics_object& database::get_account_statistics_by_uid( accou
    return *itr;
 }
 
-const account_statistics_object& database::get_account_statistics_struct_by_uid(account_uid_type uid)const
+account_statistics_object database::get_account_statistics_struct_by_uid(account_uid_type uid)const
 {
    const auto& idx = get_index_type<account_statistics_index>().indices().get<by_uid>();
    auto itr = idx.find(uid);
