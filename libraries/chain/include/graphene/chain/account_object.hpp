@@ -79,8 +79,11 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
             releasing_pledges.clear();
             return delta;
          } else {
-            if (delta_releasing > 0)
-               new_releasing(delta, new_relase_num, db);
+            if (delta_releasing > 0){
+               
+               new_releasing(delta_releasing, new_relase_num, db);
+               
+            }
             else
                reduce_releasing(-delta_releasing, db);
             return 0;
