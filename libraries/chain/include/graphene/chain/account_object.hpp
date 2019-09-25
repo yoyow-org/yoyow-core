@@ -44,17 +44,11 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id  = impl_pledge_balance_object_type;
 
-      pledge_balance_object(){
-         releasing_pledges[uint32_t(-1)]=0;
-      }
       uint64_t             superior_index;
       pledge_balance_type  type;
       asset_aid_type       asset_id = 0;
       share_type           pledge;
-      share_type           releasing_pledge=0;
-      ///block number that releasing pledges to witness will be finally unlocked.
-      uint32_t             pledge_release_block_number = -1;
-   
+      share_type           total_releasing_pledge=0;
       map<uint32_t,share_type> releasing_pledges;//pledge_release_block_number=>releasing_pledge
    
       uint64_t earliest_release_block_number()const{
@@ -1136,8 +1130,7 @@ FC_REFLECT_DERIVED(graphene::chain::pledge_balance_object,
                    (type)
                    (asset_id)
                    (pledge)
-                   (releasing_pledge)
-                   (pledge_release_block_number)
+                   (total_releasing_pledge)
                    (releasing_pledges)
                    )
 
