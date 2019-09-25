@@ -2428,7 +2428,8 @@ void database::process_pledge_balance_release()
       }
 
       if (itr_pledge->type == pledge_balance_type::Mine){
-         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](_account_statistics_object& s) {
+         account_uid_type pledge_miner = get(pledge_mining_id_type(itr_pledge->superior_index)).pledge_account;
+         modify(get_account_statistics_by_uid(pledge_miner), [&](_account_statistics_object& s) {
             s.total_mining_pledge -= itr_pledge->releasing_pledge;
          });
       }
