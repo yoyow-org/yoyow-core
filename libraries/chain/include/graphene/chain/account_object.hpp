@@ -65,66 +65,71 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
             return (--releasing_pledges.end())->first;
       }
 
+
       //return the delta pledge need to subtract from account balance
       template< typename DB>
-      share_type update_pledge(const asset &new_pledge,uint32_t new_relase_num,const DB &db){
+      share_type update_pledge(const asset &new_pledge, uint32_t new_relase_num, const DB &db){
 
-         FC_ASSERT(new_pledge.asset_id==asset_id,"erro asset id ");
-         auto delta=new_pledge.amount-total_unrelease_pledge();
-         if(delta==0)
+         FC_ASSERT(new_pledge.asset_id == asset_id, "erro asset id ");
+         auto delta = new_pledge.amount - total_unrelease_pledge();
+         auto delta_releasing = pledge - new_pledge.amount;
+         auto pledge = new_pledge.amount;
+
+         if (delta >= 0) {
             releasing_pledges.clear();
-         else if (delta>0)
-            new_releasing(delta,new_relase_num,db);
-         else if(delta<0)
-            reduce_releasing(-delta,db);
-         return delta;
-         
-      }
-   
-      template< typename DB>
-      void new_releasing(const asset &new_releasing_pledge,uint32_t new_relase_num,const DB &db){
-         
-         FC_ASSERT(new_releasing_pledge.asset_id==asset_id,"erro asset id ");
-         FC_ASSERT(pledge>=new_releasing_pledge.amount,"");
-         uint16_t max_releasing_size=0;
-         if (db.head_block_time() >= HARDFORK_0_5_TIME)//if (db.head_block_time() < HARDFORK_0_5_TIME)
-            max_releasing_size=20;
-         else
-            max_releasing_size=1;
-         if(releasing_pledges.size()==max_releasing_size)
-         {
-            auto iter = releasing_pledges.end(); iter--;
-            auto last_releasing_pledge=iter->second;
-            releasing_pledges.erase(iter);
-            releasing_pledges[new_relase_num]=last_releasing_pledge+new_releasing_pledge.amount;
-         }else if(releasing_pledges.size()<max_releasing_size){
-            if(releasing_pledges.find(new_relase_num)!=releasing_pledges.end())
-               releasing_pledges[new_relase_num]+=new_releasing_pledge.amount;
-            else
-               releasing_pledges[new_relase_num]=new_releasing_pledge.amount;
+            return delta;
          }
-         pledge-=new_releasing_pledge.amount;
+         else {
+            if (delta_releasing > 0)
+               new_releasing(delta, new_relase_num, db);
+            else
+               reduce_releasing(-delta_releasing, db);
+            return 0;
+         }
+      }
+
+      template< typename DB>
+      void new_releasing(const asset &new_releasing_pledge, uint32_t new_relase_num, const DB &db){
+
+         FC_ASSERT(new_releasing_pledge.asset_id == asset_id, "erro asset id ");
+         //FC_ASSERT(pledge>=new_releasing_pledge.amount,"");
+         uint16_t max_releasing_size = 0;
+         if (db.head_block_time() < HARDFORK_0_5_TIME)
+            max_releasing_size = 1;
+         else
+            max_releasing_size = 20;
+         if (releasing_pledges.size() == max_releasing_size)
+         {
+            auto iter = releasing_pledges.rbegin();
+            auto last_releasing_pledge = iter->second;
+            releasing_pledges.erase(iter);
+            releasing_pledges[new_relase_num] = last_releasing_pledge + new_releasing_pledge.amount;
+         }
+         else if (releasing_pledges.size() < max_releasing_size)
+            releasing_pledges[new_relase_num] += new_releasing_pledge.amount;
+         else
+            FC_ASSERT(false, "");
          total_releasing_pledge += new_releasing_pledge.amount;
-         
+
       }
       share_type total_unrelease_pledge()const { return pledge + total_releasing_pledge; }
-   
-      template< typename DB>
-      void reduce_releasing(share_type amount,const DB &db){
-         
-         for(auto itr=--releasing_pledges.end();itr!=--releasing_pledges.begin();){
-            if(itr->second<=amount){
-               amount-=itr->second;
-               releasing_pledges.erase(itr--);
-            }
-            else{
-               releasing_pledges[itr->first]-=amount;
-               break;
-            }
+private:
+
+   template< typename DB>
+   void reduce_releasing(share_type amount, const DB &db){
+      FC_ASSERT(total_releasing_pledge >= amount, " available releasing balance is not enough");
+      for (auto itr = releasing_pledges.rbegin(); itr != releasing_pledges.rend();){
+         if (itr->second <= amount){
+            amount -= itr->second;
+            releasing_pledges.erase(itr--);
          }
-         pledge-=amount;
-         total_releasing_pledge += amount;
+         else{
+            releasing_pledges[itr->first] -= amount;
+            break;
+         }
       }
+      total_releasing_pledge -= amount;
+   }
       
    };
    /**
