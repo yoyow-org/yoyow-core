@@ -3942,6 +3942,14 @@ full_account wallet_api::get_full_account(string account_name_or_uid) const
    return results.at( uid );
 }
 
+vector<pledge_balance_object> wallet_api::get_account_core_asset_pledge(string account_name_or_uid)const
+{
+   account_uid_type uid = my->get_account_uid(account_name_or_uid);
+   vector<pledge_balance_object> pledge_objs;
+   pledge_objs = my->_remote_db->get_account_core_asset_pledge(uid);
+   return pledge_objs;
+}
+
 asset_object_with_data wallet_api::get_asset(string asset_name_or_id) const
 {
    auto a = my->find_asset(asset_name_or_id);

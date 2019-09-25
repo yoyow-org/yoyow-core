@@ -345,6 +345,13 @@ class wallet_api
        */
       full_account                      get_full_account(string account_name_or_uid) const;
 
+      /** Returns all pledges about the given account.
+      *
+      * @param account_name_or_uid the name or uid of the account to provide information about
+      * @returns the public account data stored in the blockchain
+      */
+      vector<pledge_balance_object>     get_account_core_asset_pledge(string account_name_or_uid)const;
+
       /** Returns information about the given asset.
        * @param asset_name_or_id the symbol or id of the asset in question
        * @returns the information about the asset stored in the block chain
@@ -2055,6 +2062,7 @@ FC_API( graphene::wallet::wallet_api,
         (set_voting_proxy)
         (get_account)
         (get_full_account)
+        (get_account_core_asset_pledge)
         (get_block)
         (get_account_count)
         (get_relative_account_history)

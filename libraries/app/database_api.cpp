@@ -96,6 +96,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       std::map<string,full_account> get_full_accounts( const vector<string>& names_or_ids, bool subscribe );
       std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
                                                                         const full_account_query_options& options );
+      vector<pledge_balance_object> get_account_core_asset_pledge(account_uid_type account_uid)const;
       account_statistics_object get_account_statistics_by_uid(account_uid_type uid)const;
       optional<account_object> get_account_by_name( string name )const;
       vector<account_uid_type> get_account_references( account_uid_type uid )const;
@@ -1024,6 +1025,30 @@ std::map<account_uid_type,full_account> database_api_impl::get_full_accounts_by_
       results[uid] = acnt;
    }
    return results;
+}
+
+vector<pledge_balance_object> database_api::get_account_core_asset_pledge(account_uid_type account_uid)const
+{
+   return my->get_account_core_asset_pledge(account_uid);
+}
+
+vector<pledge_balance_object> database_api_impl::get_account_core_asset_pledge(account_uid_type account_uid)const
+{
+   vector<pledge_balance_object> pledge_objs;
+   const _account_statistics_object ant = _db.get_account_statistics_by_uid(account_uid);
+   for (auto iter : ant.pledge_balance_ids){
+      pledge_objs.emplace_back(_db.get<pledge_balance_object>(iter.second));
+   }
+
+   const auto& idx = _db.get_index_type<pledge_mining_index>().indices().get<by_pledge_account>();
+   auto itr_mining = idx.lower_bound(account_uid);
+   while (itr_mining != idx.end() && itr_mining->pledge_account == account_uid)
+   {
+      pledge_objs.emplace_back(_db.get<pledge_balance_object>(itr_mining->pledge_id));
+      itr_mining++;
+   }
+
+   return pledge_objs;
 }
 
 account_statistics_object database_api::get_account_statistics_by_uid(account_uid_type uid)const

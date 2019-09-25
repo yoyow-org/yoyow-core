@@ -1979,7 +1979,7 @@ void database::resign_pledge_mining(const witness_object& wit)
    auto itr = idx.lower_bound(wit.account);
    while (itr != idx.end() && itr->witness == wit.account)
    {
-      auto obj=get(itr->pledge_id);
+      const auto& obj=get(itr->pledge_id);
       modify(obj, [&](pledge_balance_object& s) {
          s.releasing_pledge += s.pledge;
          s.pledge = 0;
@@ -2428,7 +2428,8 @@ void database::process_pledge_balance_release()
       }
 
       if (itr_pledge->type == pledge_balance_type::Mine){
-         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](_account_statistics_object& s) {
+         account_uid_type pledge_miner = get(pledge_mining_id_type(itr_pledge->superior_index)).pledge_account;
+         modify(get_account_statistics_by_uid(pledge_miner), [&](_account_statistics_object& s) {
             s.total_mining_pledge -= itr_pledge->releasing_pledge;
          });
       }

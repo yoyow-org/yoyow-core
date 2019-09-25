@@ -366,6 +366,7 @@ class database_api
       std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
                                                                         const full_account_query_options& options );
 
+      vector<pledge_balance_object> get_account_core_asset_pledge(account_uid_type account_uid)const;
 
       account_statistics_object get_account_statistics_by_uid(account_uid_type uid)const;
 
@@ -973,6 +974,7 @@ FC_API( graphene::app::database_api,
    (get_accounts_by_uid)
    //(get_full_accounts)
    (get_full_accounts_by_uid)
+   (get_account_core_asset_pledge)
    (get_account_statistics_by_uid)
    (compute_coin_seconds_earned)
    (get_account_by_name)
