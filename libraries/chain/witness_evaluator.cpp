@@ -611,7 +611,7 @@ void_result witness_report_evaluator::do_apply( const witness_report_operation& 
          d.modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
             if (from_releasing > 0)
             {
-               _pbo.reduce_releasing(from_releasing, d);
+               _pbo.reduce_releasing(from_releasing);
             }
             _pbo.pledge -= from_pledge;
          });
