@@ -2433,7 +2433,7 @@ void database::process_pledge_balance_release()
          share_type delta = 0;
          auto itr = s.releasing_pledges.begin();
          while (itr != s.releasing_pledges.end() && itr->first <= head_num){
-            FC_ASSERT(s.total_releasing_pledge >= itr->second, "total_releasing_pledge must more than single pledge. ");
+            FC_ASSERT(s.total_releasing_pledge >= itr->second, "total_releasing_pledge must more than single pledge. \n pledge_balance_object`s detail:${d}", ("d",s));
             s.total_releasing_pledge -= itr->second;
             delta += itr->second;
             s.releasing_pledges.erase(itr);
