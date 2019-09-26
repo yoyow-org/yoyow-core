@@ -2430,18 +2430,20 @@ void database::process_pledge_balance_release()
 
       FC_ASSERT(itr_pledge->pledge >= 0, "pledge_balance_object`s pledge must >= 0. ");
       modify(*itr_pledge, [&](pledge_balance_object& s) {
+         share_type delta = 0;
          auto itr = s.releasing_pledges.begin();
          while (itr != s.releasing_pledges.end() && itr->first <= head_num){
             FC_ASSERT(s.total_releasing_pledge >= itr->second, "total_releasing_pledge must more than single pledge. ");
             s.total_releasing_pledge -= itr->second;
-            if (itr_pledge->type == pledge_balance_type::Mine){
-               account_uid_type pledge_miner = get(pledge_mining_id_type(itr_pledge->superior_index)).pledge_account;
-               modify(get_account_statistics_by_uid(pledge_miner), [&](_account_statistics_object& s) {
-                  s.total_mining_pledge -= itr->second;
-               });
-            }
+            delta += itr->second;
             s.releasing_pledges.erase(itr);
             itr = s.releasing_pledges.begin();
+         }
+         if (itr_pledge->type == pledge_balance_type::Mine){
+            account_uid_type pledge_miner = get(pledge_mining_id_type(itr_pledge->superior_index)).pledge_account;
+            modify(get_account_statistics_by_uid(pledge_miner), [&](_account_statistics_object& s) {
+               s.total_mining_pledge -= delta;
+            });
          }
       });
 
