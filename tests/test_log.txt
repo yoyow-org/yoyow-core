@@ -83,7 +83,7 @@
        collect_csaf init platform_account1  1000 YOYO 1545289965 true true
        collect_csaf init platform_account2 1000 YOYO 1545289965 true true
 	   
-#3.    transfer init test1 1000000 YOYO "" true true
+#3.    transfer init test1 2000000 YOYO "" true true
        transfer init test2 1000000 YOYO "" true true
        transfer init test3 100000 YOYO "" true true
        transfer init test4 100000 YOYO "" true true
@@ -312,3 +312,38 @@
 	   update_mining_pledge test8  witness3 30000000000 false true
 	   update_mining_pledge test9  witness3 30000000000 false true
 	   update_mining_pledge test10 witness3 30000000000 false true
+
+	   #15 
+	   register_account  witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx init1 init2 0 140 true true
+       import_key        witness1 5JaoAmi56oAtFLsEGwbnH692NNSVsEPgXfTqsW9BHoMSnZS7hyt
+	   transfer init witness1 1000000 YOYO "" true true
+	   collect_csaf init witness1 1000 YOYO 1545289965 true true
+	   create_witness    witness1 YYW8Bp8VssSxMbfvMh7LbArJaCa8A1Vz77hfgwQfPxKLft3ekxWWx 500000 YOYO "pledge mining test" true 6000 true true
+	   
+	   update_mining_pledge test1 witness1 50000000000 true true
+	   update_mining_pledge test1 witness1 20000000000 true true
+	   update_mining_pledge test1 witness1 15000000000 true true
+	   
+	   update_lock_balance test1 2000 true true
+	   update_lock_balance test1 1000 true true
+	   
+	   create_platform test1 platform123 10000 YOYO "www.baidu.com" "" true true
+	   update_platform test1 null 20000 YOYO "www.baidu2.com" null true true
+	   
+	   create_witness  test1 YYW5jJQfdGRgLvAeqHas4EYMryzwyBJXgJaZEwaSy2zCsvtSYiMKj 500000 YOYO "pledge mining test" true 6000 true true
+	   update_witness test1 null 600000 YOYO null null null true true
+	   
+	   create_committee_member test1 800000 YOYO "123" true true
+	   update_committee_member test1 600000 YOYO null true true
+	   
+	   get_account_core_asset_pledge test1
+	   
+	   update_platform test1 null 0 YOYO null null true true
+	   update_witness test1 null 0 YOYO null null null true true
+	   update_committee_member test1 0 YOYO null true true
+	   update_lock_balance test1 0 true true
+	   update_mining_pledge test1 witness1 0 true true
+	   
+	   get_account_core_asset_pledge test1
+	   
+	   
