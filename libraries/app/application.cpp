@@ -1008,7 +1008,7 @@ void application::set_program_options(boost::program_options::options_descriptio
          ("force-validate", "Force validation of all transactions")
          ("genesis-timestamp", bpo::value<uint32_t>(), "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)")
          ("active-post-periods", bpo::value<uint32_t>(), "Record active post object that be created in the last few periods")
-         ("check_invariants_interval", bpo::value<uint32_t>()->implicit_value(1),"check core balance, prepaid, csaf, voter of all account when per check_invariants_interval blocks defaut checking per block  if set this option, don`t check if unset this option")
+         ("check_invariants_interval", bpo::value<uint32_t>(),"check core balance, prepaid, csaf, voter of all account when per check_invariants_interval blocks, don`t check if unset this option")
          ("advertising-remain-time", bpo::value<uint32_t>(), "clear advertising order object after remaining time")
          ("custom-vote-remain-time", bpo::value<uint32_t>(), "clear custom vote object and cast custom vote object after remaining time")
          ;
