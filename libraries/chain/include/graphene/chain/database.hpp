@@ -494,7 +494,7 @@ namespace graphene { namespace chain {
          optional<undo_database::session>       _pending_tx_session;
          vector< unique_ptr<op_evaluator> >     _operation_evaluators;
 
-         bool                                   _enable_check_invariants = false;
+         uint32_t                               _check_invariants_interval = uint32_t(-1);
          uint32_t                               _advertising_order_remaining_time = 86400*365;
          uint32_t                               _custom_vote_remaining_time = 86400*365;
 
@@ -507,7 +507,7 @@ namespace graphene { namespace chain {
          processed_transaction apply_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing );
          operation_result      apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs = signed_information());
 
-         void set_check_invariants(bool check){ _enable_check_invariants = check; }
+         void set_check_invariants_interval(uint32_t interval){ _check_invariants_interval = interval; }
          void set_advertising_remain_time(uint32_t time){ _advertising_order_remaining_time = time; }
          void set_custom_vote_remain_time(uint32_t time){ _custom_vote_remaining_time = time; }
          /**

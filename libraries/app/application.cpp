@@ -417,8 +417,12 @@ namespace detail {
             _chain_db->set_custom_vote_remain_time(_options->at("custom-vote-remain-time").as<uint32_t>());
          }    
 
-         if (_options->count("enable-check-invariants"))
-            _chain_db->set_check_invariants(true);
+         if (_options->count("enable-check-invariants")){
+            auto interval=_options->at("enable-check-invariants").as<uint32_t>();
+            FC_ASSERT(interval> 0);
+            _chain_db->set_check_invariants_interval(interval);
+         }
+
 
          if( _options->count("resync-blockchain") )
             _chain_db->wipe(_data_dir / "blockchain", true);
@@ -1004,7 +1008,7 @@ void application::set_program_options(boost::program_options::options_descriptio
          ("force-validate", "Force validation of all transactions")
          ("genesis-timestamp", bpo::value<uint32_t>(), "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)")
          ("active-post-periods", bpo::value<uint32_t>(), "Record active post object that be created in the last few periods")
-         ("enable-check-invariants", "check core balance, prepaid, csaf, voter of all account when apply block")
+         ("enable-check-invariants", bpo::value<uint32_t>()->implicit_value(1),"check core balance, prepaid, csaf, voter of all account when apply block")
          ("advertising-remain-time", bpo::value<uint32_t>(), "clear advertising order object after remaining time")
          ("custom-vote-remain-time", bpo::value<uint32_t>(), "clear custom vote object and cast custom vote object after remaining time")
          ;
