@@ -117,15 +117,18 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       void reduce_releasing(share_type amount) {
          FC_ASSERT(total_releasing_pledge >= amount, " available releasing balance is not enough");
          total_releasing_pledge -= amount;
-         for (auto itr = --releasing_pledges.end(); itr != --releasing_pledges.begin();) {
+         uint32_t erase_from = -1;
+         for (auto itr = releasing_pledges.rbegin(); itr != releasing_pledges.rend(); ++itr) {
             if (itr->second <= amount) {
                amount -= itr->second;
-               releasing_pledges.erase(itr--);
+               erase_from = itr->first;
             } else{
                releasing_pledges[itr->first] -= amount;
                break;
             }
          }
+         if (erase_from != uint32_t(-1))
+            releasing_pledges.erase(releasing_pledges.lower_bound(erase_from), releasing_pledges.end());
       }
       
    };
