@@ -1984,7 +1984,7 @@ void database::resign_pledge_mining(const witness_object& wit)
    {
       const auto& obj=get(itr->pledge_id);
       modify(obj, [&](pledge_balance_object& s) {
-         //s.update
+         s.update_pledge(asset(0), head_block_num() + params.mining_pledge_release_delay, *this);
       });
 
       ++itr;
