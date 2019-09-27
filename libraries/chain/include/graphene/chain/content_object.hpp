@@ -554,7 +554,7 @@ namespace graphene { namespace chain {
                                   std::less<account_uid_type>,
                                   std::less<post_pid_type>,
                                   std::less<uint64_t>,
-                                  std::greater<object_id_type >>
+                                  std::less<object_id_type >>
                                   >,
 		  ordered_non_unique< tag<by_create_time>,member< score_object, time_point_sec, &score_object::create_time> >
        >
