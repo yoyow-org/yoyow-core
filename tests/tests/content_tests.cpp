@@ -553,6 +553,8 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
 
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
+      generate_blocks(200000);
+
       // Return number of core shares (times precision)
       auto _core = [&](int64_t x) -> asset
       {  return asset(x*prec);    };
@@ -564,22 +566,22 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
       for (const auto &p : platform_map1)
       {
          transfer(committee_account, p.first, _core(100000));
-         collect_csaf_from_committee(p.first, 1000);
+         add_csaf_for_account(p.first, 1000);
       }
       for (const auto &p : platform_map2)
       {
          transfer(committee_account, p.first, _core(100000));
-         collect_csaf_from_committee(p.first, 1000);
+         add_csaf_for_account(p.first, 1000);
       }
       for (const auto &v : vote_map1)
       {
          transfer(committee_account, v.first, _core(10000));
-         collect_csaf_from_committee(v.first, 1000);
+         add_csaf_for_account(v.first, 1000);
       }
       for (const auto &v : vote_map2)
       {
          transfer(committee_account, v.first, _core(10000));
-         collect_csaf_from_committee(v.first, 1000);
+         add_csaf_for_account(v.first, 1000);
       }
 
       uint32_t i = 0;
@@ -598,7 +600,7 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
       committee_update_global_content_parameter_item_type content_item;
-      content_item.value = { 300, 300, 1000, 31536000, 10, 0, 0, 10000000000000, 100, 10 };
+      content_item.value = { 300, 300, 1000, 31536000, 10, 0, 0, 10000000000, 100, 10 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { content_item }, current_block_num + 10, voting_opinion_type::opinion_for, current_block_num + 10, current_block_num + 10);
       committee_update_global_parameter_item_type item;
       item.value.governance_votes_update_interval = 20;
@@ -623,7 +625,7 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
 
       generate_blocks(100);
 
-      uint128_t award = (uint128_t)10000000000000 * 300 / (86400 * 365);
+      uint128_t award = (uint128_t)10000000000 * 300 / (86400 * 365);
       uint128_t platform_award_basic = award * 2000 / 10000;
       uint128_t basic = platform_award_basic / (platform_map1.size() + platform_map2.size());
       uint128_t platform_award_by_votes = award - platform_award_basic;
