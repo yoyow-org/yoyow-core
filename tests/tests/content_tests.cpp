@@ -1424,35 +1424,67 @@ BOOST_AUTO_TEST_CASE(balance_lock_for_feepoint_test)
 
       balance_lock_update({ u_1000_private_key }, u_1000_id, 5000 * prec);
       balance_lock_update({ u_2000_private_key }, u_2000_id, 8000 * prec);
-      const auto& user1 = db.get_account_statistics_by_uid(u_1000_id);
-      BOOST_CHECK(user1.locked_balance_for_feepoint == 5000 * prec);
-      BOOST_CHECK(user1.releasing_locked_feepoint == 0 * prec);
-      const auto& user2 = db.get_account_statistics_by_uid(u_2000_id);
-      BOOST_CHECK(user2.locked_balance_for_feepoint == 8000 * prec);
-      BOOST_CHECK(user2.releasing_locked_feepoint == 0 * prec);
 
+      //test update pledge
+      const auto& user1 = db.get_account_statistics_by_uid(u_1000_id);
+      const auto& pledge_balance_obj1 = user1.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      BOOST_CHECK(pledge_balance_obj1.pledge == 5000 * prec);
+      BOOST_CHECK(pledge_balance_obj1.total_releasing_pledge == 0 * prec);
+      BOOST_CHECK(pledge_balance_obj1.releasing_pledges.size() == 0);
+      const auto& user2 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj2 = user2.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      BOOST_CHECK(pledge_balance_obj2.pledge == 8000 * prec);
+      BOOST_CHECK(pledge_balance_obj2.total_releasing_pledge == 0 * prec);
+      BOOST_CHECK(pledge_balance_obj2.releasing_pledges.size() == 0 * prec);
+
+      //test new releasing
       balance_lock_update({ u_1000_private_key }, u_1000_id, 6000 * prec);
       balance_lock_update({ u_2000_private_key }, u_2000_id, 5000 * prec);
       const auto& user3 = db.get_account_statistics_by_uid(u_1000_id);
-      BOOST_CHECK(user3.locked_balance_for_feepoint == 6000 * prec);
-      BOOST_CHECK(user3.releasing_locked_feepoint == -1000 * prec);
-      BOOST_CHECK(user3.feepoint_unlock_block_number == GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+      const auto& pledge_balance_obj3 = user3.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      BOOST_CHECK(pledge_balance_obj3.pledge == 6000 * prec);
+      BOOST_CHECK(pledge_balance_obj3.total_releasing_pledge == 0 * prec);
+      BOOST_CHECK(pledge_balance_obj3.releasing_pledges.size() == 0 );
       const auto& user4 = db.get_account_statistics_by_uid(u_2000_id);
-      BOOST_CHECK(user4.locked_balance_for_feepoint == 5000 * prec);
-      BOOST_CHECK(user4.releasing_locked_feepoint == 3000 * prec);
-      BOOST_CHECK(user4.feepoint_unlock_block_number == GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+      const auto& pledge_balance_obj4 = user4.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      BOOST_CHECK(pledge_balance_obj4.pledge == 5000 * prec);
+      BOOST_CHECK(pledge_balance_obj4.total_releasing_pledge == 3000 * prec);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.size() == 1);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.begin()->first == db.head_block_num() + GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.begin()->second == 3000 * prec);
+
+      generate_blocks(10);
+      //test new releasing
+      balance_lock_update({ u_2000_private_key }, u_2000_id, 3000 * prec);
+      const auto& user5 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj5 = user5.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      BOOST_CHECK(pledge_balance_obj5.pledge == 3000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.total_releasing_pledge == 5000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.size() == 2);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->first == db.head_block_num() + GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->second == 2000 * prec);
+
+      //test reduce releasing
+      balance_lock_update({ u_2000_private_key }, u_2000_id, 4000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.pledge == 4000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.total_releasing_pledge == 4000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.size() == 2);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->first == db.head_block_num() + GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->second == 1000 * prec);
 
       generate_blocks(GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
       generate_block(5);
 
-      const auto& user5 = db.get_account_statistics_by_uid(u_1000_id);
-      BOOST_CHECK(user5.locked_balance_for_feepoint == 6000 * prec);
-      BOOST_CHECK(user5.releasing_locked_feepoint == 0 * prec);
-      BOOST_CHECK(user5.feepoint_unlock_block_number == -1);
-      const auto& user6 = db.get_account_statistics_by_uid(u_2000_id);
-      BOOST_CHECK(user6.locked_balance_for_feepoint == 5000 * prec);
-      BOOST_CHECK(user6.releasing_locked_feepoint == 0 * prec);
-      BOOST_CHECK(user6.feepoint_unlock_block_number == -1);
+      const auto& user6 = db.get_account_statistics_by_uid(u_1000_id);
+      const auto& pledge_balance_obj6 = user6.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      BOOST_CHECK(pledge_balance_obj6.pledge == 6000 * prec);
+      BOOST_CHECK(pledge_balance_obj6.releasing_pledges.size() == 0);
+      BOOST_CHECK(pledge_balance_obj6.total_releasing_pledge == 0);
+      const auto& user7 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj7 = user7.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      BOOST_CHECK(pledge_balance_obj7.pledge == 4000 * prec);
+      BOOST_CHECK(pledge_balance_obj7.releasing_pledges.size() == 0);
+      BOOST_CHECK(pledge_balance_obj7.total_releasing_pledge == 0);
 
    }
    catch (fc::exception& e) {
@@ -1519,6 +1551,7 @@ BOOST_AUTO_TEST_CASE(total_witness_pledge_test)
       throw;
    }
 }
+
 
 BOOST_AUTO_TEST_CASE(csaf_compute_test)
 {
@@ -2009,7 +2042,8 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
          generate_blocks(21);
          //check pledge mining object
          const pledge_mining_object& pledge_mining_obj = db.get_pledge_mining(u_1000_id, u_3001_id);
-         BOOST_CHECK(pledge_mining_obj.pledge == 200000 * prec);
+         const auto& pledge_balance_obj = pledge_mining_obj.pledge_id(db);
+         BOOST_CHECK(pledge_balance_obj.pledge == 200000 * prec);
 
          auto last_pledge_witness_pay = db.get_dynamic_global_properties().by_pledge_witness_pay_per_block;
 
@@ -2032,7 +2066,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
             share_type bonus_per_pledge = ((fc::uint128_t)(produce_blocks_per_cycle * pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION
                / wit.total_mining_pledge).to_uint64();
 
-            total_bonus += ((fc::uint128_t)bonus_per_pledge.value * pledge_mining_obj.pledge.value
+            total_bonus += ((fc::uint128_t)bonus_per_pledge.value * pledge_balance_obj.pledge.value
                / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
             auto account = db.get_account_statistics_by_uid(u_3001_id);
             BOOST_CHECK(account.uncollected_pledge_bonus == total_bonus);
@@ -2104,7 +2138,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
             for (const auto& m : mining_map)
             {
                auto mining_obj = db.get_pledge_mining(u_1000_id, u_3001_id);
-               share_type bonus = ((fc::uint128_t)bonus_per_pledge.value * mining_obj.pledge.value
+               share_type bonus = ((fc::uint128_t)bonus_per_pledge.value * mining_obj.pledge_id(db).pledge.value
                   / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
                total_bonus2 += bonus;
                total_bonus_per_account.at(j) += bonus;
@@ -2369,8 +2403,11 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
       //check pledge mining, after resign witness
       generate_blocks(10);
       const pledge_mining_object& pledge_mining_obj = db.get_pledge_mining(u_1000_id, u_3001_id);
-      BOOST_CHECK(pledge_mining_obj.pledge == 0);
-      BOOST_CHECK(pledge_mining_obj.releasing_mining_pledge == 200000 * prec);
+      const auto& pledge_balnce_obj = pledge_mining_obj.pledge_id(db);
+      BOOST_CHECK(pledge_balnce_obj.pledge == 0);
+      BOOST_CHECK(pledge_balnce_obj.releasing_pledges.size() == 1);
+      BOOST_CHECK(pledge_balnce_obj.releasing_pledges.begin()->first == db.head_block_num() - 9 + GRAPHENE_DEFAULT_MINING_PLEDGE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balnce_obj.releasing_pledges.begin()->second == 200000 * prec);
 
       auto pledge_act_3001 = db.get_account_statistics_by_uid(u_3001_id);
       BOOST_CHECK(pledge_act_3001.total_mining_pledge == 200000 * prec);
@@ -2383,8 +2420,9 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
       BOOST_CHECK(pledge_mining_obj_ptr == nullptr);
 
       const pledge_mining_object* pledge_mining_obj_ptr2 = db.find_pledge_mining(u_2000_id, u_3001_id);
-      BOOST_CHECK(pledge_mining_obj_ptr2->releasing_mining_pledge == 0);
-      BOOST_CHECK(pledge_mining_obj_ptr2->pledge == 300000 * prec.value);
+      const auto& pledge_balnce_obj2 = pledge_mining_obj_ptr2->pledge_id(db);
+      BOOST_CHECK(pledge_balnce_obj2.releasing_pledges.size() == 0);
+      BOOST_CHECK(pledge_balnce_obj2.pledge == 300000 * prec.value);
 
       auto pledge_act_3001_2 = db.get_account_statistics_by_uid(u_3001_id);
       BOOST_CHECK(pledge_act_3001_2.total_mining_pledge == 300000 * prec.value);
