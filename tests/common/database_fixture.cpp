@@ -1142,6 +1142,7 @@ void database_fixture::buyout_post(account_uid_type from_account,
    account_uid_type poster,
    post_pid_type    post_pid,
    account_uid_type receiptor_account,
+   optional<account_uid_type> sign_platform,
    flat_set<fc::ecc::private_key> sign_keys)
 {
    try {
@@ -1151,6 +1152,9 @@ void database_fixture::buyout_post(account_uid_type from_account,
       buyout_op.poster = poster;
       buyout_op.post_pid = post_pid;
       buyout_op.receiptor_account_uid = receiptor_account;
+      if (sign_platform.valid()){
+         buyout_op.sign_platform = *sign_platform;
+      }
 
       signed_transaction tx;
       tx.operations.push_back(buyout_op);

@@ -1045,7 +1045,7 @@ vector<pledge_balance_object> database_api_impl::get_account_core_asset_pledge(a
    while (itr_mining != idx.end() && itr_mining->pledge_account == account_uid)
    {
       pledge_objs.emplace_back(_db.get<pledge_balance_object>(itr_mining->pledge_id));
-      itr_mining++;
+      ++itr_mining;
    }
 
    return pledge_objs;
@@ -1547,13 +1547,14 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
       const auto& idx = _db.get_index_type<score_index>().indices().get<by_period_sequence>();
       auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence, lower_bound_score));
 
-      while (itr_begin != idx.end() && count < limit
+      while (count < limit
          && itr_begin->platform == platform && itr_begin->poster == poster_uid
          && itr_begin->post_pid == post_pid &&itr_begin->period_sequence == dpo.current_active_post_sequence)
       {
          result.push_back(*itr_begin);
-         ++itr_begin;
          ++count;
+         if (itr_begin == idx.begin()) break;
+         --itr_begin;
       }
    }
    else{

@@ -328,6 +328,7 @@ struct database_fixture {
       account_uid_type poster,
       post_pid_type    post_pid,
       account_uid_type receiptor_account,
+      optional<account_uid_type> sign_platform,
       flat_set<fc::ecc::private_key> sign_keys);
 
    void create_license(account_uid_type platform,

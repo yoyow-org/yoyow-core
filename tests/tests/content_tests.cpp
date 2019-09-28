@@ -317,6 +317,8 @@ BOOST_AUTO_TEST_CASE(reward_test)
          add_csaf_for_account(a.first, 10000);
       add_csaf_for_account(u_9000_id, 10000);
 
+
+      generate_blocks(HARDFORK_0_4_TIME,true);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
       create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", { u_9000_private_key });
       account_auth_platform({ u_1001_private_key }, u_1001_id, u_9000_id, 10000 * prec, account_auth_platform_object::Platform_Permission_Forward |
@@ -342,8 +344,9 @@ BOOST_AUTO_TEST_CASE(reward_test)
          reward_post(a.first, u_9000_id, u_1001_id, 1, _core(1000), { a.second });
       }
 
+      auto dpo = db.get_dynamic_global_properties();
       const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 1, 1));
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, dpo.current_active_post_sequence, 1));
       BOOST_CHECK(apt_itr != apt_idx.end());
       auto active_post = *apt_itr;
       BOOST_CHECK(active_post.total_rewards.find(GRAPHENE_CORE_ASSET_AID) != active_post.total_rewards.end());
@@ -360,7 +363,7 @@ BOOST_AUTO_TEST_CASE(reward_test)
       BOOST_CHECK(iter_reward2->second == 10 * 750 * prec);
 
       const platform_object& platform = db.get_platform_by_owner(u_9000_id);
-      auto iter_profit = platform.period_profits.find(1);
+      auto iter_profit = platform.period_profits.find(dpo.current_active_post_sequence);
       BOOST_CHECK(iter_profit != platform.period_profits.end());
       auto iter_reward_profit = iter_profit->second.rewards_profits.find(GRAPHENE_CORE_ASSET_AID);
       BOOST_CHECK(iter_reward_profit != iter_profit->second.rewards_profits.end());
@@ -1132,6 +1135,7 @@ BOOST_AUTO_TEST_CASE(buyout_test)
       transfer_extension({ u_1000_private_key }, u_1000_id, u_1000_id, _core(10000), "", true, false);
       transfer_extension({ u_2000_private_key }, u_2000_id, u_2000_id, _core(10000), "", true, false);
 
+      generate_blocks(HARDFORK_0_4_TIME, true);
       flat_set<fc::ecc::private_key> sign_keys;
       sign_keys.insert(u_9000_private_key);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
@@ -1183,7 +1187,7 @@ BOOST_AUTO_TEST_CASE(buyout_test)
       ext.buyout_expiration = time_point_sec::maximum();
       update_post({ u_1000_private_key, u_9000_private_key }, u_9000_id, u_1000_id, 1, "", "", "", "", ext);
 
-      buyout_post(u_2000_id, u_9000_id, u_1000_id, 1, u_1000_id, sign_keys_2);
+      buyout_post(u_2000_id, u_9000_id, u_1000_id, 1, u_1000_id, u_9000_id, sign_keys_2);
 
       const post_object& post = db.get_post_by_platform(u_9000_id, u_1000_id, 1);
       auto iter1 = post.receiptors.find(u_1000_id);
@@ -1567,17 +1571,17 @@ BOOST_AUTO_TEST_CASE(csaf_compute_test)
       transfer(committee_account, u_1000_id, _core(3000000));
 
       //before_hardfork_01
-      generate_blocks(1000);
+      generate_blocks(100);
       collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
       //debug in funs : _apply_block and compute_coin_seconds_earned
 
       //after_hardfork_04
-      generate_blocks(28800);
+      generate_blocks(HARDFORK_0_4_TIME, true);
       collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
       //debug in funs : _apply_block and compute_coin_seconds_earned
 
       //after_hardfork_05
-      generate_blocks(28800);
+      generate_blocks(HARDFORK_0_5_TIME, true);
       collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
       //debug in funs : _apply_block and compute_coin_seconds_earned
       
