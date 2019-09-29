@@ -2440,4 +2440,28 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
    }
 }
 
+//check committee after refactoring
+BOOST_AUTO_TEST_CASE(committee_test)
+{
+   try{
+      ACTORS((1000)(2000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+      transfer(committee_account, u_1000_id, _core(600000));
+      transfer(committee_account, u_2000_id, _core(600000));
+
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+      
+      create_committee({ u_1000_private_key }, u_1000_id, "committee test1", 3000 * prec.value);
+      create_committee({ u_2000_private_key }, u_2000_id, "committee test1", 5000 * prec.value);
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
