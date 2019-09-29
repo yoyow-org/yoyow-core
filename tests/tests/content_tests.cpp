@@ -37,10 +37,14 @@ BOOST_AUTO_TEST_CASE(witness_csaf_test)
 
       transfer(committee_account, u_1000_id, _core(100000));
       transfer(committee_account, u_2000_id, _core(100000));
+      //collect_csaf_from_committee(u_1000_id, 100);
+      //collect_csaf_from_committee(u_2000_id, 100);
+      
       const witness_object& witness1 = create_witness(u_1000_id, u_1000_private_key, _core(10000));
       const witness_object& witness2 = create_witness(u_2000_id, u_2000_private_key, _core(10000));
 
 
+      generate_blocks(HARDFORK_0_4_TIME, true);
       //###############################  before reduce witness csaf on hardfork_4_time
 
       collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
@@ -162,6 +166,7 @@ BOOST_AUTO_TEST_CASE(update_post_test)
 
       add_csaf_for_account(u_1001_id, 10000);
       add_csaf_for_account(u_9000_id, 10000);
+      generate_blocks(HARDFORK_0_4_TIME, true);
 
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
       account_auth_platform({ u_1001_private_key }, u_1001_id, u_9000_id, 1000 * prec, account_auth_platform_object::Platform_Permission_Forward |
@@ -235,6 +240,7 @@ BOOST_AUTO_TEST_CASE(score_test)
       for (auto a : score_map)
          add_csaf_for_account(a.first, 10000);
       add_csaf_for_account(u_9000_id, 10000);
+      generate_blocks(HARDFORK_0_4_TIME, true);
 
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
       create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", { u_9000_private_key });
@@ -261,8 +267,9 @@ BOOST_AUTO_TEST_CASE(score_test)
          score_a_post({ a.second }, a.first, u_9000_id, u_1001_id, 1, 5, 10);
       }
 
+      auto dpo = db.get_dynamic_global_properties();
       const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, 1, 1));
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1001_id, dpo.current_active_post_sequence, 1));
       BOOST_CHECK(apt_itr != apt_idx.end());
       auto active_post = *apt_itr;
       BOOST_CHECK(active_post.total_csaf == 10 * 10);
@@ -422,6 +429,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       for (int i = 1; i < 5; ++i)
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
       generate_blocks(102);
+      generate_blocks(HARDFORK_0_5_TIME, true);
 
       collect_csaf_from_committee(u_9000_id, 1000);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
@@ -711,6 +719,7 @@ BOOST_AUTO_TEST_CASE(transfer_extension_test)
       BOOST_CHECK(ant1001_2.prepaid == 1000 * prec);
       BOOST_CHECK(ant1000_3.prepaid == 0);
 
+      generate_blocks(HARDFORK_0_4_TIME, true);
       account_auth_platform({ u_2000_private_key }, u_2000_id, u_9000_id, 1000 * prec, account_auth_platform_object::Platform_Permission_Forward |
          account_auth_platform_object::Platform_Permission_Liked |
          account_auth_platform_object::Platform_Permission_Buyout |
@@ -748,6 +757,7 @@ BOOST_AUTO_TEST_CASE(account_auth_platform_test)
       flat_set<fc::ecc::private_key> sign_keys;
       sign_keys.insert(u_9000_private_key);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+      generate_blocks(HARDFORK_0_4_TIME, true);
 
       flat_set<fc::ecc::private_key> sign_keys1;
       sign_keys1.insert(u_1000_private_key);
@@ -804,6 +814,7 @@ BOOST_AUTO_TEST_CASE(license_test)
       flat_set<fc::ecc::private_key> sign_keys;
       sign_keys.insert(u_9000_private_key);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+      generate_blocks(HARDFORK_0_4_TIME, true);
 
       create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
 
@@ -837,6 +848,7 @@ BOOST_AUTO_TEST_CASE(post_test)
       flat_set<fc::ecc::private_key> sign_keys;
       sign_keys.insert(u_9000_private_key);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+      generate_blocks(HARDFORK_0_4_TIME, true);
       create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
 
       flat_set<fc::ecc::private_key> sign_keys1;
@@ -917,6 +929,7 @@ BOOST_AUTO_TEST_CASE(comment_test)
       flat_set<fc::ecc::private_key> sign_keys;
       sign_keys.insert(u_9000_private_key);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
+      generate_blocks(HARDFORK_0_4_TIME, true);
       create_license(u_9000_id, 6, "999999999", "license title", "license body", "extra", sign_keys);
 
       flat_set<fc::ecc::private_key> sign_keys1;
@@ -1008,6 +1021,7 @@ BOOST_AUTO_TEST_CASE(forward_test)
       transfer_extension({ u_1000_private_key }, u_1000_id, u_1000_id, _core(10000), "", true, false);
       transfer_extension({ u_2000_private_key }, u_2000_id, u_2000_id, _core(10000), "", true, false);
 
+      generate_blocks(HARDFORK_0_4_TIME, true);
       flat_set<fc::ecc::private_key> sign_keys;
       sign_keys.insert(u_9000_private_key);
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", sign_keys);
@@ -1056,6 +1070,9 @@ BOOST_AUTO_TEST_CASE(forward_test)
       create_post(sign_keys_1, u_9000_id, u_1000_id, "6666666", "document name", "document body", "extra", optional<account_uid_type>(), optional<account_uid_type>(), optional<post_pid_type>(), extension);
 
       extension.post_type = post_operation::Post_Type_forward_And_Modify;
+      if (do_by_platform){
+         extension.sign_platform = u_9001_id;
+      }
       create_post(sign_keys_2, u_9001_id, u_2000_id, "9999999", "new titile", "new body", "extra", u_9000_id, u_1000_id, 1, extension);
 
       const post_object& forward_post = db.get_post_by_platform(u_9001_id, u_2000_id, 1);
@@ -1093,8 +1110,9 @@ BOOST_AUTO_TEST_CASE(forward_test)
          BOOST_CHECK(auth_data.get_auth_platform_usable_prepaid(sobj2.prepaid) == 0);
       }
 
+      auto dpo = db.get_dynamic_global_properties();
       const auto& apt_idx = db.get_index_type<active_post_index>().indices().get<by_post_pid>();
-      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1000_id, 1, 1));
+      auto apt_itr = apt_idx.find(std::make_tuple(u_9000_id, u_1000_id, dpo.current_active_post_sequence, 1));
       BOOST_CHECK(apt_itr != apt_idx.end());
       auto active_post = *apt_itr;
       BOOST_CHECK(active_post.forward_award == 10000 * prec);
@@ -1106,7 +1124,7 @@ BOOST_AUTO_TEST_CASE(forward_test)
       BOOST_CHECK(iter_receiptor2->second.forward == 2500 * prec);
 
       const platform_object& platform = db.get_platform_by_owner(u_9000_id);
-      auto iter_profit = platform.period_profits.find(1);
+      auto iter_profit = platform.period_profits.find(dpo.current_active_post_sequence);
       BOOST_CHECK(iter_profit != platform.period_profits.end());
       BOOST_CHECK(iter_profit->second.foward_profits == 2500 * prec);
    }
@@ -1242,45 +1260,50 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       add_csaf_for_account(u_3000_id, 10000);
       add_csaf_for_account(u_4000_id, 10000);
       add_csaf_for_account(u_9000_id, 10000);
+      generate_blocks(HARDFORK_0_4_TIME, true);
 
       create_platform(u_9000_id, "platform", _core(10000), "www.123456789.com", "", { u_9000_private_key });
       create_advertising({ u_9000_private_key }, u_9000_id, "this is a test", share_type(100000000), 100000);
       generate_blocks(10);
+      uint32_t unit_time = 100000;
       const auto& idx = db.get_index_type<advertising_index>().indices().get<by_advertising_platform>();
       const auto& obj = *(idx.begin());
       BOOST_CHECK(obj.description == "this is a test");
-      BOOST_CHECK(obj.unit_time == 100000);
+      BOOST_CHECK(obj.unit_time == unit_time);
       BOOST_CHECK(obj.unit_price.value == 100000000);
 
-      buy_advertising({ u_1000_private_key }, u_1000_id, u_9000_id, 1, time_point_sec(1551752731), 2, "u_1000", "");
-      buy_advertising({ u_2000_private_key }, u_2000_id, u_9000_id, 1, time_point_sec(1551752731), 2, "u_2000", "");
-      buy_advertising({ u_3000_private_key }, u_3000_id, u_9000_id, 1, time_point_sec(1551752731), 2, "u_3000", "");
-      buy_advertising({ u_4000_private_key }, u_4000_id, u_9000_id, 1, time_point_sec(1677911410), 2, "u_4000", "");
+      time_point_sec now_time = db.head_block_time();
+      time_point_sec time1 = now_time + 300;
+      time_point_sec time2 = time1 + 2 * unit_time + 300;
+      buy_advertising({ u_1000_private_key }, u_1000_id, u_9000_id, 1, time1, 2, "u_1000", "");
+      buy_advertising({ u_2000_private_key }, u_2000_id, u_9000_id, 1, time1, 2, "u_2000", "");
+      buy_advertising({ u_3000_private_key }, u_3000_id, u_9000_id, 1, time1, 2, "u_3000", "");
+      buy_advertising({ u_4000_private_key }, u_4000_id, u_9000_id, 1, time2, 2, "u_4000", "");
 
       const auto& idx_order = db.get_index_type<advertising_order_index>().indices().get<by_advertising_user_id>();
       auto itr1 = idx_order.lower_bound(u_1000_id);
       BOOST_CHECK(itr1 != idx_order.end());
       BOOST_CHECK(itr1->user == u_1000_id);
       BOOST_CHECK(itr1->released_balance == 100000000 * 2);
-      BOOST_CHECK(itr1->start_time == time_point_sec(1551752731));
+      BOOST_CHECK(itr1->start_time == time1);
 
       auto itr2 = idx_order.lower_bound(u_2000_id);
       BOOST_CHECK(itr2 != idx_order.end());
       BOOST_CHECK(itr2->user == u_2000_id);
       BOOST_CHECK(itr2->released_balance == 100000000 * 2);
-      BOOST_CHECK(itr2->start_time == time_point_sec(1551752731));
+      BOOST_CHECK(itr2->start_time == time1);
 
       auto itr3 = idx_order.lower_bound(u_3000_id);
       BOOST_CHECK(itr3 != idx_order.end());
       BOOST_CHECK(itr3->user == u_3000_id);
       BOOST_CHECK(itr3->released_balance == 100000000 * 2);
-      BOOST_CHECK(itr3->start_time == time_point_sec(1551752731));
+      BOOST_CHECK(itr3->start_time == time1);
 
       auto itr4 = idx_order.lower_bound(u_4000_id);
       BOOST_CHECK(itr4 != idx_order.end());
       BOOST_CHECK(itr4->user == u_4000_id);
       BOOST_CHECK(itr4->released_balance == 100000000 * 2);
-      BOOST_CHECK(itr4->start_time == time_point_sec(1677911410));
+      BOOST_CHECK(itr4->start_time == time2);
 
       const auto& user1 = db.get_account_statistics_by_uid(u_1000_id);
       BOOST_CHECK(user1.core_balance == 8000 * prec);
@@ -1299,7 +1322,7 @@ BOOST_AUTO_TEST_CASE(advertising_test)
       BOOST_CHECK(itr6 != idx_ordered.end());
       BOOST_CHECK(itr6->user == u_1000_id);
       BOOST_CHECK(itr6->released_balance == 2000 * prec);
-      BOOST_CHECK(itr6->start_time == time_point_sec(1551752731));
+      BOOST_CHECK(itr6->start_time == time1);
 
       confirm_advertising({ u_9000_private_key }, u_9000_id, obj.advertising_aid, 4, false);
 
@@ -1315,7 +1338,7 @@ BOOST_AUTO_TEST_CASE(advertising_test)
 
 
       BOOST_CHECK(obj.description == "this is advertising test");
-      BOOST_CHECK(obj.unit_time == 100000);
+      BOOST_CHECK(obj.unit_time == unit_time);
       BOOST_CHECK(obj.unit_price.value == 200000000);
 
       const auto& idx_by_clear_time = db.get_index_type<advertising_order_index>().indices().get<by_clear_time>();
@@ -1345,9 +1368,10 @@ BOOST_AUTO_TEST_CASE(custom_vote_test)
       add_csaf_for_account(u_3000_id, 10000);
       add_csaf_for_account(u_4000_id, 10000);
       add_csaf_for_account(u_9000_id, 10000);
+      generate_blocks(HARDFORK_0_4_TIME, true);
 
 
-      create_custom_vote({ u_9000_private_key }, u_9000_id, 1, "title", "description", time_point_sec(1560096000),
+      create_custom_vote({ u_9000_private_key }, u_9000_id, 1, "title", "description", db.head_block_time() + 100000,
          0, share_type(1000000), 1, 3, { "aa", "bb", "cc", "dd" });
 
 
@@ -1360,7 +1384,7 @@ BOOST_AUTO_TEST_CASE(custom_vote_test)
       BOOST_CHECK(obj.vote_vid == 1);
       BOOST_CHECK(obj.title == "title");
       BOOST_CHECK(obj.description == "description");
-      BOOST_CHECK(obj.vote_expired_time == time_point_sec(1560096000));
+      BOOST_CHECK(obj.vote_expired_time == db.head_block_time() + 100000);
       BOOST_CHECK(obj.required_asset_amount.value == 1000000);
       BOOST_CHECK(obj.vote_asset_id == 0);
       BOOST_CHECK(obj.minimum_selected_items == 1);
@@ -1426,6 +1450,7 @@ BOOST_AUTO_TEST_CASE(balance_lock_for_feepoint_test)
       transfer(committee_account, u_2000_id, _core(10000));
       add_csaf_for_account(u_1000_id, 10000);
       add_csaf_for_account(u_2000_id, 10000);
+      generate_blocks(HARDFORK_0_5_TIME, true);
 
 
       balance_lock_update({ u_1000_private_key }, u_1000_id, 5000 * prec);
@@ -1534,7 +1559,7 @@ BOOST_AUTO_TEST_CASE(total_witness_pledge_test)
 
       update_witness({ u_1000_private_key }, u_1000_id, optional<public_key_type>(), _core(15000), optional<string>());
       update_witness({ u_2000_private_key }, u_2000_id, optional<public_key_type>(), _core(15000), optional<string>());
-      generate_blocks(28800);
+      generate_blocks(1);
 
       const dynamic_global_property_object dpo1 = db.get_dynamic_global_properties();
       BOOST_CHECK(dpo1.total_witness_pledge == 60000 * prec);
@@ -1606,7 +1631,7 @@ BOOST_AUTO_TEST_CASE(csaf_lease_test)
       add_csaf_for_account(u_1000_id, 10000);
       add_csaf_for_account(u_2000_id, 10000);
 
-      csaf_lease({ u_1000_private_key }, u_1000_id, u_2000_id, 15000, time_point_sec(1562224400));
+      csaf_lease({ u_1000_private_key }, u_1000_id, u_2000_id, 15000, db.head_block_time() + 10000);
       const _account_statistics_object ant_1000 = db.get_account_statistics_by_uid(u_1000_id);
       const _account_statistics_object ant_2000 = db.get_account_statistics_by_uid(u_2000_id);
       BOOST_CHECK(ant_1000.core_leased_out == 15000*prec);
@@ -1644,6 +1669,7 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
       add_csaf_for_account(u_1000_id, 10000);
       add_csaf_for_account(u_2000_id, 10000);
       add_csaf_for_account(u_3000_id, 10000);
+      generate_blocks(HARDFORK_0_5_TIME, true);
       
       auto registrar_percent=60*GRAPHENE_1_PERCENT;
       auto referrer_percent = 40*GRAPHENE_1_PERCENT;
@@ -1877,6 +1903,7 @@ BOOST_AUTO_TEST_CASE(limit_order_test2)
       add_csaf_for_account(u_2000_id, 10000);
       add_csaf_for_account(u_3000_id, 10000);
       add_csaf_for_account(u_4000_id, 10000);
+      generate_blocks(HARDFORK_0_5_TIME, true);
 
       auto market_fee_percent = 1 * GRAPHENE_1_PERCENT;
       auto market_reward_percent = 50 * GRAPHENE_1_PERCENT;
@@ -2031,6 +2058,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
 
          add_csaf_for_account(u_1000_id, 10000);
          add_csaf_for_account(u_2000_id, 10000);
+         generate_blocks(HARDFORK_0_5_TIME, true);
 
          //test create witness extension
          graphene::chain::pledge_mining::ext ext;
@@ -2241,6 +2269,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
 
          add_csaf_for_account(u_1000_id, 10000);
          add_csaf_for_account(u_2000_id, 10000);
+         generate_blocks(HARDFORK_0_5_TIME, true);
 
          graphene::chain::pledge_mining::ext ext;
          ext.can_pledge = true;
@@ -2299,6 +2328,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_3)
 
       add_csaf_for_account(u_1000_id, 10000);
       add_csaf_for_account(u_2000_id, 10000);
+      generate_blocks(HARDFORK_0_5_TIME, true);
 
       graphene::chain::pledge_mining::ext ext;
       ext.can_pledge = true;
@@ -2388,6 +2418,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
 
       add_csaf_for_account(u_1000_id, 10000);
       add_csaf_for_account(u_2000_id, 10000);
+      generate_blocks(HARDFORK_0_5_TIME, true);
 
       graphene::chain::pledge_mining::ext ext;
       ext.can_pledge = true;

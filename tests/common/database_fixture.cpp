@@ -25,7 +25,8 @@
 #include <boost/program_options.hpp>
 
 #include <graphene/account_history/account_history_plugin.hpp>
-//#include <graphene/market_history/market_history_plugin.hpp>
+#include <graphene/market_history/market_history_plugin.hpp>
+#include <graphene/non_consensus/non_consensus_plugin.hpp>
 
 #include <graphene/db/simple_index.hpp>
 
@@ -50,7 +51,7 @@
 
 using namespace graphene::chain::test;
 
-uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1562208756;// 1520611200;
+uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1559318400;// 1520611200;
 
 namespace graphene { namespace chain {
 
@@ -72,6 +73,7 @@ database_fixture::database_fixture()
             std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
       }
       auto ahplugin = app.register_plugin<graphene::account_history::account_history_plugin>();
+      auto nonlugin = app.register_plugin<graphene::non_consensus::non_consensus_plugin>();
       //   auto mhplugin = app.register_plugin<graphene::market_history::market_history_plugin>();
       init_account_pub_key = init_account_priv_key.get_public_key();
 
@@ -105,10 +107,19 @@ database_fixture::database_fixture()
       // app.initialize();
       ahplugin->plugin_set_app(&app);
       ahplugin->plugin_initialize(options);
+
+      nonlugin->plugin_set_app(&app);
+      std::vector<string> vtr;
+      vtr.emplace_back(string("customer_vote"));
+      options.emplace("non_consensus_indexs", boost::program_options::variable_value(std::vector<string>(vtr), false));
+      nonlugin->plugin_initialize(options);
+
+
       //mhplugin->plugin_set_app(&app);
       //mhplugin->plugin_initialize(options);
 
       ahplugin->plugin_startup();
+      nonlugin->plugin_startup();
       //mhplugin->plugin_startup();
 
       db.adjust_balance(GRAPHENE_COMMITTEE_ACCOUNT_UID, db.get_balance(GRAPHENE_NULL_ACCOUNT_UID, GRAPHENE_CORE_ASSET_AID));
