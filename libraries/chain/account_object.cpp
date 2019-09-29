@@ -48,6 +48,14 @@ void account_balance_object::adjust_balance(const asset& delta)
    balance += delta.amount;
 }
 
+std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_seconds_earned_fix(const uint64_t window, const fc::time_point_sec now, const database& db, uint8_t enable_hard_fork_type)const
+{
+   if (enable_hard_fork_type < ENABLE_HEAD_FORK_05)
+      enable_hard_fork_type = ENABLE_HEAD_FORK_NONE;
+   return compute_coin_seconds_earned(window,now,db, enable_hard_fork_type);
+}
+
+
 std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)const
 {
    fc::time_point_sec now_rounded((now.sec_since_epoch() / 60) * 60);

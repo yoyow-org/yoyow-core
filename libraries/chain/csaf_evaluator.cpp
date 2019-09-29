@@ -29,7 +29,7 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
               "Time should not be earlier than 5 minutes before head block time" );
 
    const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-   available_coin_seconds = from_stats->compute_coin_seconds_earned(csaf_window, op.time, d, dpo.enabled_hardfork_version).first;
+   available_coin_seconds = from_stats->compute_coin_seconds_earned_fix(csaf_window, op.time, d, dpo.enabled_hardfork_version).first;
 
    collecting_coin_seconds = fc::uint128_t(op.amount.amount.value) * global_params.csaf_rate;
 
