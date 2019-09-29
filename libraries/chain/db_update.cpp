@@ -2081,8 +2081,8 @@ void database::process_content_platform_awards()
          share_type total_csaf_amount = 0;
          share_type total_effective_csaf_amount = 0;
          map<account_uid_type, share_type> platform_csaf_amount;
-         //<active post object, post effective csaf, is or not positive>
-         vector<std::tuple<active_post_object*, share_type, bool>> post_effective_casf;
+         //<active post object, post effective csaf, (csaf * score / 5)*modulus>
+         vector<std::tuple<active_post_object*, share_type, share_type>> post_effective_casf;
 
          const auto& apt_idx = get_index_type<active_post_index>().indices().get<by_period_sequence>();
          auto apt_itr = apt_idx.lower_bound(dpo.current_active_post_sequence);
@@ -2105,10 +2105,7 @@ void database::process_content_platform_awards()
                if (csaf > 0)
                {
                   total_effective_csaf_amount += csaf;
-                  bool is_post_positive = true;
-                  if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
-                     is_post_positive = approval_amount >= 0;
-                  post_effective_casf.emplace_back(std::make_tuple((active_post_object*)&(*apt_itr), csaf, is_post_positive));
+                  post_effective_casf.emplace_back(std::make_tuple((active_post_object*)&(*apt_itr), csaf, approval_amount));
                }
             }
 
@@ -2137,7 +2134,7 @@ void database::process_content_platform_awards()
                   total_effective_csaf_amount.value).to_uint64();
                share_type score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
                share_type receiptor_earned = 0;
-               if (std::get<2>(*itr))
+               if (std::get<2>(*itr) >= 0)
                   receiptor_earned = post_earned - score_earned;
                else
                   receiptor_earned = ((uint128_t)((post_earned - score_earned).value)*params.receiptor_award_modulus / GRAPHENE_100_PERCENT).to_uint64();
@@ -2177,7 +2174,7 @@ void database::process_content_platform_awards()
 
                modify(*(std::get<0>(*itr)), [&](active_post_object& act)
                {
-                  act.positive_win = std::get<2>(*itr);
+                  act.positive_win = std::get<2>(*itr) >= 0;
                   act.post_award = receiptor_earned;
                   for (const auto& r : receiptor)
                      act.insert_receiptor(r.first, r.second);
@@ -2193,7 +2190,7 @@ void database::process_content_platform_awards()
                {
                   uint128_t effective_csaf_per_account = (uint128_t)std::get<1>(e).value;
                   share_type to_add = 0;
-                  if (!std::get<2>(*itr) && !std::get<2>(e))
+                  if (std::get<2>(*itr) < 0 && !std::get<2>(e))
                      to_add = (effective_csaf_per_account * score_earned.value * params.disapprove_award_modulus /
                      (total_award_csaf * GRAPHENE_100_PERCENT)).to_uint64();
                   else
