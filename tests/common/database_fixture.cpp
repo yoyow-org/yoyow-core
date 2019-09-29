@@ -1862,6 +1862,53 @@ void database_fixture::update_witness(flat_set<fc::ecc::private_key> sign_keys,
    } FC_CAPTURE_AND_RETHROW((account)(new_signing_key)(new_pledge)(new_url))
 }
 
+void database_fixture::create_committee(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type owner_account,
+   string url,
+   share_type pledge)
+{
+   try {
+      committee_member_create_operation committee_create_op;
+      committee_create_op.account = owner_account;
+      committee_create_op.url = url;
+      committee_create_op.pledge = asset(pledge);
+
+      signed_transaction tx;
+      tx.operations.push_back(committee_create_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(owner_account)(url)(pledge))
+}
+
+void database_fixture::update_committee(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type owner_account,
+   share_type pledge)
+{
+   try {
+      committee_member_update_operation committee_update_op;
+      committee_update_op.account = owner_account;
+      committee_update_op.new_pledge = asset(pledge);
+
+      signed_transaction tx;
+      tx.operations.push_back(committee_update_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((sign_keys)(owner_account)(pledge))
+}
+
+
 void database_fixture::create_asset(flat_set<fc::ecc::private_key> sign_keys,
    account_uid_type issuer,
    string           symbol,

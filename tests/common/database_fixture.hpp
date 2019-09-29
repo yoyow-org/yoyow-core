@@ -489,6 +489,15 @@ struct database_fixture {
       optional<string> new_url
       );
 
+   void create_committee(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type owner_account,
+      string url,
+      share_type pledge);
+
+   void update_committee(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type owner_account,
+      share_type pledge);
+
    void create_asset(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type issuer,
       string           symbol,
