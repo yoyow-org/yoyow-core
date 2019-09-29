@@ -337,6 +337,15 @@ void database_fixture::generate_blocks(uint32_t block_count)
       generate_block();
 }
 
+void database_fixture::generate_jump_blocks(uint32_t block_count)
+{
+   FC_ASSERT(block_count > 0);
+   generate_block();
+   time_point_sec now = db.head_block_time();
+   now += (block_count-1) * 3;
+   generate_blocks(now, true);
+}
+
 void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_intermediate_blocks, uint32_t skip)
 {
    if (miss_intermediate_blocks)
