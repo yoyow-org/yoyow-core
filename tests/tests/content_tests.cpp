@@ -402,12 +402,16 @@ BOOST_AUTO_TEST_CASE(reward_test)
 BOOST_AUTO_TEST_CASE(post_platform_reward_test)
 {
    try{
-      ACTORS((1001)(9000));
+      ACTORS((1001)(1002)(9000));
 
       flat_map<account_uid_type, fc::ecc::private_key> score_map1;
       flat_map<account_uid_type, fc::ecc::private_key> score_map2;
+      flat_map<account_uid_type, fc::ecc::private_key> score_map3;
+      flat_map<account_uid_type, fc::ecc::private_key> score_map4;
       actor(1003, 20, score_map1);
       actor(2003, 20, score_map2);
+      actor(3003, 20, score_map3);
+      actor(4003, 20, score_map4);
 
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
@@ -419,7 +423,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
       transfer(committee_account, u_9000_id, _core(100000));
       //to remain_budget_pool can reward enough
-      generate_block(~0,init_account_priv_key,200000);
+      generate_block(~0, init_account_priv_key, 200000);
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
       committee_update_global_content_parameter_item_type item;
@@ -441,10 +445,22 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          account_auth_platform_object::Platform_Permission_Reward |
          account_auth_platform_object::Platform_Permission_Post |
          account_auth_platform_object::Platform_Permission_Content_Update);
+      account_auth_platform({ u_1002_private_key }, u_1002_id, u_9000_id, 10000 * prec, account_auth_platform_object::Platform_Permission_Forward |
+         account_auth_platform_object::Platform_Permission_Liked |
+         account_auth_platform_object::Platform_Permission_Buyout |
+         account_auth_platform_object::Platform_Permission_Comment |
+         account_auth_platform_object::Platform_Permission_Reward |
+         account_auth_platform_object::Platform_Permission_Post |
+         account_auth_platform_object::Platform_Permission_Content_Update);
 
       post_operation::ext extensions;
       extensions.license_lid = 1;
       create_post({ u_1001_private_key, u_9000_private_key }, u_9000_id, u_1001_id, "", "", "", "",
+         optional<account_uid_type>(),
+         optional<account_uid_type>(),
+         optional<post_pid_type>(),
+         extensions);
+      create_post({ u_1002_private_key, u_9000_private_key }, u_9000_id, u_1002_id, "", "", "", "",
          optional<account_uid_type>(),
          optional<account_uid_type>(),
          optional<post_pid_type>(),
@@ -462,20 +478,29 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       }
       for (auto a : score_map2)
       {
-         //transfer(committee_account, a.first, _core(100000));
          collect_csaf_from_committee(a.first, 100);
          account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
-         //account_manage(GRAPHENE_NULL_ACCOUNT_UID, a.first, options);
+      }
+      for (auto a : score_map3)
+      {
+         collect_csaf_from_committee(a.first, 100);
+         account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
+      }
+      for (auto a : score_map4)
+      {
+         collect_csaf_from_committee(a.first, 100);
+         account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
       }
 
+
+
+      //*************************************
+      // check  victory on the side of support
+      //*************************************
       for (auto a : score_map1)
-      {
          score_a_post({ a.second }, a.first, u_9000_id, u_1001_id, 1, 5, 50);
-      }
       for (auto a : score_map2)
-      {
          score_a_post({ a.second }, a.first, u_9000_id, u_1001_id, 1, -5, 10);
-      }
 
       generate_blocks(100);
 
@@ -533,12 +558,84 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       BOOST_CHECK(active_post_obj.positive_win == true);
       BOOST_CHECK(active_post_obj.receiptor_details.at(u_1001_id).post_award == poster_earned);
       BOOST_CHECK(active_post_obj.post_award == (receiptor_earned.convert_to<uint64_t>() + total_score_balance));
+
+
+      //*************************************
+      // check  victory on the opposing side
+      //*************************************
+      for (auto a : score_map3)
+         score_a_post({ a.second }, a.first, u_9000_id, u_1002_id, 1, 5, 50);
+      for (auto a : score_map4)
+         score_a_post({ a.second }, a.first, u_9000_id, u_1002_id, 1, -5, 55);
+
+      generate_blocks(100);
+      uint128_t award_average2 = (uint128_t)10000000000 * 300 / (86400 * 365);
+
+      uint128_t post_earned2 = award_average2;
+      uint128_t score_earned2 = post_earned2 * GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO / GRAPHENE_100_PERCENT;
+      uint128_t receiptor_earned2 = (post_earned2 - score_earned2) * 8000 / 10000;
+      uint64_t  poster_earned2 = (receiptor_earned2 * 7500 / 10000).convert_to<uint64_t>();
+      auto poster_act2 = db.get_account_statistics_by_uid(u_1002_id);
+      BOOST_CHECK(poster_act2.core_balance == poster_earned2);
+
+      vector<score_id_type> scores2;
+      for (auto a : score_map3)
+      {
+         auto score_id = db.get_score(u_9000_id, u_1002_id, 1, a.first).id;
+         scores2.push_back(score_id);
+      }
+      for (auto a : score_map4)
+      {
+         auto score_id = db.get_score(u_9000_id, u_1002_id, 1, a.first).id;
+         scores2.push_back(score_id);
+      }
+      auto result2 = get_effective_csaf(scores2, 50 * 20 + 20 * 55);
+      share_type total_score_balance2 = 0;
+      share_type total_reg_balance2 = 0;
+      for (auto a : std::get<0>(result2))
+      {
+         share_type balance = 0;
+         if (std::get<2>(a))
+            balance = (score_earned * std::get<1>(a).value / std::get<1>(result2).value).convert_to<uint64_t>();
+         else
+            balance = (score_earned * std::get<1>(a).value * 12000 / (std::get<1>(result2).value * 10000)).convert_to<uint64_t>();
+
+         auto score_act = db.get_account_statistics_by_uid(std::get<0>(a));
+         share_type to_reg = balance * 25 / 100;
+         share_type to_score = balance - to_reg;
+         total_score_balance2 += balance;
+         total_reg_balance2 += to_reg;
+         BOOST_CHECK(score_act.core_balance == to_score);
+      }
+
+      //check registar and referer balance
+      auto reg_act2 = db.get_account_statistics_by_uid(genesis_state.initial_accounts.at(0).uid);
+      BOOST_CHECK(reg_act2.uncollected_score_bonus == total_reg_balance + total_reg_balance2);
+
+      auto platform_act2 = db.get_account_statistics_by_uid(u_9000_id);
+      auto platform_core_balance2 = receiptor_earned2.convert_to<uint64_t>() - poster_earned2 + award_average2.convert_to<uint64_t>() + platform_core_balance;
+      BOOST_CHECK(platform_act2.core_balance == platform_core_balance2);
+
+      auto platform_obj2 = db.get_platform_by_owner(u_9000_id);
+      auto post_profit2 = receiptor_earned2.convert_to<uint64_t>() - poster_earned2;
+      auto iter_profit2 = platform_obj2.period_profits.rbegin();
+      BOOST_CHECK(iter_profit2->second.post_profits == post_profit2);
+      BOOST_CHECK(iter_profit2->second.platform_profits == award_average2.convert_to<uint64_t>());
+
+      const auto& apt_idx2 = db.get_index_type<active_post_index>().indices().get<by_id>();
+      auto itr = apt_idx2.begin();
+      itr++;
+      auto active_post_obj2 = *itr;
+      BOOST_CHECK(active_post_obj2.positive_win == false);
+      BOOST_CHECK(active_post_obj2.receiptor_details.at(u_1002_id).post_award == poster_earned2);
+      BOOST_CHECK(active_post_obj2.post_award == (receiptor_earned2.convert_to<uint64_t>() + total_score_balance2));
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
    }
 }
+
 
 //test api: process_platform_voted_awards()
 BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
