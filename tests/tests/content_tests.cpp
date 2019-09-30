@@ -2567,6 +2567,116 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
 }
 
 //check committee after refactoring
+BOOST_AUTO_TEST_CASE(witness_test)
+{
+   try{
+      ACTORS((1000)(2000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+      transfer(committee_account, u_1000_id, _core(1000000));
+      transfer(committee_account, u_2000_id, _core(1000000));
+
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+
+      graphene::chain::pledge_mining::ext ext;
+      ext.can_pledge = true;
+      ext.bonus_rate = 6000;
+
+      // check  hard fork 04
+      //*************************************
+      create_witness({ u_1000_private_key }, u_1000_id, "test pledge witness-1", 80000 * prec, u_1000_public_key, ext);
+      update_witness({ u_1000_private_key }, u_1000_id, optional<public_key_type>(), _core(50000), optional<string>());
+      generate_blocks(1);
+      const auto& user1 = db.get_account_statistics_by_uid(u_1000_id);
+      const auto& pledge_balance_obj1 = user1.pledge_balance_ids.at(pledge_balance_type::Witness)(db);
+      BOOST_CHECK(pledge_balance_obj1.pledge == 50000 * prec);
+      BOOST_CHECK(pledge_balance_obj1.total_releasing_pledge == 30000 * prec);
+      BOOST_CHECK(pledge_balance_obj1.releasing_pledges.size() == 1);
+      BOOST_CHECK(pledge_balance_obj1.releasing_pledges.begin()->first == db.head_block_num() + GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+
+      //check hardfork 04, release size is 1
+      update_witness({ u_1000_private_key }, u_1000_id, optional<public_key_type>(), _core(30000), optional<string>());
+      generate_blocks(1);
+      const auto& user1_1 = db.get_account_statistics_by_uid(u_1000_id);
+      const auto& pledge_balance_obj1_1 = user1_1.pledge_balance_ids.at(pledge_balance_type::Witness)(db);
+      BOOST_CHECK(pledge_balance_obj1_1.pledge == 30000 * prec);
+      BOOST_CHECK(pledge_balance_obj1_1.total_releasing_pledge == 50000 * prec);
+      BOOST_CHECK(pledge_balance_obj1_1.releasing_pledges.size() == 1);
+      BOOST_CHECK(pledge_balance_obj1_1.releasing_pledges.begin()->first == db.head_block_num() + GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+      //check clear release size
+      generate_blocks(GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY);
+      const auto& user1_2 = db.get_account_statistics_by_uid(u_1000_id);
+      const auto& pledge_balance_obj1_2 = user1_2.pledge_balance_ids.at(pledge_balance_type::Witness)(db);
+      BOOST_CHECK(pledge_balance_obj1_2.pledge == 30000 * prec);
+      BOOST_CHECK(pledge_balance_obj1_2.releasing_pledges.size() == 0);
+      BOOST_CHECK(pledge_balance_obj1_2.total_releasing_pledge == 0);
+
+
+      generate_blocks(HARDFORK_0_5_TIME, true);
+
+      //*************************************
+      // check  hard fork 05
+      //*************************************
+
+      create_witness({ u_2000_private_key }, u_2000_id, "test pledge witness-2", 50000 * prec, u_2000_public_key, ext);
+      //test create committee
+      const auto& user2 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj2 = user2.pledge_balance_ids.at(pledge_balance_type::Witness)(db);
+      BOOST_CHECK(pledge_balance_obj2.pledge == 50000 * prec);
+      BOOST_CHECK(pledge_balance_obj2.total_releasing_pledge == 0 * prec);
+      BOOST_CHECK(pledge_balance_obj2.releasing_pledges.size() == 0 * prec);
+
+      //test update committee
+      update_witness({ u_2000_private_key }, u_2000_id, optional<public_key_type>(), _core(30000), optional<string>());
+      generate_blocks(1);
+      const auto& user4 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj4 = user4.pledge_balance_ids.at(pledge_balance_type::Witness)(db);
+      BOOST_CHECK(pledge_balance_obj4.pledge == 30000 * prec);
+      BOOST_CHECK(pledge_balance_obj4.total_releasing_pledge == 20000 * prec);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.size() == 1);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.begin()->first == db.head_block_num() + GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.begin()->second == 20000 * prec);
+
+      //test new releasing
+      update_witness({ u_2000_private_key }, u_2000_id, optional<public_key_type>(), _core(20000), optional<string>());
+      generate_blocks(1);
+      const auto& user5 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj5 = user5.pledge_balance_ids.at(pledge_balance_type::Witness)(db);
+      BOOST_CHECK(pledge_balance_obj5.pledge == 20000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.total_releasing_pledge == 30000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.size() == 2);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->first == db.head_block_num() + GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->second == 10000 * prec);
+
+      //test reduce releasing
+      update_witness({ u_2000_private_key }, u_2000_id, optional<public_key_type>(), _core(25000), optional<string>());
+      generate_blocks(1);
+      const auto& user6 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj6 = user6.pledge_balance_ids.at(pledge_balance_type::Witness)(db);
+      BOOST_CHECK(pledge_balance_obj6.pledge == 25000 * prec);
+      BOOST_CHECK(pledge_balance_obj6.total_releasing_pledge == 25000 * prec);
+      BOOST_CHECK(pledge_balance_obj6.releasing_pledges.size() == 2);
+      BOOST_CHECK(pledge_balance_obj6.releasing_pledges.rbegin()->first == db.head_block_num() - 1 + GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj6.releasing_pledges.rbegin()->second == 5000 * prec);
+
+      generate_blocks(GRAPHENE_DEFAULT_WITNESS_PLEDGE_RELEASE_DELAY);
+      const auto& user7 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj7 = user7.pledge_balance_ids.at(pledge_balance_type::Witness)(db);
+      BOOST_CHECK(pledge_balance_obj7.pledge == 25000 * prec);
+      BOOST_CHECK(pledge_balance_obj7.releasing_pledges.size() == 0);
+      BOOST_CHECK(pledge_balance_obj7.total_releasing_pledge == 0);
+
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+//check committee after refactoring
 BOOST_AUTO_TEST_CASE(committee_test)
 {
    try{
@@ -2580,9 +2690,93 @@ BOOST_AUTO_TEST_CASE(committee_test)
 
       add_csaf_for_account(u_1000_id, 10000);
       add_csaf_for_account(u_2000_id, 10000);
-      
-      create_committee({ u_1000_private_key }, u_1000_id, "committee test1", 3000 * prec.value);
+
+
+      //*************************************
+      // check  hard fork 04
+      //*************************************
+      create_committee({ u_1000_private_key }, u_1000_id, "committee test1", 8000 * prec.value);
+      update_committee({ u_1000_private_key }, u_1000_id, 5000 * prec.value);
+      generate_blocks(1);
+      const auto& user1 = db.get_account_statistics_by_uid(u_1000_id);
+      const auto& pledge_balance_obj1 = user1.pledge_balance_ids.at(pledge_balance_type::Commitment)(db);
+      BOOST_CHECK(pledge_balance_obj1.pledge == 5000 * prec);
+      BOOST_CHECK(pledge_balance_obj1.total_releasing_pledge == 3000 * prec);
+      BOOST_CHECK(pledge_balance_obj1.releasing_pledges.size() == 1);
+      BOOST_CHECK(pledge_balance_obj1.releasing_pledges.begin()->first == db.head_block_num() + GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+
+      //check hardfork 04, release size is 1
+      update_committee({ u_1000_private_key }, u_1000_id, 3000 * prec.value);
+      generate_blocks(1);
+      const auto& user1_1 = db.get_account_statistics_by_uid(u_1000_id);
+      const auto& pledge_balance_obj1_1 = user1_1.pledge_balance_ids.at(pledge_balance_type::Commitment)(db);
+      BOOST_CHECK(pledge_balance_obj1_1.pledge == 3000 * prec);
+      BOOST_CHECK(pledge_balance_obj1_1.total_releasing_pledge == 5000 * prec);
+      BOOST_CHECK(pledge_balance_obj1_1.releasing_pledges.size() == 1);
+      BOOST_CHECK(pledge_balance_obj1_1.releasing_pledges.begin()->first == db.head_block_num() + GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+      //check clear release size
+      generate_blocks(GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+      const auto& user1_2 = db.get_account_statistics_by_uid(u_1000_id);
+      const auto& pledge_balance_obj1_2 = user1_2.pledge_balance_ids.at(pledge_balance_type::Commitment)(db);
+      BOOST_CHECK(pledge_balance_obj1_2.pledge == 3000 * prec);
+      BOOST_CHECK(pledge_balance_obj1_2.releasing_pledges.size() == 0);
+      BOOST_CHECK(pledge_balance_obj1_2.total_releasing_pledge == 0);
+
+
+      generate_blocks(HARDFORK_0_5_TIME, true);
+
+      //*************************************
+      // check  hard fork 05
+      //*************************************
+
       create_committee({ u_2000_private_key }, u_2000_id, "committee test1", 5000 * prec.value);
+      //test create committee
+      const auto& user2 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj2 = user2.pledge_balance_ids.at(pledge_balance_type::Commitment)(db);
+      BOOST_CHECK(pledge_balance_obj2.pledge == 5000 * prec);
+      BOOST_CHECK(pledge_balance_obj2.total_releasing_pledge == 0 * prec);
+      BOOST_CHECK(pledge_balance_obj2.releasing_pledges.size() == 0 * prec);
+
+      //test update committee
+      update_committee({ u_2000_private_key }, u_2000_id, 3000 * prec.value);
+      generate_blocks(1);
+      const auto& user4 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj4 = user4.pledge_balance_ids.at(pledge_balance_type::Commitment)(db);
+      BOOST_CHECK(pledge_balance_obj4.pledge == 3000 * prec);
+      BOOST_CHECK(pledge_balance_obj4.total_releasing_pledge == 2000 * prec);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.size() == 1);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.begin()->first == db.head_block_num() + GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj4.releasing_pledges.begin()->second == 2000 * prec);
+
+      //test new releasing
+      update_committee({ u_2000_private_key }, u_2000_id, 2000 * prec);
+      generate_blocks(1);
+      const auto& user5 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj5 = user5.pledge_balance_ids.at(pledge_balance_type::Commitment)(db);
+      BOOST_CHECK(pledge_balance_obj5.pledge == 2000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.total_releasing_pledge == 3000 * prec);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.size() == 2);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->first == db.head_block_num() + GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->second == 1000 * prec);
+
+      //test reduce releasing
+      update_committee({ u_2000_private_key }, u_2000_id, 2500 * prec);
+      generate_blocks(1);
+      const auto& user6 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj6 = user6.pledge_balance_ids.at(pledge_balance_type::Commitment)(db);
+      BOOST_CHECK(pledge_balance_obj6.pledge == 2500 * prec);
+      BOOST_CHECK(pledge_balance_obj6.total_releasing_pledge == 2500 * prec);
+      BOOST_CHECK(pledge_balance_obj6.releasing_pledges.size() == 2);
+      BOOST_CHECK(pledge_balance_obj6.releasing_pledges.rbegin()->first == db.head_block_num() - 1 + GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+      BOOST_CHECK(pledge_balance_obj6.releasing_pledges.rbegin()->second == 500 * prec);
+
+      generate_blocks(GRAPHENE_DEFAULT_COMMITTEE_MEMBER_PLEDGE_RELEASE_DELAY);
+      const auto& user7 = db.get_account_statistics_by_uid(u_2000_id);
+      const auto& pledge_balance_obj7 = user7.pledge_balance_ids.at(pledge_balance_type::Commitment)(db);
+      BOOST_CHECK(pledge_balance_obj7.pledge == 2500 * prec);
+      BOOST_CHECK(pledge_balance_obj7.releasing_pledges.size() == 0);
+      BOOST_CHECK(pledge_balance_obj7.total_releasing_pledge == 0);
+
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
