@@ -568,7 +568,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_1)
          score_a_post({ a.second }, a.first, u_300000_id, u_400001_id, 1, 5, 10);
       }
 
-      generate_blocks(block_num + 999);
+      generate_block(~0,init_account_priv_key,block_num + 999);
       auto start = fc::time_point::now();
       wlog("1 platform, 1 post/per platform, 20 0000 scores/per post, content award begin>>>>>>>>>>${num}", ("num", db.head_block_num()));
       generate_block();
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_2)
          }
       }
 
-      generate_blocks(block_num + 999);
+      generate_block(~0,init_account_priv_key,block_num + 999);
       wlog("1 platform, 20 0000 post/per platform, 20 0000 score/per post, content award test begin------${num}", ("num", db.head_block_num()));
       auto start = fc::time_point::now();
       generate_block();
@@ -740,7 +740,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_3)
          itr++;
       }
 
-      generate_blocks(block_num + 900);
+      generate_block(~0,init_account_priv_key,block_num + 900);
 
       wlog("10000 platforms, 20 0000 posts/per platform, 20 0000 scores/per post, content award begin........,${num}",("num", db.head_block_num()));
       auto start = fc::time_point::now();

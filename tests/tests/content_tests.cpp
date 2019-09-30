@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
       transfer(committee_account, u_9000_id, _core(100000));
       //to remain_budget_pool can reward enough
-      generate_blocks(200000);
+      generate_block(~0,init_account_priv_key,200000);
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
       committee_update_global_content_parameter_item_type item;
@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
 
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
-      generate_blocks(200000);
+      generate_block(~0,init_account_priv_key,200000);
 
       // Return number of core shares (times precision)
       auto _core = [&](int64_t x) -> asset
@@ -1503,7 +1503,7 @@ BOOST_AUTO_TEST_CASE(balance_lock_for_feepoint_test)
       BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->first == db.head_block_num() + GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
       BOOST_CHECK(pledge_balance_obj5.releasing_pledges.rbegin()->second == 1000 * prec);
 
-      generate_blocks(GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
+      generate_block(~0,init_account_priv_key,GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY);
       generate_block(5);
 
       const auto& user6 = db.get_account_statistics_by_uid(u_1000_id);
@@ -1571,8 +1571,7 @@ BOOST_AUTO_TEST_CASE(total_witness_pledge_test)
       BOOST_CHECK(dpo2.total_witness_pledge == 65000 * prec);
       BOOST_CHECK(dpo2.resign_witness_pledge_before_05 == (-15000)*prec);
 
-      generate_blocks(28800);
-
+      generate_block(~0,init_account_priv_key,28800);
       const dynamic_global_property_object dpo3 = db.get_dynamic_global_properties();
       BOOST_CHECK(dpo3.total_witness_pledge == 65000 * prec);
       BOOST_CHECK(dpo3.resign_witness_pledge_before_05 == (-15000)*prec);
@@ -1637,7 +1636,7 @@ BOOST_AUTO_TEST_CASE(csaf_lease_test)
       BOOST_CHECK(ant_1000.core_leased_out == 15000*prec);
       BOOST_CHECK(ant_2000.core_leased_in == 15000 * prec);
 
-      generate_blocks(28800);
+      generate_block(~0,init_account_priv_key,200000);
       const _account_statistics_object ant_1000a = db.get_account_statistics_by_uid(u_1000_id);
       const _account_statistics_object ant_2000a = db.get_account_statistics_by_uid(u_2000_id);
       BOOST_CHECK(ant_1000a.core_leased_out == 0 * prec);
@@ -2088,7 +2087,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
          {
             auto wit = db.get_witness_by_uid(u_1000_id);
             auto need_block_num = wit.last_update_bonus_block_num + 10000 - db.head_block_num();
-            generate_blocks(need_block_num);
+            generate_block(~0,init_account_priv_key,need_block_num);
             wit = db.get_witness_by_uid(u_1000_id);
             const dynamic_global_property_object& dpo = db.get_dynamic_global_properties();
 
@@ -2146,7 +2145,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
          {
             auto wit = db.get_witness_by_uid(u_1000_id);
             auto need_block_num = wit.last_update_bonus_block_num + 10000 - db.head_block_num();
-            generate_blocks(need_block_num);
+            generate_block(~0,init_account_priv_key,need_block_num);
             wit = db.get_witness_by_uid(u_1000_id);
             const dynamic_global_property_object& dpo = db.get_dynamic_global_properties();
 
@@ -2199,7 +2198,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
          auto witness_uncollet_pay = db.get_account_statistics_by_uid(u_1000_id).uncollected_witness_pay;
 
          auto last_account2_3001_bonus = db.get_account_statistics_by_uid(u_3001_id).uncollected_pledge_bonus;
-         generate_blocks(5000);
+         generate_block(~0,init_account_priv_key,5000);
 
          //cancel mining pledge
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 0);
@@ -2230,7 +2229,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
          auto wit3_pay = db.get_account_statistics_by_uid(u_1000_id).uncollected_witness_pay;
          BOOST_CHECK(wit3_pay == uncollet_witness_pay3 + witness_uncollet_pay);
 
-         generate_blocks(6000);
+         generate_block(~0,init_account_priv_key,6000);
          auto wit4 = db.get_witness_by_uid(u_1000_id);
          BOOST_CHECK(wit4.total_mining_pledge == 0);
          BOOST_CHECK(wit4.bonus_per_pledge.size() == 0);
@@ -2239,7 +2238,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
          BOOST_CHECK(wit4.already_distribute_bonus == 0);
 
          //test release_mining_pledge
-         generate_blocks(28800 * 7);
+         generate_block(~0,init_account_priv_key,28800 * 7);
 
          for (const auto&p : mining_map)
          {
@@ -2280,7 +2279,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_2)
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 200000 * prec.value);
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_2000_id, 100000 * prec.value);
 
-         generate_blocks(9000);
+         generate_block(~0,init_account_priv_key,9000);
 
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 0);
          update_mining_pledge({ u_3001_private_key }, u_3001_id, u_2000_id, 0);
@@ -2335,7 +2334,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_3)
       ext.bonus_rate = 6000;
       create_witness({ u_1000_private_key }, u_1000_id, "test pledge witness-1", 500000 * prec, u_1000_public_key, ext);
       update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 200000 * prec.value);
-      generate_blocks(5000);
+      generate_block(~0,init_account_priv_key,5000);
 
       update_mining_pledge({ u_3001_private_key }, u_3001_id, u_1000_id, 100000 * prec.value);
 
@@ -2369,7 +2368,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_3)
       }
 
       auto block_num = db.get_witness_by_uid(u_1000_id).last_update_bonus_block_num + 10000 - db.head_block_num();
-      generate_blocks(block_num);
+      generate_block(~0,init_account_priv_key,block_num);
 
       auto wit2 = db.get_witness_by_uid(u_1000_id);
       const dynamic_global_property_object& dpo2 = db.get_dynamic_global_properties();
@@ -2451,8 +2450,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
 
       update_mining_pledge({ u_3001_private_key }, u_3001_id, u_2000_id, 300000 * prec.value);
 
-      generate_blocks(28800 * 7);
-
+      generate_block(~0,init_account_priv_key,28800 * 7);
       const pledge_mining_object* pledge_mining_obj_ptr = db.find_pledge_mining(u_1000_id, u_3001_id);
       BOOST_CHECK(pledge_mining_obj_ptr == nullptr);
 
