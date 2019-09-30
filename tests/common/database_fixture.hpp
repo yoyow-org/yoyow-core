@@ -181,8 +181,6 @@ struct database_fixture {
     */
    void generate_blocks(uint32_t block_count);
 
-   void generate_jump_blocks(uint32_t block_count);
-
    /**
     * @brief Generates blocks until the head block time matches or exceeds timestamp
     * @param timestamp target time to generate blocks until
