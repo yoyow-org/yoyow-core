@@ -96,8 +96,10 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          const auto& dpo = db.get_dynamic_global_properties();
          if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
             max_releasing_size = 1;
-         else
-            max_releasing_size = 20;
+         else {
+            const auto& global_params = db.get_global_properties().parameters;
+            max_releasing_size = global_params.get_award_params().max_pledge_releasing_size;
+         }
          if (releasing_pledges.size() == max_releasing_size)
          {
             auto iter = --releasing_pledges.end();

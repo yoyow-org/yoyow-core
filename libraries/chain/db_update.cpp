@@ -1493,6 +1493,8 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                v.max_pledge_mining_bonus_rate = *pv.max_pledge_mining_bonus_rate;
             if (pv.registrar_referrer_rate_from_score.valid())
                v.registrar_referrer_rate_from_score = *pv.registrar_referrer_rate_from_score;
+            if (pv.max_pledge_releasing_size.valid())
+               v.max_pledge_releasing_size = *pv.max_pledge_releasing_size;
          });
       }
 

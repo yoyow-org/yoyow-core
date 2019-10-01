@@ -244,6 +244,8 @@ void committee_updatable_content_parameters::validate()const
    if (registrar_referrer_rate_from_score.valid())
       FC_ASSERT(*registrar_referrer_rate_from_score >= 0 && *registrar_referrer_rate_from_score <= 25 * GRAPHENE_1_PERCENT,
       "registrar referrer rate from score should be in range 0-25%");
+   if (max_pledge_releasing_size.valid())
+      FC_ASSERT(*max_pledge_releasing_size >= 1,"max pledge releasing size must more than 1");
 }
 
 void committee_proposal_create_operation::validate()const
