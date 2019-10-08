@@ -1292,8 +1292,6 @@ void_result license_create_evaluator::do_evaluate(const operation_type& op)
 {try {
     const database& d = db();
     FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create license after HARDFORK_0_4_TIME");
-    if (d.head_block_time() >= HARDFORK_0_5_TIME)
-       d.get_platform_by_owner(op.platform); // make sure pid exists
 
     d.get_platform_by_owner(op.platform); // make sure pid exists
     platform_ant = &d.get_account_statistics_by_uid(op.platform);

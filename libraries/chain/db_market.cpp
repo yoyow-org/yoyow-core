@@ -61,56 +61,10 @@ void database::cancel_limit_order( const limit_order_object& order, bool create_
    const _account_statistics_object* seller_acc_stats = nullptr;
    const asset_dynamic_data_object* fee_asset_dyn_data = nullptr;
    limit_order_cancel_operation vop;
-   //share_type deferred_fee = order.deferred_fee;
-   //asset deferred_paid_fee = order.deferred_paid_fee;
    if( create_virtual_op )
    {
       vop.order = order.id;
       vop.fee_paying_account = order.seller;
-      // only deduct fee if not skipping fee, and there is any fee deferred
-      //if( !skip_cancel_fee && deferred_fee > 0 )
-      //{
-      //   asset core_cancel_fee = current_fee_schedule().calculate_fee( vop );
-      //   // cap the fee
-      //   if( core_cancel_fee.amount > deferred_fee )
-      //      core_cancel_fee.amount = deferred_fee;
-      //   // if there is any CORE fee to deduct, redirect it to referral program
-      //   if( core_cancel_fee.amount > 0 )
-      //   {
-      //      /*seller_acc_stats = &order.seller( *this ).statistics( *this );*/
-      //       seller_acc_stats = &get_account_statistics_by_uid(order.seller);
-      //      modify( *seller_acc_stats, [&]( _account_statistics_object& obj ) {
-      //          obj.pay_fee(core_cancel_fee.amount, get_global_properties().parameters.cashback_vesting_threshold);
-      //      } );
-      //      deferred_fee -= core_cancel_fee.amount;
-      //       /*handle originally paid fee if any:
-      //          to_deduct = round_up( paid_fee * core_cancel_fee / deferred_core_fee_before_deduct )*/
-      //      if( deferred_paid_fee.amount == 0 )
-      //      {
-      //         vop.fee = core_cancel_fee;
-      //      }
-      //      else
-      //      {
-      //         fc::uint128 fee128( deferred_paid_fee.amount.value );
-      //         fee128 *= core_cancel_fee.amount.value;
-      //         // to round up
-      //         fee128 += order.deferred_fee.value;
-      //         fee128 -= 1;
-      //         fee128 /= order.deferred_fee.value;
-      //         share_type cancel_fee_amount = fee128.to_uint64();
-      //         // cancel_fee should be positive, pay it to asset's accumulated_fees
-      //         /*fee_asset_dyn_data = &deferred_paid_fee.asset_id(*this).dynamic_asset_data_id(*this);*/
-      //         const asset_object& asset_obj = get_asset_by_aid(deferred_paid_fee.asset_id);
-      //         fee_asset_dyn_data = &(asset_obj.dynamic_asset_data_id(*this));
-      //         modify( *fee_asset_dyn_data, [&](asset_dynamic_data_object& addo) {
-      //            addo.accumulated_fees += cancel_fee_amount;
-      //         });
-      //         // cancel_fee should be no more than deferred_paid_fee
-      //         deferred_paid_fee.amount -= cancel_fee_amount;
-      //         vop.fee = asset( cancel_fee_amount, deferred_paid_fee.asset_id );
-      //      }
-      //   }
-      //}
    }
 
    // refund funds in order
@@ -118,36 +72,12 @@ void database::cancel_limit_order( const limit_order_object& order, bool create_
    if( refunded.asset_id == GRAPHENE_CORE_ASSET_AID )
    {
       if( seller_acc_stats == nullptr )
-         /*seller_acc_stats = &order.seller( *this ).statistics( *this );*/
           seller_acc_stats = &get_account_statistics_by_uid(order.seller);
       modify(*seller_acc_stats, [&](_account_statistics_object& obj) {
          obj.total_core_in_orders -= refunded.amount;
       });
    }
    adjust_balance(order.seller, refunded);
-
-   // refund fee
-   // could be virtual op or real op here
-   //if( order.deferred_paid_fee.amount == 0 )
-   //{
-   //   // be here, order.create_time <= HARDFORK_CORE_604_TIME, or fee paid in CORE, or no fee to refund.
-   //   // if order was created before hard fork 604 then cancelled no matter before or after hard fork 604,
-   //   //    see it as fee paid in CORE, deferred_fee should be refunded to order owner but not fee pool
-   //   adjust_balance( order.seller, deferred_fee );
-   //}
-   //else // need to refund fee in originally paid asset
-   //{
-   //   adjust_balance(order.seller, deferred_paid_fee);
-   //   // be here, must have: fee_asset != CORE
-   //   if (fee_asset_dyn_data == nullptr){
-   //       //fee_asset_dyn_data = &deferred_paid_fee.asset_id(*this).dynamic_asset_data_id(*this);
-   //       const asset_object& asset_obj = get_asset_by_aid(deferred_paid_fee.asset_id);
-   //       fee_asset_dyn_data = &(asset_obj.dynamic_asset_data_id(*this));
-   //   }
-   //   modify( *fee_asset_dyn_data, [&](asset_dynamic_data_object& addo) {
-   //      addo.fee_pool += deferred_fee;
-   //   });
-   //}
 
    if( create_virtual_op )
       push_applied_operation( vop );
@@ -169,12 +99,6 @@ bool maybe_cull_small_order( database& db, const limit_order_object& order )
     */
    if( order.amount_to_receive().amount == 0 )
    {
-      //if( order.deferred_fee > 0 && db.head_block_time() <= HARDFORK_CORE_604_TIME )
-      //{ // TODO remove this warning after hard fork core-604
-      //   wlog( "At block ${n}, cancelling order without charging a fee: ${o}", ("n",db.head_block_num())("o",order) );
-      //   db.cancel_limit_order( order, true, true );
-      //}
-      //else
       db.cancel_limit_order( order );
       return true;
    }
@@ -233,64 +157,10 @@ bool database::apply_order(const limit_order_object& new_order_object, bool allo
    // 5. the call order's collateral ratio is below or equals to MCR
    // 6. the limit order provided a good price
 
-   //bool to_check_call_orders = false;
-   //const asset_object& sell_asset = get_asset_by_aid(sell_asset_id);//sell_asset_id( *this );
-   //const asset_bitasset_data_object* sell_abd = nullptr;
-   //price call_match_price;
-   //if( sell_asset.is_market_issued() )
-   //{
-   //   sell_abd = &sell_asset.bitasset_data( *this );
-   //   if( sell_abd->options.short_backing_asset == recv_asset_id
-   //       && !sell_abd->is_prediction_market
-   //       && !sell_abd->has_settlement()
-   //       && !sell_abd->current_feed.settlement_price.is_null() )
-   //   {
-   //      call_match_price = ~sell_abd->current_feed.max_short_squeeze_price();
-   //      //if( ~new_order_object.sell_price <= call_match_price ) // new limit order price is good enough to match a call
-   //      //   to_check_call_orders = true;
-   //   }
-   //}
 
    bool finished = false; // whether the new order is gone
-   //if( to_check_call_orders )
-   //{
-   //   // check limit orders first, match the ones with better price in comparison to call orders
-   //   while( !finished && limit_itr != limit_end && limit_itr->sell_price > call_match_price )
-   //   {
-   //      auto old_limit_itr = limit_itr;
-   //      ++limit_itr;
-   //      // match returns 2 when only the old order was fully filled. In this case, we keep matching; otherwise, we stop.
-   //      finished = ( match( new_order_object, *old_limit_itr, old_limit_itr->sell_price ) != 2 );
-   //   }
-
-   //   if( !finished )
-   //   {
-   //      // check if there are margin calls
-   //      const auto& call_price_idx = get_index_type<call_order_index>().indices().get<by_price>();
-   //      auto call_min = price::min( recv_asset_id, sell_asset_id );
-   //      while( !finished )
-   //      {
-   //         // assume hard fork core-343 and core-625 will take place at same time, always check call order with least call_price
-   //         auto call_itr = call_price_idx.lower_bound( call_min );
-   //         if( call_itr == call_price_idx.end()
-   //               || call_itr->debt_type() != sell_asset_id
-   //               // feed protected https://github.com/cryptonomex/graphene/issues/436
-   //               || call_itr->call_price > ~sell_abd->current_feed.settlement_price )
-   //            break;
-   //         // assume hard fork core-338 and core-625 will take place at same time, not checking HARDFORK_CORE_338_TIME here.
-   //         int match_result = match( new_order_object, *call_itr, call_match_price,
-   //                                   sell_abd->current_feed.settlement_price,
-   //                                   sell_abd->current_feed.maintenance_collateral_ratio );
-   //         // match returns 1 or 3 when the new order was fully filled. In this case, we stop matching; otherwise keep matching.
-   //         // since match can return 0 due to BSIP38 (hard fork core-834), we no longer only check if the result is 2.
-   //         if( match_result == 1 || match_result == 3 )
-   //            finished = true;
-   //      }
-   //   }
-   //}
 
    // still need to check limit orders
-   /*while( !finished && limit_itr != limit_end )*/
    while (limit_itr != limit_end)
    {
       auto old_limit_itr = limit_itr;
@@ -303,9 +173,6 @@ bool database::apply_order(const limit_order_object& new_order_object, bool allo
    if( updated_order_object == nullptr )
       return true;
 
-   // before #555 we would have done maybe_cull_small_order() logic as a result of fill_order() being called by match() above
-   // however after #555 we need to get rid of small orders -- #555 hardfork defers logic that was done too eagerly before, and
-   // this is the point it's deferred to.
    return maybe_cull_small_order( *this, *updated_order_object );
 }
 
@@ -331,7 +198,6 @@ int database::match( const limit_order_object& usd, const limit_order_object& co
    asset usd_pays, usd_receives, core_pays, core_receives;
 
    auto maint_time = get_dynamic_global_properties().next_maintenance_time;
-   //bool before_core_hardfork_342 = ( maint_time <= HARDFORK_CORE_342_TIME ); // better rounding
 
    bool cull_taker = false;
    if( usd_for_sale <= core_for_sale * match_price ) // rounding down here should be fine
@@ -340,21 +206,9 @@ int database::match( const limit_order_object& usd, const limit_order_object& co
 
       // Be here, it's possible that taker is paying something for nothing due to partially filled in last loop.
       // In this case, we see it as filled and cancel it later
-      /*if( usd_receives.amount == 0 && maint_time > HARDFORK_CORE_184_TIME )*/
       if (usd_receives.amount == 0)
          return 1;
 
-      //if( before_core_hardfork_342 )
-      //   core_receives = usd_for_sale;
-      //else
-      //{
-      //   // The remaining amount in order `usd` would be too small,
-      //   //   so we should cull the order in fill_limit_order() below.
-      //   // The order would receive 0 even at `match_price`, so it would receive 0 at its own price,
-      //   //   so calling maybe_cull_small() will always cull it.
-      //   core_receives = usd_receives.multiply_and_round_up( match_price );
-      //   cull_taker = true;
-      //}
       core_receives = usd_receives.multiply_and_round_up(match_price);
       cull_taker = true;
    }
@@ -367,9 +221,6 @@ int database::match( const limit_order_object& usd, const limit_order_object& co
 
       // The maker won't be paying something for nothing, since if it would, it would have been cancelled already.
       core_receives = core_for_sale * match_price; // round down, in favor of bigger order
-      /*if( before_core_hardfork_342 )
-         usd_receives = core_for_sale;
-         else*/
          // The remaining amount in order `core` would be too small,
          //   so the order will be culled in fill_limit_order() below
       usd_receives = core_receives.multiply_and_round_up( match_price );
@@ -377,10 +228,6 @@ int database::match( const limit_order_object& usd, const limit_order_object& co
 
    core_pays = usd_receives;
    usd_pays  = core_receives;
-
-   //if( before_core_hardfork_342 )
-   //   FC_ASSERT( usd_pays == usd.amount_for_sale() ||
-   //              core_pays == core.amount_for_sale() );
 
    int result = 0;
    result |= fill_limit_order( usd, usd_pays, usd_receives, cull_taker, match_price, false ); // the first param is taker
@@ -392,7 +239,6 @@ int database::match( const limit_order_object& usd, const limit_order_object& co
 bool database::fill_limit_order( const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
                            const price& fill_price, const bool is_maker )
 { try {
-   /*cull_if_small |= (head_block_time() < HARDFORK_555_TIME);*/
     cull_if_small |= false;
 
    FC_ASSERT( order.amount_for_sale().asset_id == pays.asset_id );
@@ -401,29 +247,11 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
    const account_object& seller = get_account_by_uid(order.seller);
    const asset_object& recv_asset = get_asset_by_aid(receives.asset_id);
 
-   auto issuer_fees = pay_market_fees(seller, recv_asset, receives); //pay_market_fees(recv_asset, receives);
+   auto issuer_fees = pay_market_fees(seller, recv_asset, receives);
    pay_order( seller, receives - issuer_fees, pays );
 
    assert( pays.asset_id != receives.asset_id );
    push_applied_operation( fill_order_operation( order.id, order.seller, pays, receives, issuer_fees, fill_price, is_maker ) );
-
-   // conditional because cheap integer comparison may allow us to avoid two expensive modify() and object lookups
-   //if( order.deferred_fee > 0 )
-   //{
-   //   modify( seller.statistics(*this), [&]( _account_statistics_object& statistics )
-   //   {
-   //       statistics.pay_fee(order.deferred_fee, get_global_properties().parameters.cashback_vesting_threshold);
-   //   } );
-   //}
-
-   //if( order.deferred_paid_fee.amount > 0 ) // implies head_block_time() > HARDFORK_CORE_604_TIME
-   //{
-   //   /*const auto& fee_asset_dyn_data = order.deferred_paid_fee.asset_id(*this).dynamic_asset_data_id(*this);*/
-   //    const auto& fee_asset_dyn_data = get_asset_by_aid(order.deferred_paid_fee.asset_id).dynamic_asset_data_id(*this);
-   //   modify( fee_asset_dyn_data, [&](asset_dynamic_data_object& addo) {
-   //      addo.accumulated_fees += order.deferred_paid_fee.amount;
-   //   });
-   //}
 
    if( pays == order.amount_for_sale() )
    {
@@ -434,8 +262,6 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
    {
       modify( order, [&]( limit_order_object& b ) {
                              b.for_sale -= pays.amount;
-                             //b.deferred_fee = 0;
-                             //b.deferred_paid_fee.amount = 0;
                           });
       if( cull_if_small )
          return maybe_cull_small_order( *this, order );
@@ -528,37 +354,6 @@ asset database::pay_market_fees(const account_object& seller, const asset_object
             }
          }
       }
-      //auto is_rewards_allowed = [&recv_asset, &seller]() {
-      //   const auto &white_list = recv_asset.options.extensions.value.whitelist_market_fee_sharing;
-      //   return (!white_list || (*white_list).empty() || ((*white_list).find(seller.registrar) != (*white_list).end()));
-      //};
-
-      //if (is_rewards_allowed())
-      //{
-      //   const auto reward_percent = recv_asset.options.extensions.value.reward_percent;
-      //   if (reward_percent && *reward_percent)
-      //   {
-      //      const auto reward_value = detail::calculate_percent(issuer_fees.amount, *reward_percent);
-      //      if (reward_value > 0 && is_authorized_asset(*this, seller.registrar(*this), recv_asset))
-      //      {
-      //         reward = recv_asset.amount(reward_value);
-      //         FC_ASSERT(reward < issuer_fees, "Market reward should be less than issuer fees");
-      //         // cut referrer percent from reward
-      //         const auto referrer_rewards_percentage = seller.referrer_rewards_percentage;
-      //         const auto referrer_rewards_value = detail::calculate_percent(reward.amount, referrer_rewards_percentage);
-      //         auto registrar_reward = reward;
-
-      //         if (referrer_rewards_value > 0 && is_authorized_asset(*this, seller.referrer(*this), recv_asset))
-      //         {
-      //            FC_ASSERT(referrer_rewards_value <= reward.amount.value, "Referrer reward shouldn't be greater than total reward");
-      //            const asset referrer_reward = recv_asset.amount(referrer_rewards_value);
-      //            registrar_reward -= referrer_reward;
-      //            deposit_market_fee_vesting_balance(seller.referrer, referrer_reward);
-      //         }
-      //         deposit_market_fee_vesting_balance(seller.registrar, registrar_reward);
-      //      }
-      //   }
-      //}
 
       const auto& recv_dyn_data = recv_asset.dynamic_asset_data_id(*this);
       share_type accumulated_fee = issuer_fees.amount - reward.amount;

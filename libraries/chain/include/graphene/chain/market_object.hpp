@@ -52,8 +52,6 @@ class limit_order_object : public abstract_object<limit_order_object>
       account_uid_type seller;
       share_type       for_sale; ///< asset id is sell_price.base.asset_id
       price            sell_price;
-      //share_type       deferred_fee; ///< fee converted to CORE
-      //asset            deferred_paid_fee; ///< originally paid fee
 
       pair<asset_aid_type,asset_aid_type> get_market()const
       {

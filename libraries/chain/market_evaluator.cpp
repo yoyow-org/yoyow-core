@@ -43,9 +43,9 @@ void_result limit_order_create_evaluator::do_evaluate(const limit_order_create_o
    FC_ASSERT(d.head_block_time() >= HARDFORK_0_5_TIME, "Can only create limit order after HARDFORK_0_5_TIME");
    FC_ASSERT( op.expiration >= d.head_block_time() );
 
-   _seller = &d.get_account_by_uid(op.seller);//_seller        = this->fee_paying_account;
-   _sell_asset = &d.get_asset_by_aid(op.amount_to_sell.asset_id);//_sell_asset    = &op.amount_to_sell.asset_id(d);
-   _receive_asset = &d.get_asset_by_aid(op.min_to_receive.asset_id);//_receive_asset = &op.min_to_receive.asset_id(d);
+   _seller = &d.get_account_by_uid(op.seller);
+   _sell_asset = &d.get_asset_by_aid(op.amount_to_sell.asset_id);
+   _receive_asset = &d.get_asset_by_aid(op.min_to_receive.asset_id);
 
    if( _sell_asset->options.whitelist_markets.size() )
       FC_ASSERT( _sell_asset->options.whitelist_markets.find(_receive_asset->asset_id) 
@@ -56,9 +56,6 @@ void_result limit_order_create_evaluator::do_evaluate(const limit_order_create_o
             == _sell_asset->options.blacklist_markets.end(),
             "This market has been blacklisted." );
 
-   //FC_ASSERT( is_authorized_asset( d, *_seller, *_sell_asset ) );
-   //FC_ASSERT( is_authorized_asset( d, *_seller, *_receive_asset ) );
-
    validate_authorized_asset(d, *_seller, *_sell_asset, "'sell' ");
    validate_authorized_asset(d, *_seller, *_receive_asset, "'to' ");
 
@@ -67,34 +64,6 @@ void_result limit_order_create_evaluator::do_evaluate(const limit_order_create_o
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
-
-//void limit_order_create_evaluator::convert_fee()
-//{
-//   if( db().head_block_time() <= HARDFORK_CORE_604_TIME )
-//      generic_evaluator::convert_fee();
-//   else
-//      if( !trx_state->skip_fee )
-//      {
-//         if( fee_asset->get_id() != asset_id_type() )
-//         {
-//            db().modify(*fee_asset_dyn_data, [this](asset_dynamic_data_object& d) {
-//               d.fee_pool -= core_fee_paid;
-//            });
-//         }
-//      }
-//}
-//
-//void limit_order_create_evaluator::pay_fee()
-//{
-//   if( db().head_block_time() <= HARDFORK_445_TIME )
-//      generic_evaluator::pay_fee();
-//   else
-//   {
-//      _deferred_fee = core_fee_paid;
-//      if( db().head_block_time() > HARDFORK_CORE_604_TIME && fee_asset->get_id() != asset_id_type() )
-//         _deferred_paid_fee = fee_from_account;
-//   }
-//}
 
 object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_operation& op)
 { try {
@@ -112,8 +81,6 @@ object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_o
        obj.for_sale = op.amount_to_sell.amount;
        obj.sell_price = op.get_price();
        obj.expiration = op.expiration;
-       //obj.deferred_fee = total_fee_paid; //_deferred_fee;
-       //obj.deferred_paid_fee = _deferred_paid_fee;
    });
    limit_order_id_type order_id = new_order_object.id; // save this because we may remove the object by filling it
    bool filled;

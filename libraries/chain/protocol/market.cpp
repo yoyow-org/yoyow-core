@@ -28,9 +28,6 @@ namespace graphene { namespace chain {
 share_type limit_order_create_operation::calculate_fee(const fee_parameters_type& k)const
 {
     share_type core_fee_required = k.fee;
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(extra_data), k.price_per_kbyte);
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(name), k.price_per_kbyte);
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(url), k.price_per_kbyte);
     return core_fee_required;
 }
 
@@ -47,9 +44,6 @@ void limit_order_create_operation::validate()const
 share_type limit_order_cancel_operation::calculate_fee(const fee_parameters_type& k)const
 {
     share_type core_fee_required = k.fee;
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(extra_data), k.price_per_kbyte);
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(name), k.price_per_kbyte);
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(url), k.price_per_kbyte);
     return core_fee_required;
 }
 
@@ -63,9 +57,6 @@ void limit_order_cancel_operation::validate()const
 share_type fill_order_operation::calculate_fee(const fee_parameters_type& k)const
 {
     share_type core_fee_required = k.fee;
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(extra_data), k.price_per_kbyte);
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(name), k.price_per_kbyte);
-    //core_fee_required += calculate_data_fee(fc::raw::pack_size(url), k.price_per_kbyte);
     return core_fee_required;
 }
 
