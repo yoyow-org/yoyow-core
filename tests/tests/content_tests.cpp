@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
 
       // make sure the database requires our fee to be nonzero
       enable_fees();
-
+      //generate_blocks(HARDFORK_0_5_TIME, true);
       for (int i = 0; i < 5; ++i)
          add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
 
@@ -110,6 +110,16 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
       committee_update_global_content_parameter_item_type item;
       item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1, 100,
          3000, 30000, 62000000, 4000, 2000, 8000, 9000, 11000, 20, 2000000, 3640000 };
+
+      item.value.min_witness_block_produce_pledge = 60000000000;
+      //item.content_award_skip_slots;
+      item.value.unlocked_balance_release_delay = 28800 * 8;
+      item.value.min_mining_pledge = 200000000;
+      item.value.mining_pledge_release_delay = 28800 * 8;
+      item.value.max_pledge_mining_bonus_rate = 8000;
+      item.value.registrar_referrer_rate_from_score = 1000;
+      item.value.max_pledge_releasing_size = 30;
+
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
       for (int i = 1; i < 5; ++i)
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
@@ -141,6 +151,13 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
       BOOST_REQUIRE_EQUAL(gap.advertising_confirmed_min_fee.value, 2000000);
       BOOST_REQUIRE_EQUAL(gap.custom_vote_effective_time, 3640000);
 
+      BOOST_REQUIRE_EQUAL(gap.min_witness_block_produce_pledge, 60000000000);
+      BOOST_REQUIRE_EQUAL(gap.unlocked_balance_release_delay, 28800 * 8);
+      BOOST_REQUIRE_EQUAL(gap.min_mining_pledge, 200000000);
+      BOOST_REQUIRE_EQUAL(gap.mining_pledge_release_delay, 28800 * 8);
+      BOOST_REQUIRE_EQUAL(gap.max_pledge_mining_bonus_rate, 8000);
+      BOOST_REQUIRE_EQUAL(gap.registrar_referrer_rate_from_score, 1000);
+      BOOST_REQUIRE_EQUAL(gap.max_pledge_releasing_size, 30);
    }
    catch (const fc::exception& e)
    {
