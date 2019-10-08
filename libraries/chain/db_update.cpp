@@ -1414,6 +1414,8 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                v.registrar_referrer_rate_from_score = *pv.registrar_referrer_rate_from_score;
             if (pv.max_pledge_releasing_size.valid())
                v.max_pledge_releasing_size = *pv.max_pledge_releasing_size;
+            if (pv.scorer_earnings_rate.valid())
+               v.scorer_earnings_rate = *pv.scorer_earnings_rate;
          });
       }
 
@@ -1491,21 +1493,9 @@ void database::check_invariants()
       FC_ASSERT( s.core_leased_in >= 0 );
       FC_ASSERT( s.core_leased_out >= 0 );
 
-      /* FC_ASSERT( s.total_witness_pledge >= s.releasing_witness_pledge );
-       FC_ASSERT( s.releasing_witness_pledge >= 0 );
-       FC_ASSERT( s.total_committee_member_pledge >= s.releasing_committee_member_pledge );
-       FC_ASSERT( s.releasing_committee_member_pledge >= 0 );
-       FC_ASSERT( s.uncollected_witness_pay >= 0 );
-       FC_ASSERT( s.witness_pledge_release_block_number > head_num );
-       FC_ASSERT( s.committee_member_pledge_release_block_number > head_num );
-       FC_ASSERT( s.total_platform_pledge >= s.releasing_platform_pledge );
-       FC_ASSERT( s.releasing_platform_pledge >= 0 );
-       FC_ASSERT( s.platform_pledge_release_block_number > head_num );*/
-
       for (const auto& id : s.pledge_balance_ids)
       {
          auto pledge_balance_obj = get(id.second);
-         //FC_ASSERT(pledge_balance_obj.pledge_release_block_number > head_num);
          for (auto iter_pledge : pledge_balance_obj.releasing_pledges){
             FC_ASSERT(iter_pledge.first > head_num);
          }
@@ -1569,7 +1559,6 @@ void database::check_invariants()
       FC_ASSERT(total_balances[asset_obj.asset_id].value == asset_obj.dynamic_data(*this).current_supply.value);
    }
 
-   /////////////////////////////////////////////////////////////////////////////////////////////////////
    share_type total_core_leased = 0;
    const auto& csaf_lease_idx = get_index_type<csaf_lease_index>().indices();
    for( const auto& s: csaf_lease_idx )
@@ -1659,7 +1648,6 @@ void database::check_invariants()
          FC_ASSERT( s.by_vote_scheduled_time >= wso.current_by_vote_time );
          const auto& stats = get_account_statistics_by_uid( s.account );
          FC_ASSERT( stats.last_witness_sequence == s.sequence );
-         //FC_ASSERT( stats.total_witness_pledge - stats.releasing_witness_pledge == s.pledge );
          total_witness_pledges += s.pledge;
          total_witness_received_votes += s.total_votes;
       }
@@ -1676,7 +1664,6 @@ void database::check_invariants()
       {
          const auto& stats = get_account_statistics_by_uid( s.account );
          FC_ASSERT( stats.last_committee_member_sequence == s.sequence );
-         //FC_ASSERT( stats.total_committee_member_pledge - stats.releasing_committee_member_pledge == s.pledge );
          total_committee_member_pledges += s.pledge;
          total_committee_member_received_votes += s.total_votes;
       }
@@ -1694,7 +1681,6 @@ void database::check_invariants()
       {
          const auto& stats = get_account_statistics_by_uid( s.owner );
          FC_ASSERT( stats.last_platform_sequence == s.sequence );
-         //FC_ASSERT( stats.total_platform_pledge - stats.releasing_platform_pledge == s.pledge );
          total_platform_pledges += s.pledge;
          total_platform_received_votes += s.total_votes;
       }
@@ -1743,22 +1729,6 @@ void database::check_invariants()
    }
    FC_ASSERT( total_platform_voted == total_platform_vote_objects );
 }
-
-//void database::release_platform_pledges()
-//{
-//   const auto head_num = head_block_num();
-//   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_platform_pledge_release>();
-//   auto itr = idx.begin();
-//   while( itr != idx.end() && itr->platform_pledge_release_block_number <= head_num )
-//   {
-//      modify( *itr, [&](_account_statistics_object& s) {
-//         s.total_platform_pledge -= s.releasing_platform_pledge;
-//         s.releasing_platform_pledge = 0;
-//         s.platform_pledge_release_block_number = -1;
-//      });
-//      itr = idx.begin();
-//   }
-//}
 
 void database::adjust_platform_votes( const platform_object& platform, share_type delta )
 {
@@ -2056,8 +2026,12 @@ void database::process_content_platform_awards()
             {
                share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
                   total_effective_csaf_amount.value).to_uint64();
-               share_type score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
+               share_type score_earned = 0;
                share_type receiptor_earned = 0;
+               if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+                  score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
+               else
+                  score_earned = ((uint128_t)post_earned.value * params.scorer_earnings_rate / GRAPHENE_100_PERCENT).to_uint64(); 
                if (std::get<2>(*itr) >= 0)
                   receiptor_earned = post_earned - score_earned;
                else

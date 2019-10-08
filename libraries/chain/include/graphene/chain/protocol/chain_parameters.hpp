@@ -71,6 +71,7 @@ namespace graphene { namespace chain {
       uint32_t    max_pledge_mining_bonus_rate        = GRAPHENE_DEFAULT_MAX_PLEDGE_MINING_BONUS_RATE;
       uint32_t    registrar_referrer_rate_from_score  = GRAPHENE_DEFAULT_REGISTRAR_REFERRER_RATE_FROM_SCORE;
       uint32_t    max_pledge_releasing_size           = GRAPHENE_DEFAULT_MAX_PLEDGE_RELEASING_SIZE;
+      uint32_t    scorer_earnings_rate                = GRAPHENE_DEFAULT_SCORER_EARNINGS_RATE;
 	 };
 
    struct chain_parameters
@@ -179,7 +180,8 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
    (mining_pledge_release_delay)
    (max_pledge_mining_bonus_rate)
    (registrar_referrer_rate_from_score)
-   (max_pledge_releasing_size))
+   (max_pledge_releasing_size)
+   (scorer_earnings_rate))
 
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)
