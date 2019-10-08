@@ -558,10 +558,6 @@ namespace graphene { namespace chain {
          void update_maintenance_flag( bool new_maintenance_flag );
          void clear_expired_csaf_leases();
          void update_average_witness_pledges();
-         //void release_witness_pledges();
-         //void release_committee_member_pledges();
-         //void release_locked_balance();
-         void release_mining_pledge();
          void clear_resigned_witness_votes();
          void clear_resigned_committee_member_votes();
          void invalidate_expired_governance_voters();
