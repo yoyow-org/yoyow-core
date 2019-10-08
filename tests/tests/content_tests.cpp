@@ -450,16 +450,18 @@ BOOST_AUTO_TEST_CASE(reward_test)
 BOOST_AUTO_TEST_CASE(post_platform_reward_test)
 {
    try{
-      ACTORS((1001)(1002)(9000));
+      ACTORS((1001)(1002)(1003)(9000));
 
       flat_map<account_uid_type, fc::ecc::private_key> score_map1;
       flat_map<account_uid_type, fc::ecc::private_key> score_map2;
       flat_map<account_uid_type, fc::ecc::private_key> score_map3;
       flat_map<account_uid_type, fc::ecc::private_key> score_map4;
-      actor(1003, 20, score_map1);
-      actor(2003, 20, score_map2);
-      actor(3003, 20, score_map3);
-      actor(4003, 20, score_map4);
+      flat_map<account_uid_type, fc::ecc::private_key> score_map5;
+      actor(1005, 20, score_map1);
+      actor(2005, 20, score_map2);
+      actor(3005, 20, score_map3);
+      actor(4005, 20, score_map4);
+      actor(5005, 20, score_map5);
 
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
@@ -500,6 +502,13 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          account_auth_platform_object::Platform_Permission_Reward |
          account_auth_platform_object::Platform_Permission_Post |
          account_auth_platform_object::Platform_Permission_Content_Update);
+      account_auth_platform({ u_1003_private_key }, u_1003_id, u_9000_id, 10000 * prec, account_auth_platform_object::Platform_Permission_Forward |
+         account_auth_platform_object::Platform_Permission_Liked |
+         account_auth_platform_object::Platform_Permission_Buyout |
+         account_auth_platform_object::Platform_Permission_Comment |
+         account_auth_platform_object::Platform_Permission_Reward |
+         account_auth_platform_object::Platform_Permission_Post |
+         account_auth_platform_object::Platform_Permission_Content_Update);
 
       post_operation::ext extensions;
       extensions.license_lid = 1;
@@ -509,6 +518,11 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          optional<post_pid_type>(),
          extensions);
       create_post({ u_1002_private_key, u_9000_private_key }, u_9000_id, u_1002_id, "", "", "", "",
+         optional<account_uid_type>(),
+         optional<account_uid_type>(),
+         optional<post_pid_type>(),
+         extensions);
+      create_post({ u_1003_private_key, u_9000_private_key }, u_9000_id, u_1003_id, "", "", "", "",
          optional<account_uid_type>(),
          optional<account_uid_type>(),
          optional<post_pid_type>(),
@@ -535,6 +549,11 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
          account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
       }
       for (auto a : score_map4)
+      {
+         collect_csaf_from_committee(a.first, 100);
+         account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
+      }
+      for (auto a : score_map5)
       {
          collect_csaf_from_committee(a.first, 100);
          account_auth_platform({ a.second }, a.first, u_9000_id, 1000 * prec, 0x1F);
@@ -644,9 +663,9 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       {
          share_type balance = 0;
          if (std::get<2>(a))
-            balance = (score_earned * std::get<1>(a).value / std::get<1>(result2).value).convert_to<uint64_t>();
+            balance = (score_earned2 * std::get<1>(a).value / std::get<1>(result2).value).convert_to<uint64_t>();
          else
-            balance = (score_earned * std::get<1>(a).value * 12000 / (std::get<1>(result2).value * 10000)).convert_to<uint64_t>();
+            balance = (score_earned2 * std::get<1>(a).value * 12000 / (std::get<1>(result2).value * 10000)).convert_to<uint64_t>();
 
          auto score_act = db.get_account_statistics_by_uid(std::get<0>(a));
          share_type to_reg = balance * 25 / 100;
@@ -677,6 +696,79 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       BOOST_CHECK(active_post_obj2.positive_win == false);
       BOOST_CHECK(active_post_obj2.receiptor_details.at(u_1002_id).post_award == poster_earned2);
       BOOST_CHECK(active_post_obj2.post_award == (receiptor_earned2.convert_to<uint64_t>() + total_score_balance2));
+
+
+      //*******************************************
+      // update scorer earnings rate, check profits
+      //*******************************************
+      committee_update_global_content_parameter_item_type item2;
+      item2.value.scorer_earnings_rate = 4000;
+      execute_proposal_head_block = db.head_block_num() + 100;
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item2 }, execute_proposal_head_block, voting_opinion_type::opinion_for, execute_proposal_head_block, execute_proposal_head_block);
+      for (int i = 1; i < 5; ++i)
+         committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 2, voting_opinion_type::opinion_for);
+      generate_blocks(102);
+
+      for (auto a : score_map5)
+         score_a_post({ a.second }, a.first, u_9000_id, u_1003_id, 1, 5, 50);
+
+      generate_blocks(100);
+      uint128_t award_average3 = (uint128_t)10000000000 * 300 / (86400 * 365);
+
+      uint128_t post_earned3 = award_average3;
+      uint128_t score_earned3 = post_earned3 * 4000 / GRAPHENE_100_PERCENT;
+      uint128_t receiptor_earned3 = post_earned3 - score_earned3;
+      uint64_t  poster_earned3 = (receiptor_earned3 * 7500 / 10000).convert_to<uint64_t>();
+      auto poster_act3 = db.get_account_statistics_by_uid(u_1003_id);
+      BOOST_CHECK(poster_act3.core_balance == poster_earned3);
+
+      vector<score_id_type> scores3;
+      for (auto a : score_map5)
+      {
+         auto score_id = db.get_score(u_9000_id, u_1003_id, 1, a.first).id;
+         scores3.push_back(score_id);
+      }
+
+      auto result3 = get_effective_csaf(scores3, 50 * 20);
+      share_type total_score_balance3 = 0;
+      share_type total_reg_balance3 = 0;
+      for (auto a : std::get<0>(result3))
+      {
+         share_type balance = 0;
+         if (std::get<2>(a))
+            balance = (score_earned3 * std::get<1>(a).value / std::get<1>(result3).value).convert_to<uint64_t>();
+         else
+            balance = (score_earned3 * std::get<1>(a).value * 12000 / (std::get<1>(result3).value * 10000)).convert_to<uint64_t>();
+
+         auto score_act = db.get_account_statistics_by_uid(std::get<0>(a));
+         share_type to_reg = balance * 25 / 100;
+         share_type to_score = balance - to_reg;
+         total_score_balance3 += balance;
+         total_reg_balance3 += to_reg;
+         BOOST_CHECK(score_act.core_balance == to_score);
+      }
+
+      //check registar and referer balance
+      auto reg_act3 = db.get_account_statistics_by_uid(genesis_state.initial_accounts.at(0).uid);
+      BOOST_CHECK(reg_act3.uncollected_score_bonus == total_reg_balance + total_reg_balance2 + total_reg_balance3);
+
+      auto platform_act3 = db.get_account_statistics_by_uid(u_9000_id);
+      auto platform_core_balance3 = receiptor_earned3.convert_to<uint64_t>() - poster_earned3 + award_average3.convert_to<uint64_t>() + platform_core_balance2;
+      BOOST_CHECK(platform_act3.core_balance == platform_core_balance3);
+
+      auto platform_obj3 = db.get_platform_by_owner(u_9000_id);
+      auto post_profit3 = receiptor_earned3.convert_to<uint64_t>() - poster_earned3;
+      auto iter_profit3 = platform_obj3.period_profits.rbegin();
+      BOOST_CHECK(iter_profit3->second.post_profits == post_profit3);
+      BOOST_CHECK(iter_profit3->second.platform_profits == award_average3.convert_to<uint64_t>());
+
+      const auto& apt_idx3 = db.get_index_type<active_post_index>().indices().get<by_id>();
+      auto itr3 = apt_idx3.rbegin();
+      auto active_post_obj3 = *itr3;
+      BOOST_CHECK(active_post_obj3.positive_win == true);
+      BOOST_CHECK(active_post_obj3.receiptor_details.at(u_1003_id).post_award == poster_earned3);
+      BOOST_CHECK(active_post_obj3.post_award == (receiptor_earned3.convert_to<uint64_t>() + total_score_balance3));
+
    }
    catch (fc::exception& e) {
       edump((e.to_detail_string()));
@@ -2645,7 +2737,7 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_4)
    }
 }
 
-//check committee after refactoring
+//check witness after refactoring
 BOOST_AUTO_TEST_CASE(witness_test)
 {
    try{
