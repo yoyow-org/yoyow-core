@@ -197,6 +197,46 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
    }
 }
 
+BOOST_AUTO_TEST_CASE(committee_proposal_threshold_test)
+{
+   try
+   {
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+
+      // Return number of core shares (times precision)
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      // make sure the database requires our fee to be nonzero
+      enable_fees();
+      generate_blocks(HARDFORK_0_5_TIME, true);
+      for (int i = 0; i < 5; ++i)
+         add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
+
+      committee_update_global_content_parameter_item_type item;
+      item.value = { 300 };
+
+      //not enough threshold
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
+      generate_blocks(101);
+      auto gap = db.get_global_properties().parameters.get_award_params();
+      BOOST_REQUIRE_EQUAL(gap.content_award_interval, 0);
+
+      //enough threshold
+      committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 200, voting_opinion_type::opinion_for, 200, 200);
+      for (int i = 1; i < 5; ++i)
+         committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 2, voting_opinion_type::opinion_for);
+      generate_blocks(101);
+      auto gap2 = db.get_global_properties().parameters.get_award_params();
+      BOOST_REQUIRE_EQUAL(gap2.content_award_interval, 300);
+   }
+   catch (const fc::exception& e)
+   {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE(update_post_test)
 {
    try{
