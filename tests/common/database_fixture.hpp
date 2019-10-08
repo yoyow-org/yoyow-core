@@ -533,6 +533,7 @@ struct database_fixture {
       share_type           amount_to_claim
       );
 
+   fc::uint128_t compute_coin_seconds_earned(_account_statistics_object account, share_type effective_balance, time_point_sec now_rounded);
 
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);

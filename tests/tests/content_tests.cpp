@@ -35,27 +35,58 @@ BOOST_AUTO_TEST_CASE(witness_csaf_test)
       auto _core = [&](int64_t x) -> asset
       {  return asset(x*prec);    };
 
-      transfer(committee_account, u_1000_id, _core(100000));
-      transfer(committee_account, u_2000_id, _core(100000));
-      //collect_csaf_from_committee(u_1000_id, 100);
-      //collect_csaf_from_committee(u_2000_id, 100);
+      transfer(committee_account, u_1000_id, _core(100000000));
+      transfer(committee_account, u_2000_id, _core(100000000));
+      collect_csaf_from_committee(u_1000_id, 100);
+      collect_csaf_from_committee(u_2000_id, 100);
       
-      const witness_object& witness1 = create_witness(u_1000_id, u_1000_private_key, _core(10000));
-      const witness_object& witness2 = create_witness(u_2000_id, u_2000_private_key, _core(10000));
-
+      //###############################  before reduce witness csaf on hardfork_4_time
+      const witness_object& witness1 = create_witness(u_1000_id, u_1000_private_key, _core(100000));
+      generate_block(10);
+      collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
+      const _account_statistics_object& ants1_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      time_point_sec now1 = db.head_block_time();
+      fc::time_point_sec now_rounded1((now1.sec_since_epoch() / 60) * 60);
+      share_type effective_balance1 = ants1_1000.core_balance + ants1_1000.core_leased_in - ants1_1000.core_leased_out;
+      auto coin_seconds_earned1 = compute_coin_seconds_earned(ants1_1000, effective_balance1, now_rounded1);
+      BOOST_CHECK(ants1_1000.coin_seconds_earned == coin_seconds_earned1);
+      
 
       generate_blocks(HARDFORK_0_4_TIME, true);
-      //###############################  before reduce witness csaf on hardfork_4_time
+      //###############################  update witness csaf on hardfork_4_time
+      const _account_statistics_object& ants2_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      time_point_sec now2 = db.head_block_time();
+      fc::time_point_sec now_rounded2((now2.sec_since_epoch() / 60) * 60);
+      share_type effective_balance2 = ants2_1000.core_balance + ants2_1000.core_leased_in - ants2_1000.core_leased_out;
+      auto coin_seconds_earned2 = compute_coin_seconds_earned(ants2_1000, effective_balance2, now_rounded2);
+      BOOST_CHECK(ants2_1000.coin_seconds_earned == coin_seconds_earned2);
 
-      collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
-      const _account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
-      BOOST_CHECK(ants_1000.csaf == 1000 * prec);
+      generate_block(10);
+      //###############################  reduce witness pledge for computing csaf after hardfork_4_time
+      collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
+      const _account_statistics_object& ants3_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      time_point_sec now3 = db.head_block_time();
+      fc::time_point_sec now_rounded3((now3.sec_since_epoch() / 60) * 60);
+      share_type effective_balance3 = ants3_1000.core_balance + ants3_1000.core_leased_in - ants3_1000.core_leased_out
+         - ants3_1000.get_pledge_balance(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, db);
+      auto coin_seconds_earned3 = compute_coin_seconds_earned(ants3_1000, effective_balance3, now_rounded3);
+      BOOST_CHECK(ants3_1000.coin_seconds_earned == coin_seconds_earned3);
 
-      //###############################  reduce witness csaf on hardfork_4_time. need to modify hardfork_4_time and debug
+      generate_blocks(HARDFORK_0_5_TIME, true);
+      //After hardfork_05_time , csaf compute only depends on locked_balance for fee
+      const witness_object& witness2 = create_witness(u_2000_id, u_2000_private_key, _core(10000));
+      balance_lock_update({ u_2000_private_key }, u_2000_id, 10000 * prec);
+      collect_csaf_origin({ u_2000_private_key }, u_2000_id, u_2000_id, 1);
+      const _account_statistics_object& ants_2000 = db.get_account_statistics_by_uid(u_2000_id);
+      time_point_sec now4 = db.head_block_time();
+      fc::time_point_sec now_rounded4((now4.sec_since_epoch() / 60) * 60);
+      share_type effective_balance4;
+      auto pledge_balance_obj = ants_2000.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      if (GRAPHENE_CORE_ASSET_AID == pledge_balance_obj.asset_id)
+         effective_balance4 = pledge_balance_obj.pledge;
+      auto coin_seconds_earned4 = compute_coin_seconds_earned(ants_2000, effective_balance4, now_rounded4);
 
-      //collect_csaf({ u_1000_private_key }, u_1000_id, u_1000_id, 1000);
-      //const _account_statistics_object& ants_1000 = db.get_account_statistics_by_uid(u_1000_id);
-      //BOOST_CHECK(ants_1000.csaf == 1000 * prec);
+      BOOST_CHECK(ants_2000.coin_seconds_earned == coin_seconds_earned4);
 
    }
    catch (const fc::exception& e)
@@ -1696,32 +1727,63 @@ BOOST_AUTO_TEST_CASE(total_witness_pledge_test)
    }
 }
 
-
 BOOST_AUTO_TEST_CASE(csaf_compute_test)
 {
    try{
-      ACTORS((1000));
+      ACTORS((1000)(2000)(3000));
 
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
       auto _core = [&](int64_t x) -> asset
       {  return asset(x*prec);    };
 
-      transfer(committee_account, u_1000_id, _core(3000000));
+      transfer(committee_account, u_1000_id, _core(100000000));
+      transfer(committee_account, u_3000_id, _core(100000));
+      collect_csaf_from_committee(u_1000_id, 100);
+      collect_csaf_from_committee(u_3000_id, 100);
 
-      //before_hardfork_01
-      generate_blocks(100);
+      //before_hardfork_04
+      csaf_lease({ u_1000_private_key }, u_1000_id, u_2000_id, 15000, db.head_block_time() + 1000000);
+      csaf_lease({ u_3000_private_key }, u_3000_id, u_1000_id, 10000, db.head_block_time() + 1000000);
+
+      generate_blocks(10);
       collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
-      //debug in funs : _apply_block and compute_coin_seconds_earned
+      const _account_statistics_object& ants1_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      time_point_sec now1 = db.head_block_time();
+      fc::time_point_sec now_rounded1((now1.sec_since_epoch() / 60) * 60);
+      share_type effective_balance1 = ants1_1000.core_balance + ants1_1000.core_leased_in - ants1_1000.core_leased_out;
+      auto coin_seconds_earned1 = compute_coin_seconds_earned(ants1_1000, effective_balance1, now_rounded1);
+      BOOST_CHECK(ants1_1000.coin_seconds_earned == coin_seconds_earned1);
 
       //after_hardfork_04
       generate_blocks(HARDFORK_0_4_TIME, true);
+      create_witness(u_1000_id, u_1000_private_key, _core(100000));
+
+      generate_block(10);
       collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
-      //debug in funs : _apply_block and compute_coin_seconds_earned
+      const _account_statistics_object& ants2_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      time_point_sec now2 = db.head_block_time();
+      fc::time_point_sec now_rounded2((now2.sec_since_epoch() / 60) * 60);
+      share_type effective_balance2 = ants2_1000.core_balance + ants2_1000.core_leased_in - ants2_1000.core_leased_out
+         - ants2_1000.get_pledge_balance(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, db);
+      auto coin_seconds_earned2 = compute_coin_seconds_earned(ants2_1000, effective_balance2, now_rounded2);
+      BOOST_CHECK(ants2_1000.coin_seconds_earned == coin_seconds_earned2);
 
       //after_hardfork_05
       generate_blocks(HARDFORK_0_5_TIME, true);
+      balance_lock_update({ u_1000_private_key }, u_1000_id, 10000 * prec);
+
+      generate_block(10);
       collect_csaf_origin({ u_1000_private_key }, u_1000_id, u_1000_id, 1);
-      //debug in funs : _apply_block and compute_coin_seconds_earned
+      const _account_statistics_object& ants3_1000 = db.get_account_statistics_by_uid(u_1000_id);
+      time_point_sec now3 = db.head_block_time();
+      fc::time_point_sec now_rounded3((now3.sec_since_epoch() / 60) * 60);
+      share_type effective_balance3;
+      auto pledge_balance_obj = ants3_1000.pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+      if (GRAPHENE_CORE_ASSET_AID == pledge_balance_obj.asset_id)
+         effective_balance3 = pledge_balance_obj.pledge;
+      auto coin_seconds_earned3 = compute_coin_seconds_earned(ants3_1000, effective_balance3, now_rounded3);
+
+      BOOST_CHECK(ants3_1000.coin_seconds_earned == coin_seconds_earned3);
       
    }
    catch (fc::exception& e) {

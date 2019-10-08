@@ -648,6 +648,7 @@ const witness_object& database_fixture::create_witness(const account_object& own
       op.pledge = pledge;
       op.url = "";
       trx.operations.push_back(op);
+      set_expiration(db, trx);
       trx.validate();
       processed_transaction ptx = db.push_transaction(trx, ~0);
       trx.clear();
@@ -2055,6 +2056,54 @@ void database_fixture::asset_claim_fees(flat_set<fc::ecc::private_key> sign_keys
 
       db.push_transaction(tx);
    } FC_CAPTURE_AND_RETHROW((issuer)(asset_aid)(amount_to_claim))
+}
+
+fc::uint128_t database_fixture::compute_coin_seconds_earned(_account_statistics_object account, share_type effective_balance, time_point_sec now_rounded)
+{
+   share_type new_average_coins;
+   fc::uint128_t max_coin_seconds;
+
+   const auto& global_params = db.get_global_properties().parameters;
+   
+   uint64_t window = global_params.csaf_accumulate_window;
+   if (now_rounded <= account.average_coins_last_update)
+      new_average_coins = account.average_coins;
+   else
+   {
+      uint64_t delta_seconds = (now_rounded - account.average_coins_last_update).to_seconds();
+      if (delta_seconds >= window)
+         new_average_coins = effective_balance;
+      else
+      {
+         uint64_t old_seconds = window - delta_seconds;
+
+         fc::uint128_t old_coin_seconds = fc::uint128_t(account.average_coins.value) * old_seconds;
+         fc::uint128_t new_coin_seconds = fc::uint128_t(effective_balance.value) * delta_seconds;
+
+         max_coin_seconds = old_coin_seconds + new_coin_seconds;
+         new_average_coins = (max_coin_seconds / window).to_uint64();
+      }
+   }
+   // kill rounding issue
+   max_coin_seconds = fc::uint128_t(new_average_coins.value) * window;
+
+   // check earned coin-seconds
+   fc::uint128_t new_coin_seconds_earned;
+   if (now_rounded <= account.coin_seconds_earned_last_update)
+      new_coin_seconds_earned = account.coin_seconds_earned;
+   else
+   {
+      int64_t delta_seconds = (now_rounded - account.coin_seconds_earned_last_update).to_seconds();
+
+      fc::uint128_t delta_coin_seconds = effective_balance.value;
+      delta_coin_seconds *= delta_seconds;
+
+      new_coin_seconds_earned = account.coin_seconds_earned + delta_coin_seconds;
+   }
+   if (new_coin_seconds_earned > max_coin_seconds)
+      new_coin_seconds_earned = max_coin_seconds;
+
+   return std::make_pair(new_coin_seconds_earned, new_average_coins).first;
 }
 
 std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
