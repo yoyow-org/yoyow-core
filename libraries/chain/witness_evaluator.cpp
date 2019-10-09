@@ -114,7 +114,7 @@ object_id_type witness_create_evaluator::do_apply( const witness_create_operatio
    {
       const auto& wpb_obj = d.get(account_stats->pledge_balance_ids.at(pledge_balance_type::Witness));
       d.modify(wpb_obj, [&](pledge_balance_object& obj) {
-         obj.update_pledge(op.pledge, 0,d);//In this case, the second parameter is invalid
+         obj.update_pledge(op.pledge, -1,d);//In this case, the second parameter(-1) is invalid
       });
    }
    else {//create pledge_balance_obj

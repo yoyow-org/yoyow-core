@@ -154,7 +154,7 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
 
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    const auto& account_stats = get_account_statistics_by_uid( wit.account );
-   if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge || wit.total_mining_pledge == 0)
+   if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge || wit.total_mining_pledge == 0 || wit.bonus_rate == 0)
    {
       modify(account_stats, [&](_account_statistics_object& s) {
          s.uncollected_witness_pay += amount;
@@ -162,25 +162,21 @@ void database::deposit_witness_pay(const witness_object& wit, share_type amount,
    }
    else
    {
-      share_type witness_pay = amount;
-      if (wit.bonus_rate > 0)
+      share_type pledge_bonus = ((fc::bigint)amount.value * wit.bonus_rate * wit.total_mining_pledge
+         / ((wit.pledge + wit.total_mining_pledge) * GRAPHENE_100_PERCENT)).to_int64();
+      if (pledge_bonus > 0)
       {
-         share_type pledge_bonus = ((fc::bigint)amount.value * wit.bonus_rate * wit.total_mining_pledge
-            / ((wit.pledge + wit.total_mining_pledge) * GRAPHENE_100_PERCENT)).to_int64();
-         if (pledge_bonus > 0)
-         {
-            modify(wit, [&](witness_object& w) {
-               w.unhandled_bonus += pledge_bonus;
-               w.need_distribute_bonus += pledge_bonus;
-               if (w.last_update_bonus_block_num == 0)//up to now, witness not update pledge mining bonus 
-                  w.last_update_bonus_block_num = head_block_num();
-            });
-         }  
-         witness_pay = amount - pledge_bonus;
-      }   
+         modify(wit, [&](witness_object& w) {
+            w.unhandled_bonus += pledge_bonus;
+            w.need_distribute_bonus += pledge_bonus;
+            if (w.last_update_bonus_block_num == 0)//up to now, witness not update pledge mining bonus 
+               w.last_update_bonus_block_num = head_block_num();
+         });
+      }
 
+      amount -= pledge_bonus;
       modify(account_stats, [&](_account_statistics_object& s) {
-         s.uncollected_witness_pay += witness_pay;
+         s.uncollected_witness_pay += amount;
       });
    }
 

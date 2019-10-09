@@ -568,7 +568,6 @@ namespace graphene { namespace chain {
          void clear_unapproved_committee_proposals();
          void execute_committee_proposals();
          void check_invariants();
-         //void release_platform_pledges();
          void clear_resigned_platform_votes();
          void process_content_platform_awards();
          void process_platform_voted_awards();
