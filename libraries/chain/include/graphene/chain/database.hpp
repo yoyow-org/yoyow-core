@@ -543,7 +543,6 @@ namespace graphene { namespace chain {
          void update_last_irreversible_block();
          void clear_expired_transactions();
          void clear_expired_proposals();
-         void clear_expired_orders();
          void clear_active_post();
          void clear_unnecessary_objects();//advertising order, custom vote and cast custom vote
          void update_reduce_witness_csaf();//only execute once for HARDFORK_0_4_BLOCKNUM

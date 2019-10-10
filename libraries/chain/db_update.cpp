@@ -253,24 +253,6 @@ void database::update_last_irreversible_block()
    }
 }
 
-void database::clear_expired_orders()
-{
-    try {
-        //Cancel expired limit orders
-        auto head_time = head_block_time();
-        auto maint_time = get_dynamic_global_properties().next_maintenance_time;
-
-        auto& limit_index = get_index_type<limit_order_index>().indices().get<by_expiration>();
-        while (!limit_index.empty() && limit_index.begin()->expiration <= head_time)
-        {
-            const limit_order_object& order = *limit_index.begin();
-            auto base_asset = order.sell_price.base.asset_id;
-            auto quote_asset = order.sell_price.quote.asset_id;
-            cancel_limit_order(order);
-        }
-    } FC_CAPTURE_AND_RETHROW()
-}
-
 void database::clear_expired_transactions()
 { try {
    //Look for expired transactions in the deduplication list, and remove them.
@@ -516,7 +498,6 @@ void database::clear_expired_scores()
 
 void database::clear_expired_limit_orders()
 {
-   const auto& global_params = get_global_properties().parameters.get_award_params();
    const auto& limit_order_expiration_index = get_index_type<limit_order_index>().indices().get<by_expiration>();
 
    while (!limit_order_expiration_index.empty() && limit_order_expiration_index.begin()->expiration <= head_block_time())
