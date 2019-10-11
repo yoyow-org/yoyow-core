@@ -76,7 +76,7 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
       FC_ASSERT(op.vote_result.size() >= custom_vote_obj->minimum_selected_items && op.vote_result.size() <= custom_vote_obj->maximum_selected_items, 
          "vote options num is not in range ${min} - ${max}.", ("min", custom_vote_obj->minimum_selected_items)("max", custom_vote_obj->maximum_selected_items));
 
-      auto votes = d.get_account_statistics_by_uid(op.voter).get_votes_from_core_balance(); //d.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
+      auto votes = d.get_account_statistics_by_uid(op.voter).get_votes_from_core_balance();
       FC_ASSERT(votes >= custom_vote_obj->required_asset_amount, "asset ${aid} balance less than required amount for vote ${amount}", 
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
 

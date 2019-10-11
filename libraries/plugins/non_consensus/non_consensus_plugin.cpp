@@ -87,7 +87,7 @@ void non_consensus_plugin_impl::create_custom_vote_index(const custom_vote_cast_
    graphene::chain::database& db = database();
 
    auto custom_vote_obj = db.find_custom_vote_by_vid(op.custom_vote_creater, op.custom_vote_vid);
-   uint64_t votes = db.get_account_statistics_by_uid(op.voter).get_votes_from_core_balance();//db.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
+   uint64_t votes = db.get_account_statistics_by_uid(op.voter).get_votes_from_core_balance();
    const auto& cast_idx = db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
    auto cast_itr = cast_idx.find(std::make_tuple(op.voter, op.custom_vote_creater, op.custom_vote_vid));
  
