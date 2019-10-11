@@ -56,7 +56,7 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
 
    FC_ASSERT( fee_paying_account->is_registrar, "Only registrars may register an account." );
    const auto& referrer = d.get_account_by_uid( op.reg_info.referrer );
-   FC_ASSERT( referrer.is_full_member, "The referrer must be a valid platform or full member." );
+   //FC_ASSERT( referrer.is_full_member, "The referrer must be a valid platform or full member." );
 
    const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
    if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
