@@ -1229,7 +1229,7 @@ void database::check_invariants()
       if( s.is_voter )
       {
          ++total_voting_accounts;
-         total_voting_core_balance += s.core_balance;
+         total_voting_core_balance += s.get_votes_from_core_balance();
       }
    }
 
@@ -1305,7 +1305,7 @@ void database::check_invariants()
          FC_ASSERT( s.effective_votes_next_update_block > head_num );
          const auto& stats = get_account_statistics_by_uid( s.uid );
          FC_ASSERT( stats.last_voter_sequence == s.sequence );
-         FC_ASSERT( stats.core_balance == s.votes );
+         FC_ASSERT(stats.get_votes_from_core_balance() == s.votes);
          ++total_voters;
          total_voter_votes += s.votes;
          total_witnesses_voted += s.number_of_witnesses_voted;

@@ -373,7 +373,7 @@ void_result platform_vote_update_evaluator::do_apply( const platform_vote_update
       voter_obj = &d.create<voter_object>( [&]( voter_object& v ){
          v.uid               = op.voter;
          v.sequence          = account_stats->last_voter_sequence;
-         v.votes             = account_stats->core_balance.value;
+         v.votes             = account_stats->get_votes_from_core_balance();
          v.votes_last_update = head_block_time;
 
          v.effective_votes_last_update       = head_block_time;

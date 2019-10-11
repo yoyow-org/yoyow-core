@@ -325,6 +325,10 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          void set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now);
 
          void add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount);
+
+         uint64_t get_votes_from_core_balance()const{
+            return core_balance.value + total_core_in_orders.value;
+         }
       
          template<class DB>
          share_type get_all_pledge_balance(asset_aid_type asset_id,const DB& db)const{

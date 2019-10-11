@@ -117,20 +117,6 @@ void database::adjust_balance(account_uid_type account, asset delta )
             invalidate_voter( *voter );
          }
       }
-      if( account_stats.is_voter )
-      {
-         const voter_object* voter = find_voter( account, account_stats.last_voter_sequence );
-         //refresh effective votes
-         update_voter_effective_votes( *voter );
-         //update votes
-         modify( *voter, [&]( voter_object& v )
-         {
-            v.votes += delta.amount.value;
-            v.votes_last_update = head_block_time();
-         } );
-         //refresh effective votes again
-         update_voter_effective_votes( *voter );
-      }
       const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
       modify(account_stats, [&](_account_statistics_object& s) {
@@ -138,6 +124,20 @@ void database::adjust_balance(account_uid_type account, asset delta )
             s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, dpo.enabled_hardfork_version);
          s.core_balance += delta.amount;
       });
+      if (account_stats.is_voter)
+      {
+         const voter_object* voter = find_voter(account, account_stats.last_voter_sequence);
+         //refresh effective votes
+         update_voter_effective_votes(*voter);
+         //update votes
+         modify(*voter, [&](voter_object& v)
+         {
+            v.votes = account_stats.get_votes_from_core_balance();
+            v.votes_last_update = head_block_time();
+         });
+         //refresh effective votes again
+         update_voter_effective_votes(*voter);
+      }
    }
 
    //update custom vote

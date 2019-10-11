@@ -373,7 +373,7 @@ void_result committee_member_vote_update_evaluator::do_apply( const committee_me
          v.uid               = op.voter;
          v.sequence          = account_stats->last_voter_sequence;
          //v.is_valid          = true; // default
-         v.votes             = account_stats->core_balance.value;
+         v.votes             = account_stats->get_votes_from_core_balance();
          v.votes_last_update = head_block_time;
 
          //v.effective_votes                 = 0; // default

@@ -602,7 +602,7 @@ void_result account_update_proxy_evaluator::do_apply( const account_update_proxy
          v.uid               = op.voter;
          v.sequence          = account_stats->last_voter_sequence;
          //v.is_valid          = true; // default
-         v.votes             = account_stats->core_balance.value;
+         v.votes             = account_stats->get_votes_from_core_balance();
          v.votes_last_update = head_block_time;
 
          //v.effective_votes                 = 0; // default
