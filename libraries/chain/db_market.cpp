@@ -278,6 +278,26 @@ void database::pay_order( const account_object& receiver, const asset& receives,
       modify(balances, [&](_account_statistics_object& b){
          b.total_core_in_orders -= pays.amount;
       });
+
+      //total_core_in_orders changed and update votes
+      auto update_seller_votes = [&](account_uid_type account){
+         const _account_statistics_object& account_stats = get_account_statistics_by_uid(account);
+         if (account_stats.is_voter)
+         {
+            const voter_object* voter = find_voter(account, account_stats.last_voter_sequence);
+            //refresh effective votes
+            update_voter_effective_votes(*voter);
+            //update votes
+            modify(*voter, [&](voter_object& v)
+            {
+               v.votes = account_stats.get_votes_from_core_balance();
+               v.votes_last_update = head_block_time();
+            });
+            //refresh effective votes again
+            update_voter_effective_votes(*voter);
+         }
+      };
+      update_seller_votes(receiver.uid);
    }
    adjust_balance(receiver.uid, receives);
 }

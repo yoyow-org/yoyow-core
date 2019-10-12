@@ -2348,6 +2348,164 @@ BOOST_AUTO_TEST_CASE(limit_order_test2)
    }
 }
 
+BOOST_AUTO_TEST_CASE(limit_order_test3_for_votes)
+{
+   try{
+      ACTORS((1000)(2000)(3000)(4000));
+
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      auto balance_u_1000_0 = _core(30000);
+      auto balance_u_2000_0 = _core(30000);
+      auto balance_u_3000_0 = _core(30000);
+      auto balance_u_4000_0 = _core(30000);
+
+      transfer(committee_account, u_1000_id, balance_u_1000_0);
+      transfer(committee_account, u_2000_id, balance_u_2000_0);
+      transfer(committee_account, u_3000_id, balance_u_3000_0);
+      transfer(committee_account, u_4000_id, balance_u_4000_0);
+      add_csaf_for_account(u_1000_id, 10000);
+      add_csaf_for_account(u_2000_id, 10000);
+      add_csaf_for_account(u_3000_id, 10000);
+      add_csaf_for_account(u_4000_id, 10000);
+      generate_blocks(HARDFORK_0_5_TIME, true);
+
+      auto market_fee_percent = 1 * GRAPHENE_1_PERCENT;
+      auto market_reward_percent = 50 * GRAPHENE_1_PERCENT;
+      auto max_supply = 100000000 * prec;
+      auto max_market_fee_1 = 20 * prec;
+      auto max_market_fee_2 = 2000 * prec;
+      asset_options options;
+      options.max_supply = max_supply;
+      options.market_fee_percent = market_fee_percent;
+      options.max_market_fee = max_market_fee_1;
+      options.issuer_permissions = 15;
+      options.flags = charge_market_fee;
+      //options.whitelist_authorities = ;
+      //options.blacklist_authorities = ;
+      //options.whitelist_markets = ;
+      //options.blacklist_markets = ;
+      options.description = "test asset";
+      options.extensions = graphene::chain::extension<additional_asset_options>();
+      additional_asset_options exts;
+      exts.reward_percent = market_reward_percent;
+      options.extensions->value = exts;
+
+      const account_object commit_obj = db.get_account_by_uid(committee_account);
+      auto initial_supply = share_type(100000000 * prec);
+      create_asset({ u_1000_private_key }, u_1000_id, "ABC", 5, options, initial_supply);
+      const asset_object& ast = db.get_asset_by_aid(1);
+      BOOST_CHECK(ast.symbol == "ABC");
+      BOOST_CHECK(ast.precision == 5);
+      BOOST_CHECK(ast.issuer == u_1000_id);
+      BOOST_CHECK(ast.options.max_supply == max_supply);
+      BOOST_CHECK(ast.options.flags == charge_market_fee);
+      asset ast1 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast1.asset_id == 1);
+      BOOST_CHECK(ast1.amount == initial_supply);
+
+      auto options2 = options;
+      options2.max_market_fee = max_market_fee_2;
+      create_asset({ u_2000_private_key }, u_2000_id, "CBA", 5, options2, initial_supply);
+      const asset_object& ast2 = db.get_asset_by_aid(2);
+      BOOST_CHECK(ast2.symbol == "CBA");
+      BOOST_CHECK(ast2.precision == 5);
+      BOOST_CHECK(ast2.issuer == u_2000_id);
+      BOOST_CHECK(ast2.options.max_supply == max_supply);
+      BOOST_CHECK(ast2.options.flags == charge_market_fee);
+      asset ast7 = db.get_balance(u_2000_id, 2);
+      BOOST_CHECK(ast7.asset_id == 2);
+      BOOST_CHECK(ast7.amount == initial_supply);
+
+      flat_set<account_uid_type> platform_set1;
+      platform_set1.insert(u_4000_id);
+      flat_set<account_uid_type> platform_set2;
+      create_platform(u_4000_id, "platform", _core(10000), "www.123456789.com", "", { u_4000_private_key });
+      update_platform_votes(u_1000_id, platform_set1, platform_set2, { u_1000_private_key });
+      update_platform_votes(u_2000_id, platform_set1, platform_set2, { u_2000_private_key });
+      update_platform_votes(u_3000_id, platform_set1, platform_set2, { u_3000_private_key });
+
+      //other asset for core asset
+      auto expiration_time = fc::time_point::now().sec_since_epoch() + 24 * 3600;
+      auto sell_asset_1_amount = 10000 * prec;
+      auto sell_asset_0_amount = 1000 * prec;
+
+      share_type core_balance1_1 = db.get_account_statistics_by_uid(u_1000_id).core_balance;
+      //u_1000 :  10000 ABC <---> 1000 YOYO
+      create_limit_order({ u_1000_private_key }, u_1000_id, 1, sell_asset_1_amount, 0, sell_asset_0_amount, expiration_time, false);
+
+      auto account1_1 = db.get_account_statistics_by_uid(u_1000_id);
+      BOOST_CHECK(account1_1.total_core_in_orders == 0);
+
+      uint64_t votes1_1 = account1_1.get_votes_from_core_balance();
+      const voter_object* voter1 = db.find_voter(u_1000_id, account1_1.last_voter_sequence);
+      BOOST_CHECK(voter1 != nullptr);
+      BOOST_CHECK(voter1->votes == votes1_1);
+      BOOST_CHECK(votes1_1 == core_balance1_1.value);
+
+      //u_3000 :  500 YOYO  <---> 5000 ABC
+      share_type core_balance3_1 = db.get_account_statistics_by_uid(u_3000_id).core_balance;
+      create_limit_order({ u_3000_private_key }, u_3000_id, 0, sell_asset_0_amount / 2, 1, sell_asset_1_amount / 2, expiration_time, false);
+
+      auto account1_2 = db.get_account_statistics_by_uid(u_1000_id);
+      uint64_t votes1_2 = account1_2.get_votes_from_core_balance();
+      const voter_object* voter1_2 = db.find_voter(u_1000_id, account1_2.last_voter_sequence);
+      BOOST_CHECK(voter1_2 != nullptr);
+      BOOST_CHECK(voter1_2->votes == votes1_2);
+      BOOST_CHECK(votes1_2 == core_balance1_1.value + (sell_asset_0_amount / 2).value);
+
+      auto account3_1 = db.get_account_statistics_by_uid(u_3000_id);
+      uint64_t votes3_1 = account3_1.get_votes_from_core_balance();
+      const voter_object* voter3_1 = db.find_voter(u_3000_id, account3_1.last_voter_sequence);
+      BOOST_CHECK(voter3_1 != nullptr);
+      BOOST_CHECK(voter3_1->votes == votes3_1);
+      BOOST_CHECK(votes3_1 == core_balance3_1.value - (sell_asset_0_amount / 2).value);
+
+      //////////////////////////////////////////
+      //core asset for other asset
+      //////////////////////////////////////////
+      auto sell_asset_2_amount = 2000 * prec;
+
+      share_type core_balance3_2 = db.get_account_statistics_by_uid(u_3000_id).core_balance;
+      //u_3000 :  1000 YOYO <---> 2000 CBA
+      create_limit_order({ u_3000_private_key }, u_3000_id, 0, sell_asset_0_amount, 2, sell_asset_2_amount, expiration_time, false);
+
+      auto account3_2 = db.get_account_statistics_by_uid(u_3000_id);
+      BOOST_CHECK(account3_2.total_core_in_orders == sell_asset_0_amount.value);
+
+      uint64_t votes3_2 = account3_2.get_votes_from_core_balance();
+      const voter_object* voter3_2 = db.find_voter(u_3000_id, account3_2.last_voter_sequence);
+      BOOST_CHECK(voter3_2 != nullptr);
+      BOOST_CHECK(voter3_2->votes == votes3_2);
+      BOOST_CHECK(votes3_2 == core_balance3_2.value);
+
+      //u_2000 :  4000 CBA  <---> 2000 YOYO
+      share_type core_balance2_1 = db.get_account_statistics_by_uid(u_2000_id).core_balance;
+      create_limit_order({ u_2000_private_key }, u_2000_id, 2, sell_asset_2_amount * 2, 0, sell_asset_0_amount * 2, expiration_time, false);
+
+      const _account_statistics_object& account3_3 = db.get_account_statistics_by_uid(u_3000_id);
+      uint64_t votes3_3 = account3_3.get_votes_from_core_balance();
+      const voter_object* voter3_3 = db.find_voter(u_3000_id, account3_3.last_voter_sequence);
+      BOOST_CHECK(voter3_3 != nullptr);
+      BOOST_CHECK(voter3_3->votes == votes3_3);
+      BOOST_CHECK(votes3_3 == core_balance3_2.value - sell_asset_0_amount.value);
+
+
+      const _account_statistics_object& account2_1 = db.get_account_statistics_by_uid(u_2000_id);
+      uint64_t votes2_1 = account2_1.get_votes_from_core_balance();
+      const voter_object* voter2_1 = db.find_voter(u_2000_id, account2_1.last_voter_sequence);
+      BOOST_CHECK(voter2_1 != nullptr);
+      BOOST_CHECK(voter2_1->votes == votes2_1);
+      BOOST_CHECK(votes2_1 == core_balance2_1.value + sell_asset_0_amount.value);
+   }
+   catch (fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
 {
    try{
