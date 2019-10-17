@@ -1889,6 +1889,21 @@ class wallet_api
                                                          int64_t start, uint32_t stop_time,
                                                          unsigned limit = 100)const;
 
+      signed_transaction assign_beneficiary(string   account,
+                                            string   new_beneficiary,
+                                            bool     csaf_fee = true,
+                                            bool     broadcast = false);
+
+      signed_transaction collect_benefit(string                   issuer,
+                                         string                   from,
+                                         uint8_t                  benefit_type,
+                                         string                   amount,
+                                         string                   asset_symbol,
+                                         optional<string>         to,
+                                         optional<time_point_sec> time,
+                                         bool                     csaf_fee =  true,
+                                         bool                     broadcast = false);
+
 
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -2150,4 +2165,8 @@ FC_API( graphene::wallet::wallet_api,
         (get_top_markets)
         (get_trade_history)
         (get_trade_history_by_sequence)
+
+        //for_benefit
+        (assign_beneficiary)
+        (collect_benefit)
       )

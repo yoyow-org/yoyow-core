@@ -3323,6 +3323,69 @@ signed_transaction account_cancel_auth_platform(string account,
       } FC_CAPTURE_AND_RETHROW((account)(asset_symbol)(amount)(csaf_fee)(broadcast))
    }
 
+   signed_transaction assign_beneficiary(string   account,
+      string   new_beneficiary,
+      bool     csaf_fee = true,
+      bool     broadcast = false)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         account_uid_type account_uid = get_account_uid(account);
+         account_uid_type beneficiary_uid = get_account_uid(new_beneficiary);
+         beneficiary_assign_operation assign_op;
+         assign_op.owner = account_uid;
+         assign_op.new_beneficiary = beneficiary_uid;
+
+         signed_transaction tx;
+         tx.operations.push_back(assign_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((account)(new_beneficiary)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction collect_benefit(string           issuer,
+      string                   from,
+      uint8_t                  benefit_type,
+      string                   amount,
+      string                   asset_symbol,
+      optional<string>         to,
+      optional<time_point_sec> time,
+      bool                     csaf_fee = true,
+      bool                     broadcast = false)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+
+         account_uid_type issuer_uid = get_account_uid(issuer);
+         account_uid_type from_uid = get_account_uid(from);
+
+         benefit_collect_operation collect_op;
+         collect_op.issuer = issuer_uid;
+         collect_op.from = from_uid;
+         collect_op.amount = asset_obj->amount_from_string(amount);
+         collect_op.benefit_type = benefit_type;
+
+         if (to.valid())
+            collect_op.to = *to;
+         if (time.valid())
+            collect_op.time = *time;
+
+         signed_transaction tx;
+         tx.operations.push_back(collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((issuer)(from)(benefit_type)(amount)(asset_symbol)(to)(time)(csaf_fee)(broadcast))
+   }
+
    signed_transaction asset_claim_fees(string               issuer,
       string               asset_symbol,
       string               amount_to_claim,
@@ -5066,6 +5129,27 @@ vector<market_trade> wallet_api::get_trade_history_by_sequence(const string& bas
 {
    time_point_sec stop_time = time_point_sec(stop);
    return my->_remote_db->get_trade_history_by_sequence(base, quote, start, stop_time, limit);
+}
+
+signed_transaction wallet_api::assign_beneficiary(string   account,
+                                                  string   new_beneficiary,
+                                                  bool     csaf_fee,
+                                                  bool     broadcast)
+{
+   return my->assign_beneficiary(account, new_beneficiary, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::collect_benefit(string                   issuer,
+                                               string                   from,
+                                               uint8_t                  benefit_type,
+                                               string                   amount,
+                                               string                   asset_symbol,
+                                               optional<string>         to,
+                                               optional<time_point_sec> time,
+                                               bool                     csaf_fee,
+                                               bool                     broadcast)
+{
+   return my->collect_benefit(issuer, from, benefit_type, amount, asset_symbol, to, time, csaf_fee, broadcast);
 }
 
 
