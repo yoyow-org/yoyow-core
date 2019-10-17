@@ -1900,7 +1900,7 @@ class wallet_api
                                          string                   amount,
                                          string                   asset_symbol,
                                          optional<string>         to,
-                                         optional<time_point_sec> time,
+                                         optional<uint32_t>       time,
                                          bool                     csaf_fee =  true,
                                          bool                     broadcast = false);
 

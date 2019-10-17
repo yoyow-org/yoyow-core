@@ -3353,7 +3353,7 @@ signed_transaction account_cancel_auth_platform(string account,
       string                   amount,
       string                   asset_symbol,
       optional<string>         to,
-      optional<time_point_sec> time,
+      optional<uint32_t>       time,
       bool                     csaf_fee = true,
       bool                     broadcast = false)
    {
@@ -3374,11 +3374,11 @@ signed_transaction account_cancel_auth_platform(string account,
          if (to.valid())
             collect_op.to = get_account_uid(*to);
          if (time.valid())
-            collect_op.time = *time;
+            collect_op.time = time_point_sec(*time);
 
          signed_transaction tx;
          tx.operations.push_back(collect_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3405,7 +3405,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(collect_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -5145,7 +5145,7 @@ signed_transaction wallet_api::collect_benefit(string                   issuer,
                                                string                   amount,
                                                string                   asset_symbol,
                                                optional<string>         to,
-                                               optional<time_point_sec> time,
+                                               optional<uint32_t>       time,
                                                bool                     csaf_fee,
                                                bool                     broadcast)
 {

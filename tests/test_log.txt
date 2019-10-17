@@ -347,3 +347,13 @@
 	   get_account_core_asset_pledge test1
 	   
 	   
+	   #16
+	   assign_beneficiary init1 test1 true true
+	   get_account_statistics init1
+	   
+	   collect_benefit test1 init1 1 1 YOYO null null true true
+	   get_account_statistics test1
+	   
+	   collect_benefit test1 init1 0 1 YOYO test1 1571308203 true true
+	   get_account_statistics test1
+	   
