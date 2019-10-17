@@ -3372,7 +3372,7 @@ signed_transaction account_cancel_auth_platform(string account,
          collect_op.benefit_type = benefit_type;
 
          if (to.valid())
-            collect_op.to = *to;
+            collect_op.to = get_account_uid(*to);
          if (time.valid())
             collect_op.time = *time;
 
