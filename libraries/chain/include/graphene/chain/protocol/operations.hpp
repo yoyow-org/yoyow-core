@@ -103,7 +103,8 @@ namespace graphene { namespace chain {
             fill_order_operation,  // VIRTUAL
             market_fee_collect_operation,
             score_bonus_collect_operation,
-            beneficiary_assign_operation
+            beneficiary_assign_operation,
+            benefit_collect_operation
          > operation;
 
    /// @} // operations group

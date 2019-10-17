@@ -161,4 +161,18 @@ public:
    const _account_statistics_object* account_stats = nullptr;
 };
 
+class benefit_collect_evaluator : public evaluator<benefit_collect_evaluator>
+{
+public:
+   typedef benefit_collect_operation operation_type;
+
+   void_result do_evaluate(const benefit_collect_operation& o);
+   void_result do_apply(const benefit_collect_operation& o);
+
+   const _account_statistics_object* from_stats = nullptr;
+   const _account_statistics_object* to_stats = nullptr;
+   fc::uint128_t                    available_coin_seconds;
+   fc::uint128_t                    collecting_coin_seconds;
+};
+
 } } // graphene::chain

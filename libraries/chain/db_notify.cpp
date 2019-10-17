@@ -398,6 +398,13 @@ struct get_impacted_account_uid_visitor
       _impacted.insert(op.fee_payer_uid()); // account_id
       _impacted.insert(op.new_beneficiary); // account_id
    }
+   void operator()(const benefit_collect_operation& op)
+   {
+      _impacted.insert(op.issuer);
+      _impacted.insert(op.from);
+      if (op.to.valid())
+         _impacted.insert(*(op.to));
+   }
 };
 
 void operation_get_impacted_account_uids( const operation& op, flat_set<account_uid_type>& result )
