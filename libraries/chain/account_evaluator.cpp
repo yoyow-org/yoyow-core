@@ -750,4 +750,31 @@ void_result account_whitelist_evaluator::do_apply(const account_whitelist_operat
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
+void_result beneficiary_assign_evaluator::do_evaluate(const beneficiary_assign_operation& o)
+{
+   try {
+      database& d = db();
+
+      account_stats = &d.get_account_statistics_by_uid(o.owner); //check owner exist
+      d.find_account_by_uid(o.new_beneficiary); //check new beneficiary exist    
+      if (account_stats->beneficiary.valid())
+         FC_ASSERT(*account_stats->beneficiary != o.new_beneficiary, "beneficiary specified but did not change");
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((o))
+}
+
+void_result beneficiary_assign_evaluator::do_apply(const beneficiary_assign_operation& o)
+{
+   try {
+      database& d = db();
+
+      d.modify(*account_stats, [&o](_account_statistics_object& s) {
+         s.beneficiary = o.new_beneficiary;
+      });
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((o))
+}
+
 } } // graphene::chain

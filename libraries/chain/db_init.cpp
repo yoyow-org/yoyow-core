@@ -225,6 +225,7 @@ void database::initialize_evaluators()
    register_evaluator<limit_order_cancel_evaluator>();
    register_evaluator<market_fee_collect_evaluator>();
    register_evaluator<score_bonus_collect_evaluator>();
+   register_evaluator<beneficiary_assign_evaluator>();
 }
 
 void database::initialize_indexes()

@@ -440,6 +440,33 @@ namespace graphene { namespace chain {
       }
    };
 
+   /**
+   *  @ingroup operations
+   *  @brief assign beneficiary
+   */
+   struct beneficiary_assign_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION; 
+         uint64_t min_real_fee = 0;
+         uint16_t min_rf_percent = 0;
+         extensions_type        extensions;
+      };
+
+      fee_type         fee;
+      account_uid_type owner;
+      account_uid_type new_beneficiary;
+      extensions_type  extensions;
+
+      account_uid_type fee_payer_uid()const { return owner; }
+      void             validate()const;
+
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
+      {
+         a.insert(owner);
+      }
+   };
 } } // graphene::chain
 
 FC_REFLECT(graphene::chain::account_reg_info, (registrar)(referrer)(registrar_percent)(referrer_percent)
@@ -505,3 +532,6 @@ FC_REFLECT( graphene::chain::account_update_allowed_assets_operation::fee_parame
 
 FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )
+
+FC_REFLECT( graphene::chain::beneficiary_assign_operation, (fee)(owner)(new_beneficiary)(extensions))
+FC_REFLECT( graphene::chain::beneficiary_assign_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))

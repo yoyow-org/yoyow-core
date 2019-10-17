@@ -303,6 +303,11 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          license_lid_type     last_license_sequence = 0;
 
          /**
+         * beneficiary can collect witness pay, csaf that produced from locked balance of owner
+         */
+         optional<account_uid_type> beneficiary;
+
+         /**
           * Compute coin_seconds_earned.  Used to
           * non-destructively figure out how many coin seconds
           * are available.
@@ -595,6 +600,10 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       advertising_aid_type last_advertising_sequence = 0;
       license_lid_type     last_license_sequence = 0;
 
+      /**
+      * beneficiary can collect witness pay, csaf that produced from locked balance of owner
+      */
+      optional<account_uid_type> beneficiary;
    };
 
    /**
@@ -1223,6 +1232,7 @@ FC_REFLECT_DERIVED( graphene::chain::_account_statistics_object,
                     (last_advertising_sequence)
                     (last_license_sequence)
                     (pledge_balance_ids)
+                    (beneficiary)
                   )
 
 FC_REFLECT(graphene::chain::account_statistics_object,
@@ -1257,6 +1267,7 @@ FC_REFLECT(graphene::chain::account_statistics_object,
                   (last_custom_vote_sequence)
                   (last_advertising_sequence)
                   (last_license_sequence)
+                  (beneficiary)
                   )
 
 FC_REFLECT_DERIVED(graphene::chain::account_auth_platform_object,

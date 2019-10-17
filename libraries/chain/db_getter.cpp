@@ -203,6 +203,7 @@ account_statistics_object database::get_account_statistics_struct_by_uid(account
    obj.witness_total_reported           = ant.witness_total_reported;
 
    obj.total_mining_pledge = ant.total_mining_pledge;
+   obj.beneficiary = ant.beneficiary;
 
    if (ant.pledge_balance_ids.count(pledge_balance_type::Commitment)){
       const pledge_balance_object& pledge_balance_obj = get<pledge_balance_object>(ant.pledge_balance_ids.at(pledge_balance_type::Commitment));

@@ -282,4 +282,13 @@ void account_update_allowed_assets_operation::validate() const
    }
 }
 
+void beneficiary_assign_operation::validate() const
+{
+   validate_op_fee(fee, "assign beneficiary");
+   validate_account_uid(owner, "owner ");
+   validate_account_uid(new_beneficiary, "new beneficiary ");
+   FC_ASSERT(owner != new_beneficiary, "account assign beneficiary to self is not allowed");
+   FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
+}
+
 } } // graphene::chain

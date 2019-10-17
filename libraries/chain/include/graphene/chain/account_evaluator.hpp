@@ -150,4 +150,15 @@ public:
    const account_object* listed_account = nullptr;
 };
 
+class beneficiary_assign_evaluator : public evaluator < beneficiary_assign_evaluator >
+{
+public:
+   typedef beneficiary_assign_operation operation_type;
+
+   void_result do_evaluate(const beneficiary_assign_operation& o);
+   void_result do_apply(const beneficiary_assign_operation& o);
+
+   const _account_statistics_object* account_stats = nullptr;
+};
+
 } } // graphene::chain
