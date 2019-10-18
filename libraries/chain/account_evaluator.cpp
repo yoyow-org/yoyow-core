@@ -784,7 +784,7 @@ void_result benefit_collect_evaluator::do_evaluate(const benefit_collect_operati
    try {
       database& d = db();
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-      FC_ASSERT(dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05, "Can only assign beneficiary after HARDFORK_0_5_TIME");
+      FC_ASSERT(dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05, "Can only collect benefit after HARDFORK_0_5_TIME");
 
       d.get_account_by_uid(op.issuer);
       from_stats = &d.get_account_statistics_by_uid(op.from);
