@@ -248,6 +248,8 @@ namespace graphene { namespace chain {
          account_uid_type             poster;
          /// The post's pid.
          post_pid_type                post_pid;
+         /// The post's type.
+         post_operation::Post_Type    post_type = post_operation::Post_Type::Post_Type_Post;
          /// If it is a transcript, this value is requested as the source author uid
          optional<account_uid_type>   origin_poster;
          /// If it is a transcript, this value is required for the source id
@@ -641,7 +643,7 @@ FC_REFLECT_DERIVED( graphene::chain::platform_vote_object, (graphene::db::object
 
 FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
-                    (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
+                    (platform)(poster)(post_pid)(post_type)(origin_poster)(origin_post_pid)(origin_platform)
                     (hash_value)(extra_data)(title)(body)
                     (create_time)(last_update_time)(receiptors)(forward_price)(license_lid)(permission_flags)(score_settlement)
                   )

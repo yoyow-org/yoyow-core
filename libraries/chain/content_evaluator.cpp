@@ -635,6 +635,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 
          if (ext_para)
          {
+            obj.post_type = (post_operation::Post_Type)*(ext_para->post_type);
             if (ext_para->forward_price.valid())
                obj.forward_price = *(ext_para->forward_price);
             if (ext_para->license_lid.valid())
