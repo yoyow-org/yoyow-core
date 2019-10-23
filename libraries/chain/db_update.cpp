@@ -1578,7 +1578,7 @@ void database::process_content_platform_awards()
                if (csaf > 0)
                {
                   total_effective_csaf_amount += csaf;
-		  post_effective_casf.emplace_back(std::make_tuple((active_post_object*)&(*apt_itr), csaf, approval_amount.convert_to<int64_t>()));
+                  post_effective_casf.emplace_back(std::make_tuple((active_post_object*)&(*apt_itr), csaf, approval_amount.convert_to<int64_t>()));
                }
             }
 
