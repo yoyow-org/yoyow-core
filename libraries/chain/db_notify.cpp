@@ -205,6 +205,12 @@ struct get_impacted_account_uid_visitor
             if( account_item.new_priviledges.value.takeover_registrar.valid() )
                _impacted.insert( *account_item.new_priviledges.value.takeover_registrar );
          }
+         else if (item.which() == committee_proposal_item_type::tag< committee_withdraw_platform_pledge_item_type >::value)
+         {
+            const auto& platform_punish_item = item.get< committee_withdraw_platform_pledge_item_type >();
+            _impacted.insert(platform_punish_item.platform_account);
+            _impacted.insert(platform_punish_item.receiver);
+         }
       }
    }
    void operator()( const committee_proposal_update_operation& op )
