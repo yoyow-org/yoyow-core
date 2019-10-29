@@ -261,6 +261,22 @@ namespace graphene { namespace chain {
     };
     typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
 
+
+    /**
+    * @ingroup operations
+    *
+    * Committee .withdraw platform pledge
+    */
+    struct committee_withdraw_platform_pledge_item_type
+    {
+       account_uid_type    platform_account;
+       account_uid_type    receiver;
+       share_type          withdraw_amount;
+       extensions_type     extensions;
+
+       void validate()const;
+    };
+
    /**
     * @ingroup operations
     *
@@ -270,7 +286,8 @@ namespace graphene { namespace chain {
             committee_update_account_priviledge_item_type,
             committee_update_fee_schedule_item_type,
             committee_update_global_parameter_item_type,
-                  committee_update_global_content_parameter_item_type
+            committee_update_global_content_parameter_item_type,
+            committee_withdraw_platform_pledge_item_type
          > committee_proposal_item_type;
 
    /**
@@ -450,10 +467,16 @@ FC_REFLECT(graphene::chain::committee_updatable_content_parameters,
             (max_pledge_releasing_size)
             (scorer_earnings_rate))
 
+FC_REFLECT( graphene::chain::committee_withdraw_platform_pledge_item_type,
+            (platform_account)
+            (receiver)
+            (withdraw_amount)
+            (extensions))
+
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_content_parameter_item_type )
-FC_REFLECT_TYPENAME( graphene::chain::committee_proposal_item_type )
+FC_REFLECT_TYPENAME( graphene::chain::committee_proposal_item_type)
 
 FC_REFLECT_ENUM( graphene::chain::voting_opinion_type,
    (opinion_against)

@@ -450,6 +450,20 @@ void_result committee_proposal_create_evaluator::do_evaluate( const committee_pr
             FC_ASSERT( *param_item.value.maximum_time_until_expiration > global_params.block_interval,
                        "Maximum transaction expiration time must be greater than a block interval" );
       }
+      else if (item.which() == committee_proposal_item_type::tag< committee_withdraw_platform_pledge_item_type >::value)
+      {
+         const auto& param_item = item.get< committee_withdraw_platform_pledge_item_type >();
+         //make sure the account exist
+         d.get_account_by_uid(param_item.receiver); 
+         d.get_account_by_uid(param_item.platform_account);
+         const auto& account_stats = d.get_account_statistics_by_uid(param_item.platform_account);
+         const auto& pledge_balance_obj = d.get(account_stats.pledge_balance_ids.at(pledge_balance_type::Platform));
+         auto total_unrelease_pledge = pledge_balance_obj.total_unrelease_pledge();
+         FC_ASSERT(total_unrelease_pledge >= param_item.withdraw_amount,
+            "No enough unrelease pledge to withdraw, unrelease pledge: ${p}, withdraw amount: ${w}",
+            ("p", total_unrelease_pledge)
+            ("w", param_item.withdraw_amount));
+      }
    }
 
    return void_result();

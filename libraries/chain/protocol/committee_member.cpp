@@ -250,6 +250,13 @@ void committee_updatable_content_parameters::validate()const
       FC_ASSERT(*scorer_earnings_rate < GRAPHENE_100_PERCENT, "scorer earnings rate must less than 100%");
 }
 
+void committee_withdraw_platform_pledge_item_type::validate()const
+{
+   validate_account_uid(platform_account, "platform account ");
+   validate_account_uid(receiver, "target ");
+   FC_ASSERT(withdraw_amount > 0, "Withdraw amount should be positive");
+}
+
 void committee_proposal_create_operation::validate()const
 {
    validate_op_fee( fee, "committee proposal creation " );

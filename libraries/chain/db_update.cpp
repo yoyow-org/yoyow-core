@@ -903,6 +903,47 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
          {
             content_item = &item.get< committee_update_global_content_parameter_item_type >();
          }
+         else if (item.which() == committee_proposal_item_type::tag< committee_withdraw_platform_pledge_item_type >::value)
+         {
+            const auto& platform_punish_item = item.get< committee_withdraw_platform_pledge_item_type >();
+            const auto& account_stats = get_account_statistics_by_uid(platform_punish_item.platform_account);
+            const auto& pledge_balance_obj = get(account_stats.pledge_balance_ids.at(pledge_balance_type::Platform));
+            auto total_unrelease_pledge = pledge_balance_obj.total_unrelease_pledge();
+            FC_ASSERT( total_unrelease_pledge >= platform_punish_item.withdraw_amount,
+                       "No enough unrelease pledge to withdraw, unrelease pledge: ${p}, withdraw amount: ${w}", 
+                       ("p", total_unrelease_pledge)
+                       ("w", platform_punish_item.withdraw_amount) );
+
+            //withdraw platform account pledge         
+            modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
+               share_type from_pledge = std::min(_pbo.pledge, platform_punish_item.withdraw_amount);
+               share_type from_releasing = platform_punish_item.withdraw_amount - from_pledge;
+               _pbo.pledge -= from_pledge;
+               if (from_releasing > 0)
+                  _pbo.reduce_releasing(from_releasing);
+
+               const auto& global_params = get_global_properties().parameters;
+               if (_pbo.pledge < global_params.platform_min_pledge)
+               {  
+                  if (_pbo.pledge > 0)
+                  {
+                     auto release_num = head_block_num() + global_params.platform_pledge_release_delay;
+                     _pbo.update_pledge(asset(0), release_num, *this);
+                  } 
+                  //platform pledge is below platform min pledge, need delete platform object
+                  const platform_object* maybe_found = find_platform_by_owner(platform_punish_item.platform_account);
+                  if (maybe_found != nullptr)
+                     remove(*maybe_found);
+
+                  const auto& account_obj = get_account_by_uid(platform_punish_item.platform_account);
+                  modify(account_obj, [&](account_object& acc){
+                     acc.is_full_member = false;
+                  });
+               }
+            });
+            //withdraw amount awarded to receiver
+            adjust_balance(platform_punish_item.receiver, asset(platform_punish_item.withdraw_amount));
+         }
       }
 
       // apply changes : new takeover registrars
