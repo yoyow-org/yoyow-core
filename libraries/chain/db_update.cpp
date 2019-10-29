@@ -914,7 +914,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                        ("p", total_unrelease_pledge)
                        ("w", platform_punish_item.withdraw_amount) );
 
-            //withdraw platform account pledge         
+            // withdraw platform account pledge         
             modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
                share_type from_pledge = std::min(_pbo.pledge, platform_punish_item.withdraw_amount);
                share_type from_releasing = platform_punish_item.withdraw_amount - from_pledge;
@@ -930,7 +930,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                      auto release_num = head_block_num() + global_params.platform_pledge_release_delay;
                      _pbo.update_pledge(asset(0), release_num, *this);
                   } 
-                  //platform pledge is below platform min pledge, need delete platform object
+                  // platform pledge is below platform min pledge, need delete platform object
                   const platform_object* maybe_found = find_platform_by_owner(platform_punish_item.platform_account);
                   if (maybe_found != nullptr)
                      remove(*maybe_found);
@@ -940,8 +940,18 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                      acc.is_full_member = false;
                   });
                }
+               else 
+               {
+                  // update platform data
+                  const platform_object& pla_obj = get_platform_by_owner(platform_punish_item.platform_account);
+                  modify(pla_obj, [&](platform_object& pfo) {
+                     pfo.pledge = _pbo.pledge.value;
+                     pfo.last_update_time = head_block_time();
+                  });
+                  update_platform_avg_pledge(pla_obj);
+               }   
             });
-            //withdraw amount awarded to receiver
+            // withdraw amount awarded to receiver
             adjust_balance(platform_punish_item.receiver, asset(platform_punish_item.withdraw_amount));
          }
       }
