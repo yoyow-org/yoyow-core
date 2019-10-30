@@ -988,7 +988,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
       {
          if (iter.first == post->platform)
             continue;
-         uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
+         uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
          ast.amount = temp.convert_to<int64_t>();
          surplus -= temp;
          d.adjust_balance(iter.first, ast);
