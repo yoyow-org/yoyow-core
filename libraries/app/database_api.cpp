@@ -2386,7 +2386,8 @@ order_book database_api_impl::get_order_book(const string& base, const string& q
       {
          order ord;
          ord.price = price_to_string(o.sell_price, *assets[0], *assets[1]);
-         ord.quote = assets[1]->amount_to_string(share_type((uint128_t(o.for_sale.value) * o.sell_price.quote.amount.value) / o.sell_price.base.amount.value));
+         uint128_t res = (uint128_t(o.for_sale.value) * o.sell_price.quote.amount.value) / o.sell_price.base.amount.value;
+         ord.quote = assets[1]->amount_to_string(share_type(res.convert_to<int64_t>()));
          ord.base = assets[0]->amount_to_string(o.for_sale);
          result.bids.push_back(ord);
       }
@@ -2395,7 +2396,8 @@ order_book database_api_impl::get_order_book(const string& base, const string& q
          order ord;
          ord.price = price_to_string(o.sell_price, *assets[0], *assets[1]);
          ord.quote = assets[1]->amount_to_string(o.for_sale);
-         ord.base = assets[0]->amount_to_string(share_type((uint128_t(o.for_sale.value) * o.sell_price.quote.amount.value) / o.sell_price.base.amount.value));
+         uint128_t res = (uint128_t(o.for_sale.value) * o.sell_price.quote.amount.value) / o.sell_price.base.amount.value;
+         ord.base = assets[0]->amount_to_string(share_type(res.convert_to<int64_t>()));
          result.asks.push_back(ord);
       }
    }
