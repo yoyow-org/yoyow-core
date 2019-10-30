@@ -457,6 +457,9 @@ void_result committee_proposal_create_evaluator::do_evaluate( const committee_pr
          d.get_account_by_uid(param_item.receiver); 
          d.get_account_by_uid(param_item.platform_account);
          const auto& account_stats = d.get_account_statistics_by_uid(param_item.platform_account);
+         if (account_stats.pledge_balance_ids.count(pledge_balance_type::Platform) == 0)
+            FC_ASSERT(false, "platform pledge balance object is nonexistent");
+
          const auto& pledge_balance_obj = d.get(account_stats.pledge_balance_ids.at(pledge_balance_type::Platform));
          auto total_unrelease_pledge = pledge_balance_obj.total_unrelease_pledge();
          FC_ASSERT(total_unrelease_pledge >= param_item.withdraw_amount,
