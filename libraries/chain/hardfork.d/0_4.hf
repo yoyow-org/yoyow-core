@@ -5,6 +5,6 @@
 
 
 #ifndef HARDFORK_0_5_TIME
-#define HARDFORK_0_5_TIME (fc::time_point_sec( 1572566400 ))  //1572566400  2019-11-1T08:00:00 UTC
+#define HARDFORK_0_5_TIME (fc::time_point_sec( 1580313600 ))  //1572566400  2020-1-30T00:00:00 UTC
 #endif
 
