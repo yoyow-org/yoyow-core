@@ -302,7 +302,7 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       d.update_witness_avg_pledge( *witness_obj );
    }
 
-   if (op.extensions->value.can_pledge.valid() && !op.extensions->value.can_pledge) 
+   if (op.extensions->value.can_pledge.valid() && !*(op.extensions->value.can_pledge)) 
    {
       d.update_pledge_mining_bonus_by_witness(*witness_obj);
       d.resign_pledge_mining(*witness_obj);
