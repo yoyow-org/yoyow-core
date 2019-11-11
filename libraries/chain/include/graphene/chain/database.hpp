@@ -573,8 +573,9 @@ namespace graphene { namespace chain {
          void process_pledge_balance_release();
 
          void update_platform_avg_pledge( const account_uid_type uid );
-         void resign_pledge_mining(const witness_object& wit);
+        
       public:
+         void resign_pledge_mining(const witness_object& wit);
          void update_platform_avg_pledge( const platform_object& pla );
          void adjust_platform_votes( const platform_object& platform, share_type delta );
          void update_pledge_mining_bonus();
