@@ -306,6 +306,13 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
    {
       d.update_pledge_mining_bonus_by_witness(*witness_obj);
       d.resign_pledge_mining(*witness_obj);
+
+      d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+         _dpo.total_witness_pledge -= witness_obj->total_mining_pledge;
+      });
+      d.modify(*witness_obj, [&](witness_object& wit) {
+         wit.total_mining_pledge = 0;
+      });
    }
 
    return void_result();
