@@ -184,9 +184,6 @@ share_type database::get_witness_pay_by_pledge(const global_property_object& gpo
    const uint64_t witness_pay_upper_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(320000000);
    const uint64_t witness_pay_lower_point_rate = GRAPHENE_1_PERCENT * 25;
    share_type total_witness_pledges = dpo.total_witness_pledge;
-   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05){
-      total_witness_pledges += dpo.resign_witness_pledge_before_05;
-   }
    bigint witness_pay_per_year = 0;
    if (total_witness_pledges < witness_pay_lower_point) {
       witness_pay_per_year = (bigint)witness_pay_lower_point_rate * total_witness_pledges.value / GRAPHENE_100_PERCENT;

@@ -572,6 +572,7 @@ void database::_apply_block( const signed_block& next_block )
       update_account_reg_info();
       modify(dpo, [&](dynamic_global_property_object& dp)
       {
+         dp.total_witness_pledge += dpo.resign_witness_pledge_before_05;
          dp.enabled_hardfork_version = ENABLE_HEAD_FORK_05;
       });
    }
