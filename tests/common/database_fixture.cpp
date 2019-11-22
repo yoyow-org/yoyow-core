@@ -1954,6 +1954,33 @@ void database_fixture::create_asset(flat_set<fc::ecc::private_key> sign_keys,
    } FC_CAPTURE_AND_RETHROW((issuer)(symbol)(precisions)(options)(initial_supply))
 }
 
+void database_fixture::update_asset(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type  issuer,
+   asset_aid_type    asset_to_update,
+   optional<uint8_t> new_precision,
+   asset_options     new_options
+   )
+{
+   try {
+      asset_update_operation update_op;
+      update_op.issuer = issuer;
+      update_op.asset_to_update = asset_to_update;
+      update_op.new_precision = new_precision;
+      update_op.new_options = new_options;
+
+      signed_transaction tx;
+      tx.operations.push_back(update_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((issuer)(asset_to_update)(new_precision)(new_options))
+}
+
 void database_fixture::create_limit_order(flat_set<fc::ecc::private_key> sign_keys,
    account_uid_type seller,
    asset_aid_type   sell_asset_id,

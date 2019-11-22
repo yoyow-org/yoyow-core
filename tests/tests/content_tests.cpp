@@ -26,6 +26,66 @@ using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( operation_tests, database_fixture )
 
+BOOST_AUTO_TEST_CASE(update_reward_percent_test)
+{
+   try
+   {
+      ACTORS((1000));
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      transfer(committee_account, u_1000_id, _core(100000000));
+      collect_csaf_from_committee(u_1000_id, 100);
+      generate_blocks(HARDFORK_0_5_TIME, true);
+
+      auto market_fee_percent = 1 * GRAPHENE_1_PERCENT;
+      auto market_reward_percent = 50 * GRAPHENE_1_PERCENT;
+      auto max_supply = 100000000 * prec;
+      auto max_market_fee_1 = 20 * prec;
+      auto max_market_fee_2 = 2000 * prec;
+      asset_options options;
+      options.max_supply = max_supply;
+      options.market_fee_percent = market_fee_percent;
+      options.max_market_fee = max_market_fee_1;
+      options.issuer_permissions = 15;
+      options.flags = charge_market_fee;
+      options.description = "test asset";
+      options.extensions = graphene::chain::extension<additional_asset_options>();
+      additional_asset_options exts;
+      exts.reward_percent = market_reward_percent;
+      options.extensions->value = exts;
+
+      const account_object commit_obj = db.get_account_by_uid(committee_account);
+
+      auto initial_supply = share_type(100000000 * prec);
+
+      create_asset({ u_1000_private_key }, u_1000_id, "ABC", 5, options, initial_supply);
+      const asset_object& ast = db.get_asset_by_aid(1);
+      BOOST_CHECK(ast.symbol == "ABC");
+      BOOST_CHECK(ast.precision == 5);
+      BOOST_CHECK(ast.issuer == u_1000_id);
+      BOOST_CHECK(ast.options.max_supply == max_supply);
+      BOOST_CHECK(ast.options.flags == charge_market_fee);
+      asset ast1 = db.get_balance(u_1000_id, 1);
+      BOOST_CHECK(ast1.asset_id == 1);
+      BOOST_CHECK(ast1.amount == initial_supply);
+
+      exts.reward_percent = market_reward_percent/2;
+      options.extensions->value = exts;
+      update_asset({ u_1000_private_key }, u_1000_id, 1, optional<uint8_t>(), options);
+      const asset_object& ast2 = db.get_asset_by_aid(1);
+      BOOST_CHECK(ast2.options.extensions.valid());
+      BOOST_CHECK(ast2.options.extensions->value.reward_percent.valid());
+      BOOST_CHECK(*(ast2.options.extensions->value.reward_percent) == market_reward_percent / 2);
+   }
+   catch (const fc::exception& e)
+   {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE(witness_csaf_test)
 {
    try

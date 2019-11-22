@@ -506,6 +506,13 @@ struct database_fixture {
       share_type       initial_supply
       );
 
+   void update_asset(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type  issuer,
+      asset_aid_type    asset_to_update,
+      optional<uint8_t> new_precision,
+      asset_options     new_options
+      );
+
    void create_limit_order(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type seller,
       asset_aid_type   sell_asset_id,

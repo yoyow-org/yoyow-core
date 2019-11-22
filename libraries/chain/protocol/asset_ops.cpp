@@ -195,6 +195,12 @@ void asset_options::validate()const
       FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end(),
                  "Can not white-list and black-list same market at same time" );
    }
+
+   if (extensions.valid())
+   {
+      FC_ASSERT(extensions->value.reward_percent.valid(), "reward_percent must be valid. ");
+      FC_ASSERT(*(extensions->value.reward_percent) >= 0 && *(extensions->value.reward_percent) <= GRAPHENE_100_PERCENT, "reward_percent is invalid. ");
+   }
 }
 
 void asset_claim_fees_operation::validate()const {
