@@ -177,7 +177,7 @@ struct Platform_Period_Profit_Detail
     account_uid_type                       platform_account;
     string                                 platform_name;
 
-    flat_map<asset_aid_type, share_type>   rewards_profits;
+    map<asset_aid_type, share_type>        rewards_profits;
     share_type                             foward_profits = 0;
     share_type                             post_profits = 0;
     share_type                             post_profits_by_platform = 0;
@@ -192,7 +192,7 @@ struct Poster_Period_Profit_Detail
     account_uid_type                       poster_account;
 
     share_type                             total_forward = 0;
-    flat_map<asset_aid_type, share_type>   total_rewards;
+    map<asset_aid_type, share_type>        total_rewards;
     share_type                             total_post_award = 0;
 
     vector<active_post_object>             active_objects;

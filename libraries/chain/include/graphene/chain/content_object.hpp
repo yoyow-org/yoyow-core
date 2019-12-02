@@ -24,7 +24,7 @@ namespace graphene { namespace chain {
 
          struct Platform_Period_Profits
          {
-             flat_map<asset_aid_type, share_type>   rewards_profits;
+             map<asset_aid_type, share_type>        rewards_profits;
              share_type                             foward_profits    = 0;
              share_type                             post_profits      = 0; //if poster and platform is the same account , include post,platform and buyout profits from content
              share_type                             post_profits_by_platform = 0;//only platform from content
@@ -360,7 +360,7 @@ namespace graphene { namespace chain {
        {
           share_type  forward;
           share_type  post_award;
-          flat_map<asset_aid_type, share_type> rewards;
+          map<asset_aid_type, share_type> rewards;
        };
 
        /// The platform's pid.
@@ -372,14 +372,14 @@ namespace graphene { namespace chain {
        /// approvals of a post, csaf.
        share_type                             total_csaf;
        /// rewards of a post.
-       flat_map<asset_aid_type, share_type>   total_rewards;
+       map<asset_aid_type, share_type>   total_rewards;
        /// period sequence of a post.
        uint64_t                               period_sequence;
-
-       bool                                   positive_win;
+       
+       bool                                   positive_win = true;
        share_type                             post_award;
        share_type                             forward_award;
-       flat_map<account_uid_type, receiptor_detail> receiptor_details;
+       map<account_uid_type, receiptor_detail> receiptor_details;
 
        void insert_receiptor(account_uid_type uid, share_type post_award = 0, share_type forward = 0)
        {
