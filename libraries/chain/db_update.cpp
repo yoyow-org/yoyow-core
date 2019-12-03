@@ -1172,6 +1172,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                v.max_pledge_releasing_size = *pv.max_pledge_releasing_size;
             if (pv.scorer_earnings_rate.valid())
                v.scorer_earnings_rate = *pv.scorer_earnings_rate;
+            if (pv.platform_content_award_min_votes.valid())
+               v.platform_content_award_min_votes = *pv.platform_content_award_min_votes;
+            if (pv.csaf_limit_lock_balance_modulus.valid())
+               v.csaf_limit_lock_balance_modulus = *pv.csaf_limit_lock_balance_modulus;
          });
       }
 

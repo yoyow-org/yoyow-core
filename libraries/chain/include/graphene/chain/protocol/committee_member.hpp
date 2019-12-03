@@ -256,6 +256,8 @@ namespace graphene { namespace chain {
        optional< uint32_t        >    registrar_referrer_rate_from_score;
        optional< uint32_t        >    max_pledge_releasing_size;
        optional< uint32_t        >    scorer_earnings_rate;
+       optional< share_type      >    platform_content_award_min_votes;
+       optional< uint32_t        >    csaf_limit_lock_balance_modulus;
 
        void validate()const;
     };
@@ -465,7 +467,9 @@ FC_REFLECT(graphene::chain::committee_updatable_content_parameters,
             (max_pledge_mining_bonus_rate)
             (registrar_referrer_rate_from_score)
             (max_pledge_releasing_size)
-            (scorer_earnings_rate))
+            (scorer_earnings_rate)
+            (platform_content_award_min_votes)
+            (csaf_limit_lock_balance_modulus))
 
 FC_REFLECT( graphene::chain::committee_withdraw_platform_pledge_item_type,
             (platform_account)

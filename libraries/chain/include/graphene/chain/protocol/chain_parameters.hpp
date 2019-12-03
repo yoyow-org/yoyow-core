@@ -47,8 +47,7 @@ namespace graphene { namespace chain {
       share_type  total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;///< total platform award content amount, per year
       share_type  total_platform_voted_award_amount	= GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;///< total platform vote award amount, per year
       share_type  platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;///< minimum votes required for platform in platform vote awards
-      uint32_t    platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;///< minimum votes rank required for platform in platform vote awards
-      
+      uint32_t    platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;///< minimum votes rank required for platform in platform vote awards     
       uint32_t    platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;///< in platform vote awards, average allocation of this part, remaining awards distribute to platform by votes
       uint32_t    casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;///< compute effective csaf modulus
       uint32_t    post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;///< if current time greater than this time, post can't get post award
@@ -56,8 +55,7 @@ namespace graphene { namespace chain {
       uint32_t    approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;///< the first percentage of csaf, when you compute the effective csaf
       uint32_t    approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;///< the second percentage of csaf, when you compute the effective csaf, greater than the first percentage
       uint32_t    receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;///< when post of disapprove more than approve, receiptor award multiply this number, this number must less than 100%
-      uint32_t    disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;///< when post of disapprove more than approve, scorer award multiply this number, this number must more than 100%
-               
+      uint32_t    disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;///< when post of disapprove more than approve, scorer award multiply this number, this number must more than 100%               
       uint32_t    advertising_confirmed_fee_rate      = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_FEE_RATE;///< fee rate of advertising order price
       share_type  advertising_confirmed_min_fee       = GRAPHENE_DEFAULT_ADVERTISING_CONFIRMED_MIN_FEE;///< confirm advertising order minimum fee,that return to capital pool
       uint32_t    custom_vote_effective_time          = GRAPHENE_DEFAULT_CUSTOM_VOTE_EFFECTIVE_TIME;///< custom vote effective time, if more than this time, clear custom vote object
@@ -65,13 +63,15 @@ namespace graphene { namespace chain {
       uint64_t    min_witness_block_produce_pledge    = GRAPHENE_DEFAULT_MIN_WITNESS_BLOCK_PRODUCE_PLEDGE;///< pos, witness pledge must greater this number, can produce block
       uint8_t		content_award_skip_slots		      = 0;
       uint32_t    unlocked_balance_release_delay      = GRAPHENE_DEFAULT_UNLOCKED_BALANCE_RELEASE_DELAY;
-
       uint64_t    min_mining_pledge                   = GRAPHENE_DEFAULT_MIN_MINING_PLEDGE;
       uint32_t    mining_pledge_release_delay         = GRAPHENE_DEFAULT_MINING_PLEDGE_RELEASE_DELAY;
       uint32_t    max_pledge_mining_bonus_rate        = GRAPHENE_DEFAULT_MAX_PLEDGE_MINING_BONUS_RATE;
       uint32_t    registrar_referrer_rate_from_score  = GRAPHENE_DEFAULT_REGISTRAR_REFERRER_RATE_FROM_SCORE;
       uint32_t    max_pledge_releasing_size           = GRAPHENE_DEFAULT_MAX_PLEDGE_RELEASING_SIZE;
       uint32_t    scorer_earnings_rate                = GRAPHENE_DEFAULT_SCORER_EARNINGS_RATE;
+
+      share_type  platform_content_award_min_votes = GRAPHENE_DEFAULT_PLATFORM_CONTENT_AWARD_MIN_VOTES;
+      uint32_t    csaf_limit_lock_balance_modulus  = GRAPHENE_DEFAULT_CSAF_LIMIT_LOCK_BALANCE_MODULUS;
 	 };
 
    struct chain_parameters
@@ -181,7 +181,9 @@ FC_REFLECT(	graphene::chain::content_parameter_extension_type,
    (max_pledge_mining_bonus_rate)
    (registrar_referrer_rate_from_score)
    (max_pledge_releasing_size)
-   (scorer_earnings_rate))
+   (scorer_earnings_rate)
+   (platform_content_award_min_votes)
+   (csaf_limit_lock_balance_modulus))
 
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)
