@@ -1739,6 +1739,13 @@ void database::process_content_platform_awards()
          auto apt_itr = apt_idx.lower_bound(dpo.current_active_post_sequence);
          while (apt_itr != apt_idx.end() && apt_itr->period_sequence == dpo.current_active_post_sequence)
          {
+            if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05) 
+            {
+               const platform_object* pla = find_platform_by_owner(apt_itr->platform);
+               if (!pla->is_valid || pla->total_votes < params.platform_content_award_min_votes) 
+                  continue;
+            }
+
             if (apt_itr->total_csaf >= params.min_effective_csaf)
             {
                const auto& idx = get_index_type<score_index>().indices().get<by_period_sequence>();

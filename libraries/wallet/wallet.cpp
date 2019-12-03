@@ -4461,7 +4461,11 @@ string wallet_api::compute_available_csaf(string account_name_or_uid)
    const auto& global_params = my->get_global_properties().parameters;
    auto csaf = my->_remote_db->compute_coin_seconds_earned(uid, global_params.csaf_accumulate_window, time_point_sec(time_point::now())).first;
    auto ao = my->get_asset( GRAPHENE_CORE_ASSET_AID );
-   auto s1 = global_params.max_csaf_per_account - account.statistics.csaf;
+
+   auto csaf_limit_modulus = global_params.get_award_params().csaf_limit_lock_balance_modulus;
+   auto lock_balance_amount = my->_remote_db->get_account_statistics_by_uid(uid).locked_balance_for_feepoint;
+   auto lock_balance_csaf = ((fc::uint128)lock_balance_amount.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
+   auto s1 = global_params.max_csaf_per_account + lock_balance_csaf - account.statistics.csaf;
    auto s2 = (csaf / global_params.csaf_rate).to_uint64();
    return ao.amount_to_string(s1 > s2 ? s2 : s1);
 }

@@ -17,9 +17,23 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
    to_stats = &d.get_account_statistics_by_uid( op.to );
 
    const auto& global_params = d.get_global_properties().parameters;
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
 
-   FC_ASSERT( op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
-              "Maximum CSAF per account exceeded" );
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 &&
+      to_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance))
+   {
+      auto csaf_limit_modulus = global_params.get_award_params().csaf_limit_lock_balance_modulus;
+      auto pledge_balance_obj = d.get(to_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));    
+      share_type lock_balance_csaf = ((fc::uint128)pledge_balance_obj.pledge.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();      
+      
+      FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account + lock_balance_csaf,
+         "Maximum CSAF per account exceeded");
+
+   } else {
+      FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
+         "Maximum CSAF per account exceeded");
+   }
+      
 
    const auto head_time = d.head_block_time();
    const uint64_t csaf_window = global_params.csaf_accumulate_window;
@@ -28,7 +42,6 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
    FC_ASSERT( op.time + GRAPHENE_MAX_CSAF_COLLECTING_TIME_OFFSET >= head_time,
               "Time should not be earlier than 5 minutes before head block time" );
 
-   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
    available_coin_seconds = from_stats->compute_coin_seconds_earned_fix(csaf_window, op.time, d, dpo.enabled_hardfork_version).first;
 
    collecting_coin_seconds = fc::uint128_t(op.amount.amount.value) * global_params.csaf_rate;

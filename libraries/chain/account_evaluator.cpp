@@ -798,10 +798,20 @@ void_result benefit_collect_evaluator::do_evaluate(const benefit_collect_operati
          FC_ASSERT(op.time.valid(), "time is invalid. ");
          to_stats = &d.get_account_statistics_by_uid(*(op.to));
 
-         const auto& global_params = d.get_global_properties().parameters;
+         const auto& global_params = d.get_global_properties().parameters;         
+         if (to_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance)) 
+         {
+            auto csaf_limit_modulus = global_params.get_award_params().csaf_limit_lock_balance_modulus;
+            auto pledge_balance_obj = d.get(to_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));
+            share_type lock_balance_csaf = ((fc::uint128)pledge_balance_obj.pledge.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
 
-         FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
-            "Maximum CSAF per account exceeded");
+            FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account + lock_balance_csaf,
+               "Maximum CSAF per account exceeded");
+
+         } else {
+            FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
+               "Maximum CSAF per account exceeded");
+         } 
 
          const auto head_time = d.head_block_time();
          const uint64_t csaf_window = global_params.csaf_accumulate_window;
