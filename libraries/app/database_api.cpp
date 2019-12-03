@@ -223,6 +223,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                                                   const string &quote, uint32_t limit,
                                                                   optional<limit_order_id_type> ostart_id,
                                                                   optional<price> ostart_price);
+      vector<limit_order_object>         get_account_all_limit_orders(const string& account_name_or_id,
+                                                                      uint32_t limit,
+                                                                      optional<limit_order_id_type> ostart_id);
 
       void subscribe_to_market(std::function<void(const variant&)> callback, const std::string& a, const std::string& b);
       void unsubscribe_from_market(const std::string& a, const std::string& b);
@@ -2260,6 +2263,54 @@ vector<limit_order_object> database_api_impl::get_account_limit_orders(const str
       results.emplace_back(order);
    }
 
+   return results;
+}
+
+vector<limit_order_object> database_api::get_account_all_limit_orders(const string& account_name_or_id, uint32_t limit, optional<limit_order_id_type> ostart_id)
+{
+   return my->get_account_all_limit_orders(account_name_or_id, limit, ostart_id);
+}
+
+vector<limit_order_object> database_api_impl::get_account_all_limit_orders(const string& account_name_or_id, uint32_t limit, optional<limit_order_id_type> ostart_id)
+{
+   FC_ASSERT(limit <= 101);
+
+   vector<limit_order_object>   results;
+   uint32_t                     count = 0;
+
+   const account_object* account = get_account_from_string(account_name_or_id);
+   if (account == nullptr)
+      return results;
+
+   const auto& index_by_account = _db.get_index_type<limit_order_index>().indices().get<by_account_id>();
+   limit_order_multi_index_type::index<by_account_id>::type::const_iterator lower_itr;
+
+   // if both order_id and price are invalid, query the first page
+   if (!ostart_id.valid())
+   {
+      lower_itr = index_by_account.lower_bound(account->uid);
+   }
+   else if (ostart_id.valid())
+   {
+      // in case of the order been deleted during page querying
+      const limit_order_object *p_loo = _db.find(*ostart_id);
+      if (!p_loo)
+      {
+         FC_THROW("Order id invalid (maybe just been canceled?)");
+      }
+      else
+      {
+         const limit_order_object &loo = *p_loo;
+         FC_ASSERT(loo.seller == account->get_uid(), "Order not owned by specified account");
+         lower_itr = index_by_account.lower_bound(std::make_tuple(account->uid, *ostart_id));
+      }
+   }
+   for (; lower_itr != index_by_account.end() && count < limit; ++lower_itr, ++count)
+   {
+      if (lower_itr->seller != account->uid) break;
+      const limit_order_object &order = *lower_itr;
+      results.emplace_back(order);
+   }
    return results;
 }
 

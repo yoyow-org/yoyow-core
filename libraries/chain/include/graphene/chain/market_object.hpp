@@ -70,6 +70,8 @@ struct by_id;
 struct by_price;
 struct by_expiration;
 struct by_account;
+struct by_account_id;
+
 typedef multi_index_container<
    limit_order_object,
    indexed_by<
@@ -94,6 +96,13 @@ typedef multi_index_container<
             member<object, object_id_type, &object::id>
          >,
          composite_key_compare<std::less<account_uid_type>, std::greater<price>, std::less<object_id_type>>
+      >,
+      ordered_unique< tag<by_account_id>,
+         composite_key< limit_order_object,
+            member<limit_order_object, account_uid_type, &limit_order_object::seller>,
+            member<object, object_id_type, &object::id>
+         >,
+         composite_key_compare<std::less<account_uid_type>, std::less<object_id_type>>
       >
    >
 > limit_order_multi_index_type;

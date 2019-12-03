@@ -669,6 +669,10 @@ class database_api
          optional<limit_order_id_type> ostart_id = optional<limit_order_id_type>(),
          optional<price> ostart_price = optional<price>());
 
+      vector<limit_order_object> get_account_all_limit_orders(const string& account_name_or_id,
+         uint32_t limit = 101,
+         optional<limit_order_id_type> ostart_id = optional<limit_order_id_type>());
+
       /**
       * @brief Request notification when the active orders in the market between two assets changes
       * @param callback Callback method which is called when the market changes
@@ -1029,6 +1033,7 @@ FC_API( graphene::app::database_api,
    //market
    (get_limit_orders)
    (get_account_limit_orders)
+   (get_account_all_limit_orders)
    (subscribe_to_market)
    (unsubscribe_from_market)
    (get_ticker)

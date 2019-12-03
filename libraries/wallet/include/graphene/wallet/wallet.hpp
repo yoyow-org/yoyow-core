@@ -1818,9 +1818,9 @@ class wallet_api
          
       signed_transaction create_limit_order(string           seller,
                                             string           sell_asset_symbol,
-                                            share_type       sell_amount,
+                                            string           sell_amount,
                                             string           min_receive_asset_symbol,
-                                            share_type       min_receive_amount,
+                                            string           min_receive_amount,
                                             uint32_t         expiration,
                                             bool             fill_or_kill,
                                             bool             broadcast = false);
@@ -1874,6 +1874,10 @@ class wallet_api
                                                           uint32_t limit = 101,
                                                           optional<limit_order_id_type> ostart_id = optional<limit_order_id_type>(),
                                                           optional<price> ostart_price = optional<price>());
+
+      vector<limit_order_object> get_account_all_limit_orders(const string& name_or_id,
+                                                              uint32_t limit = 101,
+                                                              optional<limit_order_id_type> ostart_id = optional<limit_order_id_type>());
 
       vector<limit_order_object> get_limit_orders(string a, string b, uint32_t limit)const;
 
@@ -2158,6 +2162,7 @@ FC_API( graphene::wallet::wallet_api,
         (asset_claim_fees)
         (get_market_history)
         (get_account_limit_orders)
+        (get_account_all_limit_orders)
         (get_limit_orders)
         (get_order_book)
         (get_ticker)

@@ -3239,9 +3239,9 @@ signed_transaction account_cancel_auth_platform(string account,
 
    signed_transaction create_limit_order(string           seller,
       string           sell_asset_symbol,
-      share_type       sell_amount,
+      string           sell_amount,
       string           min_receive_asset_symbol,
-      share_type       min_receive_amount,
+      string           min_receive_amount,
       uint32_t         expiration,
       bool             fill_or_kill,
       bool             broadcast)
@@ -3257,8 +3257,8 @@ signed_transaction account_cancel_auth_platform(string account,
          time_point_sec expiration_time(expiration);
          limit_order_create_operation create_op;
          create_op.seller = account_uid;
-         create_op.amount_to_sell = asset(sell_amount, asset_to_sell->asset_id);
-         create_op.min_to_receive = asset(min_receive_amount, asset_to_buy->asset_id);
+         create_op.amount_to_sell = asset_to_sell->amount_from_string(sell_amount);
+         create_op.min_to_receive = asset_to_buy->amount_from_string(min_receive_amount);
          create_op.expiration = expiration_time;
          create_op.fill_or_kill = fill_or_kill;
 
@@ -5031,9 +5031,9 @@ signed_transaction wallet_api::collect_score_bonus(string collect_account,
 
 signed_transaction wallet_api::create_limit_order(string           seller,
                                                   string           sell_asset_symbol,
-                                                  share_type       sell_amount,
+                                                  string           sell_amount,
                                                   string           min_receive_asset_symbol,
-                                                  share_type       min_receive_amount,
+                                                  string           min_receive_amount,
                                                   uint32_t         expiration,
                                                   bool             fill_or_kill,
                                                   bool             broadcast)
@@ -5087,6 +5087,13 @@ vector<limit_order_object> wallet_api::get_account_limit_orders(const string& na
                                                                 optional<price> ostart_price)
 {
    return my->_remote_db->get_account_limit_orders(name_or_id, base, quote, limit, ostart_id, ostart_price);
+}
+
+vector<limit_order_object> wallet_api::get_account_all_limit_orders(const string& name_or_id,
+                                                                    uint32_t limit,
+                                                                    optional<limit_order_id_type> ostart_id)
+{
+   return my->_remote_db->get_account_all_limit_orders(name_or_id, limit, ostart_id);
 }
 
 vector<limit_order_object> wallet_api::get_limit_orders(std::string a, std::string b, uint32_t limit)const
