@@ -1720,7 +1720,16 @@ void database::process_content_platform_awards()
 
       share_type actual_awards = 0;
 
-      bool can_award = dpo.budget_pool >= (params.total_content_award_amount + params.total_platform_content_award_amount);
+      bool can_award = false;
+      if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+      {
+         fc::uint128_t award_two_periods = (fc::uint128_t)(params.total_content_award_amount + params.total_platform_content_award_amount).value*2*
+            (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
+         can_award = dpo.budget_pool >= award_two_periods.to_uint64();
+      } else {
+         can_award = dpo.budget_pool >= (params.total_content_award_amount + params.total_platform_content_award_amount);
+      }    
+
       if (can_award)
       {
          //notify witness plugin skip block
@@ -1994,8 +2003,17 @@ void database::process_platform_voted_awards()
 
       if (params.total_platform_voted_award_amount > 0 && params.platform_award_interval > 0)
       {
-         share_type actual_awards = 0;
-         bool can_award = dpo.budget_pool >= params.total_platform_voted_award_amount;
+         share_type actual_awards = 0; 
+         bool can_award = false;
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+         {
+            fc::uint128_t award_two_periods = (fc::uint128_t)params.total_platform_voted_award_amount.value * 2 *
+               (dpo.next_platform_voted_award_time - dpo.last_platform_voted_award_time).to_seconds() / (86400 * 365);
+            can_award = dpo.budget_pool >= award_two_periods.to_uint64();
+         } else {
+            can_award = dpo.budget_pool >= params.total_platform_voted_award_amount;
+         }
+
          if (dpo.next_platform_voted_award_time > time_point_sec(0) && can_award)
          {
             flat_map<account_uid_type, uint64_t> platforms;
