@@ -1019,7 +1019,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
                   s.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
 
                for (const auto& p : receiptors)
-                  s.insert_receiptor(p.first, p.second);
+                  s.insert_reward_receiptor(p.first, p.second);
             });
          }
          else
@@ -1037,7 +1037,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
                   obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
 
                   for (const auto& p : receiptors)
-                     obj.insert_receiptor(p.first, p.second);
+                     obj.insert_reward_receiptor(p.first, p.second);
                });
             }
          }
@@ -1143,7 +1143,7 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
                else
                   s.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
                for (const auto& p : receiptors)
-                  s.insert_receiptor(p.first, p.second);
+                  s.insert_reward_receiptor(p.first, p.second);
             });
          }
          else
@@ -1160,7 +1160,7 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
                   obj.period_sequence = dpo.current_active_post_sequence;
                   obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
                   for (const auto& p : receiptors)
-                     obj.insert_receiptor(p.first, p.second);
+                     obj.insert_reward_receiptor(p.first, p.second);
                });
             }
          }
