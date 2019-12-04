@@ -248,6 +248,10 @@ void committee_updatable_content_parameters::validate()const
       FC_ASSERT(*max_pledge_releasing_size >= 1,"max pledge releasing size must more than 1");
    if (scorer_earnings_rate.valid())
       FC_ASSERT(*scorer_earnings_rate < GRAPHENE_100_PERCENT, "scorer earnings rate must less than 100%");
+   if (platform_content_award_min_votes.valid())
+      FC_ASSERT(*platform_content_award_min_votes >= 0, "platform content award min votes must be positive");
+   if (csaf_limit_lock_balance_modulus.valid())
+      FC_ASSERT(*csaf_limit_lock_balance_modulus >= 0, "csaf limit lock balance modulus must be positive");
 }
 
 void committee_withdraw_platform_pledge_item_type::validate()const
