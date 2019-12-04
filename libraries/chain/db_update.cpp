@@ -1751,8 +1751,11 @@ void database::process_content_platform_awards()
             if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05) 
             {
                const platform_object* pla = find_platform_by_owner(apt_itr->platform);
-               if (!pla->is_valid || pla->total_votes < params.platform_content_award_min_votes) 
+               if (pla == nullptr || !pla->is_valid || pla->total_votes < params.platform_content_award_min_votes) 
+               {
+                  ++apt_itr;
                   continue;
+               }  
             }
 
             if (apt_itr->total_csaf >= params.min_effective_csaf)
