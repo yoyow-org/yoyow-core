@@ -1850,6 +1850,8 @@ class wallet_api
                                                uint32_t end_time
                                                )const;
 
+      vector<order_history_object> get_fill_order_history(std::string a, std::string b, uint32_t limit)const;
+
       /**
       * @brief Fetch all orders relevant to the specified account sorted descendingly by price
       *
@@ -2161,6 +2163,7 @@ FC_API( graphene::wallet::wallet_api,
         (collect_market_fee)
         (asset_claim_fees)
         (get_market_history)
+        (get_fill_order_history)
         (get_account_limit_orders)
         (get_account_all_limit_orders)
         (get_limit_orders)

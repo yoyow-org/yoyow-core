@@ -5083,6 +5083,11 @@ vector<bucket_object> wallet_api::get_market_history(string   symbol1,
    return my->_remote_hist->get_market_history(symbol1, symbol2, bucket, start_time, end_time);
 }
 
+vector<order_history_object> wallet_api::get_fill_order_history(std::string a, std::string b, uint32_t limit)const
+{
+   return my->_remote_hist->get_fill_order_history(a, b, limit);
+}
+
 vector<limit_order_object> wallet_api::get_account_limit_orders(const string& name_or_id,
                                                                 const string &base,
                                                                 const string &quote,

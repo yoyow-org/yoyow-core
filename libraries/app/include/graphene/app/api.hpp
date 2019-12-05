@@ -149,6 +149,9 @@ namespace graphene { namespace app {
          */
          vector<bucket_object> get_market_history(std::string a, std::string b, uint32_t bucket_seconds,
                                                   fc::time_point_sec start, fc::time_point_sec end)const;
+
+         vector<order_history_object> get_fill_order_history(std::string a, std::string b, uint32_t limit)const;
+
       private:
            application& _app;
            graphene::app::database_api database_api;
@@ -393,6 +396,7 @@ FC_API(graphene::app::history_api,
        //(get_account_history_operations)
        (get_relative_account_history)
        (get_market_history)
+       (get_fill_order_history)
      )
 FC_API(graphene::app::block_api,
        (get_blocks)
