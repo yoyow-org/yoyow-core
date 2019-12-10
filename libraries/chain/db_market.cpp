@@ -161,7 +161,7 @@ bool database::apply_order(const limit_order_object& new_order_object, bool allo
    bool finished = false; // whether the new order is gone
 
    // still need to check limit orders
-   while (limit_itr != limit_end)
+   while (!finished && limit_itr != limit_end)
    {
       auto old_limit_itr = limit_itr;
       ++limit_itr;
