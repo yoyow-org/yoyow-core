@@ -3244,6 +3244,7 @@ signed_transaction account_cancel_auth_platform(string account,
       string           min_receive_amount,
       uint32_t         expiration,
       bool             fill_or_kill,
+      bool             csaf_fee,
       bool             broadcast)
    {
       try {
@@ -3264,7 +3265,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(create_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3273,6 +3274,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
    signed_transaction cancel_limit_order(string               seller,
       limit_order_id_type  order_id,
+      bool                 csaf_fee,
       bool                 broadcast)
    {
 
@@ -3286,7 +3288,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(cancel_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3315,7 +3317,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(collect_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3339,7 +3341,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(assign_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, false);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -5040,16 +5042,18 @@ signed_transaction wallet_api::create_limit_order(string           seller,
                                                   string           min_receive_amount,
                                                   uint32_t         expiration,
                                                   bool             fill_or_kill,
+                                                  bool             csaf_fee,
                                                   bool             broadcast)
 {
-   return my->create_limit_order(seller, sell_asset_symbol, sell_amount, min_receive_asset_symbol, min_receive_amount, expiration, fill_or_kill, broadcast);
+   return my->create_limit_order(seller, sell_asset_symbol, sell_amount, min_receive_asset_symbol, min_receive_amount, expiration, fill_or_kill, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::cancel_limit_order(string               seller,
                                                   limit_order_id_type  order_id,
+                                                  bool                 csaf_fee,
                                                   bool                 broadcast)
 {
-    return my->cancel_limit_order(seller, order_id, broadcast);
+    return my->cancel_limit_order(seller, order_id, csaf_fee, broadcast);
 }
 
 signed_transaction wallet_api::collect_market_fee(string               account,

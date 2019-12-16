@@ -1823,10 +1823,12 @@ class wallet_api
                                             string           min_receive_amount,
                                             uint32_t         expiration,
                                             bool             fill_or_kill,
+                                            bool             csaf_fee = true,
                                             bool             broadcast = false);
 
       signed_transaction cancel_limit_order(string               seller,
                                             limit_order_id_type  order_id,
+                                            bool                 csaf_fee = true,
                                             bool                 broadcast = false);
 
       signed_transaction collect_market_fee(string               account,

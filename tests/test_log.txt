@@ -234,14 +234,14 @@
 	   list_account_balances test2
 	   list_account_balances test3
 	   
-	   create_limit_order test2 1 10000 2 50000 1579862861 false true
-	   create_limit_order test3 2 50000 1 10000 1579862861 false true
+	   create_limit_order test2 1 10000 2 50000 1579862861 false true true
+	   create_limit_order test3 2 50000 1 10000 1579862861 false true true
 	   
 	   create_asset test4  XYZ 5 {max_supply : 10000000000000,market_fee_percent : 1000,max_market_fee : 20,issuer_permissions : 15,flags : 1,whitelist_authorities : [],blacklist_authorities : [],whitelist_markets : [],blacklist_markets : [],description : "create test asset",extensions : { reward_percent : 5000 } }  10000000000000 true true
 	   create_asset test5  ZYX 5 {max_supply : 10000000000000,market_fee_percent : 1000,max_market_fee : 20,issuer_permissions : 15,flags : 1,whitelist_authorities : [],blacklist_authorities : [],whitelist_markets : [],blacklist_markets : [],description : "create test asset",extensions : { reward_percent : 5000 } }  10000000000000 true true
 	   
-	   create_limit_order test4 3 100000000 4 500000000 1579862861 false true
-	   create_limit_order test5 4 500000000 3 100000000 1579862861 false true
+	   create_limit_order test4 3 100000000 4 500000000 1579862861 false true true
+	   create_limit_order test5 4 500000000 3 100000000 1579862861 false true true
 	   
 	   get_ticker XYZ ZYX
 	   get_ticker ABC CBA
@@ -249,8 +249,8 @@
 	   get_24_volume XYZ ZYX
 	   get_24_volume ABC CBA
 	   
-	   create_limit_order test2 1 10000000 2 20000000 1579862861 false true
-	   create_limit_order test3 2 30000000 1 10000000 1579862861 false true
+	   create_limit_order test2 1 10000000 2 20000000 1579862861 false true true
+	   create_limit_order test3 2 30000000 1 10000000 1579862861 false true true
 	   get_order_book ABC CBA 50
 	   get_order_book CBA ABC 50
 	   
