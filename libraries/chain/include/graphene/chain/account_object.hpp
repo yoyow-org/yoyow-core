@@ -1245,7 +1245,7 @@ FC_REFLECT(graphene::chain::account_statistics_object,
                   (core_balance)(core_leased_in)(core_leased_out)
                   (average_coins)(average_coins_last_update)
                   (coin_seconds_earned)(coin_seconds_earned_last_update)
-                  (total_mining_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
+                  (total_mining_pledge)(total_witness_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
                   (locked_balance)(releasing_locked_balance)(locked_balance_release_block_number)
                   (total_mining_pledge)
                   (last_witness_sequence)(uncollected_witness_pay)
