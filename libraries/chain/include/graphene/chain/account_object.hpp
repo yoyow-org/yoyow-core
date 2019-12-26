@@ -462,17 +462,17 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       uint32_t witness_pledge_release_block_number = -1;
 
       /**
-      * coins locked for produce feepoint.
+      * coins locked for produce csaf.
       */
-      share_type locked_balance_for_feepoint;
+      share_type locked_balance;
       /**
       * coins that are requested to be released but not yet unlocked.
       */
-      share_type releasing_locked_feepoint;
+      share_type releasing_locked_balance;
       /**
-      * block number that releasing locked_balance_for_feepoint will be finally unlocked.
+      * block number that releasing locked balance will be finally unlocked.
       */
-      uint32_t feepoint_unlock_block_number = -1;
+      uint32_t locked_balance_release_block_number = -1;
 
       /**
       * coins pledge to witness for bonus form witness pay.
@@ -1246,7 +1246,7 @@ FC_REFLECT(graphene::chain::account_statistics_object,
                   (average_coins)(average_coins_last_update)
                   (coin_seconds_earned)(coin_seconds_earned_last_update)
                   (total_mining_pledge)(releasing_witness_pledge)(witness_pledge_release_block_number)
-                  (locked_balance_for_feepoint)(releasing_locked_feepoint)(feepoint_unlock_block_number)
+                  (locked_balance)(releasing_locked_balance)(locked_balance_release_block_number)
                   (total_mining_pledge)
                   (last_witness_sequence)(uncollected_witness_pay)
                   (uncollected_pledge_bonus)

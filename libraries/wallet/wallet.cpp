@@ -4465,7 +4465,7 @@ string wallet_api::compute_available_csaf(string account_name_or_uid)
    auto ao = my->get_asset( GRAPHENE_CORE_ASSET_AID );
 
    auto csaf_limit_modulus = global_params.get_award_params().csaf_limit_lock_balance_modulus;
-   auto lock_balance_amount = my->_remote_db->get_account_statistics_by_uid(uid).locked_balance_for_feepoint;
+   auto lock_balance_amount = my->_remote_db->get_account_statistics_by_uid(uid).locked_balance;
    auto lock_balance_csaf = ((fc::uint128)lock_balance_amount.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
    auto s1 = global_params.max_csaf_per_account + lock_balance_csaf - account.statistics.csaf;
    auto s2 = (csaf / global_params.csaf_rate).to_uint64();

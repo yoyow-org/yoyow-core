@@ -228,9 +228,9 @@ account_statistics_object database::get_account_statistics_struct_by_uid(account
 
    if (ant.pledge_balance_ids.count(pledge_balance_type::Lock_balance)){
       const pledge_balance_object& pledge_balance_obj = get<pledge_balance_object>(ant.pledge_balance_ids.at(pledge_balance_type::Lock_balance));
-      obj.locked_balance_for_feepoint = pledge_balance_obj.pledge;
-      obj.releasing_locked_feepoint = pledge_balance_obj.total_releasing_pledge;
-      obj.feepoint_unlock_block_number = pledge_balance_obj.last_release_block_number();
+      obj.locked_balance = pledge_balance_obj.pledge;
+      obj.releasing_locked_balance = pledge_balance_obj.total_releasing_pledge;
+      obj.locked_balance_release_block_number = pledge_balance_obj.last_release_block_number();
    }
 
    return obj;
