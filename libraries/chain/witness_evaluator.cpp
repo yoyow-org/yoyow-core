@@ -283,15 +283,6 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
 
          if( op.new_url.valid() )
             wit.url = *op.new_url;
-
-         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 && op.extensions.valid())
-         {
-            auto witness_ext = op.extensions->value;
-            if (witness_ext.can_pledge.valid())
-               wit.can_pledge = *witness_ext.can_pledge;
-            if (witness_ext.bonus_rate.valid())
-               wit.bonus_rate = *witness_ext.bonus_rate;
-         }
       });
 
       d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
@@ -302,17 +293,27 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       d.update_witness_avg_pledge( *witness_obj );
    }
 
-   if (op.extensions.valid() && op.extensions->value.can_pledge.valid() && !*(op.extensions->value.can_pledge))
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 && op.extensions.valid())
    {
-      d.update_pledge_mining_bonus_by_witness(*witness_obj);
-      d.resign_pledge_mining(*witness_obj);
+      auto witness_ext = op.extensions->value;
+      d.modify(*witness_obj, [&](witness_object& wit) {       
+         if (witness_ext.can_pledge.valid())
+            wit.can_pledge = *witness_ext.can_pledge;
+         if (witness_ext.bonus_rate.valid())
+            wit.bonus_rate = *witness_ext.bonus_rate;
+      }); 
 
-      d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
-         _dpo.total_witness_pledge -= witness_obj->total_mining_pledge;
-      });
-      d.modify(*witness_obj, [&](witness_object& wit) {
-         wit.total_mining_pledge = 0;
-      });
+      if (witness_ext.can_pledge.valid() && !*(witness_ext.can_pledge)) {
+         d.update_pledge_mining_bonus_by_witness(*witness_obj);
+         d.resign_pledge_mining(*witness_obj);
+
+         d.modify(dpo, [&](dynamic_global_property_object& _dpo) {
+            _dpo.total_witness_pledge -= witness_obj->total_mining_pledge;
+         });
+         d.modify(*witness_obj, [&](witness_object& wit) {
+            wit.total_mining_pledge = 0;
+         });
+      }
    }
 
    return void_result();
