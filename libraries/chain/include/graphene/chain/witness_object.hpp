@@ -100,7 +100,7 @@ namespace graphene { namespace chain {
                return bonus + p.second.value; 
             });
             
-            if (unhandled_bonus > 0)
+            if (unhandled_bonus > 0 && total_mining_pledge > 0)
             {
                result = result + ((fc::uint128_t)unhandled_bonus.value* GRAPHENE_PLEDGE_BONUS_PRECISION
                   / total_mining_pledge).to_uint64();

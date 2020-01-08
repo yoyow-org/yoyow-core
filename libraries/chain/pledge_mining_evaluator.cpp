@@ -42,6 +42,7 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
       else if (op.new_pledge == 0)
       {
          FC_ASSERT(pledge_mining_obj != nullptr, "Cancel nonexistent pledge is not allowed");
+         FC_ASSERT(d.get(pledge_mining_obj->pledge_id).pledge > 0, "previous pledge mining alreay is zero, cancel mining pledge is not allowed.");
       }
       
       return void_result();
@@ -99,7 +100,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
 
       //update witness object
       d.modify(*witness_obj, [&](witness_object& obj) {
-         if (obj.unhandled_bonus > 0)//until witness produce block, only execute first op
+         if (obj.unhandled_bonus > 0 && obj.total_mining_pledge > 0)//until witness produce block, only execute first op
          {
             share_type bonus_per_pledge = ((fc::uint128_t)obj.unhandled_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
                / obj.total_mining_pledge).to_uint64();

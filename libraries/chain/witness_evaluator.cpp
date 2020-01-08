@@ -312,6 +312,12 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
          });
          d.modify(*witness_obj, [&](witness_object& wit) {
             wit.total_mining_pledge = 0;
+
+            wit.unhandled_bonus = 0;
+            wit.need_distribute_bonus = 0;
+            wit.already_distribute_bonus = 0;
+            wit.last_update_bonus_block_num = d.head_block_num();
+            wit.bonus_per_pledge.clear();
          });
       }
    }
