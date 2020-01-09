@@ -1722,7 +1722,7 @@ void database_fixture::create_custom_vote(flat_set<fc::ecc::private_key> sign_ke
 {
    try {
       custom_vote_create_operation create_op;
-      create_op.custom_vote_creater = create_account;
+      create_op.custom_vote_creator = create_account;
       create_op.vote_vid = custom_vote_vid;
       create_op.title = title;
       create_op.description = description;
@@ -1749,14 +1749,14 @@ void database_fixture::create_custom_vote(flat_set<fc::ecc::private_key> sign_ke
 
 void database_fixture::cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
    account_uid_type      voter,
-   account_uid_type      custom_vote_creater,
+   account_uid_type      custom_vote_creator,
    custom_vote_vid_type  custom_vote_vid,
    set<uint8_t>          vote_result)
 {
    try {
       custom_vote_cast_operation vote_op;
       vote_op.voter = voter;
-      vote_op.custom_vote_creater = custom_vote_creater;
+      vote_op.custom_vote_creator = custom_vote_creator;
       vote_op.custom_vote_vid = custom_vote_vid;
       vote_op.vote_result = vote_result;
 
@@ -1770,7 +1770,7 @@ void database_fixture::cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys
          sign(tx, key);
 
       db.push_transaction(tx);
-   } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creater)(custom_vote_vid)(vote_result))
+   } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creator)(custom_vote_vid)(vote_result))
 }
 
 void database_fixture::balance_lock_update(flat_set<fc::ecc::private_key> sign_keys, account_uid_type account, share_type amount)

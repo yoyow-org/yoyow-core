@@ -1759,16 +1759,16 @@ class wallet_api
                                             bool broadcast = false);
 
       signed_transaction cast_custom_vote(string                voter,
-                                          string                custom_vote_creater,
+                                          string                custom_vote_creator,
                                           custom_vote_vid_type  custom_vote_vid,
                                           set<uint8_t>          vote_result,
                                           bool csaf_fee = true,
                                           bool broadcast = false);
 
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit);
-      vector<custom_vote_object> lookup_custom_votes(string creater, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit);
+      vector<custom_vote_object> lookup_custom_votes(string creator, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit);
 
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const string creater,
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const string creator,
                                                                    const custom_vote_vid_type vote_vid,
                                                                    const object_id_type lower_bound_cast_custom_vote,
                                                                    uint32_t limit);
@@ -1803,16 +1803,16 @@ class wallet_api
 
       signed_transaction update_mining_pledge(string   pledge_account,
                                               string   witness,
-                                              uint64_t new_pledge,
+                                              string   new_pledge,
                                               bool csaf_fee = true,
                                               bool broadcast = false);
       signed_transaction collect_pledge_mining_bonus(string collect_account,
-                                                     uint64_t bonus_amount,
+                                                     string bonus_amount,
                                                      bool csaf_fee = true,
                                                      bool broadcast = false);
 
       signed_transaction collect_score_bonus(string collect_account,
-                                             uint64_t bonus_amount,
+                                             string bonus_amount,
                                              bool csaf_fee = true,
                                              bool broadcast = false);
          

@@ -22,7 +22,7 @@ namespace graphene { namespace chain {
       static const uint8_t type_id = impl_cast_custom_vote_object_type;
 
       account_uid_type           voter;
-      account_uid_type           custom_vote_creater;
+      account_uid_type           custom_vote_creator;
       custom_vote_vid_type       custom_vote_vid;
       asset_aid_type             vote_asset_id;
       std::set<uint8_t>          vote_result;
@@ -44,7 +44,7 @@ namespace graphene { namespace chain {
       ordered_unique< tag<by_id>, member< object, object_id_type,  &object::id > >,
       ordered_unique< tag<by_custom_vote_vid>,
       composite_key<cast_custom_vote_object,
-            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::custom_vote_creater>,
+            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::custom_vote_creator>,
             member< cast_custom_vote_object, custom_vote_vid_type, &cast_custom_vote_object::custom_vote_vid >,
             member< object, object_id_type,  &object::id > 
       >> ,
@@ -52,7 +52,7 @@ namespace graphene { namespace chain {
          composite_key<
             cast_custom_vote_object,
             member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::voter>,
-            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::custom_vote_creater>,
+            member< cast_custom_vote_object, account_uid_type,     &cast_custom_vote_object::custom_vote_creator>,
             member< cast_custom_vote_object, custom_vote_vid_type, &cast_custom_vote_object::custom_vote_vid >>
          >,
       ordered_unique< tag<by_cast_custom_vote_id>,
@@ -88,7 +88,7 @@ namespace graphene { namespace chain {
       static const uint8_t space_id = implementation_ids;
       static const uint8_t type_id = impl_custom_vote_object_type;
 
-      account_uid_type           custom_vote_creater;
+      account_uid_type           custom_vote_creator;
       custom_vote_vid_type       vote_vid;
 
       string                     title;
@@ -117,7 +117,7 @@ namespace graphene { namespace chain {
       ordered_unique< tag<by_creater>,
          composite_key<
             custom_vote_object,
-            member< custom_vote_object, account_uid_type,     &custom_vote_object::custom_vote_creater>,
+            member< custom_vote_object, account_uid_type,     &custom_vote_object::custom_vote_creator>,
             member< custom_vote_object, custom_vote_vid_type, &custom_vote_object::vote_vid > > >,
       ordered_non_unique< tag<by_expired_time>,
             member< custom_vote_object, time_point_sec,       &custom_vote_object::vote_expired_time> >
@@ -132,9 +132,9 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::custom_vote_object,
                    (graphene::db::object),
-                   (custom_vote_creater)(vote_vid)(title)(description)(vote_expired_time)(vote_asset_id)(required_asset_amount)
+                   (custom_vote_creator)(vote_vid)(title)(description)(vote_expired_time)(vote_asset_id)(required_asset_amount)
                    (minimum_selected_items)(maximum_selected_items)(options)(vote_result))
 
 FC_REFLECT_DERIVED( graphene::chain::cast_custom_vote_object,
                    (graphene::db::object),
-                   (voter)(custom_vote_creater)(custom_vote_vid)(vote_asset_id)(vote_result)(vote_expired_time))
+                   (voter)(custom_vote_creator)(custom_vote_vid)(vote_asset_id)(vote_result)(vote_expired_time))

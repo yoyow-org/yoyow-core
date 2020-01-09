@@ -327,9 +327,9 @@ void database::clear_unnecessary_objects()
 
       while (custom_vote_itr != custom_vote_end) {
          const auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_vid>();
-         auto cast_vote_itr = cast_vote_idx.lower_bound(std::make_tuple(custom_vote_itr->custom_vote_creater, custom_vote_itr->vote_vid));
+         auto cast_vote_itr = cast_vote_idx.lower_bound(std::make_tuple(custom_vote_itr->custom_vote_creator, custom_vote_itr->vote_vid));
 
-         while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->custom_vote_creater == custom_vote_itr->custom_vote_creater &&
+         while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->custom_vote_creator == custom_vote_itr->custom_vote_creator &&
             cast_vote_itr->custom_vote_vid == custom_vote_itr->vote_vid) {
             auto del = cast_vote_itr;
             ++cast_vote_itr;

@@ -466,7 +466,7 @@ struct database_fixture {
 
    void cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type      voter,
-      account_uid_type      custom_vote_creater,
+      account_uid_type      custom_vote_creator,
       custom_vote_vid_type  custom_vote_vid,
       set<uint8_t>          vote_result);
 

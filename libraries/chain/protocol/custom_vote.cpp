@@ -10,7 +10,7 @@ namespace graphene { namespace chain {
 void custom_vote_create_operation::validate()const
 {
    validate_op_fee(fee, "custom_vote_create");
-   validate_account_uid(custom_vote_creater, "create_account");
+   validate_account_uid(custom_vote_creator, "create_account");
 
    FC_ASSERT(options.size() > 1 && options.size() < 256, "options size should more than 1 and less than 256");
    FC_ASSERT(minimum_selected_items <= maximum_selected_items,

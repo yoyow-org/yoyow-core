@@ -176,9 +176,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                                                           uint32_t limit)const;
 
       vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
-      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const;
+      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creator, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const;
 
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const account_uid_type     creater, 
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const account_uid_type     creator, 
                                                                    const custom_vote_vid_type vote_vid, 
                                                                    const object_id_type       lower_bound_cast_custom_vote, 
                                                                    uint32_t                   limit)const;
@@ -1716,18 +1716,18 @@ vector<custom_vote_object> database_api_impl::list_custom_votes(const account_ui
    return result;
 }
 
-vector<custom_vote_object> database_api::lookup_custom_votes(const account_uid_type creater, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const
+vector<custom_vote_object> database_api::lookup_custom_votes(const account_uid_type creator, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const
 {
-    return my->lookup_custom_votes(creater, lower_bound_custom_vote, limit);
+    return my->lookup_custom_votes(creator, lower_bound_custom_vote, limit);
 }
 
-vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_uid_type creater, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const
+vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_uid_type creator, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const
 {
    FC_ASSERT(limit <= 100);
    vector<custom_vote_object> result;
    const auto& idx = _db.get_index_type<custom_vote_index>().indices().get<by_creater>();
-   auto itr = idx.lower_bound(std::make_tuple(creater, lower_bound_custom_vote));
-   while (itr != idx.end() && limit-- && itr->custom_vote_creater == creater)
+   auto itr = idx.lower_bound(std::make_tuple(creator, lower_bound_custom_vote));
+   while (itr != idx.end() && limit-- && itr->custom_vote_creator == creator)
    {
       result.push_back(*itr);
       ++itr;
@@ -1735,15 +1735,15 @@ vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_
    return result;
 }
 
-vector<cast_custom_vote_object> database_api::list_cast_custom_votes_by_id(const account_uid_type creater, 
+vector<cast_custom_vote_object> database_api::list_cast_custom_votes_by_id(const account_uid_type creator, 
                                                                            const custom_vote_vid_type vote_vid, 
                                                                            const object_id_type lower_bound_cast_custom_vote, 
                                                                            uint32_t limit)const
 {
-   return my->list_cast_custom_votes_by_id(creater, vote_vid, lower_bound_cast_custom_vote, limit);
+   return my->list_cast_custom_votes_by_id(creator, vote_vid, lower_bound_cast_custom_vote, limit);
 }
 
-vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_id(const account_uid_type creater, 
+vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_id(const account_uid_type creator, 
                                                                                 const custom_vote_vid_type vote_vid, 
                                                                                 const object_id_type lower_bound_cast_custom_vote, 
                                                                                 uint32_t limit)const
@@ -1752,10 +1752,10 @@ vector<cast_custom_vote_object> database_api_impl::list_cast_custom_votes_by_id(
    vector<cast_custom_vote_object> result;
 
    const auto& idx = _db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_vid>();
-   auto itr = idx.lower_bound(std::make_tuple(creater, vote_vid, lower_bound_cast_custom_vote));
+   auto itr = idx.lower_bound(std::make_tuple(creator, vote_vid, lower_bound_cast_custom_vote));
 
    while (itr != idx.end() && limit-- &&
-      itr->custom_vote_creater == creater &&
+      itr->custom_vote_creator == creator &&
       itr->custom_vote_vid == vote_vid)
    {
       result.push_back(*itr);

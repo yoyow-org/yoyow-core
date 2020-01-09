@@ -1623,11 +1623,13 @@ signed_transaction account_cancel_auth_platform(string account,
       witness_update_op.new_signing_key = block_signing_key;
       witness_update_op.new_pledge = pledge;
       witness_update_op.new_url = url;
-      witness_update_op.extensions = graphene::chain::extension<pledge_mining::ext>();
-      pledge_mining::ext exts;
-      exts.can_pledge = can_pledge;
-      exts.bonus_rate = bonus_rate;
-      witness_update_op.extensions->value = exts;
+      if (can_pledge.valid() || bonus_rate.valid()){
+         witness_update_op.extensions = graphene::chain::extension<pledge_mining::ext>();
+         pledge_mining::ext exts;
+         exts.can_pledge = can_pledge;
+         exts.bonus_rate = bonus_rate;
+         witness_update_op.extensions->value = exts;
+      }
 
       signed_transaction tx;
       tx.operations.push_back( witness_update_op );
@@ -3042,11 +3044,11 @@ signed_transaction account_cancel_auth_platform(string account,
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
 
-         account_uid_type creater = get_account_uid(create_account);
-         const account_statistics_object& creater_statistics = _remote_db->get_account_statistics_by_uid(creater);
+         account_uid_type creator = get_account_uid(create_account);
+         const account_statistics_object& creater_statistics = _remote_db->get_account_statistics_by_uid(creator);
 
          custom_vote_create_operation create_op;
-         create_op.custom_vote_creater = creater;
+         create_op.custom_vote_creator = creator;
          create_op.vote_vid = creater_statistics.last_custom_vote_sequence + 1;
          create_op.title = title;
          create_op.description = description;
@@ -3068,7 +3070,7 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction cast_custom_vote(string                voter,
-                                       string                custom_vote_creater,
+                                       string                custom_vote_creator,
                                        custom_vote_vid_type  custom_vote_vid,
                                        set<uint8_t>          vote_result,
                                        bool csaf_fee,
@@ -3078,10 +3080,10 @@ signed_transaction account_cancel_auth_platform(string account,
          FC_ASSERT(!self.is_locked(), "Should unlock first");
 
          account_uid_type cast_voter = get_account_uid(voter);
-         account_uid_type creater = get_account_uid(custom_vote_creater);
+         account_uid_type creator = get_account_uid(custom_vote_creator);
          custom_vote_cast_operation vote_op;
          vote_op.voter = cast_voter;
-         vote_op.custom_vote_creater = creater;
+         vote_op.custom_vote_creator = creator;
          vote_op.custom_vote_vid = custom_vote_vid;
          vote_op.vote_result = vote_result;
 
@@ -3091,7 +3093,7 @@ signed_transaction account_cancel_auth_platform(string account,
          tx.validate();
 
          return sign_transaction(tx, broadcast);
-      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creater)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creator)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
    }
 
    uint64_t get_account_auth_platform_count(string platform)
@@ -3169,12 +3171,14 @@ signed_transaction account_cancel_auth_platform(string account,
 
    signed_transaction update_mining_pledge(string pledge_account,
       string witness,
-      uint64_t new_pledge,
+      string new_pledge,
       bool csaf_fee,
       bool broadcast)
    {
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
+         auto asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         share_type pledge = asset_obj.amount_from_string(new_pledge).amount;
 
          account_uid_type pledge_account_uid = get_account_uid(pledge_account);
          account_uid_type witness_uid = get_account_uid(witness);
@@ -3182,7 +3186,7 @@ signed_transaction account_cancel_auth_platform(string account,
          pledge_mining_update_operation pledge_mining_update_op;
          pledge_mining_update_op.pledge_account = pledge_account_uid;
          pledge_mining_update_op.witness = witness_uid;
-         pledge_mining_update_op.new_pledge = new_pledge;
+         pledge_mining_update_op.new_pledge = pledge;
 
          signed_transaction tx;
          tx.operations.push_back(pledge_mining_update_op);
@@ -3194,17 +3198,19 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction collect_pledge_mining_bonus(string collect_account,
-      uint64_t bonus_amount,
+      string bonus_amount,
       bool csaf_fee,
       bool broadcast)
    {
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
          account_uid_type collect_account_uid = get_account_uid(collect_account);
+         auto asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         share_type bonus = asset_obj.amount_from_string(bonus_amount).amount;
 
          pledge_bonus_collect_operation pledge_bonus_collect_op;
          pledge_bonus_collect_op.account = collect_account_uid;
-         pledge_bonus_collect_op.bonus = bonus_amount;
+         pledge_bonus_collect_op.bonus = bonus;
 
          signed_transaction tx;
          tx.operations.push_back(pledge_bonus_collect_op);
@@ -3216,17 +3222,19 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction collect_score_bonus(string collect_account,
-      uint64_t bonus_amount,
+      string bonus_amount,
       bool csaf_fee,
       bool broadcast)
    {
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
          account_uid_type collect_account_uid = get_account_uid(collect_account);
+         auto asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         share_type bonus = asset_obj.amount_from_string(bonus_amount).amount;
 
          score_bonus_collect_operation score_bonus_collect_op;
          score_bonus_collect_op.account = collect_account_uid;
-         score_bonus_collect_op.bonus = bonus_amount;
+         score_bonus_collect_op.bonus = bonus;
 
          signed_transaction tx;
          tx.operations.push_back(score_bonus_collect_op);
@@ -4934,13 +4942,13 @@ signed_transaction wallet_api::create_custom_vote(string           create_accoun
 }
 
 signed_transaction wallet_api::cast_custom_vote(string                voter,
-                                                string                custom_vote_creater,
+                                                string                custom_vote_creator,
                                                 custom_vote_vid_type  custom_vote_vid,
                                                 set<uint8_t>          vote_result,
                                                 bool csaf_fee,
                                                 bool broadcast)
 {
-   return my->cast_custom_vote(voter, custom_vote_creater, custom_vote_vid, vote_result, csaf_fee, broadcast);
+   return my->cast_custom_vote(voter, custom_vote_creator, custom_vote_vid, vote_result, csaf_fee, broadcast);
 }
 
 vector<custom_vote_object> wallet_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)
@@ -4948,18 +4956,18 @@ vector<custom_vote_object> wallet_api::list_custom_votes(const account_uid_type 
    return my->_remote_db->list_custom_votes(lowerbound, limit);
 }
 
-vector<custom_vote_object> wallet_api::lookup_custom_votes(string creater, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)
+vector<custom_vote_object> wallet_api::lookup_custom_votes(string creator, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)
 {
-   account_uid_type account = my->get_account_uid(creater);
+   account_uid_type account = my->get_account_uid(creator);
    return my->_remote_db->lookup_custom_votes(account, lower_bound_custom_vote, limit);
 }
 
-vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(const string creater,
+vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(const string creator,
                                                                          const custom_vote_vid_type vote_vid,
                                                                          const object_id_type lower_bound_cast_custom_vote,
                                                                          uint32_t limit)
 {
-   account_uid_type creater_account = my->get_account_uid(creater);
+   account_uid_type creater_account = my->get_account_uid(creator);
    return my->_remote_db->list_cast_custom_votes_by_id(creater_account, vote_vid, lower_bound_cast_custom_vote, limit);
 }
 
@@ -5012,7 +5020,7 @@ signed_transaction wallet_api::update_lock_balance(string lock_balance_account,
 
 signed_transaction wallet_api::update_mining_pledge(string pledge_account,
                                                     string witness,
-                                                    uint64_t new_pledge,
+                                                    string new_pledge,
                                                     bool csaf_fee,
                                                     bool broadcast)
 {
@@ -5020,7 +5028,7 @@ signed_transaction wallet_api::update_mining_pledge(string pledge_account,
 }
 
 signed_transaction wallet_api::collect_pledge_mining_bonus(string collect_account,
-                                                           uint64_t bonus_amount,
+                                                           string bonus_amount,
                                                            bool csaf_fee,
                                                            bool broadcast)
 {
@@ -5028,7 +5036,7 @@ signed_transaction wallet_api::collect_pledge_mining_bonus(string collect_accoun
 }
 
 signed_transaction wallet_api::collect_score_bonus(string collect_account,
-                                                   uint64_t bonus_amount,
+                                                   string bonus_amount,
                                                    bool csaf_fee,
                                                    bool broadcast)
 {

@@ -1718,7 +1718,7 @@ BOOST_AUTO_TEST_CASE(custom_vote_test)
       //***************************************************
       const auto& idx = db.get_index_type<custom_vote_index>().indices().get<by_id>();
       const auto& obj = *(idx.begin());
-      BOOST_CHECK(obj.custom_vote_creater == u_9000_id);
+      BOOST_CHECK(obj.custom_vote_creator == u_9000_id);
       BOOST_CHECK(obj.vote_vid == 1);
       BOOST_CHECK(obj.title == "title");
       BOOST_CHECK(obj.description == "description");
