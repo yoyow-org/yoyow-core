@@ -306,7 +306,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
          FC_ASSERT(name_or_id.size() > 0);
          const account_object* account = nullptr;
          if (std::isdigit(name_or_id[0]))
-            account = _db.find(fc::variant(name_or_id, 1).as<account_id_type>(1));
+            account = _db.find_account_by_uid(fc::variant(name_or_id).as<account_uid_type>(1));
          else
          {
             const auto& idx = _db.get_index_type<account_index>().indices().get<by_name>();
