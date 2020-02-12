@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
 
       generate_blocks(10);
 
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1, 100,
          3000, 30000, 62000000, 4000, 2000, 8000, 9000, 11000, 20, 2000000, 3640000 };
 
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(committee_proposal_test)
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
 
       generate_blocks(101);
-      auto gap = db.get_global_properties().parameters.get_award_params();
+      auto gap = db.get_global_properties().parameters.get_extension_params();
 
       BOOST_REQUIRE_EQUAL(gap.content_award_interval, 300);
       BOOST_REQUIRE_EQUAL(gap.platform_award_interval, 300);
@@ -273,13 +273,13 @@ BOOST_AUTO_TEST_CASE(committee_proposal_threshold_test)
       for (int i = 0; i < 5; ++i)
          add_csaf_for_account(genesis_state.initial_accounts.at(i).uid, 1000);
 
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 300 };
 
       //not enough threshold
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
       generate_blocks(101);
-      auto gap = db.get_global_properties().parameters.get_award_params();
+      auto gap = db.get_global_properties().parameters.get_extension_params();
       BOOST_REQUIRE_EQUAL(gap.content_award_interval, 0);
 
       //enough threshold
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(committee_proposal_threshold_test)
       for (int i = 1; i < 5; ++i)
          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 2, voting_opinion_type::opinion_for);
       generate_blocks(101);
-      auto gap2 = db.get_global_properties().parameters.get_award_params();
+      auto gap2 = db.get_global_properties().parameters.get_extension_params();
       BOOST_REQUIRE_EQUAL(gap2.content_award_interval, 300);
    }
    catch (const fc::exception& e)
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE(score_test)
       generate_blocks(10);
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
       for (int i = 1; i < 5; ++i)
@@ -461,7 +461,7 @@ BOOST_AUTO_TEST_CASE(reward_test)
       generate_blocks(10);
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
       for (int i = 1; i < 5; ++i)
@@ -576,7 +576,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       generate_blocks(200000);
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 300, 300, 1000, 31536000, 10, 10000000000, 10000000000, 10000000000, 1000, 100 };
       auto execute_proposal_head_block = db.head_block_num() + 100;
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, execute_proposal_head_block, voting_opinion_type::opinion_for, execute_proposal_head_block, execute_proposal_head_block);
@@ -801,7 +801,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       //*******************************************
       // update scorer earnings rate, check profits
       //*******************************************
-      committee_update_global_content_parameter_item_type item2;
+      committee_update_global_extension_parameter_item_type item2;
       uint32_t scorer_earnings_rate=4000;
       item2.value.scorer_earnings_rate = scorer_earnings_rate;
       execute_proposal_head_block = db.head_block_num() + 100;
@@ -948,7 +948,7 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
       uint32_t current_block_num = db.head_block_num();
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
-      committee_update_global_content_parameter_item_type content_item;
+      committee_update_global_extension_parameter_item_type content_item;
       content_item.value = { 300, 300, 1000, 31536000, 10, 0, 0, 10000000000, 100, 10 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { content_item }, current_block_num + 10, voting_opinion_type::opinion_for, current_block_num + 10, current_block_num + 10);
       committee_update_global_parameter_item_type item;
@@ -1341,7 +1341,7 @@ BOOST_AUTO_TEST_CASE(forward_test)
       generate_blocks(10);
 
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 300, 300, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 100, voting_opinion_type::opinion_for, 100, 100);
       for (int i = 1; i < 5; ++i)

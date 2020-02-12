@@ -321,7 +321,7 @@ class wallet_api
        * @returns the global properties
        */
       global_property_object            get_global_properties() const;
-      content_parameter_extension_type  get_global_properties_extensions() const;
+      extension_parameter_type  get_global_properties_extensions() const;
 
       /** Returns the block chain's rapidly-changing properties.
        * The returned object contains information that changes every block interval

@@ -59,7 +59,7 @@ void_result witness_create_evaluator::do_evaluate( const witness_create_operatio
    if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 && op.extensions.valid() && op.extensions->value.bonus_rate.valid())
    {
       auto bonus_rate = *(op.extensions->value.bonus_rate);
-      auto max_pledge_mining_bonus_rate = global_params.get_award_params().max_pledge_mining_bonus_rate;
+      auto max_pledge_mining_bonus_rate = global_params.get_extension_params().max_pledge_mining_bonus_rate;
       FC_ASSERT(bonus_rate >= 0 && bonus_rate <= max_pledge_mining_bonus_rate,
          "bonus rate should be between 0 and ${max_rate}", ("max_rate", max_pledge_mining_bonus_rate));
    }
@@ -196,7 +196,7 @@ void_result witness_update_evaluator::do_evaluate( const witness_update_operatio
       {
          FC_ASSERT(*witness_ext.bonus_rate != witness_obj->bonus_rate, 
             "bonus_rate specified but did not change");
-         auto max_pledge_mining_bonus_rate = global_params.get_award_params().max_pledge_mining_bonus_rate;
+         auto max_pledge_mining_bonus_rate = global_params.get_extension_params().max_pledge_mining_bonus_rate;
          FC_ASSERT(*witness_ext.bonus_rate >= 0 && *witness_ext.bonus_rate <= max_pledge_mining_bonus_rate,
             "bonus rate should be between 0 and ${max_rate}", ("max_rate", max_pledge_mining_bonus_rate));
       }      

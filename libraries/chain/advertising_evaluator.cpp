@@ -115,7 +115,7 @@ void_result advertising_buy_evaluator::do_evaluate(const operation_type& op)
       }
 
       necessary_balance = advertising_obj->unit_price * op.buy_number;
-      const auto& params = d.get_global_properties().parameters.get_award_params();
+      const auto& params = d.get_global_properties().parameters.get_extension_params();
       FC_ASSERT(necessary_balance > params.advertising_confirmed_min_fee,
          "buy price is not enough to pay The lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
 
@@ -171,7 +171,7 @@ void_result advertising_confirm_evaluator::do_evaluate(const operation_type& op)
          "order ${p}_${ad}_${order} already effective or refused.", ("p", op.platform)("ad", op.advertising_aid)("order", op.advertising_order_oid));
 
       if (op.isconfirm) {
-         const auto& params = d.get_global_properties().parameters.get_award_params();
+         const auto& params = d.get_global_properties().parameters.get_extension_params();
          FC_ASSERT(advertising_order_obj->released_balance > params.advertising_confirmed_min_fee,
             "buy price is not enough to pay the lowest poundage ${fee}", ("fee", params.advertising_confirmed_min_fee));
       }
@@ -196,7 +196,7 @@ advertising_confirm_result advertising_confirm_evaluator::do_apply(const operati
             obj.handle_time = d.head_block_time();
          });
 
-         const auto& params = d.get_global_properties().parameters.get_award_params();
+         const auto& params = d.get_global_properties().parameters.get_extension_params();
          share_type fee = ((uint128_t)(released_balance.value)* params.advertising_confirmed_fee_rate
             / GRAPHENE_100_PERCENT).convert_to<int64_t>();
          if (fee < params.advertising_confirmed_min_fee)

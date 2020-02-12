@@ -22,7 +22,7 @@ void_result pledge_mining_update_evaluator::do_evaluate(const pledge_mining_upda
 
       if (op.new_pledge > 0)
       {
-         auto min_pledge_to_witness = d.get_global_properties().parameters.get_award_params().min_mining_pledge;
+         auto min_pledge_to_witness = d.get_global_properties().parameters.get_extension_params().min_mining_pledge;
          FC_ASSERT(op.new_pledge.value >= min_pledge_to_witness,
                    "Insufficient pledge: provided ${p}, need ${r}",
                    ("p", d.to_pretty_core_string(op.new_pledge))
@@ -54,7 +54,7 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
    try {
       database& d = db();
 
-      const auto& params = d.get_global_properties().parameters.get_award_params();
+      const auto& params = d.get_global_properties().parameters.get_extension_params();
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       auto block_num = d.head_block_num();
 

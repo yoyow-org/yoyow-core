@@ -591,7 +591,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             else
             {
                time_point_sec expiration_time = origin_post->create_time;
-               expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration;
+               expiration_time += d.get_global_properties().parameters.get_extension_params().post_award_expiration;
                if (expiration_time >= d.head_block_time())
                {
                   d.create<active_post_object>([&](active_post_object& obj)
@@ -841,7 +841,7 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
       if (d.head_block_time() >= HARDFORK_0_5_TIME)
          d.get_platform_by_owner(op.platform); // make sure pid exists
 
-      const auto& global_params = d.get_global_properties().parameters.get_award_params();
+      const auto& global_params = d.get_global_properties().parameters.get_extension_params();
       auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
       const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
       FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Liked) > 0, "post_object ${p} not allowed to liked.", ("p", op.post_pid));
@@ -910,7 +910,7 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
          {
             const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
             time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            if ((expiration_time += d.get_global_properties().parameters.get_extension_params().post_award_expiration) >= d.head_block_time())
             {
                const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
                d.create<active_post_object>([&](active_post_object& obj)
@@ -1025,7 +1025,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
          else
          {
             time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            if ((expiration_time += d.get_global_properties().parameters.get_extension_params().post_award_expiration) >= d.head_block_time())
             {
                d.create<active_post_object>([&](active_post_object& obj)
                {
@@ -1149,7 +1149,7 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
          else
          {
             time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            if ((expiration_time += d.get_global_properties().parameters.get_extension_params().post_award_expiration) >= d.head_block_time())
             {
                d.create<active_post_object>([&](active_post_object& obj)
                {

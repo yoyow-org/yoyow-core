@@ -221,7 +221,7 @@ namespace graphene { namespace chain {
     */
    typedef extension<committee_updatable_parameters> committee_update_global_parameter_item_type;
 
-    struct committee_updatable_content_parameters
+    struct committee_updatable_extension_parameters
     {
        optional< uint32_t        >    content_award_interval;
        optional< uint32_t        >    platform_award_interval;
@@ -261,7 +261,7 @@ namespace graphene { namespace chain {
 
        void validate()const;
     };
-    typedef extension<committee_updatable_content_parameters> committee_update_global_content_parameter_item_type;
+    typedef extension<committee_updatable_extension_parameters> committee_update_global_extension_parameter_item_type;
 
 
     /**
@@ -288,7 +288,7 @@ namespace graphene { namespace chain {
             committee_update_account_priviledge_item_type,
             committee_update_fee_schedule_item_type,
             committee_update_global_parameter_item_type,
-            committee_update_global_content_parameter_item_type,
+            committee_update_global_extension_parameter_item_type,
             committee_withdraw_platform_pledge_item_type
          > committee_proposal_item_type;
 
@@ -437,7 +437,7 @@ FC_REFLECT( graphene::chain::committee_updatable_parameters,
             (platform_max_pledge_seconds)
             (platform_avg_pledge_update_interval)
           )
-FC_REFLECT(graphene::chain::committee_updatable_content_parameters, 
+FC_REFLECT(graphene::chain::committee_updatable_extension_parameters, 
             (content_award_interval)
             (platform_award_interval)
             (max_csaf_per_approval)
@@ -479,7 +479,7 @@ FC_REFLECT( graphene::chain::committee_withdraw_platform_pledge_item_type,
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )
-FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_content_parameter_item_type )
+FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_extension_parameter_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_proposal_item_type)
 
 FC_REFLECT_ENUM( graphene::chain::voting_opinion_type,

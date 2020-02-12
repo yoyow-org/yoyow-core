@@ -24,7 +24,7 @@ void_result custom_vote_create_evaluator::do_evaluate(const operation_type& op)
 
       d.get_asset_by_aid(op.vote_asset_id); //check asset exist
 
-      const auto& params = d.get_global_properties().parameters.get_award_params();
+      const auto& params = d.get_global_properties().parameters.get_extension_params();
       auto range_end_time = d.head_block_time() + params.custom_vote_effective_time;
       FC_ASSERT(op.vote_expired_time > d.head_block_time() && op.vote_expired_time < range_end_time,
          "vote expired time should in range ${start}--${end}", ("start", d.head_block_time())("end", range_end_time));

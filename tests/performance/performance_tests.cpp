@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_1)
 
       //actor(500000, cycles, score_map);
 
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       int current_block_num = db.head_block_num();
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num + 5, voting_opinion_type::opinion_for, current_block_num + 5, current_block_num+5);
@@ -603,7 +603,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_2)
 
       int current_block_num = db.head_block_num();
 
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num + 5, voting_opinion_type::opinion_for, current_block_num + 5, current_block_num+5);
       for (int i = 1; i < 5; ++i)
@@ -678,7 +678,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_3)
       flat_map<account_uid_type, fc::ecc::private_key> score_map;
       actor(1003, score_count, score_map);
 
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 5, voting_opinion_type::opinion_for, 5, 5);
       for (int i = 1; i < 5; ++i)

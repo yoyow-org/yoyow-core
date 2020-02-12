@@ -98,7 +98,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
             max_releasing_size = 1;
          else {
             const auto& global_params = db.get_global_properties().parameters;
-            max_releasing_size = global_params.get_award_params().max_pledge_releasing_size;
+            max_releasing_size = global_params.get_extension_params().max_pledge_releasing_size;
          }
          if (releasing_pledges.size() == max_releasing_size)
          {

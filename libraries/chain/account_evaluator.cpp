@@ -801,7 +801,7 @@ void_result benefit_collect_evaluator::do_evaluate(const benefit_collect_operati
          const auto& global_params = d.get_global_properties().parameters;         
          if (to_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance)) 
          {
-            auto csaf_limit_modulus = global_params.get_award_params().csaf_limit_lock_balance_modulus;
+            auto csaf_limit_modulus = global_params.get_extension_params().csaf_limit_lock_balance_modulus;
             auto pledge_balance_obj = d.get(to_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));
             share_type lock_balance_csaf = ((fc::uint128)pledge_balance_obj.pledge.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
 

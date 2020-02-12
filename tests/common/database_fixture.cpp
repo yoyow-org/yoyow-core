@@ -2137,7 +2137,7 @@ std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
 database_fixture::get_effective_csaf(const vector<score_id_type>& scores, share_type amount)
 {
    const global_property_object& gpo = db.get_global_properties();
-   const auto& params = gpo.parameters.get_award_params();
+   const auto& params = gpo.parameters.get_extension_params();
 
    uint128_t  total_csaf = 0;
    share_type total_effective_csaf = 0;

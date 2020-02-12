@@ -405,7 +405,7 @@ std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
 database::get_effective_csaf(const active_post_object& active_post)
 {
    const global_property_object& gpo = get_global_properties();
-   const auto& params = gpo.parameters.get_award_params();
+   const auto& params = gpo.parameters.get_extension_params();
 
    uint128_t amount = (uint128_t)active_post.total_csaf.value;
 
@@ -483,7 +483,7 @@ database::get_effective_csaf(const active_post_object& active_post)
 
 void database::clear_expired_scores()
 {
-   const auto& global_params = get_global_properties().parameters.get_award_params();
+   const auto& global_params = get_global_properties().parameters.get_extension_params();
 	const auto& score_expiration_index = get_index_type<score_index>().indices().get<by_create_time>();
 
 	while (!score_expiration_index.empty() && score_expiration_index.begin()->create_time <= head_block_time()-global_params.approval_expiration)
@@ -794,7 +794,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
       flat_map<account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
       const committee_update_fee_schedule_item_type* fee_item = nullptr;
       const committee_update_global_parameter_item_type* param_item = nullptr;
-      const committee_update_global_content_parameter_item_type* content_item = nullptr;
+      const committee_update_global_extension_parameter_item_type* extension_parm_item = nullptr;
       for( const auto& item : proposal.items )
       {
          // account update item
@@ -896,9 +896,9 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
          {
             param_item = &item.get< committee_update_global_parameter_item_type >();
          }
-         else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
+         else if (item.which() == committee_proposal_item_type::tag< committee_update_global_extension_parameter_item_type >::value)
          {
-            content_item = &item.get< committee_update_global_content_parameter_item_type >();
+            extension_parm_item = &item.get< committee_update_global_extension_parameter_item_type >();
          }
          else if (item.which() == committee_proposal_item_type::tag< committee_withdraw_platform_pledge_item_type >::value)
          {
@@ -1102,12 +1102,12 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                o.platform_avg_pledge_update_interval = *pv.platform_avg_pledge_update_interval;
          });
       }
-      if (content_item != nullptr)
+      if (extension_parm_item != nullptr)
       {
-         const auto& pv = content_item->value;
+         const auto& pv = extension_parm_item->value;
          modify(get_global_properties(), [&](global_property_object& _gpo)
          {
-            auto& v = _gpo.parameters.content_parameters;
+            auto& v = _gpo.parameters.extension_parameters;
             if (pv.content_award_interval.valid())
                v.content_award_interval = *pv.content_award_interval;
             if (pv.platform_award_interval.valid())
@@ -1628,7 +1628,7 @@ void database::update_platform_avg_pledge( const platform_object& pla )
 
 void database::resign_pledge_mining(const witness_object& wit)
 {
-   const auto& params = get_global_properties().parameters.get_award_params();
+   const auto& params = get_global_properties().parameters.get_extension_params();
    const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
    auto itr = idx.lower_bound(wit.account);
    while (itr != idx.end() && itr->witness == wit.account)
@@ -1687,7 +1687,7 @@ void database::process_content_platform_awards()
    if (block_time >= dpo.next_content_award_time)
    {
       const global_property_object& gpo = get_global_properties();
-      const auto& params = gpo.parameters.get_award_params();
+      const auto& params = gpo.parameters.get_extension_params();
 
       if ((params.total_content_award_amount == 0 && params.total_platform_content_award_amount == 0) || params.content_award_interval == 0)
       {
@@ -2002,7 +2002,7 @@ void database::process_platform_voted_awards()
    if (block_time >= dpo.next_platform_voted_award_time)
    {
       const global_property_object& gpo = get_global_properties();
-      const auto& params = gpo.parameters.get_award_params();
+      const auto& params = gpo.parameters.get_extension_params();
 
       if (params.total_platform_voted_award_amount > 0 && params.platform_award_interval > 0)
       {

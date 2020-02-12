@@ -1,45 +1,45 @@
-Content_update йЩ╬щ╫А╧╧уШюМ
-1.	сц╩╖йзсХф╫л╗х╗оч
+Content_update О©╫О©╫О©╫щ╫А╧╧О©╫О©╫О©╫О©╫
+1.	О©╫ц╩О©╫О©╫О©╫О©╫О©╫ф╫л╗х╗О©╫О©╫
 \\libraries\chain\include\graphene\chain\account_object.hpp
 1.	enum Platform_Auth_Permission  
 2.	{  
-3.	    Platform_Permission_Forward  = 1,   //тйпМф╫л╗в╙╥╒ндубё╛д╛хотйпМ
-4.	    Platform_Permission_Liked    = 2,   //тйпМф╫л╗╣Цтч╩Р╢Р╥жё╛д╛хотйпМ
-5.	    Platform_Permission_Buyout   = 4,   //тйпМф╫л╗бР╤ондубйурФё╛д╛хотйпМ
-6.	    Platform_Permission_Comment  = 8,   //тйпМф╫л╗фюбшфДкШндубё╛д╛хотйпМ
-7.	    Platform_Permission_Reward   = 16,  //тйпМф╫л╗╢РимфДкШндубё╛д╛хотйпМ
-8.	    Platform_Permission_Transfer = 32   //тйпМф╫л╗╤╞сцаЦг╝в╙укё╛д╛хо╡╩тйпМ
+3.	    Platform_Permission_Forward  = 1,   //О©╫О©╫О©╫О©╫ф╫л╗в╙О©╫О©╫О©╫О©╫О©╫бёО©╫д╛О©╫О©╫О©╫О©╫О©╫О©╫
+4.	    Platform_Permission_Liked    = 2,   //О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫ч╩О©╫О©╫жёО©╫д╛О©╫О©╫О©╫О©╫О©╫О©╫
+5.	    Platform_Permission_Buyout   = 4,   //О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫Фё╛д╛О©╫О©╫О©╫О©╫О©╫О©╫
+6.	    Platform_Permission_Comment  = 8,   //О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫бёО©╫д╛О©╫О©╫О©╫О©╫О©╫О©╫
+7.	    Platform_Permission_Reward   = 16,  //О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫бёО©╫д╛О©╫О©╫О©╫О©╫О©╫О©╫
+8.	    Platform_Permission_Transfer = 32   //О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫г╝в╙О©╫кёО©╫д╛О©╫о╡О©╫О©╫О©╫О©╫О©╫
 9.	};
-╦Эпбк╣цВё╨сц╩╖йзсХф╫л╗дэ╢ЗюМсц╩╖вЖ╡ывВ╣дх╗очё╛й╧сцuint32_t╣д╠Йж╬н╩ё╛╥╫╠Цж╝╨СвЖх╗очю╘у╧║ёртиокЫспф╫л╗╢ЗюМук╩╖╡ывВ╤╪пХр╙ук╩╖йзх╗ё╛╥ЯтР╡ывВй╖п╖║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫ц╩О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫э╢О©╫О©╫О©╫О©╫ц╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫х╗О©╫чёО©╫й╧О©╫О©╫uint32_tО©╫д╠О©╫ж╬н╩О©╫О©╫О©╫О©╫О©╫О©╫ж╝О©╫О©╫О©╫О©╫х╗О©╫О©╫О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫р╙О©╫к╩О©╫О©╫О©╫х╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫й╖п╖О©╫О©╫
 
 
 
-2.	вВуъйзсХндубх╗оч
+2.	О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫х╗О©╫О©╫
 \\libraries\chain\include\graphene\chain\content_object.hpp
 1.	enum Post_Permission  
 2.	{  
-3.	    Post_Permission_Forward = 1,   //ндубтйпМв╙╥╒ё╛д╛хотйпМ
-4.	    Post_Permission_Liked   = 2,   //ндубтйпМ╢Р╥ж║╒╣Цтчё╛д╛хотйпМ
-5.	    Post_Permission_Buyout  = 4,   //ндубтйпМЁЖйшйурФё╛д╛хотйпМ
-6.	    Post_Permission_Comment = 8,   //ндубтйпМфюбшё╛д╛хотйпМ
-7.	    Post_Permission_Reward  = 16   //ндубтйпМ╢Римё╛д╛хотйпМ
+3.	    Post_Permission_Forward = 1,   //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫в╙О©╫О©╫О©╫О©╫д╛О©╫О©╫О©╫О©╫О©╫О©╫
+4.	    Post_Permission_Liked   = 2,   //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ж║О©╫О©╫О©╫О©╫чёО©╫д╛О©╫О©╫О©╫О©╫О©╫О©╫
+5.	    Post_Permission_Buyout  = 4,   //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫Фё╛д╛О©╫О©╫О©╫О©╫О©╫О©╫
+6.	    Post_Permission_Comment = 8,   //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫шёО©╫д╛О©╫О©╫О©╫О©╫О©╫О©╫
+7.	    Post_Permission_Reward  = 16   //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫мёО©╫д╛О©╫О©╫О©╫О©╫О©╫О©╫
 8.	};
-╦Эпбк╣цВё╨вВуъё╗мБ╪сф╫л╗ё╘йзсХндуб╣дх╗очё╛й╧сцuint32_t╣д╠Йж╬н╩║ёкЫсп╤тндуб╣доЮ╧ь╡ывВё╛пХр╙вВуъ╢Р©╙ндубоЮ╧ьх╗очё╛╥ЯтР╡ывВй╣п╖║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫ъёО©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫б╣О©╫х╗О©╫чёО©╫й╧О©╫О©╫uint32_tО©╫д╠О©╫ж╬н╩О©╫О©╫О©╫О©╫О©╫п╤О©╫О©╫О©╫О©╫б╣О©╫О©╫О©╫ь╡О©╫О©╫О©╫О©╫О©╫О©╫О©╫р╙О©╫О©╫О©╫ъ╢О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫х╗О©╫чёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫й╣п╖О©╫О©╫
 
 
 
-3. ндубюЮпм
+3. О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
 \\libraries\chain\include\graphene\chain\protocol\content.hpp
 1.	enum Post_Type  
 2.	{  
-3.	   Post_Type_Post = 0,                 //пбндуб
-4.	   Post_Type_Comment = 1,              //фюбш
-5.	   Post_Type_forward = 2,              //в╙╥╒╣дндуб
-6.	   Post_Type_forward_And_Modify = 3,  //в╙╥╒грпч╦д╣дндуб
+3.	   Post_Type_Post = 0,                 //О©╫О©╫О©╫О©╫О©╫О©╫
+4.	   Post_Type_Comment = 1,              //О©╫О©╫О©╫О©╫
+5.	   Post_Type_forward = 2,              //в╙О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+6.	   Post_Type_forward_And_Modify = 3,  //в╙О©╫О©╫О©╫О©╫О©╫ч╦д╣О©╫О©╫О©╫О©╫О©╫
 7.	  
 8.	   Post_Type_Default  
 9.	};
-╦Эпбк╣цВё╨лМ╪сакндуб╣дюЮпмё╛╬ълЕ╪Шио║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫б╣О©╫О©╫О©╫О©╫мёО©╫О©╫О©╫О©╫О©╫О©╫О©╫о║О©╫
 
 
 
@@ -49,8 +49,8 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 2.	{  
 3.	   struct ext  
 4.	   {  
-5.	        optional<share_type> limit_for_platform;  //ю╘у╧ё╨ ук╩╖йзсХф╫л╗й╧сцаЦг╝╣двН╢Соч╤Н║ё╣╠оч╤Нй╧сцмЙакё╛кЫспф╫л╗╤╞сцук╩╖аЦг╝╣д╡ывВ╫╚й╖╟эё╛ж╠╣╫ук╩╖лА╦ъф╫л╗оч╤Н║ё
-6.	        optional<uint32_t>   permission_flags;    //ю╘у╧ё╨ ук╩╖йзсХф╫л╗х╗очё╛х╗оч╟╢╠Йж╬н╩иХ╤╗ё╛╬ълЕиХ╤╗╡н╪Ш Platform_Auth_Permission
+5.	        optional<share_type> limit_for_platform;  //О©╫О©╫у╧О©╫О©╫ О©╫к╩О©╫О©╫О©╫О©╫О©╫ф╫л╗й╧О©╫О©╫О©╫О©╫г╝О©╫О©╫О©╫О©╫О©╫О©╫ч╤Н║ёО©╫О©╫О©╫ч╤О©╫й╧О©╫О©╫О©╫О©╫О©╫кёО©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫г╝О©╫д╡О©╫О©╫О©╫О©╫О©╫й╖О©╫эёО©╫ж╠О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫ф╫л╗О©╫ч╤Н║ё
+6.	        optional<uint32_t>   permission_flags;    //О©╫О©╫у╧О©╫О©╫ О©╫к╩О©╫О©╫О©╫О©╫О©╫ф╫л╗х╗О©╫чёО©╫х╗О©╫ч╟О©╫О©╫О©╫ж╬н╩О©╫Х╤╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫Х╤╗О©╫н╪О©╫ Platform_Auth_Permission
 7.	   };  
 8.	  
 9.	   typedef static_variant< ext > extension_parameter;  
@@ -69,31 +69,31 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 22.	  
 23.	  optional< flat_set<extension_parameter> > extensions;  
 24.	};
-╦Эпбк╣цВё╨ук╩╖йзх╗ф╫л╗ё╛тзт╜ю╢╣дaccount_auth_platform_operation╩Ы╢║иоё╛ю╘у╧лМ╪сак╤тйзх╗ф╫л╗╤╞сцаЦг╝╣доч╤Нё╛рт╪╟ф╫л╗╦ВюЮ╢ЗюМ╡ывВ╣доч╤╗║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫х╗ф╫л╗О©╫О©╫О©╫О©╫т╜О©╫О©╫О©╫О©╫account_auth_platform_operationО©╫О©╫О©╫О©╫О©╫оёО©╫О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫к╤О©╫О©╫О©╫х╗ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫г╝О©╫О©╫О©╫ч╤Нё╛О©╫т╪О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ч╤О©╫О©╫О©╫
 
 
 
 5. post_operation
 \\libraries\chain\include\graphene\chain\protocol\content.hpp
-1.	class Recerptor_Parameter  //ю╘у╧ё╨ндубйэрФхк╡нйЩ
+1.	class Recerptor_Parameter  //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╡О©╫О©╫О©╫
 2.	{  
 3.	public:  
-4.	   uint16_t       cur_ratio;     //ю╘у╧: ╣╠г╟╣дндубйурФу╪╠х
-5.	   bool           to_buyout;     //ю╘у╧ё╨йурФйг╥ЯЁЖйшё╛ЁЖйш╠хюЩ╡╩╣ц╢Ссзвт╪╨╣д╣╠г╟у╪╠хё╛╣╠╦цндубд©г╟╣дйэрФхкё╗╟Эю╗ф╫л╗ё╘ря╬╜бЗак5хкё╛╠ьпКх╚╡©ЁЖйшвт╪╨╣дйурФу╪╠х
-6.	   uint16_t       buyout_ratio;  //ю╘у╧ё╨йурФЁЖйш╠хюЩё╛
-7.	   share_type     buyout_price;  //ю╘у╧ё╨йурФЁЖйш╪ш╦Я
-8.	   time_point_sec buyout_expiration = time_point_sec::maximum();  //ю╘у╧ё╨йурФЁЖйш╧Щфзй╠╪Дё╛╣╠й╠╪Д╧Щфзё╛╦цйурФЁЖйш╫╚нчп╖
+4.	   uint16_t       cur_ratio;     //О©╫О©╫у╧: О©╫О©╫г╟О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫у╪О©╫О©╫
+5.	   bool           to_buyout;     //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫г╥О©╫О©╫О©╫шёО©╫О©╫О©╫О©╫ш╠О©╫О©╫О©╫О©╫О©╫О©╫ц╢О©╫О©╫О©╫О©╫т╪О©╫О©╫д╣О©╫г╟у╪О©╫хёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©г╟О©╫О©╫О©╫О©╫О©╫О©╫О©╫кёО©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫я╬О©╫О©╫О©╫О©╫О©╫5О©╫кёО©╫О©╫О©╫О©╫О©╫х╚О©╫О©╫О©╫О©╫О©╫О©╫О©╫т╪О©╫О©╫О©╫О©╫О©╫О©╫О©╫у╪О©╫О©╫
+6.	   uint16_t       buyout_ratio;  //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ш╠О©╫О©╫О©╫О©╫О©╫
+7.	   share_type     buyout_price;  //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ш╪ш╦О©╫
+8.	   time_point_sec buyout_expiration = time_point_sec::maximum();  //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ш╧О©╫О©╫О©╫й╠О©╫Дё╛О©╫О©╫й╠О©╫О©╫О©╫О©╫зёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ш╫О©╫О©╫О©╫п╖
 9.	}  
 10.	  
 11.	struct post_operation : public base_operation  
 12.	{  
 13.	   struct ext  
 14.	   {  
-15.	        uint8_t                                                post_type = Post_Type_Post;      //ю╘у╧ё╨ндубюЮпмё╛╡н╪ШPost_Type
-16.	        optional<share_type>                                   forward_price;                    //ю╘у╧ё╨в╙╥╒╪ш
-17.	        optional< map<account_uid_type, Recerptor_Parameter> > receiptors;                       //ю╘у╧ё╨ндубйэрФхкап╠Мё╛ап╠Мг©жф╟Эю╗ндубф╫л╗ё╛грг©жфу╪╠х25%ё╛╡╩©ипч╦д║ёйурФап╠МйэрФхкйЩ╠ьпКйг[2,5]ж╝г╟
-18.	        optional<license_lid_type>                             license_lid;                      //ю╘у╧ё╨ндубпМ©иid
-19.	        uint32_t                                               permission_flags = 0xFFFFFFFF;  //ю╘у╧ё╨ндубх╗очё╛╡н╪ШPost_Permission
+15.	        uint8_t                                                post_type = Post_Type_Post;      //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫мёО©╫О©╫н╪О©╫Post_Type
+16.	        optional<share_type>                                   forward_price;                    //О©╫О©╫у╧О©╫О©╫в╙О©╫О©╫О©╫О©╫
+17.	        optional< map<account_uid_type, Recerptor_Parameter> > receiptors;                       //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫п╠О©╫О©╫О©╫О©╫п╠О©╫г©О©╫ф╟О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫г©О©╫О©╫у╪О©╫О©╫25%О©╫О©╫О©╫О©╫О©╫О©╫О©╫ч╦д║О©╫О©╫О©╫О©╫О©╫О©╫п╠О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫[2,5]ж╝г╟
+18.	        optional<license_lid_type>                             license_lid;                      //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫id
+19.	        uint32_t                                               permission_flags = 0xFFFFFFFF;  //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫х╗О©╫чёО©╫О©╫н╪О©╫Post_Permission
 20.	   };  
 21.	   typedef static_variant< ext > extension_parameter;  
 22.	  
@@ -121,7 +121,7 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 44.	  
 45.	  optional< flat_set<extension_parameter> > extensions;  
 46.	};
-╦Эпбк╣цВё╨тзт╜ю╢╣дpost_operation╩Ы╢║иоё╛лМ╪сакндубюЮпмё╛ндубв╙╥╒╪шё╛ндубпМ©иё╛ндубх╗очё╛рт╪╟ндубйэрФхкап╠М╣хю╘у╧йТпт║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫т╜О©╫О©╫О©╫О©╫post_operationО©╫О©╫О©╫О©╫О©╫оёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫мёО©╫О©╫О©╫О©╫О©╫в╙О©╫О©╫О©╫шёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫иёО©╫О©╫О©╫О©╫О©╫х╗О©╫чёО©╫О©╫т╪О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫п╠О©╫О©╫О©╫О©╫О©╫у╧О©╫О©╫О©╫т║О©╫
 
 
 
@@ -131,14 +131,14 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 2.	{  
 3.	   struct ext  
 4.	   {  
-5.	        optional<share_type>           forward_price;     //ю╘у╧ё╨пч╦д╣дндубв╙╥╒╪ш
-6.	        optional<account_uid_type>     receiptor;         //ю╘у╧ё╨йэрФхкук╩╖id
-7.	        optional<bool>                 to_buyout;         //ю╘у╧ё╨йг╥ЯЁЖйшйурФ
-8.	        optional<uint16_t>             buyout_ratio;      //ю╘у╧ё╨ЁЖйшйурФ╠хюЩё╛ЁЖйш╠хюЩ╡╩╣ц╢Ссзвт╪╨╣д╣╠г╟у╪╠х║ё╣╠╦цндубд©г╟╣дйэрФхкё╗╟Эю╗ф╫л╗ё╘ря╬╜бЗак5хкё╛╠ьпКх╚╡©ЁЖйшвт╪╨╣дйурФу╪╠х║ё
-9.	        optional<share_type>           buyout_price;      //ю╘у╧ё╨ЁЖйшйурФ╪ш╦Я
-10.	        optional<time_point_sec>       buyout_expiration; //ю╘у╧ё╨ЁЖйш╧р╣╔╧Щфзй╠╪Д
-11.	        optional<license_lid_type>     license_lid;        //ю╘у╧ё╨ндубпМ©иid
-12.	        optional<uint32_t>             permission_flags;  //ю╘у╧ё╨ндубх╗очё╛╡н╪ШPost_Permission
+5.	        optional<share_type>           forward_price;     //О©╫О©╫у╧О©╫О©╫О©╫ч╦д╣О©╫О©╫О©╫О©╫О©╫в╙О©╫О©╫О©╫О©╫
+6.	        optional<account_uid_type>     receiptor;         //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫id
+7.	        optional<bool>                 to_buyout;         //О©╫О©╫у╧О©╫О©╫О©╫г╥О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+8.	        optional<uint16_t>             buyout_ratio;      //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ш╠О©╫О©╫О©╫О©╫О©╫О©╫ц╢О©╫О©╫О©╫О©╫т╪О©╫О©╫д╣О©╫г╟у╪О©╫х║О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©г╟О©╫О©╫О©╫О©╫О©╫О©╫О©╫кёО©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫я╬О©╫О©╫О©╫О©╫О©╫5О©╫кёО©╫О©╫О©╫О©╫О©╫х╚О©╫О©╫О©╫О©╫О©╫О©╫О©╫т╪О©╫О©╫О©╫О©╫О©╫О©╫О©╫у╪О©╫х║О©╫
+9.	        optional<share_type>           buyout_price;      //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ш╦О©╫
+10.	        optional<time_point_sec>       buyout_expiration; //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫ш╧р╣О©╫О©╫О©╫О©╫О©╫й╠О©╫О©╫
+11.	        optional<license_lid_type>     license_lid;        //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫id
+12.	        optional<uint32_t>             permission_flags;  //О©╫О©╫у╧О©╫О©╫О©╫О©╫О©╫О©╫х╗О©╫чёО©╫О©╫н╪О©╫Post_Permission
 13.	   };  
 14.	   typedef static_variant< ext > extension_parameter;  
 15.	  
@@ -163,7 +163,7 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 34.	  
 35.	  optional< flat_set<extension_parameter> > extensions;  
 36.	};
-╦Эпбк╣цВё╨тзт╜ю╢╣дpost_update_operation╩Ы╢║иоё╛лМ╪сакндубв╙╥╒╪шё╛ндубпМ©иidё╛ндубх╗очё╛рт╪╟ндубйэрФхк╣дйг╥ЯЁЖйшндубйэрФё╛ЁЖйшйурФ╠хё╛ЁЖйш╪ш╦Яё╛╧р╣╔спп╖й╠╪Д╣хю╘у╧йТпт║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫т╜О©╫О©╫О©╫О©╫post_update_operationО©╫О©╫О©╫О©╫О©╫оёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫в╙О©╫О©╫О©╫шёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫idО©╫О©╫О©╫О©╫О©╫О©╫х╗О©╫чёО©╫О©╫т╪О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╣О©╫О©╫г╥О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫Фё╛О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫хёО©╫О©╫О©╫О©╫ш╪ш╦Яё╛╧р╣О©╫О©╫О©╫п╖й╠О©╫О©╫О©╫О©╫О©╫у╧О©╫О©╫О©╫т║О©╫
 
 
 
@@ -179,18 +179,18 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 8.	       extensions_type   extensions;  
 9.	   };  
 10.	  
-11.	   fee_type                     fee;  //йжпЬ╥я
+11.	   fee_type                     fee;  //О©╫О©╫О©╫О©╫О©╫О©╫
 12.	  
-13.	   account_uid_type             from_account_uid;  //╢Р╥ж╩Р╣Цтч╥╒фПхкук╩╖id
-14.	   account_uid_type             platform;          //ндубкЫтзф╫л╗
-15.	   account_uid_type             poster;            //ндуб╣двВуъ
-16.	   post_pid_type                post_pid;          //ндуб╣дid
-17.	   int8_t                       score;             //ндуб╢Р╣д╥жйЩё╛╥жйЩ╥╤н╖н╙-5~5
-18.	   share_type                   csaf;              //╢Р╥ж╩Р╣Цтч╩╗╥я╣д╩Щ╥ж
+13.	   account_uid_type             from_account_uid;  //О©╫О©╫ж╩О©╫О©╫О©╫ч╥О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫id
+14.	   account_uid_type             platform;          //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗
+15.	   account_uid_type             poster;            //О©╫О©╫О©╫б╣О©╫О©╫О©╫О©╫О©╫
+16.	   post_pid_type                post_pid;          //О©╫О©╫О©╫б╣О©╫id
+17.	   int8_t                       score;             //О©╫О©╫О©╫б╢О©╫д╥О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫н╖н╙-5~5
+18.	   share_type                   csaf;              //О©╫О©╫ж╩О©╫О©╫О©╫ч╩О©╫О©╫я╣д╩О©╫О©╫О©╫
 19.	  
-20.	   extensions_type              extensions;  //ю╘у╧оН
+20.	   extensions_type              extensions;  //О©╫О©╫у╧О©╫О©╫
 21.	};
-╦Эпбк╣цВё╨пбтЖscore_create_operationё╛сцсзук╩╖╤тндуб╫Ьпп╢Р╥ж╩Руъ╣Цтч║ёндубпХр╙©╙╥е╢Р╥жх╗очё╛сц╩╖пХр╙йзх╗ф╫л╗╢Р╥жх╗очё╛╥ЯтР╡ывВй╖╟э║ёйЩ╬щ©Б╣в╡Цпб╫╗score_objectю╢╢Ф╢╒╢Р╥жпео╒║ёц©р╩╦Ж╥жеДжэфз╩А╡н©╪╢Р╥жпео╒ю╢фю╤╗йурФ║ёЁ╛╧ЩвН╢С╣д╠ё╢Фй╠╪Дё╗сиюМйб╩А╡нйЩ╬Ж╤╗ё╘╣дё╛score_object╩А╠╩йЩ╬щ©Би╬ЁЩ║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫score_create_operationО©╫О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫О©╫б╫О©╫О©╫п╢О©╫ж╩О©╫О©╫ъ╣О©╫О©╫ч║О©╫О©╫О©╫О©╫О©╫О©╫О©╫р╙О©╫О©╫О©╫е╢О©╫О©╫х╗О©╫чёО©╫О©╫ц╩О©╫О©╫О©╫р╙О©╫О©╫х╗ф╫л╗О©╫О©╫О©╫х╗О©╫чёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫й╖О©╫э║О©╫О©╫О©╫О©╫щ©О©╫в╡О©╫О©╫б╫О©╫score_objectО©╫О©╫О©╫Ф╢╒О©╫О©╫О©╫О©╫О©╫о╒О©╫О©╫ц©р╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫з╩О©╫н©О©╫О©╫О©╫О©╫О©╫О©╫о╒О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫Ф║ёО©╫О©╫О©╫О©╫О©╫О©╫О©╫д╠О©╫О©╫О©╫й╠О©╫Дё╗О©╫О©╫О©╫О©╫О©╫б╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫дёО©╫score_objectО©╫А╠╩О©╫О©╫О©╫щ©О©╫и╬О©╫О©╫О©╫О©╫
 
 
 
@@ -206,17 +206,17 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 8.	       extensions_type   extensions;  
 9.	   };  
 10.	  
-11.	   fee_type                     fee;  //йжпЬ╥я
+11.	   fee_type                     fee;  //О©╫О©╫О©╫О©╫О©╫О©╫
 12.	  
-13.	   account_uid_type             from_account_uid; //╢Рим╥╒фПхкук╩╖id
-14.	   account_uid_type             platform;          //ндубкЫтзф╫л╗
-15.	   account_uid_type             poster;            //ндубвВуъ
-16.	   post_pid_type                post_pid;          //ндубid
-17.	   asset                        amount;            //╢Рим╦Ьндуб╣двй╡Зё╛©иртйгхнрБ╣двй╡З
+13.	   account_uid_type             from_account_uid; //О©╫О©╫О©╫м╥О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫id
+14.	   account_uid_type             platform;          //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗
+15.	   account_uid_type             poster;            //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+16.	   post_pid_type                post_pid;          //О©╫О©╫О©╫О©╫id
+17.	   asset                        amount;            //О©╫О©╫О©╫м╦О©╫О©╫О©╫О©╫б╣О©╫О©╫й╡О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫й╡О©╫
 18.	  
-19.	   extensions_type              extensions;  //ю╘у╧оН
+19.	   extensions_type              extensions;  //О©╫О©╫у╧О©╫О©╫
 20.	};
-╦Эпбк╣цВё╨пбтЖreward_operationё╛сцсзук╩╖╤тндуб╫Ьпп╢Рим║ёндубпХр╙©╙╥е╢Римх╗очё╛╥ЯтРй╖╟э║ё╢Рим╣двй╡З©иртйгхнрБа╢иовй╡Зё╗╡╩оч╤╗н╙YOYOё╘ё╛╢Рим╣двй╡Зсиндуб╣дйэрФхкце╟╢ууйурФ╠хюЩф╫╥жё╛╦цйурФж╠╫с╫АкЦё╛╡╩╫ЬхКйурФ╥жеД╩╥╫з║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫reward_operationО©╫О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫О©╫б╫О©╫О©╫п╢О©╫О©╫м║О©╫О©╫О©╫О©╫О©╫О©╫О©╫р╙О©╫О©╫О©╫е╢О©╫О©╫О©╫х╗О©╫чёО©╫О©╫О©╫О©╫О©╫й╖О©╫э║О©╫О©╫О©╫О©╫м╣О©╫О©╫й╡О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫й╡О©╫О©╫О©╫О©╫О©╫О©╫ч╤О©╫н╙YOYOО©╫О©╫О©╫О©╫О©╫О©╫О©╫м╣О©╫О©╫й╡О©╫О©╫О©╫О©╫О©╫О©╫б╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫е╟О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫О©╫жёО©╫О©╫О©╫О©╫О©╫О©╫О©╫ж╠О©╫с╫О©╫О©╫Цё╛О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫Д╩╥О©╫з║О©╫
 
 
 
@@ -232,17 +232,17 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 8.	        extensions_type   extensions;  
 9.	    };  
 10.	  
-11.	    fee_type                     fee;  //йжпЬ╥я
+11.	    fee_type                     fee;  //О©╫О©╫О©╫О©╫О©╫О©╫
 12.	  
-13.	    account_uid_type             from_account_uid; //╢ЗюМ╢Рим╣дук╩╖id
-14.	    account_uid_type             platform;          //ндубкЫтзф╫л╗
-15.	    account_uid_type             poster;            //ндубвВуъ
-16.	    post_pid_type                post_pid;          //ндуб╣дid
-17.	    share_type                   amount;            //╢Рио╦Ьндуб╣д╫П╤Нё╛╢ЗюМ╢Римйгф╫л╗╢ЗюМсц╩╖╡ывВё╛╢к╢╕йг╤╞сцук╩╖╣даЦг╝ё╛╩Ай╧сцук╩╖йзсХф╫л╗╣даЦг╝оч╤Н
+13.	    account_uid_type             from_account_uid; //О©╫О©╫О©╫О©╫О©╫О©╫О©╫м╣О©╫О©╫к╩О©╫id
+14.	    account_uid_type             platform;          //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗
+15.	    account_uid_type             poster;            //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+16.	    post_pid_type                post_pid;          //О©╫О©╫О©╫б╣О©╫id
+17.	    share_type                   amount;            //О©╫О©╫О©╫о╦О©╫О©╫О©╫О©╫б╣д╫О©╫Нё╛О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫ц╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╢О©╫О©╫г╤О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫г╝О©╫О©╫О©╫О©╫й╧О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫г╝О©╫ч╤О©╫
 18.	  
-19.	    extensions_type              extensions;  //ю╘у╧оН
+19.	    extensions_type              extensions;  //О©╫О©╫у╧О©╫О©╫
 20.	};
-╦Эпбк╣цВё╨пбтЖreward_proxy_operationё╛сцсзф╫л╗╢ЗюМук╩╖ю╢╢Римндуб║ёндубпХр╙©╙╥е╢Римх╗очё╛сц╩╖пХр╙йзх╗ф╫л╗╢Римх╗очё╛╥ЯтРй╖╟э║ё╦ц╡ывВ╤╞сцук╩╖йзсХф╫л╗╣даЦг╝ё╛оШ╨дук╩╖йзсХф╫л╗╣д╤Н╤хё╛рР╢квй╡З╠ьпКйгYOYOё╛грф╫л╗╠ьпКйгук╩╖тйпМ╢ЗюМ╢Рим╣д║ё╢Рим╣дYOYOсиндуб╣дйэрФхкце╟╢ууйурФ╠хюЩф╫╥жё╛╦цйурФж╠╫с╫АкЦё╛╡╩╫ЬхКйурФ╥жеД╩╥╫з║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫reward_proxy_operationО©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫б║О©╫О©╫О©╫О©╫О©╫О©╫О©╫р╙О©╫О©╫О©╫е╢О©╫О©╫О©╫х╗О©╫чёО©╫О©╫ц╩О©╫О©╫О©╫р╙О©╫О©╫х╗ф╫л╗О©╫О©╫О©╫О©╫х╗О©╫чёО©╫О©╫О©╫О©╫О©╫й╖О©╫э║О©╫О©╫ц╡О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫г╝О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫д╤О©╫хёО©╫О©╫О©╫О©╫О©╫й╡О©╫О©╫О©╫О©╫О©╫О©╫О©╫YOYOО©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫м╣д║О©╫О©╫О©╫О©╫м╣О©╫YOYOО©╫О©╫О©╫О©╫О©╫б╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫е╟О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫О©╫жёО©╫О©╫О©╫О©╫О©╫О©╫О©╫ж╠О©╫с╫О©╫О©╫Цё╛О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫Д╩╥О©╫з║О©╫
 
 
 
@@ -258,17 +258,17 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 8.	       extensions_type   extensions;  
 9.	   };  
 10.	  
-11.	   fee_type                     fee;  //йжпЬ╥я
+11.	   fee_type                     fee;  //О©╫О©╫О©╫О©╫О©╫О©╫
 12.	  
-13.	   account_uid_type             from_account_uid;       //бР╤ондубйэрФ╣д╥╒фПук╩╖id
-14.	   account_uid_type             platform;               //ндубкЫтзф╫л╗
-15.	   account_uid_type             poster;                 //ндуб╣двВуъ
-16.	   post_pid_type                post_pid;               //ндуб╣дid
-17.	   account_uid_type             receiptor_account_uid; //р╙бР╤о╣дйэрФхк╣дid
+13.	   account_uid_type             from_account_uid;       //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д╥О©╫О©╫О©╫О©╫к╩О©╫id
+14.	   account_uid_type             platform;               //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗
+15.	   account_uid_type             poster;                 //О©╫О©╫О©╫б╣О©╫О©╫О©╫О©╫О©╫
+16.	   post_pid_type                post_pid;               //О©╫О©╫О©╫б╣О©╫id
+17.	   account_uid_type             receiptor_account_uid; //р╙О©╫О©╫о╣О©╫О©╫О©╫О©╫О©╫О©╫к╣О©╫id
 18.	  
-19.	   extensions_type              extensions;  //ю╘у╧оН
+19.	   extensions_type              extensions;  //О©╫О©╫у╧О©╫О©╫
 20.	}; 
-╦Эпбк╣цВё╨пбтЖbuyout_operationё╛сцсзндубйурФхк╤тндубйурФ╠х╣д╫╩рв║ёндубпХр╙©╙╥╒бР╤ох╗очё╛сц╩╖пХр╙йзх╗ф╫л╗бР╤ох╗очё╛╥ЯтРй╖╟э║ё╦ц╡ывВ╤╞сцук╩╖аЦг╝ё╛оШ╨дсц╩╖йзсХф╫л╗╣д╤Н╤х║ёсцсзбР╤о╣дYOYO╩А╢с╥╒фПук╩╖╣даЦг╝в╙╦ЬйурФбТЁЖук╩╖╣даЦг╝║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫buyout_operationО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╤О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫х╣д╫О©╫О©╫в║О©╫О©╫О©╫О©╫О©╫О©╫О©╫р╙О©╫О©╫О©╫О©╫О©╫О©╫О©╫х╗О©╫чёО©╫О©╫ц╩О©╫О©╫О©╫р╙О©╫О©╫х╗ф╫л╗О©╫О©╫О©╫х╗О©╫чёО©╫О©╫О©╫О©╫О©╫й╖О©╫э║О©╫О©╫ц╡О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫г╝О©╫О©╫О©╫О©╫О©╫О©╫О©╫ц╩О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫д╤О©╫х║О©╫О©╫О©╫О©╫О©╫О©╫О©╫о╣О©╫YOYOО©╫О©╫с╥О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫г╝в╙О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╩О©╫О©╫О©╫О©╫О©╫г╝О©╫О©╫
 
 
 
@@ -284,19 +284,19 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 8.	        extensions_type   extensions;  
 9.	    };  
 10.	  
-11.	    fee_type                     fee;  //йжпЬ╥я
+11.	    fee_type                     fee;  //О©╫О©╫О©╫О©╫О©╫О©╫
 12.	  
-13.	    license_lid_type             license_lid;      //пМ©и╣дid
-14.	    account_uid_type             platform = 0;     //пМ©икЫтзф╫л╗
-15.	    uint8_t                      type;              //пМ©июЮпмё╛д©г╟╥╤н╖н╢╤╗
-16.	    string                       hash_value;        //пМ©и╣дhash
-17.	    string                       extra_data = "{}"; //пМ©и╣д╤НмБдзхщ
-18.	    string                       title;              //пМ©и╣д╠ЙлБ
-19.	    string                       body;               //пМ©и╣ддзхщ
+13.	    license_lid_type             license_lid;      //О©╫О©╫О©╫и╣О©╫id
+14.	    account_uid_type             platform = 0;     //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗
+15.	    uint8_t                      type;              //О©╫О©╫О©╫О©╫О©╫О©╫О©╫мёО©╫д©г╟О©╫О©╫н╖н╢О©╫О©╫
+16.	    string                       hash_value;        //О©╫О©╫О©╫и╣О©╫hash
+17.	    string                       extra_data = "{}"; //О©╫О©╫О©╫и╣д╤О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+18.	    string                       title;              //О©╫О©╫О©╫и╣д╠О©╫О©╫О©╫
+19.	    string                       body;               //О©╫О©╫О©╫и╣О©╫О©╫О©╫О©╫О©╫
 20.	  
-21.	    extensions_type              extensions;  //ю╘у╧оН
+21.	    extensions_type              extensions;  //О©╫О©╫у╧О©╫О©╫
 22.	};
-╦Эпбк╣цВё╨пбтЖlicense_create_operationё╛сцсзф╫л╗сц╩╖пб╫╗ндубпМ©и║ёйЩ╬щ©Б╣в╡Цпб╫╗license_objectю╢╢Ф╢╒║ёпМ©итза╢иож╩©иртпб╫╗ё╛╡╩©иртпч╦д║ё╣╠ндубпМ©ииЫцВпХр╙пч╦д╣дй╠╨Рё╛пХпб╫╗пМ©идзхщё╛╡╒╦ЭпбндубпМ©и╨е║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫license_create_operationО©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗О©╫ц╩О©╫О©╫б╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫и║О©╫О©╫О©╫О©╫щ©О©╫в╡О©╫О©╫б╫О©╫license_objectО©╫О©╫О©╫Ф╢╒О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ж╩О©╫О©╫О©╫О©╫О©╫б╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ч╦д║О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫р╙О©╫ч╦д╣О©╫й╠О©╫О©╫О©╫О©╫О©╫б╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫щёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫и╨е║О©╫
 
 
 
@@ -308,16 +308,16 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 4.	   static const uint8_t space_id = implementation_ids;  
 5.	   static const uint8_t type_id = impl_score_object_type;  
 6.	  
-7.	   account_uid_type    from_account_uid; //╢Р╥ж╩Р╣Цтч╣д╥╒фПук╩╖id
-8.	   account_uid_type    platform;         //ндубкЫтзф╫л╗
-9.	   account_uid_type    poster;            //ндубвВуъ
-10.	   post_pid_type       post_pid;          //ндуб╣дid
-11.	   int8_t              score;             //╢Р╥ж╣д╥жйЩё╛╥╤н╖н╙-5~5
-12.	   share_type          csaf;              //╩╗╥я╣д╩Щ╥жйЩ
+7.	   account_uid_type    from_account_uid; //О©╫О©╫ж╩О©╫О©╫О©╫ч╣д╥О©╫О©╫О©╫О©╫к╩О©╫id
+8.	   account_uid_type    platform;         //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫л╗
+9.	   account_uid_type    poster;            //О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+10.	   post_pid_type       post_pid;          //О©╫О©╫О©╫б╣О©╫id
+11.	   int8_t              score;             //О©╫О©╫ж╣д╥О©╫О©╫О©╫О©╫О©╫О©╫О©╫н╖н╙-5~5
+12.	   share_type          csaf;              //О©╫О©╫О©╫я╣д╩О©╫О©╫О©╫О©╫О©╫
 13.	  
-14.	   time_point_sec      create_time;      //╢╢╫╗й╠╪Д
+14.	   time_point_sec      create_time;      //О©╫О©╫О©╫О©╫й╠О©╫О©╫
 15.	};
-╦Эпбк╣цВё╨йЩ╬щ©БпбтЖscore_objectсцсз╢Ф╢╒╣Цтч╢Р╥жпео╒ё╛ц©р╩╦Ж╥жеДжэфз╩А╡н©╪╢Р╥жпео╒ю╢фю╤╗йурФ║ёЁ╛╧ЩвН╢С╣д╠ё╢Фй╠╪Дё╗сиюМйб╩А╡нйЩ╬Ж╤╗ё╘╣дё╛score_object╩А╠╩йЩ╬щ©Би╬ЁЩ║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫щ©О©╫О©╫О©╫О©╫О©╫score_objectО©╫О©╫О©╫з╢Ф╢╒О©╫О©╫О©╫ч╢О©╫О©╫О©╫О©╫о╒О©╫О©╫ц©р╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫з╩О©╫н©О©╫О©╫О©╫О©╫О©╫О©╫о╒О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫Ф║ёО©╫О©╫О©╫О©╫О©╫О©╫О©╫д╠О©╫О©╫О©╫й╠О©╫Дё╗О©╫О©╫О©╫О©╫О©╫б╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫дёО©╫score_objectО©╫А╠╩О©╫О©╫О©╫щ©О©╫и╬О©╫О©╫О©╫О©╫
 
 
 
@@ -329,60 +329,60 @@ Content_update йЩ╬щ╫А╧╧уШюМ
 4.	    static const uint8_t space_id = implementation_ids;  
 5.	    static const uint8_t type_id = impl_license_object_type;  
 6.	  
-7.	    license_lid_type             license_lid;    //пМ©и╣дid
-8.	    account_uid_type             platform;       //ф╫л╗ук╩╖╣дid
-9.	    uint8_t                      license_type;   //пМ©июЮпмё╛тщй╠ц╩спт╓╤╗╬ълЕюЮпм
+7.	    license_lid_type             license_lid;    //О©╫О©╫О©╫и╣О©╫id
+8.	    account_uid_type             platform;       //ф╫л╗О©╫к╩О©╫О©╫О©╫id
+9.	    uint8_t                      license_type;   //О©╫О©╫О©╫О©╫О©╫О©╫О©╫мёО©╫О©╫О©╫й╠ц╩О©╫О©╫т╓О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
 10.	     
-11.	    string                       hash_value;     //пМ©и╣дhash
-12.	    string                       extra_data;     //пМ©и╣д╤НмБдзхщ
-13.	    string                       title;           //пМ©и╣д╠ЙлБ
-14.	    string                       body;            //пМ©и╣ддзхщ
+11.	    string                       hash_value;     //О©╫О©╫О©╫и╣О©╫hash
+12.	    string                       extra_data;     //О©╫О©╫О©╫и╣д╤О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+13.	    string                       title;           //О©╫О©╫О©╫и╣д╠О©╫О©╫О©╫
+14.	    string                       body;            //О©╫О©╫О©╫и╣О©╫О©╫О©╫О©╫О©╫
 15.	  
-16.	    time_point_sec               create_time;    //пМ©и╣д╢╢╫╗й╠╪Д
+16.	    time_point_sec               create_time;    //О©╫О©╫О©╫и╣д╢О©╫О©╫О©╫й╠О©╫О©╫
 17.	};
-╦Эпбк╣цВё╨йЩ╬щ©БпбтЖlicense_objectсцсз╢Ф╢╒ф╫л╗сц╩╖пб╫╗╣дпМ©ипео╒║ёпМ©иж╩дэйгф╫л╗ю╢╢╢╫╗ё╛гр╡╩©и╠╩пч╦д║ёсц╩╖╥╒╡╪ндуб╣дй╠╨Рё╛пХр╙я║тЯф╫л╗╥╒╡╪╣доЮс╕╣дпМ©и║ё
+О©╫О©╫О©╫О©╫к╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫щ©О©╫О©╫О©╫О©╫О©╫license_objectО©╫О©╫О©╫з╢Ф╢╒ф╫л╗О©╫ц╩О©╫О©╫б╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫о╒О©╫О©╫О©╫О©╫О©╫О©╫ж╩О©╫О©╫О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫р╡О©╫О©╫и╠О©╫О©╫ч╦д║О©╫О©╫ц╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫б╣О©╫й╠О©╫О©╫О©╫О©╫р╙я║О©╫О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫с╕О©╫О©╫О©╫О©╫О©╫и║О©╫
 
 
 
 
 14. active_post_object
 \\libraries\chain\include\graphene\chain\content_object.hpp
-1.	╩Нт╬ндуб:  
+1.	О©╫О©╫т╬О©╫О©╫О©╫О©╫:  
 2.	   class active_post_object : public graphene::db::abstract_object < active_post_object >  
 3.	   {  
-4.	         account_uid_type                       platform;           // ф╫л╗ук╨е  
-5.	         account_uid_type                       poster;             // вВуъук╨е  
-6.	         post_pid_type                          post_pid            // м╛р╩ук╨ем╛р╩ф╫л╗облШвсн╗р╩╠Йй╤ё╗pidё╘  
-7.	         vector<score_id_type>                  scores;             // ╢Р╥ж╠Йй╤╪╞╨о  
-8.	         share_type                             total_amount        // ндубвэ╧╡╩Щ╥ж;  
-9.	         flat_map<asset_aid_type, share_type>   total_rewards;      // ндуб╢Рим  
-10.	         uint64_t                               period_sequence;    // ндубкЫйТ╫╠юЬжэфзйЩ  
+4.	         account_uid_type                       platform;           // ф╫л╗О©╫к╨О©╫  
+5.	         account_uid_type                       poster;             // О©╫О©╫О©╫О©╫О©╫к╨О©╫  
+6.	         post_pid_type                          post_pid            // м╛р╩О©╫к╨О©╫м╛р╩ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫н╗р╩О©╫О©╫й╤О©╫О©╫pidО©╫О©╫  
+7.	         vector<score_id_type>                  scores;             // О©╫О©╫ж╠О©╫й╤О©╫О©╫О©╫О©╫  
+8.	         share_type                             total_amount        // О©╫О©╫О©╫О©╫О©╫э╧О©╫О©╫О©╫О©╫О©╫;  
+9.	         flat_map<asset_aid_type, share_type>   total_rewards;      // О©╫О©╫О©╫б╢О©╫О©╫О©╫  
+10.	         uint64_t                               period_sequence;    // О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫  
 11.	   };  
 
 
 
 
-15. юМйб╩А╡нйЩю╘у╧
-1.	struct content_parameter_extension_type  
+15. О©╫О©╫О©╫б╩О©╫О©╫О©╫О©╫О©╫О©╫у╧
+1.	struct extension_parameter_type  
 2.	{  
-3.	     uint32_t   content_award_interval              = GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;                // дзхщ╫╠юЬжэфз║ёЁУй╪ж╣н╙0  
-4.	     uint32_t   platform_award_interval             = GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;               // ф╫л╗м╤ф╠╫╠юЬжэфз║ёЁУй╪ж╣н╙0  
-5.	     share_type max_csaf_per_approval               = GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;                 // ╣ЦтчоШ╨двН╢С╩Щ╥ж║ёЁУй╪ж╣н╙1000╩Щ╥ж  
-6.	     uint32_t   approval_expiration                 = GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;                   // ╣Цтч╧Щфзй╠╪Д║ёЁУй╪ж╣н╙1дЙ  
-7.	     share_type min_effective_csaf                  = GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;                    // ндуб╡нсКфю╫╠кЫпХвНп║╩Щ╥ж║ёЁУй╪ж╣н╙100╩Щ╥ж  
-8.	     share_type total_content_award_amount          = GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;            // вэ╧╡ндуб╫╠юЬ╫П╤Н║ёЁУй╪ж╣н╙0ё╛р╩дЙа©  
-9.	     share_type total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;   // ф╫л╗╢сндубжпйурФ╫╠юЬ╫П╤Н║ёЁУй╪ж╣н╙0ё╛р╩дЙа©  
-10.	     share_type total_platform_voted_award_amount   = GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;     // вэ╧╡ф╫л╗м╤ф╠╫╠юЬ╫П╤Н║ёЁУй╪ж╣н╙0ё╛р╩дЙа©  
-11.	     share_type platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;              // ф╫л╗╡нсКфю╫╠кЫпХвНп║м╤ф╠йЩ║ёЁУй╪ж╣н╙10  
-12.	     uint32_t   platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;         // ф╫л╗╡нсКфю╫╠кЫпХм╤ф╠еецШйЩ║ёЁУй╪ж╣н╙100  
-13.	     uint32_t   platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;             // ф╫л╗м╤ф╠╫╠юЬжп╩Ы╢║╠хюЩё╗ф╫╥ж╦Ьф╫л╗ё╘║ёЁУй╪ж╣н╙20%  
-14.	     uint32_t   casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;                          // ╩Щ╥ж╬Ь╤тж╣+ ё╗фю╥ж*╩Щ╥ж/5)*о╣йЩё╩╪сх╗ф╫╬Ыо╣йЩ║ёЁУй╪ж╣н╙200%  
-15.	     uint32_t   post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;                 // ндубфю╫╠╧Щфзй╠╪Д║ёЁУй╪ж╣н╙1дЙ  
-16.	     uint32_t   approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;              // ╣Цтч╩Щ╥жвНп║х╗жь║ёЁУй╪ж╣н╙50%  
-17.	     uint32_t   approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;              // ╪фкЦспп╖╩Щ╥ж╠хюЩр╩║ёЁУй╪ж╣н╙30%  
-18.	     uint32_t   approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;             // ╪фкЦспп╖╩Щ╥ж╠хюЩ╤Ч║ёЁУй╪ж╣н╙70%//спп╖╩Щ╥ж╠хюЩ╤Чс╕╦ц╢Ссзспп╖╩Щ╥ж╠хюЩр╩  
-19.	     uint32_t   receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;               // ╥╢╥╫й╓й╠ё╗╡х╢Ссзтчё╘ндубйурФхк╫╠юЬо╣йЩ║ёЁУй╪ж╣н╙80%  
-20.	     uint32_t   disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;              // ╥╢╥╫й╓й╠ё╗╡х╢Ссзтчё╘╣Ц╡хуъ╫╠юЬо╣йЩ║ёЁУй╪ж╣н╙120%  
+3.	     uint32_t   content_award_interval              = GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;                // О©╫О©╫О©╫щ╫О©╫О©╫О©╫О©╫О©╫О©╫з║О©╫О©╫О©╫й╪ж╣н╙0  
+4.	     uint32_t   platform_award_interval             = GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;               // ф╫л╗м╤ф╠О©╫О©╫О©╫О©╫О©╫О©╫О©╫з║О©╫О©╫О©╫й╪ж╣н╙0  
+5.	     share_type max_csaf_per_approval               = GRAPHENE_DEFAULT_MAX_CSAF_PER_APPROVAL;                 // О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ж║О©╫О©╫О©╫й╪ж╣н╙1000О©╫О©╫О©╫О©╫  
+6.	     uint32_t   approval_expiration                 = GRAPHENE_DEFAULT_APPROVAL_EXPIRATION;                   // О©╫О©╫О©╫ч╧О©╫О©╫О©╫й╠О©╫Д║ёО©╫О©╫й╪ж╣н╙1О©╫О©╫  
+7.	     share_type min_effective_csaf                  = GRAPHENE_DEFAULT_MIN_EFFECTIVE_CSAF;                    // О©╫О©╫О©╫б╡О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫п║О©╫О©╫О©╫ж║О©╫О©╫О©╫й╪ж╣н╙100О©╫О©╫О©╫О©╫  
+8.	     share_type total_content_award_amount          = GRAPHENE_DEFAULT_TOTAL_CONTENT_AWARD_AMOUNT;            // О©╫э╧О©╫О©╫О©╫О©╫б╫О©╫О©╫О©╫О©╫О©╫Н║ёО©╫О©╫й╪ж╣н╙0О©╫О©╫р╩О©╫О©╫О©╫О©╫  
+9.	     share_type total_platform_content_award_amount = GRAPHENE_DEFAULT_TOTAL_PLATFORM_CONTENT_AWARD_AMOUNT;   // ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫Ф╫╠О©╫О©╫О©╫О©╫Н║ёО©╫О©╫й╪ж╣н╙0О©╫О©╫р╩О©╫О©╫О©╫О©╫  
+10.	     share_type total_platform_voted_award_amount   = GRAPHENE_DEFAULT_TOTAL_PLATFORM_VOTED_AWARD_AMOUNT;     // О©╫э╧О©╫ф╫л╗м╤ф╠О©╫О©╫О©╫О©╫О©╫О©╫Н║ёО©╫О©╫й╪ж╣н╙0О©╫О©╫р╩О©╫О©╫О©╫О©╫  
+11.	     share_type platform_award_min_votes            = GRAPHENE_DEFAULT_PLATFORM_AWARD_MIN_VOTES;              // ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫п║м╤ф╠О©╫О©╫О©╫О©╫О©╫О©╫й╪ж╣н╙10  
+12.	     uint32_t   platform_award_requested_rank       = GRAPHENE_DEFAULT_PLATFORM_AWARD_REQUESTED_RANK;         // ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫м╤ф╠О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫й╪ж╣н╙100  
+13.	     uint32_t   platform_award_basic_rate           = GRAPHENE_DEFAULT_PLATFORM_AWARD_BASIC_RATE;             // ф╫л╗м╤ф╠О©╫О©╫О©╫О©╫О©╫п╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ф╫О©╫ж╦О©╫ф╫л╗О©╫О©╫О©╫О©╫О©╫О©╫й╪ж╣н╙20%  
+14.	     uint32_t   casf_modulus                        = GRAPHENE_DEFAULT_CASF_MODULUS;                          // О©╫О©╫О©╫ж╬О©╫О©╫О©╫ж╣+ О©╫О©╫О©╫О©╫О©╫О©╫*О©╫О©╫О©╫О©╫/5)*о╣О©╫О©╫О©╫О©╫О©╫О©╫х╗ф╫О©╫О©╫о╣О©╫О©╫О©╫О©╫О©╫О©╫й╪ж╣н╙200%  
+15.	     uint32_t   post_award_expiration               = GRAPHENE_DEFAULT_POST_AWARD_EXPIRATION;                 // О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫й╠О©╫Д║ёО©╫О©╫й╪ж╣н╙1О©╫О©╫  
+16.	     uint32_t   approval_casf_min_weight            = GRAPHENE_DEFAULT_APPROVAL_MIN_CASF_WEIGHT;              // О©╫О©╫О©╫ч╩О©╫О©╫О©╫О©╫О©╫п║х╗О©╫ь║О©╫О©╫О©╫й╪ж╣н╙50%  
+17.	     uint32_t   approval_casf_first_rate            = GRAPHENE_DEFAULT_APPROVAL_CASF_FIRST_RATE;              // О©╫О©╫О©╫О©╫О©╫О©╫п╖О©╫О©╫О©╫ж╠О©╫О©╫О©╫р╩О©╫О©╫О©╫О©╫й╪ж╣н╙30%  
+18.	     uint32_t   approval_casf_second_rate           = GRAPHENE_DEFAULT_APPROVAL_CASF_SECOND_RATE;             // О©╫О©╫О©╫О©╫О©╫О©╫п╖О©╫О©╫О©╫ж╠О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫й╪ж╣н╙70%//О©╫О©╫п╖О©╫О©╫О©╫ж╠О©╫О©╫О©╫О©╫О©╫с╕О©╫ц╢О©╫О©╫О©╫О©╫О©╫п╖О©╫О©╫О©╫ж╠О©╫О©╫О©╫р╩  
+19.	     uint32_t   receiptor_award_modulus             = GRAPHENE_DEFAULT_RECEIPTOR_AWARD_MODULUS;               // О©╫О©╫О©╫О©╫й╓й╠О©╫О©╫О©╫х╢О©╫О©╫О©╫О©╫чёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫к╫О©╫О©╫О©╫о╣О©╫О©╫О©╫О©╫О©╫О©╫й╪ж╣н╙80%  
+20.	     uint32_t   disapprove_award_modulus            = GRAPHENE_DEFAULT_DISAPPROVE_AWARD_MODULUS;              // О©╫О©╫О©╫О©╫й╓й╠О©╫О©╫О©╫х╢О©╫О©╫О©╫О©╫чёО©╫О©╫О©╫О©╫О©╫ъ╫О©╫О©╫О©╫о╣О©╫О©╫О©╫О©╫О©╫О©╫й╪ж╣н╙120%  
 21.	 };  
 
 

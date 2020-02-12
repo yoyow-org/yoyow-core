@@ -63,7 +63,7 @@ fc::time_point_sec database::get_slot_time(uint32_t slot_num)const
       slot_num += gpo.parameters.maintenance_skip_slots;
 
    if (dpo.content_award_skip_flag)
-   	slot_num += gpo.parameters.get_award_params().content_award_skip_slots;
+   	slot_num += gpo.parameters.get_extension_params().content_award_skip_slots;
    	
 
    // "slot 0" is head_slot_time
@@ -166,7 +166,7 @@ void database::update_witness_schedule()
       uint16_t pledge_added = 0;
       vector<const witness_object*> by_pledge_processed;
       fc::uint128_t new_by_pledge_time = wso.current_by_pledge_time;
-      share_type min_witness_blcok_produce_pledge = gpo.parameters.get_award_params().min_witness_block_produce_pledge;
+      share_type min_witness_blcok_produce_pledge = gpo.parameters.get_extension_params().min_witness_block_produce_pledge;
       const auto& pledge_idx = get_index_type<witness_index>().indices().get<by_pledge_schedule>();
       auto pledge_itr = pledge_idx.lower_bound( true );
       while( pledge_itr != pledge_idx.end() && pledge_added < pledge_max )

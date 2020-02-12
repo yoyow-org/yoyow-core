@@ -186,7 +186,7 @@ void committee_updatable_parameters::validate()const
                  "Platform average pledge update interval must be positive" );
 }
 
-void committee_updatable_content_parameters::validate()const
+void committee_updatable_extension_parameters::validate()const
 {
    if (approval_casf_min_weight.valid() && approval_casf_first_rate.valid() && approval_casf_second_rate.valid())
    {
@@ -271,7 +271,7 @@ void committee_proposal_create_operation::validate()const
    uint32_t account_item_count = 0;
    uint32_t fee_item_count = 0;
    uint32_t param_item_count = 0;
-   uint32_t award_item_count = 0;
+   uint32_t extension_param_item_count = 0;
    //flat_map< account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
    for( const auto& item : items )
    {
@@ -298,11 +298,11 @@ void committee_proposal_create_operation::validate()const
          const auto& param_item = item.get< committee_update_global_parameter_item_type >();
          param_item.value.validate();
       }
-      else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
+      else if (item.which() == committee_proposal_item_type::tag< committee_update_global_extension_parameter_item_type >::value)
       {
-         award_item_count += 1;
-         FC_ASSERT(award_item_count <= 1, "No more than one global parameter award update item is allowed");
-         const auto& param_item = item.get< committee_update_global_content_parameter_item_type >();
+         extension_param_item_count += 1;
+         FC_ASSERT(extension_param_item_count <= 1, "No more than one global parameter award update item is allowed");
+         const auto& param_item = item.get< committee_update_global_extension_parameter_item_type >();
          param_item.value.validate();
       }
       else if (item.which() == committee_proposal_item_type::tag< committee_withdraw_platform_pledge_item_type >::value)

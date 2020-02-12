@@ -36,7 +36,7 @@ namespace fc {
 
 namespace graphene { namespace chain {
 
-	 struct content_parameter_extension_type
+	 struct extension_parameter_type
 	 {
       uint32_t    content_award_interval              = GRAPHENE_DEFAULT_CONTENT_AWARD_INTERVAL;///< interval in seconds between content awards
       uint32_t    platform_award_interval             = GRAPHENE_DEFAULT_PLATFORM_AWARD_INTERVAL;///< interval in seconds between platform vote awards
@@ -142,16 +142,16 @@ namespace graphene { namespace chain {
       uint32_t                platform_pledge_release_delay           = GRAPHENE_DEFAULT_PLATFORM_PLEDGE_RELEASE_DELAY;
       uint16_t                platform_max_vote_per_account           = GRAPHENE_DEFAULT_PLATFORM_MAX_VOTE_PER_ACCOUNT;
 		
-      content_parameter_extension_type content_parameters;
+      extension_parameter_type extension_parameters;
 
       /** defined in fee_schedule.cpp */
       void validate()const;
 
-      content_parameter_extension_type get_award_params()const { return content_parameters; }
+      extension_parameter_type get_extension_params()const { return extension_parameters; }
    };
 
 } }  // graphene::chain
-FC_REFLECT(	graphene::chain::content_parameter_extension_type, 
+FC_REFLECT(	graphene::chain::extension_parameter_type, 
    (content_award_interval)
    (platform_award_interval)
    (max_csaf_per_approval)
@@ -249,5 +249,5 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (platform_avg_pledge_update_interval)
             (platform_pledge_release_delay)
             (platform_max_vote_per_account)
-            (content_parameters)
+            (extension_parameters)
           )

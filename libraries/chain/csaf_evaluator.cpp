@@ -22,7 +22,7 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
    if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 &&
       to_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance))
    {
-      auto csaf_limit_modulus = global_params.get_award_params().csaf_limit_lock_balance_modulus;
+      auto csaf_limit_modulus = global_params.get_extension_params().csaf_limit_lock_balance_modulus;
       auto pledge_balance_obj = d.get(to_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));    
       share_type lock_balance_csaf = ((fc::uint128)pledge_balance_obj.pledge.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();      
       

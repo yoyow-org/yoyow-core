@@ -548,9 +548,9 @@ public:
    {
       return _remote_db->get_global_properties();
    }
-   content_parameter_extension_type get_global_properties_extensions() const
+   extension_parameter_type get_global_properties_extensions() const
    {
-      return _remote_db->get_global_properties().parameters.get_award_params();
+      return _remote_db->get_global_properties().parameters.get_extension_params();
    }
    dynamic_global_property_object get_dynamic_global_properties() const
    {
@@ -4472,7 +4472,7 @@ string wallet_api::compute_available_csaf(string account_name_or_uid)
    auto csaf = my->_remote_db->compute_coin_seconds_earned(uid, global_params.csaf_accumulate_window, time_point_sec(time_point::now())).first;
    auto ao = my->get_asset( GRAPHENE_CORE_ASSET_AID );
 
-   auto csaf_limit_modulus = global_params.get_award_params().csaf_limit_lock_balance_modulus;
+   auto csaf_limit_modulus = global_params.get_extension_params().csaf_limit_lock_balance_modulus;
    auto lock_balance_amount = my->_remote_db->get_account_statistics_by_uid(uid).locked_balance;
    auto lock_balance_csaf = ((fc::uint128)lock_balance_amount.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
    auto s1 = global_params.max_csaf_per_account + lock_balance_csaf - account.statistics.csaf;
@@ -5204,7 +5204,7 @@ global_property_object wallet_api::get_global_properties() const
    return my->get_global_properties();
 }
 
-content_parameter_extension_type wallet_api::get_global_properties_extensions() const
+extension_parameter_type wallet_api::get_global_properties_extensions() const
 {
    return my->get_global_properties_extensions();
 }
