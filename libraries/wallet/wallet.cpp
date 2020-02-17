@@ -4951,9 +4951,9 @@ signed_transaction wallet_api::cast_custom_vote(string                voter,
    return my->cast_custom_vote(voter, custom_vote_creator, custom_vote_vid, vote_result, csaf_fee, broadcast);
 }
 
-vector<custom_vote_object> wallet_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)
+vector<custom_vote_object> wallet_api::list_custom_votes(optional<custom_vote_id_type> lower_bound_custom_vote_id, optional<bool> is_finished, uint32_t limit)
 {
-   return my->_remote_db->list_custom_votes(lowerbound, limit);
+   return my->_remote_db->list_custom_votes(lower_bound_custom_vote_id, is_finished, limit);
 }
 
 vector<custom_vote_object> wallet_api::lookup_custom_votes(string creator, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)

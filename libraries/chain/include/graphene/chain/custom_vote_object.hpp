@@ -106,6 +106,7 @@ namespace graphene { namespace chain {
 
    struct by_creater{};
    struct by_expired_time{};
+   struct by_new{};
 
    /**
    * @ingroup object_index
@@ -114,6 +115,7 @@ namespace graphene { namespace chain {
       custom_vote_object,
       indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+      ordered_unique< tag<by_new>, member< object, object_id_type, &object::id >, std::greater<object_id_type >>,
       ordered_unique< tag<by_creater>,
          composite_key<
             custom_vote_object,

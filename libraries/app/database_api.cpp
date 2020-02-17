@@ -175,7 +175,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
                                                                           const advertising_order_oid_type lower_bound_advertising_order,
                                                                           uint32_t limit)const;
 
-      vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
+      vector<custom_vote_object> list_custom_votes(optional<custom_vote_id_type> lower_bound_custom_vote_id, optional<bool> is_finished, uint32_t limit)const;
       vector<custom_vote_object> lookup_custom_votes(const account_uid_type creator, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const;
 
       vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const account_uid_type     creator, 
@@ -1695,27 +1695,6 @@ vector<advertising_order_object> database_api_impl::list_advertising_orders_by_a
    return result;
 }
 
-vector<custom_vote_object> database_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const
-{
-   return my->list_custom_votes(lowerbound, limit);
-}
-
-vector<custom_vote_object> database_api_impl::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const
-{
-   FC_ASSERT(limit <= 100);
-   vector<custom_vote_object> result;
-
-   const auto& idx = _db.get_index_type<custom_vote_index>().indices().get<by_creater>();
-   auto itr = idx.lower_bound(lowerbound);
-
-   while (itr != idx.end() && limit--)
-   {
-      result.push_back(*itr);
-      ++itr;
-   }
-   return result;
-}
-
 vector<custom_vote_object> database_api::lookup_custom_votes(const account_uid_type creator, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const
 {
     return my->lookup_custom_votes(creator, lower_bound_custom_vote, limit);
@@ -1731,6 +1710,45 @@ vector<custom_vote_object> database_api_impl::lookup_custom_votes(const account_
    {
       result.push_back(*itr);
       ++itr;
+   }
+   return result;
+}
+
+vector<custom_vote_object> database_api::list_custom_votes(optional<custom_vote_id_type> lower_bound_custom_vote_id, optional<bool> is_finished, uint32_t limit)const
+{
+   return my->list_custom_votes(lower_bound_custom_vote_id, is_finished, limit);
+}
+
+vector<custom_vote_object> database_api_impl::list_custom_votes(optional<custom_vote_id_type> lower_bound_custom_vote_id, optional<bool> is_finished, uint32_t limit)const
+{
+   FC_ASSERT(limit <= 100);
+   vector<custom_vote_object> result;
+   const auto& idx = _db.get_index_type<custom_vote_index>().indices().get<by_new>();
+   auto itr = lower_bound_custom_vote_id.valid() ? idx.lower_bound(*lower_bound_custom_vote_id) : idx.begin();
+   if (is_finished.valid()){
+      if (*is_finished){
+         while (itr != idx.end() && limit--)
+         {
+            if (itr->vote_expired_time <= _db.head_block_time())
+               result.push_back(*itr);
+            ++itr;
+         }
+      }
+      else{
+         while (itr != idx.end() && limit--)
+         {
+            if (itr->vote_expired_time > _db.head_block_time())
+               result.push_back(*itr);
+            ++itr;
+         }
+      }
+   }
+   else{
+      while (itr != idx.end() && limit--)
+      {
+         result.push_back(*itr);
+         ++itr;
+      }
    }
    return result;
 }
