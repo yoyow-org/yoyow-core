@@ -940,11 +940,13 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                      else if (from_pledge > 0) {
                         // update platform data
                         const platform_object& pla_obj = get_platform_by_owner(platform_punish_item.platform_account);
+                        update_platform_avg_pledge(pla_obj);
                         modify(pla_obj, [&](platform_object& pfo) {
                            pfo.pledge = _pbo.pledge.value;
                            pfo.last_update_time = head_block_time();
+                           pfo.pledge_last_update = head_block_time();
                         });
-                        update_platform_avg_pledge(pla_obj);
+                        
                      }
                   });
                   // withdraw amount awarded to receiver

@@ -186,6 +186,9 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    }
    else // change pledge
    {
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+         d.update_platform_avg_pledge(*platform_obj);
       // update platform data
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
          if( op.new_name.valid() )
@@ -197,9 +200,12 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
 
          pfo.pledge              = op.new_pledge->amount.value;
          pfo.last_update_time  = d.head_block_time();
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+            pfo.pledge_last_update = d.head_block_time();
 
       });
-      d.update_platform_avg_pledge( *platform_obj );
+      if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+         d.update_platform_avg_pledge( *platform_obj );
    }
 
    return void_result();
