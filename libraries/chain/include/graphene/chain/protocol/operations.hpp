@@ -104,7 +104,8 @@ namespace graphene { namespace chain {
             market_fee_collect_operation,
             score_bonus_collect_operation,
             beneficiary_assign_operation,
-            benefit_collect_operation
+            benefit_collect_operation,
+            asset_destroy_operation
          > operation;
 
    /// @} // operations group

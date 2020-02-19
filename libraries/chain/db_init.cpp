@@ -200,6 +200,7 @@ void database::initialize_evaluators()
    register_evaluator<asset_reserve_evaluator>();
    register_evaluator<asset_update_evaluator>();
    register_evaluator<asset_claim_fees_evaluator>();
+   register_evaluator<asset_destroy_evaluator>();
    register_evaluator<transfer_evaluator>();
    register_evaluator<override_transfer_evaluator>();
    register_evaluator<proposal_create_evaluator>();

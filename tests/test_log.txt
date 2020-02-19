@@ -356,4 +356,22 @@
 	   
 	   collect_benefit test1 init1 0 1 YOYO test1 1571308203 true true
 	   get_account_statistics test1
+       
+       
+       #17
+       destroy_asset test1 1000000 YOYO true true
+       get_asset 0       
+       list_account_balances test1
+       
+       destroy_asset test2 1000000 ABC true true
+       get_asset 1
+       list_account_balances test2
+       
+       
+       committee_proposal_create init1 [[5 , {destroy_amount : 300000000, extensions : null}]] 1800 1 1800 1800 true true
+       committee_proposal_vote init2 1 1 true true
+       committee_proposal_vote init3 1 1 true true
+       committee_proposal_vote init4 1 1 true true
+       committee_proposal_vote init5 1 1 true true
+       
 	   

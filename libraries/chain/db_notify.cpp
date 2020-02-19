@@ -251,6 +251,11 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.issuer ); // fee payer
    }
 
+   void operator()(const asset_destroy_operation& op)
+   {
+      _impacted.insert(op.issuer); // fee payer
+   }
+
    void operator()( const override_transfer_operation& op )
    {
       _impacted.insert( op.to );

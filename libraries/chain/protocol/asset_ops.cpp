@@ -209,4 +209,10 @@ void asset_claim_fees_operation::validate()const {
    FC_ASSERT( amount_to_claim.amount > 0, "Should claim a positive amount" );
 }
 
+void asset_destroy_operation::validate()const {
+   validate_op_fee(fee, "asset destroy ");
+   validate_account_uid(issuer, "asset destroy ");
+   FC_ASSERT(amount_to_destroy.amount > 0, "Should destroy a positive amount");
+}
+
 } } // namespace graphene::chain

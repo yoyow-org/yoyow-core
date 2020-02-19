@@ -219,6 +219,7 @@
 #define GRAPHENE_CPPT_PARAM_PLATFORM_MAX_PLEDGE_SECONDS            (uint16_t(6500))
 #define GRAPHENE_CPPT_PARAM_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL    (uint16_t(6500))
 
+#define GRAPHENE_CPPT_PARAM_DESTROY_BUDGET_POOL   (uint16_t(8000))
 
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex

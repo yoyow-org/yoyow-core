@@ -156,6 +156,10 @@ uint16_t committee_proposal_object::get_approve_threshold(const uint8_t enable_h
             threshold = std::max( threshold, GRAPHENE_CPPT_PARAM_PLATFORM_AVG_PLEDGE_UPDATE_INTERVAL    );
 
       }
+      else if (item.which() == committee_proposal_item_type::tag< committee_destroy_budget_pool_item_type >::value)
+      {
+         threshold = std::max(threshold, GRAPHENE_CPPT_PARAM_DESTROY_BUDGET_POOL);
+      }
    }
    return threshold;
 }

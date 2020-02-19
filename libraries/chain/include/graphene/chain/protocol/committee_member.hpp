@@ -279,6 +279,19 @@ namespace graphene { namespace chain {
        void validate()const;
     };
 
+    /**
+    * @ingroup operations
+    *
+    * Committee .destroy budget pool
+    */
+    struct committee_destroy_budget_pool_item_type
+    {
+       share_type          destroy_amount;
+       extensions_type     extensions;
+
+       void validate()const;
+    };
+
    /**
     * @ingroup operations
     *
@@ -289,7 +302,8 @@ namespace graphene { namespace chain {
             committee_update_fee_schedule_item_type,
             committee_update_global_parameter_item_type,
             committee_update_global_extension_parameter_item_type,
-            committee_withdraw_platform_pledge_item_type
+            committee_withdraw_platform_pledge_item_type,
+            committee_destroy_budget_pool_item_type
          > committee_proposal_item_type;
 
    /**
@@ -476,6 +490,11 @@ FC_REFLECT( graphene::chain::committee_withdraw_platform_pledge_item_type,
             (receiver)
             (withdraw_amount)
             (extensions))
+
+FC_REFLECT( graphene::chain::committee_destroy_budget_pool_item_type,
+            (destroy_amount)
+            (extensions))
+            
 
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_fee_schedule_item_type )
 FC_REFLECT_TYPENAME( graphene::chain::committee_update_global_parameter_item_type )
