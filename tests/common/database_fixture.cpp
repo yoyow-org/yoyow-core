@@ -2085,6 +2085,30 @@ void database_fixture::asset_claim_fees(flat_set<fc::ecc::private_key> sign_keys
    } FC_CAPTURE_AND_RETHROW((issuer)(asset_aid)(amount_to_claim))
 }
 
+void database_fixture::destroy_asset(flat_set<fc::ecc::private_key> sign_keys,
+   account_uid_type     issuer,
+   asset_aid_type       asset_aid,
+   share_type           amount_to_destroy
+   )
+{
+   try {
+      asset_destroy_operation destroy_op;
+      destroy_op.issuer = issuer;
+      destroy_op.amount_to_destroy = asset(amount_to_destroy, asset_aid);
+
+      signed_transaction tx;
+      tx.operations.push_back(destroy_op);
+      set_operation_fees(tx, db.current_fee_schedule());
+      set_expiration(db, tx);
+      tx.validate();
+
+      for (auto key : sign_keys)
+         sign(tx, key);
+
+      db.push_transaction(tx);
+   } FC_CAPTURE_AND_RETHROW((issuer)(asset_aid)(amount_to_destroy))
+}
+
 fc::uint128_t database_fixture::compute_coin_seconds_earned(_account_statistics_object account, share_type effective_balance, time_point_sec now_rounded)
 {
    share_type new_average_coins;
