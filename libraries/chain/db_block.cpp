@@ -575,6 +575,21 @@ void database::_apply_block( const signed_block& next_block )
          dp.total_witness_pledge += dpo.resign_witness_pledge_before_05;
          dp.enabled_hardfork_version = ENABLE_HEAD_FORK_05;
       });
+
+      if (dpo.budget_pool >= GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT)
+      {
+         modify(dpo, [&](dynamic_global_property_object& dp)
+         {
+            dp.budget_pool -= GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT;
+         });
+
+         const asset_object& ast_obj = get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
+         const auto& ast_dyn_data = ast_obj.dynamic_data(*this);
+         modify(ast_dyn_data, [&](asset_dynamic_data_object& dyn)
+         {
+            dyn.current_supply -= GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT;
+         });
+      }
    }
 
    //dlog("before update_witness_schedule");
