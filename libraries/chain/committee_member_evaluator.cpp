@@ -467,14 +467,14 @@ void_result committee_proposal_create_evaluator::do_evaluate( const committee_pr
             ("p", total_unrelease_pledge)
             ("w", param_item.withdraw_amount));
       }
-      else if (item.which() == committee_proposal_item_type::tag< committee_destroy_budget_pool_item_type >::value)
-      {
-         FC_ASSERT(d.head_block_time() >= HARDFORK_0_5_TIME, "Can only use destroy budget pool after HARDFORK_0_5_TIME");
-         const auto& param_item = item.get< committee_destroy_budget_pool_item_type >();
-         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-         FC_ASSERT(dpo.budget_pool >= param_item.destroy_amount, "budget pool:${b} is less than destroy amount:${a}",
-            ("b", dpo.budget_pool)("a", param_item.destroy_amount));
-      }
+      // else if (item.which() == committee_proposal_item_type::tag< committee_destroy_budget_pool_item_type >::value)
+      // {
+      //    FC_ASSERT(d.head_block_time() >= HARDFORK_0_5_TIME, "Can only use destroy budget pool after HARDFORK_0_5_TIME");
+      //    const auto& param_item = item.get< committee_destroy_budget_pool_item_type >();
+      //    const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      //    FC_ASSERT(dpo.budget_pool >= param_item.destroy_amount, "budget pool:${b} is less than destroy amount:${a}",
+      //       ("b", dpo.budget_pool)("a", param_item.destroy_amount));
+      // }
    }
 
    return void_result();

@@ -261,10 +261,10 @@ void committee_withdraw_platform_pledge_item_type::validate()const
    FC_ASSERT(withdraw_amount > 0, "Withdraw amount should be positive");
 }
 
-void committee_destroy_budget_pool_item_type::validate()const
-{
-   FC_ASSERT(destroy_amount > 0, "Destroy amount should be positive");
-}
+// void committee_destroy_budget_pool_item_type::validate()const
+// {
+//    FC_ASSERT(destroy_amount > 0, "Destroy amount should be positive");
+// }
 
 void committee_proposal_create_operation::validate()const
 {
@@ -315,11 +315,11 @@ void committee_proposal_create_operation::validate()const
          const auto& platform_punish_item = item.get< committee_withdraw_platform_pledge_item_type >();
          platform_punish_item.validate();
       }
-      else if (item.which() == committee_proposal_item_type::tag< committee_destroy_budget_pool_item_type >::value)
-      {
-         const auto& destroy_budget_pool_item = item.get< committee_destroy_budget_pool_item_type >();
-         destroy_budget_pool_item.validate();
-      }
+      // else if (item.which() == committee_proposal_item_type::tag< committee_destroy_budget_pool_item_type >::value)
+      // {
+      //    const auto& destroy_budget_pool_item = item.get< committee_destroy_budget_pool_item_type >();
+      //    destroy_budget_pool_item.validate();
+      // }
       else
          FC_ASSERT( false, "Bad proposal item type: ${n}", ("n",item.which()) );
    }
