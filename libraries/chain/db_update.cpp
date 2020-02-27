@@ -552,6 +552,18 @@ void database::update_average_witness_pledges()
    }
 }
 
+void database::update_average_platform_pledges()
+{
+   const auto head_num = head_block_num();
+   const auto& idx = get_index_type<platform_index>().indices().get<by_pledge_next_update>();
+   auto itr = idx.begin();
+   while (itr != idx.end() && itr->average_pledge_next_update_block <= head_num && itr->is_valid)
+   {
+      update_platform_avg_pledge(*itr);
+      itr = idx.begin();
+   }
+}
+
 void database::clear_resigned_witness_votes()
 {
    const uint32_t max_votes_to_process = GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK;
@@ -930,7 +942,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                         // platform pledge is below platform min pledge, need delete platform object
                         const platform_object* maybe_found = find_platform_by_owner(platform_punish_item.platform_account);
                         if (maybe_found != nullptr)
-                           remove(*maybe_found);
+                           modify(*maybe_found, [&](platform_object& pfo) {
+                              pfo.is_valid = false;
+                              pfo.average_pledge_next_update_block = -1;
+                        });
 
                         const auto& account_obj = get_account_by_uid(platform_punish_item.platform_account);
                         modify(account_obj, [&](account_object& acc){
@@ -1616,12 +1631,23 @@ void database::update_platform_avg_pledge( const platform_object& pla )
    {
       // need to schedule next update because average_pledge < pledge, and need to update average_pledge
       uint64_t delta_seconds = ( now - pla.average_pledge_last_update ).to_seconds();
-      uint64_t old_seconds = window - delta_seconds;
+      uint64_t new_average_coins;
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+      {
+         uint64_t old_seconds = window - delta_seconds;
 
-      fc::uint128_t old_coin_seconds = fc::uint128_t( pla.average_pledge ) * old_seconds;
-      fc::uint128_t new_coin_seconds = fc::uint128_t( pla.pledge ) * delta_seconds;
+         fc::uint128_t old_coin_seconds = fc::uint128_t( pla.average_pledge ) * old_seconds;
+         fc::uint128_t new_coin_seconds = fc::uint128_t( pla.pledge ) * delta_seconds;
 
-      uint64_t new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+         new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+      }
+      else
+      {
+         uint64_t total_seconds = window - ( pla.average_pledge_last_update - pla.pledge_last_update ).to_seconds();
+
+         new_average_coins = pla.average_pledge + ( fc::uint128_t( pla.pledge - pla.average_pledge ) * delta_seconds / total_seconds ).to_uint64();
+      }
 
       modify( pla, [&]( platform_object& p )
       {

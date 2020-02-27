@@ -592,6 +592,9 @@ void database::_apply_block( const signed_block& next_block )
       }
    }
 
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+      update_average_platform_pledges();
+
    //dlog("before update_witness_schedule");
    update_witness_schedule();
    if( !_node_property_object.debug_updates.empty() )

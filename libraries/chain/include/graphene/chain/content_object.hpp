@@ -106,6 +106,7 @@ namespace graphene { namespace chain {
    struct by_valid{};
    struct by_platform_pledge;
    struct by_platform_votes;
+   struct by_pledge_next_update;
 
    /**
     * @ingroup object_index
@@ -158,6 +159,14 @@ namespace graphene { namespace chain {
                std::less< account_uid_type >,
                std::less< uint32_t >
             >
+         >,
+         ordered_unique< tag<by_pledge_next_update>,
+            composite_key<
+               platform_object,
+               member<platform_object, uint32_t, &platform_object::average_pledge_next_update_block>,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+         >
          >
       >
    > platform_multi_index_type;

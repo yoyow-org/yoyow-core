@@ -312,12 +312,23 @@ void database::update_witness_avg_pledge( const witness_object& wit )
    {
       // need to schedule next update because average_pledge < pledge, and need to update average_pledge
       uint64_t delta_seconds = ( now - wit.average_pledge_last_update ).to_seconds();
-      uint64_t old_seconds = window - delta_seconds;
+      uint64_t new_average_coins;
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+      {
+         uint64_t old_seconds = window - delta_seconds;
 
-      fc::uint128_t old_coin_seconds = fc::uint128_t( wit.average_pledge ) * old_seconds;
-      fc::uint128_t new_coin_seconds = fc::uint128_t( wit.pledge ) * delta_seconds;
+         fc::uint128_t old_coin_seconds = fc::uint128_t( wit.average_pledge ) * old_seconds;
+         fc::uint128_t new_coin_seconds = fc::uint128_t( wit.pledge ) * delta_seconds;
 
-      uint64_t new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+         new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+      }
+      else
+      {
+         uint64_t total_seconds = window - ( wit.average_pledge_last_update - wit.pledge_last_update ).to_seconds();
+
+         new_average_coins = wit.average_pledge + ( fc::uint128_t( wit.pledge - wit.average_pledge ) * delta_seconds / total_seconds ).to_uint64();
+      }
 
       modify( wit, [&]( witness_object& w )
       {

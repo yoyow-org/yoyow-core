@@ -177,8 +177,11 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    }
    else if( op.new_pledge->amount == 0 ) // resign
    {
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
          pfo.is_valid = false; // Processing will be delayed
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+            pfo.average_pledge_next_update_block = -1;
       });
       d.modify( *account_obj, [&]( account_object& acc ){
          acc.is_full_member = false;
@@ -189,6 +192,7 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
          d.update_platform_avg_pledge(*platform_obj);
+
       // update platform data
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
          if( op.new_name.valid() )

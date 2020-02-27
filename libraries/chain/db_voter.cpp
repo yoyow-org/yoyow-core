@@ -43,12 +43,23 @@ void database::update_voter_effective_votes( const voter_object& voter )
    {
       // need to schedule next update because effective_votes < votes, and need to update effective_votes
       uint64_t delta_seconds = ( now - voter.effective_votes_last_update ).to_seconds();
-      uint64_t old_seconds = window - delta_seconds;
+      uint64_t new_average_coins;
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+      {
+         uint64_t old_seconds = window - delta_seconds;
 
-      fc::uint128_t old_coin_seconds = fc::uint128_t( voter.effective_votes ) * old_seconds;
-      fc::uint128_t new_coin_seconds = fc::uint128_t( voter.votes ) * delta_seconds;
+         fc::uint128_t old_coin_seconds = fc::uint128_t( voter.effective_votes ) * old_seconds;
+         fc::uint128_t new_coin_seconds = fc::uint128_t( voter.votes ) * delta_seconds;
 
-      uint64_t new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+         new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+      }
+      else
+      {
+         uint64_t total_seconds = window - ( voter.effective_votes_last_update - voter.votes_last_update ).to_seconds();
+
+         new_average_coins = voter.effective_votes + ( fc::uint128_t( voter.votes - voter.effective_votes ) * delta_seconds / total_seconds ).to_uint64();
+      }
 
       modify( voter, [&]( voter_object& v )
       {
