@@ -221,7 +221,7 @@
 
 #define GRAPHENE_CPPT_PARAM_DESTROY_BUDGET_POOL   (uint16_t(8000))
 
-#define GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT (uint64_t(100000000000))
+#define GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT (uint64_t(20000000000000))
 
 // counter initialization values used to derive near and far future seeds for shuffling witnesses
 // we use the fractional bits of sqrt(2) in hex
