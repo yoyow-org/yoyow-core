@@ -1550,7 +1550,7 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
       const auto& idx = _db.get_index_type<score_index>().indices().get<by_period_sequence>();
       auto itr_begin = idx.lower_bound(std::make_tuple(platform, poster_uid, post_pid, dpo.current_active_post_sequence, lower_bound_score));
 
-      while (count < limit
+      while (itr_begin != idx.end() && count < limit
          && itr_begin->platform == platform && itr_begin->poster == poster_uid
          && itr_begin->post_pid == post_pid &&itr_begin->period_sequence == dpo.current_active_post_sequence)
       {

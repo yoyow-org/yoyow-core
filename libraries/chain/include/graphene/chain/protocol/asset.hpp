@@ -159,5 +159,3 @@ namespace graphene { namespace chain {
 FC_REFLECT( graphene::chain::asset, (amount)(asset_id) )
 FC_REFLECT( graphene::chain::price, (base)(quote) )
 
-#define GRAPHENE_PRICE_FEED_FIELDS (settlement_price)(maintenance_collateral_ratio)(maximum_short_squeeze_ratio) \
-   (core_exchange_rate)
