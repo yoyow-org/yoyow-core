@@ -1727,18 +1727,22 @@ vector<custom_vote_object> database_api_impl::list_custom_votes(optional<custom_
    auto itr = lower_bound_custom_vote_id.valid() ? idx.lower_bound(*lower_bound_custom_vote_id) : idx.begin();
    if (is_finished.valid()){
       if (*is_finished){
-         while (itr != idx.end() && limit--)
+         while (itr != idx.end() && limit)
          {
-            if (itr->vote_expired_time <= _db.head_block_time())
+            if (itr->vote_expired_time <= _db.head_block_time()){
                result.push_back(*itr);
+               limit--;
+            }
             ++itr;
          }
       }
       else{
-         while (itr != idx.end() && limit--)
+         while (itr != idx.end() && limit)
          {
-            if (itr->vote_expired_time > _db.head_block_time())
+            if (itr->vote_expired_time > _db.head_block_time()){
                result.push_back(*itr);
+               limit--;
+            }
             ++itr;
          }
       }
