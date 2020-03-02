@@ -835,7 +835,7 @@ void_result benefit_collect_evaluator::do_evaluate(const benefit_collect_operati
          if (op.to.valid())
             FC_ASSERT(*(op.to) == op.issuer, "to_account must be issuer. ");
          FC_ASSERT(!op.time.valid(), "time must be invalid. ");
-
+         FC_ASSERT(op.amount.asset_id == GRAPHENE_CORE_ASSET_AID, "asset must be yoyo. ");
          FC_ASSERT(from_stats->uncollected_witness_pay >= op.amount.amount,
             "Can not collect so much: have ${b}, requested ${r}",
             ("b", d.to_pretty_core_string(from_stats->uncollected_witness_pay))

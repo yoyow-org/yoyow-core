@@ -308,9 +308,7 @@ void benefit_collect_operation::validate()const
    FC_ASSERT(benefit_type == BENEFIT_TYPE_CSAF || benefit_type == BENEFIT_TYPE_WITNESS, "benefit_type is error. ");
    if (benefit_type == BENEFIT_TYPE_CSAF)
       FC_ASSERT(time.valid(), "time is error. ");
-   if (benefit_type == BENEFIT_TYPE_WITNESS && to.valid()){
-      FC_ASSERT(amount.asset_id == GRAPHENE_CORE_ASSET_AID, "asset must be yoyo. ");
+   if (benefit_type == BENEFIT_TYPE_WITNESS && to.valid())
       FC_ASSERT(*to == issuer, "only collect benefit for self. ");
-   }
 }
 } } // graphene::chain
