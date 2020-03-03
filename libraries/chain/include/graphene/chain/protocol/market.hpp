@@ -150,7 +150,7 @@ namespace graphene { namespace chain {
       asset                pays;
       asset                receives;
       price                fill_price;
-      bool                 is_maker;
+      bool                 is_maker = false;
 
       pair<asset_aid_type,asset_aid_type> get_market()const
       {

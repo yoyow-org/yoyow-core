@@ -94,7 +94,7 @@ namespace graphene { namespace chain {
 
       advertising_aid_type       advertising_aid;
       account_uid_type           platform;
-      bool                       on_sell;
+      bool                       on_sell = false;
       uint32_t                   unit_time;
       share_type                 unit_price;
       string                     description;

@@ -136,7 +136,7 @@ namespace graphene { namespace chain {
    {
    public:
       uint16_t          cur_ratio;        //the receiptor`s current ratio of the post
-      bool              to_buyout;        //is to sell receiptor`s ratio
+      bool              to_buyout = false;        //is to sell receiptor`s ratio
       uint16_t          buyout_ratio = 0; //the ratio to sell
       share_type        buyout_price = 0; //the price of the ratio for sell
       time_point_sec    buyout_expiration = time_point_sec::maximum(); //the expiration time for receiptor`s sell order
