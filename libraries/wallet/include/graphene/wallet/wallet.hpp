@@ -898,11 +898,11 @@ class wallet_api
                                     bool broadcast = false);
 
 
-      signed_transaction destroy_asset(string issuer,
-                                       string amount,
-                                       string symbol,
-                                       bool csaf_fee = true,
-                                       bool broadcast = false);
+      //signed_transaction destroy_asset(string issuer,
+      //                                 string amount,
+      //                                 string symbol,
+      //                                 bool csaf_fee = true,
+      //                                 bool broadcast = false);
 
       /** Whitelist and blacklist accounts, primarily for transacting in whitelisted assets.
        *
@@ -2057,7 +2057,7 @@ FC_API( graphene::wallet::wallet_api,
         (issue_asset)
         (get_asset)
         (reserve_asset)
-        (destroy_asset)
+        //(destroy_asset)
         (enable_allowed_assets)
         (update_allowed_assets)
         //(whitelist_account)

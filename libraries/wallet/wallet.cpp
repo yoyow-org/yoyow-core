@@ -1181,29 +1181,29 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (from)(amount)(symbol)(csaf_fee)(broadcast) ) }
 
-   signed_transaction destroy_asset(string issuer,
-                                    string amount,
-                                    string symbol,
-                                    bool csaf_fee,
-                                    bool broadcast)
-   {
-      try {
-         account_object issuer_account = get_account(issuer);
-         optional<asset_object_with_data> asset_to_reserve = find_asset(symbol);
-         FC_ASSERT(asset_to_reserve.valid(), "Can not find asset ${a}", ("a", symbol));
+   //signed_transaction destroy_asset(string issuer,
+   //                                 string amount,
+   //                                 string symbol,
+   //                                 bool csaf_fee,
+   //                                 bool broadcast)
+   //{
+   //   try {
+   //      account_object issuer_account = get_account(issuer);
+   //      optional<asset_object_with_data> asset_to_reserve = find_asset(symbol);
+   //      FC_ASSERT(asset_to_reserve.valid(), "Can not find asset ${a}", ("a", symbol));
 
-         asset_destroy_operation destroy_op;
-         destroy_op.issuer = issuer_account.uid;
-         destroy_op.amount_to_destroy = asset_to_reserve->amount_from_string(amount);
+   //      asset_destroy_operation destroy_op;
+   //      destroy_op.issuer = issuer_account.uid;
+   //      destroy_op.amount_to_destroy = asset_to_reserve->amount_from_string(amount);
 
-         signed_transaction tx;
-         tx.operations.push_back(destroy_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
-         tx.validate();
+   //      signed_transaction tx;
+   //      tx.operations.push_back(destroy_op);
+   //      set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+   //      tx.validate();
 
-         return sign_transaction(tx, broadcast);
-      } FC_CAPTURE_AND_RETHROW((issuer)(amount)(symbol)(csaf_fee)(broadcast))
-   }
+   //      return sign_transaction(tx, broadcast);
+   //   } FC_CAPTURE_AND_RETHROW((issuer)(amount)(symbol)(csaf_fee)(broadcast))
+   //}
 
    signed_transaction whitelist_account(string authorizing_account,
                                         string account_to_list,
@@ -4296,14 +4296,14 @@ signed_transaction wallet_api::reserve_asset(string from,
    return my->reserve_asset(from, amount, symbol, csaf_fee, broadcast);
 }
 
-signed_transaction wallet_api::destroy_asset(string issuer,
-                                             string amount,
-                                             string symbol,
-                                             bool csaf_fee,
-                                             bool broadcast)
-{
-   return my->destroy_asset(issuer, amount, symbol, csaf_fee, broadcast);
-}
+//signed_transaction wallet_api::destroy_asset(string issuer,
+//                                             string amount,
+//                                             string symbol,
+//                                             bool csaf_fee,
+//                                             bool broadcast)
+//{
+//   return my->destroy_asset(issuer, amount, symbol, csaf_fee, broadcast);
+//}
 
 signed_transaction wallet_api::whitelist_account(string authorizing_account,
                                                  string account_to_list,
