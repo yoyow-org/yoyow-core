@@ -274,37 +274,4 @@ void_result asset_claim_fees_evaluator::do_apply( const asset_claim_fees_operati
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
-void_result asset_destroy_evaluator::do_evaluate(const asset_destroy_operation& o)
-{
-   try {
-      database& d = db();
-      FC_ASSERT(d.head_block_time() >= HARDFORK_0_5_TIME, "Can only use asset_destroy after HARDFORK_0_5_TIME");
-
-      auto asset = d.get_balance(o.issuer, o.amount_to_destroy.asset_id);
-      FC_ASSERT(asset.amount >= o.amount_to_destroy.amount, "issuer doesn't have enough balance. asset:${a}. amount_have ${h} less than amount_destroy ${d}",
-         ("a", o.amount_to_destroy.asset_id)("h", asset.amount)("d", o.amount_to_destroy.amount));
-      return void_result();
-   } FC_CAPTURE_AND_RETHROW((o))
-}
-
-
-void_result asset_destroy_evaluator::do_apply(const asset_destroy_operation& o)
-{
-   try {
-      database& d = db();
-
-      if (o.amount_to_destroy.amount > 0)
-         d.adjust_balance(o.issuer, -o.amount_to_destroy);
-
-      const asset_object& ast_obj = d.get_asset_by_aid(o.amount_to_destroy.asset_id);
-      const auto& ast_dyn_data = ast_obj.dynamic_data(d);
-      d.modify(ast_dyn_data, [&](asset_dynamic_data_object& dyn)
-      {
-         dyn.current_supply -= o.amount_to_destroy.amount;
-      });
-
-      return void_result();
-   } FC_CAPTURE_AND_RETHROW((o))
-}
-
 } } // graphene::chain

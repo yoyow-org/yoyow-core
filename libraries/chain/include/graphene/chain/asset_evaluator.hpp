@@ -80,13 +80,4 @@ namespace graphene { namespace chain {
          void_result do_apply( const asset_claim_fees_operation& o );
    };
 
-   class asset_destroy_evaluator : public evaluator<asset_destroy_evaluator>
-   {
-   public:
-      typedef asset_destroy_operation operation_type;
-
-      void_result do_evaluate(const asset_destroy_operation& o);
-      void_result do_apply(const asset_destroy_operation& o);
-   };
-
 } } // graphene::chain

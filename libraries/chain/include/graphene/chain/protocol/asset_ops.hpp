@@ -298,30 +298,6 @@ namespace graphene { namespace chain {
 	  }
    };
 
-   struct asset_destroy_operation : public base_operation
-   {
-      struct fee_parameters_type {
-         uint64_t fee = 10 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint64_t min_real_fee = 0;
-         uint16_t min_rf_percent = 0;
-         extensions_type   extensions;
-      };
-
-      fee_type         fee;
-      account_uid_type issuer;
-      asset            amount_to_destroy;
-      extensions_type  extensions;
-
-      account_uid_type fee_payer_uid()const { return issuer; }
-      void            validate()const;
-      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
-      {
-         if (enabled_hardfork)
-            a.insert(issuer);
-      }
-   };
-
-
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::asset_claim_fees_operation, (fee)(issuer)(amount_to_claim)(extensions) )
@@ -384,8 +360,3 @@ FC_REFLECT( graphene::chain::asset_issue_operation,
             (fee)(issuer)(asset_to_issue)(issue_to_account)(memo)(extensions) )
 FC_REFLECT( graphene::chain::asset_reserve_operation,
             (fee)(payer)(amount_to_reserve)(extensions) )
-
-FC_REFLECT(graphene::chain::asset_destroy_operation::fee_parameters_type,
-            (fee)(min_real_fee)(min_rf_percent)(extensions))
-FC_REFLECT(graphene::chain::asset_destroy_operation,
-            (fee)(issuer)(amount_to_destroy)(extensions))
