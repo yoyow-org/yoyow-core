@@ -593,7 +593,6 @@ void database::_apply_block( const signed_block& next_block )
          {
             dyn.current_supply -= GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT;
          });
-         FC_ASSERT(ast_obj.options.max_supply == GRAPHENE_MAX_SHARE_SUPPLY);
       }
    }
 
