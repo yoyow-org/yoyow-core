@@ -3214,46 +3214,6 @@ BOOST_AUTO_TEST_CASE(committee_test)
    }
 }
 
-// BOOST_AUTO_TEST_CASE(destory_budget_pool_test)
-// {
-//    try
-//    {
-//       ACTORS((1000));
-//       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
-//       auto _core = [&](int64_t x) -> asset
-//       {  return asset(x*prec);    };
-
-//       transfer(committee_account, u_1000_id, _core(100000000));
-//       collect_csaf_from_committee(u_1000_id, 100);
-//       generate_blocks(HARDFORK_0_5_TIME, true);
-
-//       share_type destory_amount = 50000000;
-//       committee_destroy_budget_pool_item_type item;
-//       item.destroy_amount = destory_amount;
-
-
-//       uint32_t block_num = db.head_block_num() + 100;
-//       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, block_num, voting_opinion_type::opinion_for, block_num, block_num);
-//       for (int i = 1; i < 5; ++i)
-//          committee_proposal_vote(genesis_state.initial_accounts.at(i).uid, 1, voting_opinion_type::opinion_for);
-
-//       generate_blocks(99);
-//       const dynamic_global_property_object& dpo = db.get_dynamic_global_properties();
-//       share_type origin_budget_pool = dpo.budget_pool;
-//       generate_blocks(2);
-//       share_type now_budget_pool = dpo.budget_pool;
-//       share_type delta_amount = origin_budget_pool - destory_amount;
-//       BOOST_CHECK(now_budget_pool > delta_amount);
-//       BOOST_CHECK(now_budget_pool - delta_amount < 10000000);
-
-//    }
-//    catch (const fc::exception& e)
-//    {
-//       edump((e.to_detail_string()));
-//       throw;
-//    }
-// }
-
 BOOST_AUTO_TEST_CASE(destory_asset_test)
 {
    try

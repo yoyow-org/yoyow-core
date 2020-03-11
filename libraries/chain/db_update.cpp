@@ -969,23 +969,6 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                }
             }
          }
-         // else if (item.which() == committee_proposal_item_type::tag< committee_destroy_budget_pool_item_type >::value)
-         // {
-         //    const auto& destroy_budget_pool_item = item.get< committee_destroy_budget_pool_item_type >();
-         //    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-         //    modify(dpo, [&](dynamic_global_property_object& _dpo)
-         //    {
-         //       if (destroy_budget_pool_item.destroy_amount > 0 && dpo.budget_pool >= destroy_budget_pool_item.destroy_amount)
-         //          _dpo.budget_pool -= destroy_budget_pool_item.destroy_amount;
-         //    });
-
-         //    const asset_object& ast_obj = get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
-         //    const auto& ast_dyn_data = ast_obj.dynamic_data(*this);
-         //    modify(ast_dyn_data, [&](asset_dynamic_data_object& dyn)
-         //    {
-         //       dyn.current_supply -= destroy_budget_pool_item.destroy_amount;
-         //    });
-         // }
       }
 
       // apply changes : new takeover registrars
