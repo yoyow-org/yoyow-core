@@ -1926,7 +1926,8 @@ void database_fixture::create_asset(flat_set<fc::ecc::private_key> sign_keys,
    string           symbol,
    uint8_t          precisions,
    asset_options    options,
-   share_type       initial_supply
+   share_type       initial_supply,
+   uint32_t         skip
    )
 {
    try {
@@ -1950,7 +1951,7 @@ void database_fixture::create_asset(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx, skip);
    } FC_CAPTURE_AND_RETHROW((issuer)(symbol)(precisions)(options)(initial_supply))
 }
 

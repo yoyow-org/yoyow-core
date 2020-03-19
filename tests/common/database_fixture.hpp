@@ -503,7 +503,8 @@ struct database_fixture {
       string           symbol,
       uint8_t          precisions,
       asset_options    options,
-      share_type       initial_supply
+      share_type       initial_supply,
+      uint32_t         skip = 0
       );
 
    void update_asset(flat_set<fc::ecc::private_key> sign_keys,
