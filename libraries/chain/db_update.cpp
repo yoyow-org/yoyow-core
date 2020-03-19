@@ -928,12 +928,15 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
             {
                const auto& pledge_balance_obj = get(account_stats.pledge_balance_ids.at(pledge_balance_type::Platform));
                auto total_unrelease_pledge = pledge_balance_obj.total_unrelease_pledge();
-               if (total_unrelease_pledge >= platform_punish_item.withdraw_amount) // platform pledge already release, invalid proposal
+
+               share_type actual_withdraw_amount = std::min(total_unrelease_pledge, platform_punish_item.withdraw_amount);
+
+               if (total_unrelease_pledge >= actual_withdraw_amount) // platform pledge already release, invalid proposal
                {
                   // withdraw platform account pledge         
                   modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
-                     share_type from_releasing = std::min(pledge_balance_obj.total_releasing_pledge, platform_punish_item.withdraw_amount);
-                     share_type from_pledge = platform_punish_item.withdraw_amount - from_releasing;
+                     share_type from_releasing = std::min(pledge_balance_obj.total_releasing_pledge, actual_withdraw_amount);
+                     share_type from_pledge = actual_withdraw_amount - from_releasing;
                      if (from_releasing > 0)
                         _pbo.reduce_releasing(from_releasing);
                      if (from_pledge > 0)
@@ -973,7 +976,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
                      }
                   });
                   // withdraw amount awarded to receiver
-                  adjust_balance(platform_punish_item.receiver, asset(platform_punish_item.withdraw_amount));
+                  adjust_balance(platform_punish_item.receiver, asset(actual_withdraw_amount));
                }
             }
          }
