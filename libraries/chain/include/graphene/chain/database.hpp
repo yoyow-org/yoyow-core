@@ -81,7 +81,8 @@ namespace graphene { namespace chain {
             skip_undo_history_check     = 1 << 9,  ///< used while reindexing
             skip_witness_schedule_check = 1 << 10, ///< used while reindexing
             skip_invariants_check       = 1 << 11, ///< used while reindexing and used by non-witness nodes
-            skip_validate               = 1 << 12  ///< used prior to checkpoint, skips validate() call on transaction
+            skip_validate               = 1 << 12, ///< used prior to checkpoint, skips validate() call on transaction
+            skip_uint_test              = 1 << 13  ///< used for uint test 
          };
 
          /**

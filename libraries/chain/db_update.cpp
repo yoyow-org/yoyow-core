@@ -49,25 +49,28 @@ void database::update_global_dynamic_data( const signed_block& b )
    uint32_t missed_blocks = get_slot_at_time( b.timestamp );
    assert( missed_blocks != 0 );
    missed_blocks--;
-   for( uint32_t i = 0; i < missed_blocks; ++i ) {
-      const auto& witness_missed = get_witness_by_uid( get_scheduled_witness( i+1 ) );
-      if(  witness_missed.account != b.witness ) {
-         /*
-         const auto& witness_account = witness_missed.account(*this);
-         if( (fc::time_point::now() - b.timestamp) < fc::seconds(30) )
-            wlog( "Witness ${name} missed block ${n} around ${t}", ("name",witness_account.name)("n",b.block_num())("t",b.timestamp) );
-            */
+   
+   //skip miss block when uint test
+   if(!(get_node_properties().skip_flags&skip_uint_test))
+      for( uint32_t i = 0; i < missed_blocks; ++i ) {
+         const auto& witness_missed = get_witness_by_uid( get_scheduled_witness( i+1 ) );
+         if(  witness_missed.account != b.witness ) {
+            /*
+            const auto& witness_account = witness_missed.account(*this);
+            if( (fc::time_point::now() - b.timestamp) < fc::seconds(30) )
+               wlog( "Witness ${name} missed block ${n} around ${t}", ("name",witness_account.name)("n",b.block_num())("t",b.timestamp) );
+               */
 
-         modify( witness_missed, [&]( witness_object& w ) {
-           w.total_missed++;
-           if( w.last_confirmed_block_num + gpo.parameters.max_witness_inactive_blocks < b.block_num() )
-              w.signing_key = public_key_type();
-         });
-         modify(get_account_statistics_by_uid(witness_missed.account), [&](_account_statistics_object& s) {
-           s.witness_total_missed++;
-         });
-      } 
-   }
+            modify( witness_missed, [&]( witness_object& w ) {
+              w.total_missed++;
+              if( w.last_confirmed_block_num + gpo.parameters.max_witness_inactive_blocks < b.block_num() )
+                 w.signing_key = public_key_type();
+            });
+            modify(get_account_statistics_by_uid(witness_missed.account), [&](_account_statistics_object& s) {
+              s.witness_total_missed++;
+            });
+         }
+      }
 
    // dynamic global properties updating
    modify( _dgp, [&]( dynamic_global_property_object& dgp ){
@@ -390,7 +393,7 @@ void database::update_account_reg_info()
 
 void database::update_core_asset_flags()
 {
-   auto core_asset = get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
+   auto const & core_asset = get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
    modify(core_asset, [&](asset_object& ast) {
       ast.options.flags |= charge_market_fee;
    });
