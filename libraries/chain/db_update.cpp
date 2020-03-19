@@ -388,6 +388,14 @@ void database::update_account_reg_info()
    }
 }
 
+void database::update_core_asset_flags()
+{
+   auto core_asset = get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
+   modify(core_asset, [&](asset_object& ast) {
+      ast.options.flags |= charge_market_fee;
+   });
+}
+
 void database::update_account_feepoint()
 {
    const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;

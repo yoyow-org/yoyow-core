@@ -549,6 +549,7 @@ namespace graphene { namespace chain {
          void update_account_permission();
          void update_account_feepoint(); //only execute once for HARDFORK_0_5_BLOCKNUM
          void update_account_reg_info(); //only execute once for HARDFORK_0_5_BLOCKNUM
+         void update_core_asset_flags(); //only execute once for HARDFORK_0_5_BLOCKNUM
 
          std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
               get_effective_csaf(const active_post_object& active_post);

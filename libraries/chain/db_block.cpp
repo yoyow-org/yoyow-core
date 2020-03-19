@@ -570,6 +570,7 @@ void database::_apply_block( const signed_block& next_block )
       update_account_feepoint();
       //update account that created before hardfork_0_5_time registrar,referrer,registrar_percent, referrer_percent
       update_account_reg_info();
+      update_core_asset_flags();
       modify(dpo, [&](dynamic_global_property_object& dp)
       {
          dp.total_witness_pledge += dpo.resign_witness_pledge_before_05;
