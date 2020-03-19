@@ -3214,36 +3214,4 @@ BOOST_AUTO_TEST_CASE(committee_test)
    }
 }
 
-BOOST_AUTO_TEST_CASE(destory_asset_test)
-{
-   try
-   {
-      ACTORS((1000));
-      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
-      auto _core = [&](int64_t x) -> asset
-      {  return asset(x*prec);    };
-
-      transfer(committee_account, u_1000_id, _core(100000000));
-      collect_csaf_from_committee(u_1000_id, 100);
-      generate_blocks(HARDFORK_0_5_TIME, true);
-
-      share_type destory_amount = 100000000;
-      share_type origin_amount = db.get_balance(u_1000_id, GRAPHENE_CORE_ASSET_AID).amount;
-      share_type origin_supply = db.get_asset_by_aid(GRAPHENE_CORE_ASSET_AID).dynamic_data(db).current_supply;
-
-      destroy_asset({ u_1000_private_key }, u_1000_id, GRAPHENE_CORE_ASSET_AID, 100000000);
-      share_type now_amount = db.get_balance(u_1000_id, GRAPHENE_CORE_ASSET_AID).amount;
-      share_type now_supply = db.get_asset_by_aid(GRAPHENE_CORE_ASSET_AID).dynamic_data(db).current_supply;
-
-      BOOST_CHECK(now_amount == (origin_amount - destory_amount));
-      BOOST_CHECK(now_supply == (origin_supply - destory_amount));
-
-   }
-   catch (const fc::exception& e)
-   {
-      edump((e.to_detail_string()));
-      throw;
-   }
-}
-
 BOOST_AUTO_TEST_SUITE_END()

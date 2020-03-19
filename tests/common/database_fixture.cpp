@@ -1000,7 +1000,7 @@ void database_fixture::committee_proposal_create(
 
       sign(tx, init_account_priv_key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    }FC_CAPTURE_AND_RETHROW((committee_member_account)(items)(voting_closing_block_num)(proposer_opinion)(execution_block_num)(expiration_block_num))
 
 }
@@ -1025,7 +1025,7 @@ void database_fixture::committee_proposal_vote(
 
       sign(tx, init_account_priv_key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    }FC_CAPTURE_AND_RETHROW((committee_member_account)(proposal_number)(opinion))
 }
 
@@ -1053,7 +1053,7 @@ void database_fixture::create_platform(account_uid_type owner_account,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((owner_account)(name)(pledge_amount)(url)(extra_data)(sign_keys))
 }
 
@@ -1087,7 +1087,7 @@ void database_fixture::update_platform_votes(account_uid_type voting_account,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
 
    } FC_CAPTURE_AND_RETHROW((voting_account)(platforms_to_add)(platforms_to_remove)(sign_keys))
 }
@@ -1116,7 +1116,7 @@ void database_fixture::reward_post(account_uid_type from_account,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
 
    } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(sign_keys))
 }
@@ -1145,7 +1145,7 @@ void database_fixture::reward_post_proxy_by_platform(account_uid_type from_accou
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(amount)(sign_keys))
 }
 
@@ -1177,7 +1177,7 @@ void database_fixture::buyout_post(account_uid_type from_account,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((from_account)(platform)(poster)(post_pid)(receiptor_account)(sign_keys))
 }
 
@@ -1209,7 +1209,7 @@ void database_fixture::create_license(account_uid_type platform,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((platform)(license_type)(hash_value)(title)(body)(extra_data)(sign_keys))
 }
 
@@ -1258,7 +1258,7 @@ void database_fixture::transfer_extension(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    }FC_CAPTURE_AND_RETHROW((sign_keys)(from)(to)(amount)(memo)(isfrom_balance)(isto_balance))
 }
 
@@ -1288,7 +1288,7 @@ void database_fixture::account_auth_platform(flat_set<fc::ecc::private_key> sign
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    }FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform_owner)(limit_for_platform)(permission_flags))
 }
 
@@ -1334,7 +1334,7 @@ void database_fixture::create_post(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    }FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(poster)(hash_value)(title)(body)(extra_data)(origin_platform)(origin_poster)(origin_post_pid)(exts))
 }
 
@@ -1375,7 +1375,7 @@ void database_fixture::update_post(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    }FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(poster)(post_pid)(hash_value)(title)(body)(extra_data)(ext))
 }
 
@@ -1405,7 +1405,7 @@ void database_fixture::score_a_post(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    }FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(platform)(poster)(post_pid)(score)(csaf))
 }
 
@@ -1439,7 +1439,7 @@ void database_fixture::buy_advertising(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
 
    } FC_CAPTURE_AND_RETHROW((sign_keys)(account)(platform)(advertising_aid)(start_time)(buy_number)(extra_data)(memo))
 }
@@ -1466,7 +1466,7 @@ void database_fixture::confirm_advertising(flat_set<fc::ecc::private_key> sign_k
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
 
    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_aid)(advertising_order_oid)(confirm))
 }
@@ -1532,7 +1532,7 @@ void database_fixture::collect_csaf(flat_set<fc::ecc::private_key> sign_keys, ac
 
       for (auto key : sign_keys)
          sign(tx, key);
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
 
    } FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(to_account)(amount))
 }
@@ -1559,7 +1559,7 @@ void database_fixture::collect_csaf_origin(flat_set<fc::ecc::private_key> sign_k
 
       for (auto key : sign_keys)
          sign(tx, key);
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
 
    } FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(to_account)(amount))
 }
@@ -1613,7 +1613,7 @@ void database_fixture::csaf_lease(flat_set<fc::ecc::private_key> sign_keys, acco
 
       for (auto key : sign_keys)
          sign(tx, key);
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
 
    } FC_CAPTURE_AND_RETHROW((sign_keys)(from_account)(to_account)(amount)(expiration))
 }
@@ -1643,7 +1643,7 @@ void database_fixture::create_advertising(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(description)(unit_price)(unit_time))
 }
 
@@ -1677,7 +1677,7 @@ void database_fixture::update_advertising(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(advertising_aid)(description)(unit_price)(unit_time)(on_sell))
 }
 
@@ -1703,7 +1703,7 @@ void database_fixture::ransom_advertising(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((sign_keys)(platform)(from_account)(advertising_aid)(advertising_order_oid))
 }
 
@@ -1742,7 +1742,7 @@ void database_fixture::create_custom_vote(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((create_account)(custom_vote_vid)(title)(description)(expired_time)(asset_id)
       (required_amount)(minimum_selected_items)(maximum_selected_items)(options))
 }
@@ -1769,7 +1769,7 @@ void database_fixture::cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creator)(custom_vote_vid)(vote_result))
 }
 
@@ -1789,7 +1789,7 @@ void database_fixture::balance_lock_update(flat_set<fc::ecc::private_key> sign_k
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((account)(amount))
 }
 
@@ -1814,7 +1814,7 @@ void database_fixture::update_mining_pledge(flat_set<fc::ecc::private_key> sign_
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((pledge_account)(witness)(new_pledge))
 }
 
@@ -1843,7 +1843,7 @@ void database_fixture::create_witness(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((sign_keys)(owner_account)(url)(pledge)(signing_public_key))
 }
 
@@ -1870,7 +1870,7 @@ void database_fixture::update_witness(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((account)(new_signing_key)(new_pledge)(new_url))
 }
 
@@ -1894,7 +1894,7 @@ void database_fixture::create_committee(flat_set<fc::ecc::private_key> sign_keys
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((sign_keys)(owner_account)(url)(pledge))
 }
 
@@ -1916,7 +1916,7 @@ void database_fixture::update_committee(flat_set<fc::ecc::private_key> sign_keys
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((sign_keys)(owner_account)(pledge))
 }
 
@@ -1950,7 +1950,7 @@ void database_fixture::create_asset(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((issuer)(symbol)(precisions)(options)(initial_supply))
 }
 
@@ -1977,7 +1977,7 @@ void database_fixture::update_asset(flat_set<fc::ecc::private_key> sign_keys,
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((issuer)(asset_to_update)(new_precision)(new_options))
 }
 
@@ -2009,7 +2009,7 @@ void database_fixture::create_limit_order(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((seller)(sell_asset_id)(sell_amount)(min_receive_asset_id)(min_receive_amount)(expiration)(fill_or_kill))
 }
 
@@ -2032,7 +2032,7 @@ void database_fixture::cancel_limit_order(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((seller)(order_id))
 }
 
@@ -2057,7 +2057,7 @@ void database_fixture::collect_market_fee(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((account)(asset_aid)(amount))
 }
 
@@ -2081,32 +2081,8 @@ void database_fixture::asset_claim_fees(flat_set<fc::ecc::private_key> sign_keys
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx);
+      db.push_transaction(tx, ~0);
    } FC_CAPTURE_AND_RETHROW((issuer)(asset_aid)(amount_to_claim))
-}
-
-void database_fixture::destroy_asset(flat_set<fc::ecc::private_key> sign_keys,
-   account_uid_type     issuer,
-   asset_aid_type       asset_aid,
-   share_type           amount_to_destroy
-   )
-{
-   try {
-      asset_destroy_operation destroy_op;
-      destroy_op.issuer = issuer;
-      destroy_op.amount_to_destroy = asset(amount_to_destroy, asset_aid);
-
-      signed_transaction tx;
-      tx.operations.push_back(destroy_op);
-      set_operation_fees(tx, db.current_fee_schedule());
-      set_expiration(db, tx);
-      tx.validate();
-
-      for (auto key : sign_keys)
-         sign(tx, key);
-
-      db.push_transaction(tx);
-   } FC_CAPTURE_AND_RETHROW((issuer)(asset_aid)(amount_to_destroy))
 }
 
 fc::uint128_t database_fixture::compute_coin_seconds_earned(_account_statistics_object account, share_type effective_balance, time_point_sec now_rounded)

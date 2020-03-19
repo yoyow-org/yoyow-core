@@ -540,12 +540,6 @@ struct database_fixture {
       share_type           amount_to_claim
       );
 
-   void destroy_asset(flat_set<fc::ecc::private_key> sign_keys,
-      account_uid_type     issuer,
-      asset_aid_type       asset_aid,
-      share_type           amount_to_destroy
-      );
-
    fc::uint128_t compute_coin_seconds_earned(_account_statistics_object account, share_type effective_balance, time_point_sec now_rounded);
 
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
