@@ -26,6 +26,40 @@ using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( operation_tests, database_fixture )
 
+BOOST_AUTO_TEST_CASE(update_asset_flag_test)
+{
+   try
+   {
+      ACTORS((1000));
+      const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
+      auto _core = [&](int64_t x) -> asset
+      {  return asset(x*prec);    };
+
+      {
+         const auto& asset_idx = db.get_index_type<asset_index>().indices();
+         for (auto itr = asset_idx.begin(); itr != asset_idx.end(); ++itr)
+         {
+            BOOST_CHECK(itr->options.flags == 0);
+            BOOST_CHECK(itr->options.issuer_permissions == 0);
+            asset_options options = itr->options;
+            options.max_market_fee = 0;
+            options.flags = charge_market_fee | issue_asset;
+            update_asset({ generate_private_key("null_key") }, GRAPHENE_NULL_ACCOUNT_UID, itr->asset_id, optional<uint8_t>(), options);
+            const asset_object& ast_obj = db.get_asset_by_aid(0);
+            BOOST_CHECK(ast_obj.options.flags == charge_market_fee | issue_asset);
+            BOOST_CHECK(ast_obj.options.issuer_permissions == 0);
+         }
+      }
+
+   }
+   catch (const fc::exception& e)
+   {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+
 BOOST_AUTO_TEST_CASE(update_reward_percent_test)
 {
    try
