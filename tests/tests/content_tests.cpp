@@ -1423,9 +1423,10 @@ BOOST_AUTO_TEST_CASE(forward_test)
          account_auth_platform_object::Platform_Permission_Reward |
          account_auth_platform_object::Platform_Permission_Post |
          account_auth_platform_object::Platform_Permission_Content_Update);
+      generate_blocks(2);
       sign_keys_1.insert(u_9000_private_key);
       sign_keys_2.insert(u_9001_private_key);
-      bool do_by_platform = true; // modify to false , change to do_by_account
+      bool do_by_platform = false; // modify to false , change to do_by_account
       if (do_by_platform){
          sign_keys_2.erase(u_2000_private_key);
       }
@@ -1551,9 +1552,10 @@ BOOST_AUTO_TEST_CASE(buyout_test)
          account_auth_platform_object::Platform_Permission_Reward |
          account_auth_platform_object::Platform_Permission_Post |
          account_auth_platform_object::Platform_Permission_Content_Update);
+      generate_blocks(2);
       sign_keys_1.insert(u_9000_private_key);
       sign_keys_2.insert(u_9000_private_key);
-      bool do_by_platform = true; // modify to false , change to do_by_account
+      bool do_by_platform = false; // modify to false , change to do_by_account
       if (do_by_platform){
          sign_keys_2.erase(u_2000_private_key);
       }
@@ -1578,7 +1580,7 @@ BOOST_AUTO_TEST_CASE(buyout_test)
       ext.buyout_expiration = time_point_sec::maximum();
       update_post({ u_1000_private_key, u_9000_private_key }, u_9000_id, u_1000_id, 1, "", "", "", "", ext);
 
-      buyout_post(u_2000_id, u_9000_id, u_1000_id, 1, u_1000_id, u_9000_id, sign_keys_2);
+      buyout_post(u_2000_id, u_9000_id, u_1000_id, 1, u_1000_id, optional<account_uid_type>(), sign_keys_2);
 
       const post_object& post = db.get_post_by_platform(u_9000_id, u_1000_id, 1);
       auto iter1 = post.receiptors.find(u_1000_id);
@@ -2150,7 +2152,7 @@ BOOST_AUTO_TEST_CASE(limit_order_test)
       
       
       //full match market pair asset_0 and asset_1
-      auto expiration_time=fc::time_point::now().sec_since_epoch()+24*3600;
+      auto expiration_time = db.head_block_time().sec_since_epoch() + 24 * 3600;
       auto sell_asset_1_amount=10000*prec;
       auto sell_asset_0_amount=1000*prec;
       
@@ -2357,7 +2359,7 @@ BOOST_AUTO_TEST_CASE(limit_order_test2)
 
 
       //test for less match
-      auto expiration_time = fc::time_point::now().sec_since_epoch() + 24 * 3600;
+      auto expiration_time = db.head_block_time().sec_since_epoch() + 24 * 3600;
       auto sell_asset_1_amount = 10000 * prec;
       auto sell_asset_0_amount = 1000 * prec;
 
@@ -2523,7 +2525,7 @@ BOOST_AUTO_TEST_CASE(limit_order_test3_for_votes)
       update_platform_votes(u_3000_id, platform_set1, platform_set2, { u_3000_private_key });
 
       //other asset for core asset
-      auto expiration_time = fc::time_point::now().sec_since_epoch() + 24 * 3600;
+      auto expiration_time = db.head_block_time().sec_since_epoch() + 24 * 3600;
       auto sell_asset_1_amount = 10000 * prec;
       auto sell_asset_0_amount = 1000 * prec;
 
