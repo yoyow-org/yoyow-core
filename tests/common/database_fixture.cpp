@@ -1948,8 +1948,10 @@ void database_fixture::create_asset(flat_set<fc::ecc::private_key> sign_keys,
       set_expiration(db, tx);
       tx.validate();
 
-      for (auto key : sign_keys)
-         sign(tx, key);
+      const auto& dpo = db.get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_04)
+         for (auto key : sign_keys)
+            sign(tx, key);
 
       db.push_transaction(tx, skip);
    } FC_CAPTURE_AND_RETHROW((issuer)(symbol)(precisions)(options)(initial_supply))
