@@ -944,6 +944,28 @@ void database_fixture::add_csaf_for_account(account_uid_type account, share_type
    });
 }
 
+void database_fixture::add_buget_pool(share_type amount)
+{
+   auto temp_session = db._undo_db.start_undo_session();
+
+   const dynamic_global_property_object& dpo = db.get_dynamic_global_properties();
+   db.modify( dpo, [&]( dynamic_global_property_object& _dpo )
+   {
+      _dpo.budget_pool += amount;
+   } );
+   
+   const auto& core_asset = db.get_core_asset();
+   const auto& core_dyn_data = core_asset.dynamic_data(db);
+   db.modify(core_dyn_data, [&](asset_dynamic_data_object& dyn)
+   {
+      dyn.current_supply +=amount;
+   });
+
+   temp_session.commit();
+
+}
+
+
 //void database_fixture::collect_csaf(account_uid_type from, account_uid_type to, uint32_t amount, string asset_symbol)
 //{
 //   try

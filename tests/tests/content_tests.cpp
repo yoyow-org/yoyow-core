@@ -936,8 +936,9 @@ BOOST_AUTO_TEST_CASE(platform_voted_awards_test)
 
       const share_type prec = asset::scaled_precision(asset_id_type()(db).precision);
 
-      generate_blocks(200000);
-
+      generate_blocks(1);
+      add_buget_pool(931298256468);
+      
       // Return number of core shares (times precision)
       auto _core = [&](int64_t x) -> asset
       {  return asset(x*prec);    };

@@ -280,6 +280,8 @@ struct database_fixture {
 
    //content test add
    void add_csaf_for_account(account_uid_type account, share_type csaf);
+   
+   void add_buget_pool(share_type amount);
    //void collect_csaf(account_uid_type from, account_uid_type to, uint32_t amount, string asset_symbol = "YOYO");
    void committee_proposal_create(
       const account_uid_type committee_member_account,
