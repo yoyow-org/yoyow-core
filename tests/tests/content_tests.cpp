@@ -612,6 +612,7 @@ BOOST_AUTO_TEST_CASE(post_platform_reward_test)
       BOOST_TEST_MESSAGE("Turn on the reward mechanism, open content award and platform voted award");
       committee_update_global_extension_parameter_item_type item;
       item.value = { 300, 300, 1000, 31536000, 10, 10000000000, 10000000000, 10000000000, 1000, 100 };
+      item.value.platform_content_award_min_votes = 0;
       auto execute_proposal_head_block = db.head_block_num() + 100;
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, execute_proposal_head_block, voting_opinion_type::opinion_for, execute_proposal_head_block, execute_proposal_head_block);
       for (int i = 1; i < 5; ++i)
