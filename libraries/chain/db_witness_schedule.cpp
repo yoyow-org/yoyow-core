@@ -258,8 +258,9 @@ void database::update_witness_schedule()
          }
          _wso.next_schedule_block_num += _wso.current_shuffled_witnesses.size();
       });
-      dlog( "witness schedule updated on block ${n}, next reschedule block is ${b}",
-            ("n",head_block_num())("b",wso.next_schedule_block_num) );
+      if (!(get_node_properties().skip_flags & skip_uint_test))
+         dlog("witness schedule updated on block ${n}, next reschedule block is ${b}",
+         ("n", head_block_num())("b", wso.next_schedule_block_num));
    }
 }
 
