@@ -44,6 +44,7 @@ BOOST_FIXTURE_TEST_SUITE( uia_tests, database_fixture )
 BOOST_AUTO_TEST_CASE( create_advanced_uia )
 {
    try {
+      generate_blocks(HARDFORK_0_5_TIME, true);
       asset_id_type test_asset_id = db.get_index<asset_object>().get_next_id();
       asset_create_operation creator;
       creator.issuer = GRAPHENE_COMMITTEE_ACCOUNT_UID;
@@ -54,7 +55,8 @@ BOOST_AUTO_TEST_CASE( create_advanced_uia )
       creator.common_options.market_fee_percent = GRAPHENE_MAX_MARKET_FEE_PERCENT/100; /*1%*/
       creator.common_options.issuer_permissions = charge_market_fee|white_list|override_authority|transfer_restricted;
       creator.common_options.flags = charge_market_fee|white_list|override_authority;
-      creator.common_options.whitelist_authorities = creator.common_options.blacklist_authorities = {GRAPHENE_COMMITTEE_ACCOUNT_UID};
+      //asset donot support whitelist_authorities
+      //creator.common_options.whitelist_authorities = creator.common_options.blacklist_authorities = {GRAPHENE_COMMITTEE_ACCOUNT_UID};
       trx.operations.push_back(std::move(creator));
       PUSH_TX( db, trx, ~0 );
 
@@ -78,7 +80,7 @@ BOOST_AUTO_TEST_CASE( override_transfer_test )
 { try {
    //ACTORS( (dan)(eric)(sam) );
    ACTORS( (1000)(1001)(1002) );
-   const asset_object& advanced = create_user_issued_asset( "ADVANCED", u_1002, override_authority );
+   const asset_object& advanced = create_user_issued_asset( "ADVANCED", u_1002, override_authority|issue_asset);
    BOOST_TEST_MESSAGE( "Issuing 1000 ADVANCED to dan" );
    issue_uia( u_1000, advanced.amount( 1000 ) );
    BOOST_TEST_MESSAGE( "Checking dan's balance" );
@@ -109,7 +111,7 @@ BOOST_AUTO_TEST_CASE( override_transfer_test2 )
 { try {
    //ACTORS( (dan)(eric)(sam) );
    ACTORS( (1000)(1001)(1002) );
-   const asset_object& advanced = create_user_issued_asset( "ADVANCED", u_1002, 0 );
+   const asset_object& advanced = create_user_issued_asset( "ADVANCED", u_1002, override_authority|issue_asset );
    issue_uia( u_1000, advanced.amount( 1000 ) );
    BOOST_REQUIRE_EQUAL( get_balance( u_1000, advanced ), 1000 );
 
@@ -366,7 +368,7 @@ BOOST_AUTO_TEST_CASE( transfer_restricted_test )
          PUSH_TX( db, tx, database::skip_authority_check | database::skip_tapos_check | database::skip_transaction_signatures );
       } ;
 
-      const asset_object& uia = create_user_issued_asset( "TXRX", u_1000, transfer_restricted );
+      const asset_object& uia = create_user_issued_asset( "TXRX", u_1000, transfer_restricted|issue_asset );
       _issue_uia( u_1001, uia.amount( 1000 ) );
 
       auto _restrict_xfer = [&]( bool xfer_flag )

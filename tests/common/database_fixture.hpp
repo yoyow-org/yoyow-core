@@ -180,6 +180,8 @@ struct database_fixture {
     * @param block_count number of blocks to generate
     */
    void generate_blocks(uint32_t block_count);
+   
+   void generate_blocks_miss(uint32_t block_count, uint32_t serial_no=5, uint32_t skip=~0);
 
    /**
     * @brief Generates blocks until the head block time matches or exceeds timestamp
@@ -214,7 +216,7 @@ struct database_fixture {
    const asset_object& create_user_issued_asset(const string& name);
    const asset_object& create_user_issued_asset(const string& name,
       const account_object& issuer,
-      uint16_t flags);
+      uint16_t flags,bool enable_hardfork5=false);
    void issue_uia(const account_object& recipient, asset amount);
    void issue_uia(account_uid_type recipient_id, asset amount);
 

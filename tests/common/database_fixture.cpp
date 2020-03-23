@@ -185,7 +185,7 @@ void database_fixture::verify_asset_supplies(const database& db)
       reported_core_in_orders += a.total_core_in_orders;
       for(const auto & p:a.uncollected_market_fees)
          total_balances[p.first]+=p.second;
-      total_balances[0]+=(a.uncollected_witness_pay+a.uncollected_score_bonus+a.uncollected_pledge_bonus);
+      total_balances[0]+=(a.uncollected_witness_pay+a.uncollected_score_bonus+a.uncollected_pledge_bonus+a.prepaid);
    }
    
    for( const limit_order_object& o : db.get_index_type<limit_order_index>().indices() )
@@ -337,6 +337,14 @@ void database_fixture::generate_blocks(uint32_t block_count)
       generate_block();
 }
 
+void database_fixture::generate_blocks_miss(uint32_t block_count, uint32_t serial_no, uint32_t skip)
+{
+   if(block_count>serial_no)
+      generate_blocks(db.head_block_time()+(block_count-serial_no)*3,true,skip);
+   generate_blocks(serial_no);
+ 
+}
+
 void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_intermediate_blocks, uint32_t skip)
 {
    if (miss_intermediate_blocks)
@@ -347,6 +355,7 @@ void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_i
          return;
       --slots_to_miss;
       generate_block(skip, init_account_priv_key, slots_to_miss);
+      trx.expiration = time_point_sec(timestamp.sec_since_epoch() + 43200);
       return;
    }
    while (db.head_block_time() < timestamp)
@@ -463,7 +472,7 @@ const asset_object& database_fixture::create_user_issued_asset(const string& nam
    return db.get<asset_object>(ptx.operation_results[0].get<object_id_type>());
 }
 
-const asset_object& database_fixture::create_user_issued_asset(const string& name, const account_object& issuer, uint16_t flags)
+const asset_object& database_fixture::create_user_issued_asset(const string& name, const account_object& issuer, uint16_t flags,bool enable_hardfork5)
 {
    asset_create_operation creator;
    creator.issuer = issuer.uid;
@@ -472,6 +481,8 @@ const asset_object& database_fixture::create_user_issued_asset(const string& nam
    creator.common_options.max_supply = 0;
    creator.precision = 2;
    creator.common_options.max_supply = GRAPHENE_MAX_SHARE_SUPPLY;
+   if(!enable_hardfork5)
+      creator.common_options.max_market_fee=0;
    creator.common_options.flags = flags;
    creator.common_options.issuer_permissions = flags;
    trx.operations.clear();
@@ -1247,17 +1258,17 @@ void database_fixture::transfer_extension(flat_set<fc::ecc::private_key> sign_ke
       transfer_operation xfer_op;
       xfer_op.extensions = extension< transfer_operation::ext >();
       if (isfrom_balance)
-         xfer_op.extensions->value.from_balance = amount.amount;
+         xfer_op.extensions->value.from_balance = amount;
       else
-         xfer_op.extensions->value.from_prepaid = amount.amount;
+         xfer_op.extensions->value.from_prepaid = amount;
       if (isto_balance)
-         xfer_op.extensions->value.to_balance = amount.amount;
+         xfer_op.extensions->value.to_balance = amount;
       else
-         xfer_op.extensions->value.to_prepaid = amount.amount;
+         xfer_op.extensions->value.to_prepaid = amount;
 
       xfer_op.from = from;
       xfer_op.to = to;
-      xfer_op.amount = amount.amount;
+      xfer_op.amount = amount;
 
       if (memo.size())
       {
@@ -1280,7 +1291,7 @@ void database_fixture::transfer_extension(flat_set<fc::ecc::private_key> sign_ke
       for (auto key : sign_keys)
          sign(tx, key);
 
-      db.push_transaction(tx, ~0);
+      db.push_transaction(tx);
    }FC_CAPTURE_AND_RETHROW((sign_keys)(from)(to)(amount)(memo)(isfrom_balance)(isto_balance))
 }
 
