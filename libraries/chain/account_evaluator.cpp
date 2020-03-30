@@ -61,6 +61,7 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
    const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
    if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
    {
+      FC_ASSERT(op.uid > 99999999,"The uid must > 99999999");
       FC_ASSERT(op.reg_info.registrar != GRAPHENE_NULL_ACCOUNT_UID, "The registrar must not be a null account.");
       FC_ASSERT(op.reg_info.referrer != GRAPHENE_NULL_ACCOUNT_UID, "The referrer must not be a null account.");
       FC_ASSERT(op.reg_info.referrer_percent + op.reg_info.registrar_percent == GRAPHENE_100_PERCENT, 
