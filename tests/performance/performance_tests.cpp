@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(post_performance_test)
                                  post_object::Post_Permission_Comment |
                                  post_object::Post_Permission_Reward;
 
-    const account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(u_1000_id);
+    const _account_statistics_object& poster_account_statistics = db.get_account_statistics_by_uid(u_1000_id);
     post_operation create_op;
     create_op.platform = u_9000_id;
     create_op.poster = u_1000_id;
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(comment_performance_test)
 
         extension.post_type = post_operation::Post_Type_Comment;
         for (uint32_t i = 0; i < cycles; ++i){
-            const account_statistics_object& comment_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
+            const _account_statistics_object& comment_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
             post_operation comment_op;
             comment_op.platform = u_9000_id;
             comment_op.poster = accounts[i];
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(forward_performance_test)
         //forward post test
         extension.post_type = post_operation::Post_Type_forward;
         for (uint32_t i = 0; i < cycles; ++i){
-            const account_statistics_object& forward_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
+            const _account_statistics_object& forward_account_statistics = db.get_account_statistics_by_uid(accounts[i]);
             post_operation forward_op;
             forward_op.platform = u_9000_id;
             forward_op.poster = accounts[i];
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_1)
 
       //actor(500000, cycles, score_map);
 
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       int current_block_num = db.head_block_num();
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num + 5, voting_opinion_type::opinion_for, current_block_num + 5, current_block_num+5);
@@ -568,7 +568,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_1)
          score_a_post({ a.second }, a.first, u_300000_id, u_400001_id, 1, 5, 10);
       }
 
-      generate_blocks(block_num + 999);
+      generate_block(~0,init_account_priv_key,block_num + 999);
       auto start = fc::time_point::now();
       wlog("1 platform, 1 post/per platform, 20 0000 scores/per post, content award begin>>>>>>>>>>${num}", ("num", db.head_block_num()));
       generate_block();
@@ -603,7 +603,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_2)
 
       int current_block_num = db.head_block_num();
 
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, current_block_num + 5, voting_opinion_type::opinion_for, current_block_num + 5, current_block_num+5);
       for (int i = 1; i < 5; ++i)
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_2)
          }
       }
 
-      generate_blocks(block_num + 999);
+      generate_block(~0,init_account_priv_key,block_num + 999);
       wlog("1 platform, 20 0000 post/per platform, 20 0000 score/per post, content award test begin------${num}", ("num", db.head_block_num()));
       auto start = fc::time_point::now();
       generate_block();
@@ -678,7 +678,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_3)
       flat_map<account_uid_type, fc::ecc::private_key> score_map;
       actor(1003, score_count, score_map);
 
-      committee_update_global_content_parameter_item_type item;
+      committee_update_global_extension_parameter_item_type item;
       item.value = { 15000, 15000, 1000, 31536000, 10, 10000000000000, 10000000000000, 10000000000000, 1000, 100 };
       committee_proposal_create(genesis_state.initial_accounts.at(0).uid, { item }, 5, voting_opinion_type::opinion_for, 5, 5);
       for (int i = 1; i < 5; ++i)
@@ -740,7 +740,7 @@ BOOST_AUTO_TEST_CASE(content_award_performance_test_3)
          itr++;
       }
 
-      generate_blocks(block_num + 900);
+      generate_block(~0,init_account_priv_key,block_num + 900);
 
       wlog("10000 platforms, 20 0000 posts/per platform, 20 0000 scores/per post, content award begin........,${num}",("num", db.head_block_num()));
       auto start = fc::time_point::now();

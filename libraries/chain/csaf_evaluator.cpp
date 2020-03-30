@@ -17,9 +17,23 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
    to_stats = &d.get_account_statistics_by_uid( op.to );
 
    const auto& global_params = d.get_global_properties().parameters;
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
 
-   FC_ASSERT( op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
-              "Maximum CSAF per account exceeded" );
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05 &&
+      to_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance))
+   {
+      auto csaf_limit_modulus = global_params.get_extension_params().csaf_limit_lock_balance_modulus;
+      auto pledge_balance_obj = d.get(to_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));    
+      share_type lock_balance_csaf = ((fc::uint128)pledge_balance_obj.pledge.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();      
+      
+      FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account + lock_balance_csaf,
+         "Maximum CSAF per account exceeded");
+
+   } else {
+      FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
+         "Maximum CSAF per account exceeded");
+   }
+      
 
    const auto head_time = d.head_block_time();
    const uint64_t csaf_window = global_params.csaf_accumulate_window;
@@ -28,7 +42,7 @@ void_result csaf_collect_evaluator::do_evaluate( const csaf_collect_operation& o
    FC_ASSERT( op.time + GRAPHENE_MAX_CSAF_COLLECTING_TIME_OFFSET >= head_time,
               "Time should not be earlier than 5 minutes before head block time" );
 
-   available_coin_seconds = from_stats->compute_coin_seconds_earned( csaf_window, op.time ).first;
+   available_coin_seconds = from_stats->compute_coin_seconds_earned_fix(csaf_window, op.time, d, dpo.enabled_hardfork_version).first;
 
    collecting_coin_seconds = fc::uint128_t(op.amount.amount.value) * global_params.csaf_rate;
 
@@ -46,11 +60,11 @@ void_result csaf_collect_evaluator::do_apply( const csaf_collect_operation& o )
 { try {
    database& d = db();
 
-   d.modify( *from_stats, [&](account_statistics_object& s) {
+   d.modify(*from_stats, [&](_account_statistics_object& s) {
       s.set_coin_seconds_earned( available_coin_seconds - collecting_coin_seconds, o.time );
    });
 
-   d.modify( *to_stats, [&](account_statistics_object& s) {
+   d.modify(*to_stats, [&](_account_statistics_object& s) {
       s.csaf += o.amount.amount;
    });
 
@@ -84,11 +98,7 @@ void_result csaf_lease_evaluator::do_evaluate( const csaf_lease_operation& op )
 
    if( delta > 0 )
    {
-      auto available_balance = from_stats->core_balance
-                             - from_stats->core_leased_out
-                             - from_stats->total_witness_pledge
-                             - from_stats->total_platform_pledge
-                             - from_stats->total_committee_member_pledge;
+      auto available_balance = from_stats->get_available_core_balance(d);
       FC_ASSERT( available_balance >= delta,
                  "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                  ("a",op.from)
@@ -134,13 +144,15 @@ object_id_type csaf_lease_evaluator::do_apply( const csaf_lease_operation& o )
       const uint64_t csaf_window = d.get_global_properties().parameters.csaf_accumulate_window;
       
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
-      d.modify( *from_stats, [&](account_statistics_object& s) {
-          s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
-          s.core_leased_out += delta;
+      d.modify(*from_stats, [&](_account_statistics_object& s) {
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+            s.update_coin_seconds_earned(csaf_window, head_time, d, dpo.enabled_hardfork_version);
+         s.core_leased_out += delta;
       });
-      d.modify( *to_stats, [&](account_statistics_object& s) {
-          s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
-          s.core_leased_in += delta;
+      d.modify(*to_stats, [&](_account_statistics_object& s) {
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+            s.update_coin_seconds_earned(csaf_window, head_time, d, dpo.enabled_hardfork_version);
+         s.core_leased_in += delta;
       });
    }
 

@@ -35,11 +35,13 @@
 #include <graphene/chain/custom_vote_object.hpp>
 #include <graphene/chain/csaf_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
+#include <graphene/chain/market_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/transaction_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
+#include <graphene/chain/pledge_mining_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -47,10 +49,13 @@
 #include <graphene/chain/content_evaluator.hpp>
 #include <graphene/chain/advertising_evaluator.hpp>
 #include <graphene/chain/custom_vote_evaluator.hpp>
+#include <graphene/chain/balance_lock_evaluator.hpp>
 #include <graphene/chain/csaf_evaluator.hpp>
 #include <graphene/chain/proposal_evaluator.hpp>
 #include <graphene/chain/transfer_evaluator.hpp>
 #include <graphene/chain/witness_evaluator.hpp>
+#include <graphene/chain/pledge_mining_evaluator.hpp>
+#include <graphene/chain/market_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -94,6 +99,12 @@ const uint8_t csaf_lease_object::type_id;
 
 const uint8_t global_property_object::space_id;
 const uint8_t global_property_object::type_id;
+
+const uint8_t limit_order_object::space_id;
+const uint8_t limit_order_object::type_id;
+
+//const uint8_t call_order_object::space_id;
+//const uint8_t call_order_object::type_id;
 
 const uint8_t operation_history_object::space_id;
 const uint8_t operation_history_object::type_id;
@@ -149,6 +160,12 @@ const uint8_t custom_vote_object::type_id;
 const uint8_t cast_custom_vote_object::space_id;
 const uint8_t cast_custom_vote_object::type_id;
 
+const uint8_t pledge_mining_object::space_id;
+const uint8_t pledge_mining_object::type_id;
+
+const uint8_t pledge_balance_object::space_id;
+const uint8_t pledge_balance_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -201,6 +218,15 @@ void database::initialize_evaluators()
    register_evaluator<advertising_ransom_evaluator>();
    register_evaluator<custom_vote_create_evaluator>();
    register_evaluator<custom_vote_cast_evaluator>();
+   register_evaluator<balance_lock_update_evaluator>();
+   register_evaluator<pledge_mining_update_evaluator>();
+   register_evaluator<pledge_bonus_collect_evaluator>();
+   register_evaluator<limit_order_create_evaluator>();
+   register_evaluator<limit_order_cancel_evaluator>();
+   register_evaluator<market_fee_collect_evaluator>();
+   register_evaluator<score_bonus_collect_evaluator>();
+   register_evaluator<beneficiary_assign_evaluator>();
+   register_evaluator<benefit_collect_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -222,6 +248,8 @@ void database::initialize_indexes()
    add_index< primary_index<committee_member_index> >();
    add_index< primary_index<committee_proposal_index> >();
    add_index< primary_index<witness_index> >();
+   add_index< primary_index<limit_order_index > >();
+   //add_index< primary_index<call_order_index > >();
 
    auto prop_index = add_index< primary_index<proposal_index > >();
    prop_index->add_secondary_index<required_approval_index>();
@@ -243,13 +271,14 @@ void database::initialize_indexes()
    add_index< primary_index<custom_vote_index                             > >();
    add_index< primary_index<cast_custom_vote_index                        > >();
    add_index< primary_index<account_auth_platform_index                   > >();
+   add_index< primary_index<pledge_mining_index                           > >();
    add_index< primary_index<committee_member_vote_index                   > >();
    add_index< primary_index<csaf_lease_index                              > >();
+   add_index< primary_index<pledge_balance_index                          > >();
    add_index< primary_index<simple_index<asset_dynamic_data_object       >> >();
    add_index< primary_index<flat_index<  block_summary_object            >> >();
    add_index< primary_index<simple_index<chain_property_object          > > >();
    add_index< primary_index<simple_index<witness_schedule_object        > > >();
-
 }
 
 void database::init_genesis(const genesis_state_type& genesis_state)
@@ -288,7 +317,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_PROXY_TO_SELF_ACCOUNT_UID;
        a.name = "proxy-to-self";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
@@ -307,7 +336,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
          n.active.weight_threshold = 1;
          n.secondary.weight_threshold = 1;
          n.name = "committee-account";
-         n.statistics = create<account_statistics_object>( [&](account_statistics_object& s){
+         n.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){
             s.owner = n.uid;
             s.core_balance = GRAPHENE_MAX_SHARE_SUPPLY;
          }).id;
@@ -316,7 +345,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_WITNESS_ACCOUNT_UID;
        a.name = "witness-account";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
@@ -328,7 +357,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID;
        a.name = "relaxed-committee-account";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
@@ -340,7 +369,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_NULL_ACCOUNT_UID;
        a.name = "null-account";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
@@ -354,7 +383,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_TEMP_ACCOUNT_UID;
        a.name = "temp-account";
-       a.statistics = create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.uid;}).id;
+       a.statistics = create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = a.uid; }).id;
        a.owner.weight_threshold = 0;
        a.active.weight_threshold = 0;
        a.secondary.weight_threshold = 0;

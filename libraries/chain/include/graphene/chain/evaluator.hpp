@@ -102,7 +102,7 @@ namespace graphene { namespace chain {
       share_type                       from_prepaid;
       share_type                       from_csaf;
       const account_object*            fee_paying_account = nullptr;
-      const account_statistics_object* fee_paying_account_statistics = nullptr;
+      const _account_statistics_object* fee_paying_account_statistics = nullptr;
       transaction_evaluation_state*    trx_state;
       signed_information               sigs;
    };

@@ -180,6 +180,8 @@ struct database_fixture {
     * @param block_count number of blocks to generate
     */
    void generate_blocks(uint32_t block_count);
+   
+   void generate_blocks_miss(uint32_t block_count, uint32_t serial_no=5, uint32_t skip=~0);
 
    /**
     * @brief Generates blocks until the head block time matches or exceeds timestamp
@@ -214,7 +216,7 @@ struct database_fixture {
    const asset_object& create_user_issued_asset(const string& name);
    const asset_object& create_user_issued_asset(const string& name,
       const account_object& issuer,
-      uint16_t flags);
+      uint16_t flags,bool enable_hardfork5=false);
    void issue_uia(const account_object& recipient, asset amount);
    void issue_uia(account_uid_type recipient_id, asset amount);
 
@@ -249,9 +251,9 @@ struct database_fixture {
 
    const committee_member_object& create_committee_member(const account_object& owner);
    const witness_object& create_witness(account_uid_type owner,
-      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
+      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"), asset pledge = asset());
    const witness_object& create_witness(const account_object& owner,
-      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"));
+      const fc::ecc::private_key& signing_private_key = generate_private_key("null_key"), asset pledge = asset());
    //   const worker_object& create_worker(account_id_type owner, const share_type daily_pay = 1000, const fc::microseconds& duration = fc::days(2));
    uint64_t fund(const account_object& account, const asset& amount = asset(500000));
    digest_type digest(const transaction& tx);
@@ -280,6 +282,8 @@ struct database_fixture {
 
    //content test add
    void add_csaf_for_account(account_uid_type account, share_type csaf);
+   
+   void add_buget_pool(share_type amount);
    //void collect_csaf(account_uid_type from, account_uid_type to, uint32_t amount, string asset_symbol = "YOYO");
    void committee_proposal_create(
       const account_uid_type committee_member_account,
@@ -328,6 +332,7 @@ struct database_fixture {
       account_uid_type poster,
       post_pid_type    post_pid,
       account_uid_type receiptor_account,
+      optional<account_uid_type> sign_platform,
       flat_set<fc::ecc::private_key> sign_keys);
 
    void create_license(account_uid_type platform,
@@ -411,7 +416,9 @@ struct database_fixture {
       );
 
    void collect_csaf(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount);
+   void collect_csaf_origin(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount);
    void collect_csaf_from_committee(account_uid_type to_account, int64_t amount);
+   void csaf_lease(flat_set<fc::ecc::private_key> sign_keys, account_uid_type from_account, account_uid_type to_account, int64_t amount, time_point_sec expiration);
 
    void actor(uint32_t start, uint32_t limit, flat_map<account_uid_type, fc::ecc::private_key>& map)
    {
@@ -463,9 +470,82 @@ struct database_fixture {
 
    void cast_custom_vote(flat_set<fc::ecc::private_key> sign_keys,
       account_uid_type      voter,
-      account_uid_type      custom_vote_creater,
+      account_uid_type      custom_vote_creator,
       custom_vote_vid_type  custom_vote_vid,
       set<uint8_t>          vote_result);
+
+   void balance_lock_update(flat_set<fc::ecc::private_key> sign_keys, account_uid_type account, share_type amount);
+   void update_mining_pledge(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type pledge_account,
+      account_uid_type witness,
+      uint64_t new_pledge);
+   void create_witness(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type owner_account,
+      string url,
+      share_type pledge,
+      graphene::chain::public_key_type signing_public_key,
+      graphene::chain::pledge_mining::ext ext);
+
+   void update_witness(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type account,
+      optional<public_key_type> new_signing_key,
+      optional<asset> new_pledge,
+      optional<string> new_url
+      );
+
+   void create_committee(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type owner_account,
+      string url,
+      share_type pledge);
+
+   void update_committee(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type owner_account,
+      share_type pledge);
+
+   void create_asset(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type issuer,
+      string           symbol,
+      uint8_t          precisions,
+      asset_options    options,
+      share_type       initial_supply,
+      uint32_t         skip = 0
+      );
+
+   void update_asset(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type  issuer,
+      asset_aid_type    asset_to_update,
+      optional<uint8_t> new_precision,
+      asset_options     new_options
+      );
+
+   void create_limit_order(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type seller,
+      asset_aid_type   sell_asset_id,
+      share_type       sell_amount,
+      asset_aid_type   min_receive_asset_id,
+      share_type       min_receive_amount,
+      uint32_t         expiration,
+      bool             fill_or_kill
+      );
+
+   void cancel_limit_order(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type     seller,
+      limit_order_id_type  order_id
+      );
+
+   void collect_market_fee(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type     account,
+      asset_aid_type       asset_aid,
+      share_type           amount
+      );
+
+   void asset_claim_fees(flat_set<fc::ecc::private_key> sign_keys,
+      account_uid_type     issuer,
+      asset_aid_type       asset_aid,
+      share_type           amount_to_claim
+      );
+
+   fc::uint128_t compute_coin_seconds_earned(_account_statistics_object account, share_type effective_balance, time_point_sec now_rounded);
 
    std::tuple<vector<std::tuple<account_uid_type, share_type, bool>>, share_type>
       get_effective_csaf(const vector<score_id_type>& scores, share_type amount);

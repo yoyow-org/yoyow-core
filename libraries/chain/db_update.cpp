@@ -49,25 +49,28 @@ void database::update_global_dynamic_data( const signed_block& b )
    uint32_t missed_blocks = get_slot_at_time( b.timestamp );
    assert( missed_blocks != 0 );
    missed_blocks--;
-   for( uint32_t i = 0; i < missed_blocks; ++i ) {
-      const auto& witness_missed = get_witness_by_uid( get_scheduled_witness( i+1 ) );
-      if(  witness_missed.account != b.witness ) {
-         /*
-         const auto& witness_account = witness_missed.account(*this);
-         if( (fc::time_point::now() - b.timestamp) < fc::seconds(30) )
-            wlog( "Witness ${name} missed block ${n} around ${t}", ("name",witness_account.name)("n",b.block_num())("t",b.timestamp) );
-            */
+   
+   //skip miss block when uint test
+   if(!(get_node_properties().skip_flags&skip_uint_test))
+      for( uint32_t i = 0; i < missed_blocks; ++i ) {
+         const auto& witness_missed = get_witness_by_uid( get_scheduled_witness( i+1 ) );
+         if(  witness_missed.account != b.witness ) {
+            /*
+            const auto& witness_account = witness_missed.account(*this);
+            if( (fc::time_point::now() - b.timestamp) < fc::seconds(30) )
+               wlog( "Witness ${name} missed block ${n} around ${t}", ("name",witness_account.name)("n",b.block_num())("t",b.timestamp) );
+               */
 
-         modify( witness_missed, [&]( witness_object& w ) {
-           w.total_missed++;
-           if( w.last_confirmed_block_num + gpo.parameters.max_witness_inactive_blocks < b.block_num() )
-              w.signing_key = public_key_type();
-         });
-         modify( get_account_statistics_by_uid( witness_missed.account ), [&]( account_statistics_object& s ) {
-           s.witness_total_missed++;
-         });
-      } 
-   }
+            modify( witness_missed, [&]( witness_object& w ) {
+              w.total_missed++;
+              if( w.last_confirmed_block_num + gpo.parameters.max_witness_inactive_blocks < b.block_num() )
+                 w.signing_key = public_key_type();
+            });
+            modify(get_account_statistics_by_uid(witness_missed.account), [&](_account_statistics_object& s) {
+              s.witness_total_missed++;
+            });
+         }
+      }
 
    // dynamic global properties updating
    modify( _dgp, [&]( dynamic_global_property_object& dgp ){
@@ -153,7 +156,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    }
 
    if( witness_pay > 0 )
-      deposit_witness_pay( signing_witness, witness_pay );
+      deposit_witness_pay( signing_witness, witness_pay, wit_type );
 
    modify( signing_witness, [&]( witness_object& _wit )
    {
@@ -162,7 +165,7 @@ void database::update_signing_witness(const witness_object& signing_witness, con
       _wit.last_confirmed_block_num = new_block.block_num();
    } );
 
-   modify( get_account_statistics_by_uid( signing_witness.account ), [&]( account_statistics_object& _stat )
+   modify(get_account_statistics_by_uid(signing_witness.account), [&](_account_statistics_object& _stat)
    {
       _stat.witness_last_aslot = new_block_aslot;
       _stat.witness_total_produced += 1;
@@ -183,15 +186,20 @@ share_type database::get_witness_pay_by_pledge(const global_property_object& gpo
    const uint64_t witness_pay_lower_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(10000000);
    const uint64_t witness_pay_upper_point      = GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(320000000);
    const uint64_t witness_pay_lower_point_rate = GRAPHENE_1_PERCENT * 25;
-
+   share_type total_witness_pledges = dpo.total_witness_pledge;
    bigint witness_pay_per_year = 0;
-   if (dpo.total_witness_pledge < witness_pay_lower_point) {
-      witness_pay_per_year = (bigint)witness_pay_lower_point_rate * dpo.total_witness_pledge.value / GRAPHENE_100_PERCENT;
+   if (total_witness_pledges < witness_pay_lower_point) {
+      witness_pay_per_year = (bigint)witness_pay_lower_point_rate * total_witness_pledges.value / GRAPHENE_100_PERCENT;
    }
-   else if (dpo.total_witness_pledge < witness_pay_upper_point) {
-      bigint pledge = dpo.total_witness_pledge.value;
+   else if (total_witness_pledges < witness_pay_upper_point) {
+      bigint pledge = total_witness_pledges.value;
       bigint A = GRAPHENE_BLOCKCHAIN_PRECISION * 10000000;
 
+      /*
+      * when total witness pledge between 10 million and 320 million, witness_pay_per_year is calculated as follows:
+      * rate = (-0.001052*pledge*pledge*pledge + 0.06937*pledge*pledge - 1.656*pledge + 21.12)/100, pledge unit is 10 million;
+      * witness_pay_per_year = pledge * rate,
+      */
       bigint rate = pledge * pledge * witness_pay_second_modulus * A
          - pledge * pledge * pledge * witness_pay_first_modulus
          - pledge * witness_pay_third_modulus * A * A
@@ -322,9 +330,9 @@ void database::clear_unnecessary_objects()
 
       while (custom_vote_itr != custom_vote_end) {
          const auto& cast_vote_idx = get_index_type<cast_custom_vote_index>().indices().get<by_custom_vote_vid>();
-         auto cast_vote_itr = cast_vote_idx.lower_bound(std::make_tuple(custom_vote_itr->custom_vote_creater, custom_vote_itr->vote_vid));
+         auto cast_vote_itr = cast_vote_idx.lower_bound(std::make_tuple(custom_vote_itr->custom_vote_creator, custom_vote_itr->vote_vid));
 
-         while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->custom_vote_creater == custom_vote_itr->custom_vote_creater &&
+         while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->custom_vote_creator == custom_vote_itr->custom_vote_creator &&
             cast_vote_itr->custom_vote_vid == custom_vote_itr->vote_vid) {
             auto del = cast_vote_itr;
             ++cast_vote_itr;
@@ -348,9 +356,9 @@ void database::update_reduce_witness_csaf()
     const auto& witness_idx = get_index_type<witness_index>().indices();
     for (auto itr = witness_idx.begin(); itr != witness_idx.end(); ++itr)
     {
-        const account_statistics_object& statistics_obj = get_account_statistics_by_uid(itr->account);
-        modify(statistics_obj, [&](account_statistics_object& s) {
-            s.update_coin_seconds_earned(csaf_window, head_block_time(), false);
+        const _account_statistics_object& statistics_obj = get_account_statistics_by_uid(itr->account);
+        modify(statistics_obj, [&](_account_statistics_object& s) {
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_NONE);
         });
     }
 }
@@ -367,11 +375,48 @@ void database::update_account_permission()
    }
 }
 
+void database::update_account_reg_info()
+{
+   const auto& account_idx = get_index_type<account_index>().indices();
+   for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
+   {
+      modify(*itr, [&](account_object& a) {
+         if (a.reg_info.registrar == GRAPHENE_NULL_ACCOUNT_UID)
+            a.reg_info.registrar = account_uid_type(224373708);
+         if (a.reg_info.referrer == GRAPHENE_NULL_ACCOUNT_UID)
+            a.reg_info.referrer = account_uid_type(23080);
+         a.reg_info.registrar_percent = GRAPHENE_100_PERCENT / 2;
+         a.reg_info.referrer_percent = GRAPHENE_100_PERCENT / 2;
+      });
+   }
+}
+
+void database::update_core_asset_flags()
+{
+   auto const & core_asset = get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
+   modify(core_asset, [&](asset_object& ast) {
+      ast.options.flags |= charge_market_fee;
+   });
+}
+
+void database::update_account_feepoint()
+{
+   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+   const auto& account_idx = get_index_type<account_statistics_index>().indices();
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   for (auto itr = account_idx.begin(); itr != account_idx.end(); ++itr)
+   {
+      modify(*itr, [&](_account_statistics_object& s) {
+         s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_04);
+      });
+   }
+}
+
 std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
 database::get_effective_csaf(const active_post_object& active_post)
 {
    const global_property_object& gpo = get_global_properties();
-   const auto& params = gpo.parameters.get_award_params();
+   const auto& params = gpo.parameters.get_extension_params();
 
    uint128_t amount = (uint128_t)active_post.total_csaf.value;
 
@@ -449,7 +494,7 @@ database::get_effective_csaf(const active_post_object& active_post)
 
 void database::clear_expired_scores()
 {
-   const auto& global_params = get_global_properties().parameters.get_award_params();
+   const auto& global_params = get_global_properties().parameters.get_extension_params();
 	const auto& score_expiration_index = get_index_type<score_index>().indices().get<by_create_time>();
 
 	while (!score_expiration_index.empty() && score_expiration_index.begin()->create_time <= head_block_time()-global_params.approval_expiration)
@@ -457,6 +502,17 @@ void database::clear_expired_scores()
 		const score_object& score = *score_expiration_index.begin();
 		remove(score);
 	}
+}
+
+void database::clear_expired_limit_orders()
+{
+   const auto& limit_order_expiration_index = get_index_type<limit_order_index>().indices().get<by_expiration>();
+
+   while (!limit_order_expiration_index.empty() && limit_order_expiration_index.begin()->expiration <= head_block_time())
+   {
+      const limit_order_object& limit_order = *limit_order_expiration_index.begin();
+      cancel_limit_order(limit_order);
+   }
 }
 
 void database::update_maintenance_flag( bool new_maintenance_flag )
@@ -480,12 +536,14 @@ void database::clear_expired_csaf_leases()
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    while( itr != idx.end() && itr->expiration <= head_time )
    {
-      modify( get_account_statistics_by_uid( itr->from ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
+      modify(get_account_statistics_by_uid(itr->from), [&](_account_statistics_object& s) {
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+            s.update_coin_seconds_earned(csaf_window, head_time, *this, dpo.enabled_hardfork_version);
          s.core_leased_out -= itr->amount;
       });
-      modify( get_account_statistics_by_uid( itr->to ), [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_time, dpo.enabled_hardfork_04);
+      modify(get_account_statistics_by_uid(itr->to), [&](_account_statistics_object& s) {
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+            s.update_coin_seconds_earned(csaf_window, head_time, *this, dpo.enabled_hardfork_version);
          s.core_leased_in -= itr->amount;
       });
       remove( *itr );
@@ -505,39 +563,14 @@ void database::update_average_witness_pledges()
    }
 }
 
-void database::release_witness_pledges()
+void database::update_average_platform_pledges()
 {
    const auto head_num = head_block_num();
-   const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
-   auto block_time = head_block_time();
-   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_witness_pledge_release>();
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   const auto& idx = get_index_type<platform_index>().indices().get<by_pledge_next_update>();
    auto itr = idx.begin();
-   while( itr != idx.end() && itr->witness_pledge_release_block_number <= head_num )
+   while (itr != idx.end() && itr->average_pledge_next_update_block <= head_num && itr->is_valid)
    {
-      modify( *itr, [&](account_statistics_object& s) {
-          if (dpo.enabled_hardfork_04)
-              s.update_coin_seconds_earned(csaf_window, head_block_time(), true);
-          s.total_witness_pledge -= s.releasing_witness_pledge;
-          s.releasing_witness_pledge = 0;
-          s.witness_pledge_release_block_number = -1;
-      });
-      itr = idx.begin();
-   }
-}
-
-void database::release_committee_member_pledges()
-{
-   const auto head_num = head_block_num();
-   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_committee_member_pledge_release>();
-   auto itr = idx.begin();
-   while( itr != idx.end() && itr->committee_member_pledge_release_block_number <= head_num )
-   {
-      modify( *itr, [&](account_statistics_object& s) {
-         s.total_committee_member_pledge -= s.releasing_committee_member_pledge;
-         s.releasing_committee_member_pledge = 0;
-         s.committee_member_pledge_release_block_number = -1;
-      });
+      update_platform_avg_pledge(*itr);
       itr = idx.begin();
    }
 }
@@ -574,6 +607,9 @@ void database::clear_resigned_witness_votes()
          }
       }
 
+      update_pledge_mining_bonus_by_witness(*wit_itr);
+      //before remove witness, update pledge mining to zero  
+      resign_pledge_mining(*wit_itr);
       remove( *wit_itr );
 
       wit_itr = wit_idx.begin();
@@ -781,7 +817,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
       flat_map<account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
       const committee_update_fee_schedule_item_type* fee_item = nullptr;
       const committee_update_global_parameter_item_type* param_item = nullptr;
-			const committee_update_global_content_parameter_item_type* content_item = nullptr;
+      const committee_update_global_extension_parameter_item_type* extension_parm_item = nullptr;
       for( const auto& item : proposal.items )
       {
          // account update item
@@ -879,14 +915,74 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
             fee_item = &item.get< committee_update_fee_schedule_item_type >();
          }
          // parameter update item
-         else if( item.which() == committee_proposal_item_type::tag< committee_update_global_parameter_item_type >::value )
+         else if (item.which() == committee_proposal_item_type::tag< committee_update_global_parameter_item_type >::value)
          {
             param_item = &item.get< committee_update_global_parameter_item_type >();
          }
-				 else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
-				 {
-					 content_item = &item.get< committee_update_global_content_parameter_item_type >();
-				 }
+         else if (item.which() == committee_proposal_item_type::tag< committee_update_global_extension_parameter_item_type >::value)
+         {
+            extension_parm_item = &item.get< committee_update_global_extension_parameter_item_type >();
+         }
+         else if (item.which() == committee_proposal_item_type::tag< committee_withdraw_platform_pledge_item_type >::value)
+         {
+            const auto& platform_punish_item = item.get< committee_withdraw_platform_pledge_item_type >();
+            const auto& account_stats = get_account_statistics_by_uid(platform_punish_item.platform_account);
+            if (account_stats.pledge_balance_ids.count(pledge_balance_type::Platform))// platform pledge object is nonexistent, invalid proposal
+            {
+               const auto& pledge_balance_obj = get(account_stats.pledge_balance_ids.at(pledge_balance_type::Platform));
+               auto total_unrelease_pledge = pledge_balance_obj.total_unrelease_pledge();
+
+               share_type actual_withdraw_amount = std::min(total_unrelease_pledge, platform_punish_item.withdraw_amount);
+
+               if (total_unrelease_pledge >= actual_withdraw_amount) // platform pledge already release, invalid proposal
+               {
+                  // withdraw platform account pledge         
+                  modify(pledge_balance_obj, [&](pledge_balance_object& _pbo) {
+                     share_type from_releasing = std::min(pledge_balance_obj.total_releasing_pledge, actual_withdraw_amount);
+                     share_type from_pledge = actual_withdraw_amount - from_releasing;
+                     if (from_releasing > 0)
+                        _pbo.reduce_releasing(from_releasing);
+                     if (from_pledge > 0)
+                        _pbo.pledge -= from_pledge;
+
+                     const auto& global_params = get_global_properties().parameters;
+                     if (_pbo.pledge < global_params.platform_min_pledge)
+                     {
+                        if (_pbo.pledge > 0)
+                        {
+                           auto release_num = head_block_num() + global_params.platform_pledge_release_delay;
+                           _pbo.update_pledge(asset(0), release_num, *this);
+                        }
+                        // platform pledge is below platform min pledge, need delete platform object
+                        const platform_object* maybe_found = find_platform_by_owner(platform_punish_item.platform_account);
+                        if (maybe_found != nullptr)
+                           modify(*maybe_found, [&](platform_object& pfo) {
+                              pfo.is_valid = false;
+                              pfo.average_pledge_next_update_block = -1;
+                        });
+
+                        const auto& account_obj = get_account_by_uid(platform_punish_item.platform_account);
+                        modify(account_obj, [&](account_object& acc){
+                           acc.is_full_member = false;
+                        });
+                     }
+                     else if (from_pledge > 0) {
+                        // update platform data
+                        const platform_object& pla_obj = get_platform_by_owner(platform_punish_item.platform_account);
+                        update_platform_avg_pledge(pla_obj);
+                        modify(pla_obj, [&](platform_object& pfo) {
+                           pfo.pledge = _pbo.pledge.value;
+                           pfo.last_update_time = head_block_time();
+                           pfo.pledge_last_update = head_block_time();
+                        });
+                        
+                     }
+                  });
+                  // withdraw amount awarded to receiver
+                  adjust_balance(platform_punish_item.receiver, asset(actual_withdraw_amount));
+               }
+            }
+         }
       }
 
       // apply changes : new takeover registrars
@@ -930,10 +1026,10 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
          }
          if( pv.can_vote.valid() )
          {
-            const account_statistics_object& st = get_account_statistics_by_uid( account_item.first );
+            const _account_statistics_object& st = get_account_statistics_by_uid(account_item.first);
             if( *pv.can_vote == false && st.is_voter == true )
                invalidate_voter( *find_voter( st.owner, st.last_voter_sequence )  );
-            modify( st, [&](account_statistics_object& a){
+            modify(st, [&](_account_statistics_object& a){
                a.can_vote = *pv.can_vote;
             });
          }
@@ -956,148 +1052,166 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
          });
       }
       // apply changes : global params update
-      if( param_item != nullptr )
+      if (param_item != nullptr)
       {
          const auto& pv = param_item->value;
-         modify( get_global_properties(), [&]( global_property_object& _gpo )
+         modify(get_global_properties(), [&](global_property_object& _gpo)
          {
             auto& o = _gpo.parameters;
-            if( pv.maximum_transaction_size.valid() )
+            if (pv.maximum_transaction_size.valid())
                o.maximum_transaction_size = *pv.maximum_transaction_size;
-            if( pv.maximum_block_size.valid() )
+            if (pv.maximum_block_size.valid())
                o.maximum_block_size = *pv.maximum_block_size;
-            if( pv.maximum_time_until_expiration.valid() )
+            if (pv.maximum_time_until_expiration.valid())
                o.maximum_time_until_expiration = *pv.maximum_time_until_expiration;
-            if( pv.maximum_authority_membership.valid() )
+            if (pv.maximum_authority_membership.valid())
                o.maximum_authority_membership = *pv.maximum_authority_membership;
-            if( pv.max_authority_depth.valid() )
+            if (pv.max_authority_depth.valid())
                o.max_authority_depth = *pv.max_authority_depth;
-            if( pv.csaf_rate.valid() )
+            if (pv.csaf_rate.valid())
                o.csaf_rate = *pv.csaf_rate;
-            if( pv.max_csaf_per_account.valid() )
+            if (pv.max_csaf_per_account.valid())
                o.max_csaf_per_account = *pv.max_csaf_per_account;
-            if( pv.csaf_accumulate_window.valid() )
+            if (pv.csaf_accumulate_window.valid())
                o.csaf_accumulate_window = *pv.csaf_accumulate_window;
-            if( pv.min_witness_pledge.valid() )
+            if (pv.min_witness_pledge.valid())
                o.min_witness_pledge = *pv.min_witness_pledge;
-            if( pv.max_witness_pledge_seconds.valid() )
+            if (pv.max_witness_pledge_seconds.valid())
                o.max_witness_pledge_seconds = *pv.max_witness_pledge_seconds;
-            if( pv.witness_avg_pledge_update_interval.valid() )
+            if (pv.witness_avg_pledge_update_interval.valid())
                o.witness_avg_pledge_update_interval = *pv.witness_avg_pledge_update_interval;
-            if( pv.witness_pledge_release_delay.valid() )
+            if (pv.witness_pledge_release_delay.valid())
                o.witness_pledge_release_delay = *pv.witness_pledge_release_delay;
-            if( pv.min_governance_voting_balance.valid() )
+            if (pv.min_governance_voting_balance.valid())
                o.min_governance_voting_balance = *pv.min_governance_voting_balance;
-            if( pv.governance_voting_expiration_blocks.valid() )
+            if (pv.governance_voting_expiration_blocks.valid())
                o.governance_voting_expiration_blocks = *pv.governance_voting_expiration_blocks;
-            if( pv.governance_votes_update_interval.valid() )
+            if (pv.governance_votes_update_interval.valid())
                o.governance_votes_update_interval = *pv.governance_votes_update_interval;
-            if( pv.max_governance_votes_seconds.valid() )
+            if (pv.max_governance_votes_seconds.valid())
                o.max_governance_votes_seconds = *pv.max_governance_votes_seconds;
-            if( pv.max_witnesses_voted_per_account.valid() )
+            if (pv.max_witnesses_voted_per_account.valid())
                o.max_witnesses_voted_per_account = *pv.max_witnesses_voted_per_account;
-            if( pv.max_witness_inactive_blocks.valid() )
+            if (pv.max_witness_inactive_blocks.valid())
                o.max_witness_inactive_blocks = *pv.max_witness_inactive_blocks;
-            if( pv.by_vote_top_witness_pay_per_block.valid() )
+            if (pv.by_vote_top_witness_pay_per_block.valid())
                o.by_vote_top_witness_pay_per_block = *pv.by_vote_top_witness_pay_per_block;
-            if( pv.by_vote_rest_witness_pay_per_block.valid() )
+            if (pv.by_vote_rest_witness_pay_per_block.valid())
                o.by_vote_rest_witness_pay_per_block = *pv.by_vote_rest_witness_pay_per_block;
-            if( pv.by_pledge_witness_pay_per_block.valid() )
+            if (pv.by_pledge_witness_pay_per_block.valid())
                o.by_pledge_witness_pay_per_block = *pv.by_pledge_witness_pay_per_block;
-            if( pv.by_vote_top_witness_count.valid() )
+            if (pv.by_vote_top_witness_count.valid())
                o.by_vote_top_witness_count = *pv.by_vote_top_witness_count;
-            if( pv.by_vote_rest_witness_count.valid() )
+            if (pv.by_vote_rest_witness_count.valid())
                o.by_vote_rest_witness_count = *pv.by_vote_rest_witness_count;
-            if( pv.by_pledge_witness_count.valid() )
+            if (pv.by_pledge_witness_count.valid())
                o.by_pledge_witness_count = *pv.by_pledge_witness_count;
-            if( pv.budget_adjust_interval.valid() )
+            if (pv.budget_adjust_interval.valid())
                o.budget_adjust_interval = *pv.budget_adjust_interval;
-            if( pv.budget_adjust_target.valid() )
+            if (pv.budget_adjust_target.valid())
                o.budget_adjust_target = *pv.budget_adjust_target;
-            if( pv.min_committee_member_pledge.valid() )
+            if (pv.min_committee_member_pledge.valid())
                o.min_committee_member_pledge = *pv.min_committee_member_pledge;
-            if( pv.committee_member_pledge_release_delay.valid() )
+            if (pv.committee_member_pledge_release_delay.valid())
                o.committee_member_pledge_release_delay = *pv.committee_member_pledge_release_delay;
-            if( pv.witness_report_prosecution_period.valid() )
+            if (pv.witness_report_prosecution_period.valid())
                o.witness_report_prosecution_period = *pv.witness_report_prosecution_period;
-            if( pv.witness_report_allow_pre_last_block.valid() )
+            if (pv.witness_report_allow_pre_last_block.valid())
                o.witness_report_allow_pre_last_block = *pv.witness_report_allow_pre_last_block;
-            if( pv.witness_report_pledge_deduction_amount.valid() )
+            if (pv.witness_report_pledge_deduction_amount.valid())
                o.witness_report_pledge_deduction_amount = *pv.witness_report_pledge_deduction_amount;
-            
-            if( pv.platform_min_pledge.valid() )
+
+            if (pv.platform_min_pledge.valid())
                o.platform_min_pledge = *pv.platform_min_pledge;
-            if( pv.platform_pledge_release_delay.valid() )
+            if (pv.platform_pledge_release_delay.valid())
                o.platform_pledge_release_delay = *pv.platform_pledge_release_delay;
-            if( pv.platform_max_vote_per_account.valid() )
+            if (pv.platform_max_vote_per_account.valid())
                o.platform_max_vote_per_account = *pv.platform_max_vote_per_account;
-            if( pv.platform_max_pledge_seconds.valid() )
+            if (pv.platform_max_pledge_seconds.valid())
                o.platform_max_pledge_seconds = *pv.platform_max_pledge_seconds;
-            if( pv.platform_avg_pledge_update_interval.valid() )
+            if (pv.platform_avg_pledge_update_interval.valid())
                o.platform_avg_pledge_update_interval = *pv.platform_avg_pledge_update_interval;
          });
       }
-			if (content_item != nullptr)
-			{
-				const auto& pv = content_item->value;
-				modify(get_global_properties(), [&](global_property_object& _gpo)
-				{
-           auto& v = _gpo.parameters.content_parameters;
-           if (pv.content_award_interval.valid())
-              v.content_award_interval = *pv.content_award_interval;
-           if (pv.platform_award_interval.valid())
-              v.platform_award_interval = *pv.platform_award_interval;
-           if (pv.max_csaf_per_approval.valid())
-              v.max_csaf_per_approval = *pv.max_csaf_per_approval;
-           if (pv.approval_expiration.valid())
-              v.approval_expiration = *pv.approval_expiration;
-           if (pv.min_effective_csaf.valid())
-              v.min_effective_csaf = *pv.min_effective_csaf;
-           if (pv.total_content_award_amount.valid())
-              v.total_content_award_amount = *pv.total_content_award_amount;
-           if (pv.total_platform_content_award_amount.valid())
-              v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
-           if (pv.total_platform_voted_award_amount.valid())
-              v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
-           if (pv.platform_award_min_votes.valid())
-              v.platform_award_min_votes = *pv.platform_award_min_votes;
-           if (pv.platform_award_requested_rank.valid())
-              v.platform_award_requested_rank = *pv.platform_award_requested_rank;
+      if (extension_parm_item != nullptr)
+      {
+         const auto& pv = extension_parm_item->value;
+         modify(get_global_properties(), [&](global_property_object& _gpo)
+         {
+            auto& v = _gpo.parameters.extension_parameters;
+            if (pv.content_award_interval.valid())
+               v.content_award_interval = *pv.content_award_interval;
+            if (pv.platform_award_interval.valid())
+               v.platform_award_interval = *pv.platform_award_interval;
+            if (pv.max_csaf_per_approval.valid())
+               v.max_csaf_per_approval = *pv.max_csaf_per_approval;
+            if (pv.approval_expiration.valid())
+               v.approval_expiration = *pv.approval_expiration;
+            if (pv.min_effective_csaf.valid())
+               v.min_effective_csaf = *pv.min_effective_csaf;
+            if (pv.total_content_award_amount.valid())
+               v.total_content_award_amount = *pv.total_content_award_amount;
+            if (pv.total_platform_content_award_amount.valid())
+               v.total_platform_content_award_amount = *pv.total_platform_content_award_amount;
+            if (pv.total_platform_voted_award_amount.valid())
+               v.total_platform_voted_award_amount = *pv.total_platform_voted_award_amount;
+            if (pv.platform_award_min_votes.valid())
+               v.platform_award_min_votes = *pv.platform_award_min_votes;
+            if (pv.platform_award_requested_rank.valid())
+               v.platform_award_requested_rank = *pv.platform_award_requested_rank;
 
-           if (pv.platform_award_basic_rate.valid())
-              v.platform_award_basic_rate = *pv.platform_award_basic_rate;
-           if (pv.casf_modulus.valid())
-              v.casf_modulus = *pv.casf_modulus;
-           if (pv.post_award_expiration.valid())
-              v.post_award_expiration = *pv.post_award_expiration;
-           if (pv.approval_casf_min_weight.valid())
-              v.approval_casf_min_weight = *pv.approval_casf_min_weight;
-           if (pv.approval_casf_first_rate.valid())
-              v.approval_casf_first_rate = *pv.approval_casf_first_rate;
-           if (pv.approval_casf_second_rate.valid())
-              v.approval_casf_second_rate = *pv.approval_casf_second_rate;
-           if (pv.receiptor_award_modulus.valid())
-              v.receiptor_award_modulus = *pv.receiptor_award_modulus;
-           if (pv.disapprove_award_modulus.valid())
-              v.disapprove_award_modulus = *pv.disapprove_award_modulus;
+            if (pv.platform_award_basic_rate.valid())
+               v.platform_award_basic_rate = *pv.platform_award_basic_rate;
+            if (pv.casf_modulus.valid())
+               v.casf_modulus = *pv.casf_modulus;
+            if (pv.post_award_expiration.valid())
+               v.post_award_expiration = *pv.post_award_expiration;
+            if (pv.approval_casf_min_weight.valid())
+               v.approval_casf_min_weight = *pv.approval_casf_min_weight;
+            if (pv.approval_casf_first_rate.valid())
+               v.approval_casf_first_rate = *pv.approval_casf_first_rate;
+            if (pv.approval_casf_second_rate.valid())
+               v.approval_casf_second_rate = *pv.approval_casf_second_rate;
+            if (pv.receiptor_award_modulus.valid())
+               v.receiptor_award_modulus = *pv.receiptor_award_modulus;
+            if (pv.disapprove_award_modulus.valid())
+               v.disapprove_award_modulus = *pv.disapprove_award_modulus;
 
-           if (pv.advertising_confirmed_fee_rate.valid())
-              v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
-           if (pv.advertising_confirmed_min_fee.valid())
-              v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
-           if (pv.custom_vote_effective_time.valid())
-              v.custom_vote_effective_time = *pv.custom_vote_effective_time;
+            if (pv.advertising_confirmed_fee_rate.valid())
+               v.advertising_confirmed_fee_rate = *pv.advertising_confirmed_fee_rate;
+            if (pv.advertising_confirmed_min_fee.valid())
+               v.advertising_confirmed_min_fee = *pv.advertising_confirmed_min_fee;
+            if (pv.custom_vote_effective_time.valid())
+               v.custom_vote_effective_time = *pv.custom_vote_effective_time;
 
-           if (pv.min_witness_block_produce_pledge.valid())
-              v.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
+            if (pv.min_witness_block_produce_pledge.valid())
+               v.min_witness_block_produce_pledge = *pv.min_witness_block_produce_pledge;
 
-		   if (pv.content_award_skip_slots.valid())
-              v.content_award_skip_slots = *pv.content_award_skip_slots;
-				});
-			}
+            if (pv.content_award_skip_slots.valid())
+               v.content_award_skip_slots = *pv.content_award_skip_slots;
+            if (pv.unlocked_balance_release_delay.valid())
+               v.unlocked_balance_release_delay = *pv.unlocked_balance_release_delay;
+            if (pv.min_mining_pledge.valid())
+               v.min_mining_pledge = *pv.min_mining_pledge;
+            if (pv.mining_pledge_release_delay.valid())
+               v.mining_pledge_release_delay = *pv.mining_pledge_release_delay;
+            if (pv.max_pledge_mining_bonus_rate.valid())
+               v.max_pledge_mining_bonus_rate = *pv.max_pledge_mining_bonus_rate;
+            if (pv.registrar_referrer_rate_from_score.valid())
+               v.registrar_referrer_rate_from_score = *pv.registrar_referrer_rate_from_score;
+            if (pv.max_pledge_releasing_size.valid())
+               v.max_pledge_releasing_size = *pv.max_pledge_releasing_size;
+            if (pv.scorer_earnings_rate.valid())
+               v.scorer_earnings_rate = *pv.scorer_earnings_rate;
+            if (pv.platform_content_award_min_votes.valid())
+               v.platform_content_award_min_votes = *pv.platform_content_award_min_votes;
+            if (pv.csaf_limit_lock_balance_modulus.valid())
+               v.csaf_limit_lock_balance_modulus = *pv.csaf_limit_lock_balance_modulus;
+         });
+      }
 
       // remove the executed proposal
-      remove( proposal );
+      remove(proposal);
 
    } catch ( const fc::exception& e ) {
       if( silent_fail )
@@ -1143,6 +1257,11 @@ void database::check_invariants()
    FC_ASSERT( wso.next_schedule_block_num > head_num );
    //if( head_block_num() >= 1285 ) { idump( (dpo) ); }
 
+   map<asset_aid_type, share_type> total_balances;
+   const auto& balance_index = get_index_type<account_balance_index>().indices();
+   for (const account_balance_object& b : balance_index)
+      total_balances[b.asset_type] += b.balance;
+
    share_type total_core_balance = 0;
    share_type total_core_non_bal = dpo.budget_pool;
    share_type total_core_leased_in = 0;
@@ -1164,32 +1283,56 @@ void database::check_invariants()
       FC_ASSERT( s.csaf >= 0 );
       FC_ASSERT( s.core_leased_in >= 0 );
       FC_ASSERT( s.core_leased_out >= 0 );
-      FC_ASSERT( s.total_witness_pledge >= s.releasing_witness_pledge );
-      FC_ASSERT( s.releasing_witness_pledge >= 0 );
-      FC_ASSERT( s.total_committee_member_pledge >= s.releasing_committee_member_pledge );
-      FC_ASSERT( s.releasing_committee_member_pledge >= 0 );
-      FC_ASSERT( s.uncollected_witness_pay >= 0 );
-      FC_ASSERT( s.witness_pledge_release_block_number > head_num );
-      FC_ASSERT( s.committee_member_pledge_release_block_number > head_num );
-      FC_ASSERT( s.total_platform_pledge >= s.releasing_platform_pledge );
-      FC_ASSERT( s.releasing_platform_pledge >= 0 );
-      FC_ASSERT( s.platform_pledge_release_block_number > head_num );
+
+      for (const auto& id : s.pledge_balance_ids)
+      {
+         auto pledge_balance_obj = get(id.second);
+         for (auto iter_pledge : pledge_balance_obj.releasing_pledges){
+            FC_ASSERT(iter_pledge.first > head_num);
+         }
+      }
+
+      for (const auto & p : s.uncollected_market_fees)
+         total_balances[p.first] += p.second;
+
+      auto iter_fee = s.uncollected_market_fees.find(GRAPHENE_CORE_ASSET_AID);
+      share_type uncollect_market_fee = iter_fee != s.uncollected_market_fees.end() ? iter_fee->second : 0;
 
       total_core_balance += s.core_balance;
-      total_core_non_bal += ( s.prepaid + s.uncollected_witness_pay );
+      total_core_non_bal += (s.prepaid + s.uncollected_witness_pay + s.uncollected_pledge_bonus + s.uncollected_score_bonus + uncollect_market_fee);
       total_core_leased_in += s.core_leased_in;
       total_core_leased_out += s.core_leased_out;
-      total_core_witness_pledge += ( s.total_witness_pledge - s.releasing_witness_pledge );
-      total_core_committee_member_pledge += ( s.total_committee_member_pledge - s.releasing_committee_member_pledge );
-      total_core_platform_pledge += (s.total_platform_pledge - s.releasing_platform_pledge );
-      FC_ASSERT( s.core_balance >= s.core_leased_out + s.total_witness_pledge + s.total_committee_member_pledge + s.total_platform_pledge );
+      if (s.pledge_balance_ids.count(pledge_balance_type::Witness))
+         total_core_witness_pledge += get(s.pledge_balance_ids.at(pledge_balance_type::Witness)).pledge;
+      if (s.pledge_balance_ids.count(pledge_balance_type::Commitment))
+         total_core_committee_member_pledge += get(s.pledge_balance_ids.at(pledge_balance_type::Commitment)).pledge;
+      if (s.pledge_balance_ids.count(pledge_balance_type::Platform))
+         total_core_platform_pledge += get(s.pledge_balance_ids.at(pledge_balance_type::Platform)).pledge;
+      FC_ASSERT(s.core_balance >= s.core_leased_out + s.total_mining_pledge + s.get_all_pledge_balance(GRAPHENE_CORE_ASSET_AID, *this));
 
       if( s.is_voter )
       {
          ++total_voting_accounts;
-         total_voting_core_balance += s.core_balance;
+         total_voting_core_balance += s.get_votes_from_core_balance();
       }
    }
+
+   for (const limit_order_object& o : get_index_type<limit_order_index>().indices())
+   {
+      asset for_sale = o.amount_for_sale();
+      total_balances[for_sale.asset_id] += for_sale.amount;
+   }
+
+   for (const asset_object& asset_obj : get_index_type<asset_index>().indices())
+   {
+      total_balances[asset_obj.asset_id] += asset_obj.dynamic_data(*this).accumulated_fees.value;
+   }
+
+   for (const witness_object& witness_obj : get_index_type<witness_index>().indices())
+   {
+      total_core_non_bal += (witness_obj.need_distribute_bonus - witness_obj.already_distribute_bonus);
+   }
+
    FC_ASSERT( total_core_leased_in == total_core_leased_out );
 
    share_type total_advertising_released = 0;
@@ -1200,9 +1343,12 @@ void database::check_invariants()
        total_advertising_released += advertising_iter->released_balance;
        ++advertising_iter;
    }
+   total_balances[GRAPHENE_CORE_ASSET_AID] += total_advertising_released + total_core_non_bal;
 
-   share_type current_supply = get_core_asset().dynamic_data(*this).current_supply;
-   FC_ASSERT( total_core_balance + total_core_non_bal + total_advertising_released == current_supply);
+   for (const asset_object& asset_obj : get_index_type<asset_index>().indices())
+   {
+      FC_ASSERT(total_balances[asset_obj.asset_id].value == asset_obj.dynamic_data(*this).current_supply.value);
+   }
 
    share_type total_core_leased = 0;
    const auto& csaf_lease_idx = get_index_type<csaf_lease_index>().indices();
@@ -1243,7 +1389,7 @@ void database::check_invariants()
          FC_ASSERT( s.effective_votes_next_update_block > head_num );
          const auto& stats = get_account_statistics_by_uid( s.uid );
          FC_ASSERT( stats.last_voter_sequence == s.sequence );
-         FC_ASSERT( stats.core_balance == s.votes );
+         FC_ASSERT(stats.get_votes_from_core_balance() == s.votes);
          ++total_voters;
          total_voter_votes += s.votes;
          total_witnesses_voted += s.number_of_witnesses_voted;
@@ -1293,7 +1439,6 @@ void database::check_invariants()
          FC_ASSERT( s.by_vote_scheduled_time >= wso.current_by_vote_time );
          const auto& stats = get_account_statistics_by_uid( s.account );
          FC_ASSERT( stats.last_witness_sequence == s.sequence );
-         FC_ASSERT( stats.total_witness_pledge - stats.releasing_witness_pledge == s.pledge );
          total_witness_pledges += s.pledge;
          total_witness_received_votes += s.total_votes;
       }
@@ -1310,7 +1455,6 @@ void database::check_invariants()
       {
          const auto& stats = get_account_statistics_by_uid( s.account );
          FC_ASSERT( stats.last_committee_member_sequence == s.sequence );
-         FC_ASSERT( stats.total_committee_member_pledge - stats.releasing_committee_member_pledge == s.pledge );
          total_committee_member_pledges += s.pledge;
          total_committee_member_received_votes += s.total_votes;
       }
@@ -1328,7 +1472,6 @@ void database::check_invariants()
       {
          const auto& stats = get_account_statistics_by_uid( s.owner );
          FC_ASSERT( stats.last_platform_sequence == s.sequence );
-         FC_ASSERT( stats.total_platform_pledge - stats.releasing_platform_pledge == s.pledge );
          total_platform_pledges += s.pledge;
          total_platform_received_votes += s.total_votes;
       }
@@ -1378,22 +1521,6 @@ void database::check_invariants()
    FC_ASSERT( total_platform_voted == total_platform_vote_objects );
 }
 
-void database::release_platform_pledges()
-{
-   const auto head_num = head_block_num();
-   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_platform_pledge_release>();
-   auto itr = idx.begin();
-   while( itr != idx.end() && itr->platform_pledge_release_block_number <= head_num )
-   {
-      modify( *itr, [&](account_statistics_object& s) {
-         s.total_platform_pledge -= s.releasing_platform_pledge;
-         s.releasing_platform_pledge = 0;
-         s.platform_pledge_release_block_number = -1;
-      });
-      itr = idx.begin();
-   }
-}
-
 void database::adjust_platform_votes( const platform_object& platform, share_type delta )
 {
    if( delta == 0 || !platform.is_valid )
@@ -1402,6 +1529,66 @@ void database::adjust_platform_votes( const platform_object& platform, share_typ
    {
       pla.total_votes += delta.value;
    } );
+}
+
+void database::update_pledge_mining_bonus()
+{
+   const auto& wit_idx = get_index_type<witness_index>().indices().get<by_pledge_mining_bonus>();
+   auto wit_itr = wit_idx.lower_bound(head_block_num());
+   vector<std::reference_wrapper<const witness_object>> refs;
+   while (wit_itr != wit_idx.end()) {
+      update_pledge_mining_bonus_by_witness(*wit_itr);
+      refs.emplace_back(std::cref(*wit_itr));
+      ++wit_itr;
+   }
+
+   std::for_each(refs.begin(), refs.end(), [&](const witness_object& witness_obj) {
+      modify(witness_obj, [&](witness_object& wit) {
+         wit.unhandled_bonus = 0;
+         wit.need_distribute_bonus = 0;
+         wit.already_distribute_bonus = 0;
+         wit.last_update_bonus_block_num = head_block_num();
+         wit.bonus_per_pledge.clear();
+      });
+   });
+}
+
+void database::update_pledge_mining_bonus_by_witness(const witness_object& witness_obj)
+{
+   share_type send_bonus = 0;
+   const auto& pmg_idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto pmg_itr = pmg_idx.lower_bound(witness_obj.account);
+   while (pmg_itr != pmg_idx.end() && pmg_itr->witness == witness_obj.account)
+   {
+      share_type bonus_per_pledge = witness_obj.accumulate_bonus_per_pledge(pmg_itr->last_bonus_block_num + 1);
+      send_bonus += update_pledge_mining_bonus_by_account(*pmg_itr, bonus_per_pledge);
+      ++pmg_itr;
+   }
+   modify(get_account_statistics_by_uid(witness_obj.account), [&](_account_statistics_object& o)
+   {
+      o.uncollected_witness_pay += (witness_obj.need_distribute_bonus 
+         - witness_obj.already_distribute_bonus 
+         - send_bonus);
+   });
+}
+
+share_type database::update_pledge_mining_bonus_by_account(const pledge_mining_object& pledge_mining_obj, share_type bonus_per_pledge)
+{
+   if (this->get(pledge_mining_obj.pledge_id).pledge == 0)
+      return 0;
+
+   share_type total_bonus = ((uint128_t)bonus_per_pledge.value * get(pledge_mining_obj.pledge_id).pledge.value
+      / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+   if (total_bonus > 0) {
+      modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](_account_statistics_object& o) {
+         o.uncollected_pledge_bonus += total_bonus;
+      });
+   }
+   modify(pledge_mining_obj, [&](pledge_mining_object& o) {
+      o.last_bonus_block_num = head_block_num();
+   });
+    
+   return total_bonus;
 }
 
 void database::update_platform_avg_pledge( const account_uid_type uid )
@@ -1441,12 +1628,23 @@ void database::update_platform_avg_pledge( const platform_object& pla )
    {
       // need to schedule next update because average_pledge < pledge, and need to update average_pledge
       uint64_t delta_seconds = ( now - pla.average_pledge_last_update ).to_seconds();
-      uint64_t old_seconds = window - delta_seconds;
+      uint64_t new_average_coins;
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+      {
+         uint64_t old_seconds = window - delta_seconds;
 
-      fc::uint128_t old_coin_seconds = fc::uint128_t( pla.average_pledge ) * old_seconds;
-      fc::uint128_t new_coin_seconds = fc::uint128_t( pla.pledge ) * delta_seconds;
+         fc::uint128_t old_coin_seconds = fc::uint128_t( pla.average_pledge ) * old_seconds;
+         fc::uint128_t new_coin_seconds = fc::uint128_t( pla.pledge ) * delta_seconds;
 
-      uint64_t new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+         new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+      }
+      else
+      {
+         uint64_t total_seconds = window - ( pla.average_pledge_last_update - pla.pledge_last_update ).to_seconds();
+
+         new_average_coins = pla.average_pledge + ( fc::uint128_t( pla.pledge - pla.average_pledge ) * delta_seconds / total_seconds ).to_uint64();
+      }
 
       modify( pla, [&]( platform_object& p )
       {
@@ -1467,6 +1665,22 @@ void database::update_platform_avg_pledge( const platform_object& pla )
    if( old_avg_pledge != pla.average_pledge )
    {
       // TODO: Adjust distribution logic
+   }
+}
+
+void database::resign_pledge_mining(const witness_object& wit)
+{
+   const auto& params = get_global_properties().parameters.get_extension_params();
+   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto itr = idx.lower_bound(wit.account);
+   while (itr != idx.end() && itr->witness == wit.account)
+   {
+      const auto& obj=get(itr->pledge_id);
+      modify(obj, [&](pledge_balance_object& s) {
+         s.update_pledge(asset(0), head_block_num() + params.mining_pledge_release_delay, *this);
+      });
+
+      ++itr;
    }
 }
 
@@ -1515,7 +1729,7 @@ void database::process_content_platform_awards()
    if (block_time >= dpo.next_content_award_time)
    {
       const global_property_object& gpo = get_global_properties();
-      const auto& params = gpo.parameters.get_award_params();
+      const auto& params = gpo.parameters.get_extension_params();
 
       if ((params.total_content_award_amount == 0 && params.total_platform_content_award_amount == 0) || params.content_award_interval == 0)
       {
@@ -1548,9 +1762,24 @@ void database::process_content_platform_awards()
 
       share_type actual_awards = 0;
 
-      bool can_award = dpo.budget_pool >= (params.total_content_award_amount + params.total_platform_content_award_amount);
+      bool can_award = false;
+      if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+      {
+         fc::uint128_t award_two_periods = (fc::uint128_t)(params.total_content_award_amount + params.total_platform_content_award_amount).value*2*
+            (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
+         can_award = dpo.budget_pool >= award_two_periods.to_uint64();
+      } else {
+         can_award = dpo.budget_pool >= (params.total_content_award_amount + params.total_platform_content_award_amount);
+      }    
+
       if (can_award)
       {
+         //notify witness plugin skip block
+         modify(dpo, [&](dynamic_global_property_object& _dpo)
+         {
+            _dpo.content_award_skip_flag = true;
+         });
+
          share_type total_csaf_amount = 0;
          share_type total_effective_csaf_amount = 0;
          map<account_uid_type, share_type> platform_csaf_amount;
@@ -1561,6 +1790,16 @@ void database::process_content_platform_awards()
          auto apt_itr = apt_idx.lower_bound(dpo.current_active_post_sequence);
          while (apt_itr != apt_idx.end() && apt_itr->period_sequence == dpo.current_active_post_sequence)
          {
+            if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05) 
+            {
+               const platform_object* pla = find_platform_by_owner(apt_itr->platform);
+               if (pla == nullptr || !pla->is_valid || pla->total_votes < params.platform_content_award_min_votes) 
+               {
+                  ++apt_itr;
+                  continue;
+               }  
+            }
+
             if (apt_itr->total_csaf >= params.min_effective_csaf)
             {
                const auto& idx = get_index_type<score_index>().indices().get<by_period_sequence>();
@@ -1600,12 +1839,17 @@ void database::process_content_platform_awards()
                (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
 
             flat_map<account_uid_type, std::pair<share_type, share_type>> platform_receiptor_award;
+            std::map<account_uid_type, share_type> registrar_and_referrer_award;
             for (auto itr = post_effective_casf.begin(); itr != post_effective_casf.end(); ++itr)
             {
                share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
                   total_effective_csaf_amount.value).to_uint64();
-               share_type score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
+               share_type score_earned = 0;
                share_type receiptor_earned = 0;
+               if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+                  score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
+               else
+                  score_earned = ((uint128_t)post_earned.value * params.scorer_earnings_rate / GRAPHENE_100_PERCENT).to_uint64(); 
                if (std::get<2>(*itr) >= 0)
                   receiptor_earned = post_earned - score_earned;
                else
@@ -1672,8 +1916,17 @@ void database::process_content_platform_awards()
                   {
                      obj.profits = to_add;
                   });
-                  ///adjust_balance(score_obj.from_account_uid, asset(to_add));
-                  adjust_balance_map[score_obj.from_account_uid] += to_add;
+
+                  //registrar and referrer get part of earning
+                  if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+                  {
+                     share_type to_registrar_and_referrer = ((uint128_t)to_add.value * params.registrar_referrer_rate_from_score / GRAPHENE_100_PERCENT).to_uint64();
+                     registrar_and_referrer_award[score_obj.from_account_uid] += to_registrar_and_referrer;
+                     adjust_balance_map[score_obj.from_account_uid] += (to_add - to_registrar_and_referrer);
+                  }
+                  else
+                     adjust_balance_map[score_obj.from_account_uid] += to_add;
+
                   actual_score_earned += to_add;
                }
 
@@ -1705,6 +1958,25 @@ void database::process_content_platform_awards()
                         p.second.second);
                   });
                }
+            }
+
+            //registrar and referrer bonus from score earning
+            map<account_uid_type, share_type> bonus_map;
+            for (const auto& r : registrar_and_referrer_award)
+            {
+               auto account_obj = get_account_by_uid(r.first);
+               share_type to_registrar = ((uint128_t)r.second.value * account_obj.reg_info.registrar_percent
+                  / GRAPHENE_100_PERCENT).to_uint64();
+               bonus_map[account_obj.reg_info.registrar] += to_registrar;
+               bonus_map[account_obj.reg_info.referrer] += (r.second - to_registrar);
+            }
+            for (const auto& r : bonus_map)
+            {
+               modify(get_account_statistics_by_uid(r.first), [&](_account_statistics_object& s)
+               {
+                  s.uncollected_score_bonus += r.second;
+               });
+               actual_awards += r.second;
             }
          }
 
@@ -1749,7 +2021,6 @@ void database::process_content_platform_awards()
          _dpo.last_content_award_time = block_time;
          _dpo.next_content_award_time = block_time + params.content_award_interval;
          ++_dpo.current_active_post_sequence;
-         _dpo.content_award_done = true;
 
          if (actual_awards > 0)
             _dpo.budget_pool -= actual_awards;
@@ -1757,11 +2028,11 @@ void database::process_content_platform_awards()
 
       clear_active_post();
    }
-   else if (dpo.content_award_done)
+   else if (dpo.content_award_skip_flag)
    {
       modify(dpo, [&](dynamic_global_property_object& _dpo)
       {
-         _dpo.content_award_done = false;
+         _dpo.content_award_skip_flag = false;
       });
    }
 }
@@ -1773,12 +2044,21 @@ void database::process_platform_voted_awards()
    if (block_time >= dpo.next_platform_voted_award_time)
    {
       const global_property_object& gpo = get_global_properties();
-      const auto& params = gpo.parameters.get_award_params();
+      const auto& params = gpo.parameters.get_extension_params();
 
       if (params.total_platform_voted_award_amount > 0 && params.platform_award_interval > 0)
       {
-         share_type actual_awards = 0;
-         bool can_award = dpo.budget_pool >= params.total_platform_voted_award_amount;
+         share_type actual_awards = 0; 
+         bool can_award = false;
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+         {
+            fc::uint128_t award_two_periods = (fc::uint128_t)params.total_platform_voted_award_amount.value * 2 *
+               (dpo.next_platform_voted_award_time - dpo.last_platform_voted_award_time).to_seconds() / (86400 * 365);
+            can_award = dpo.budget_pool >= award_two_periods.to_uint64();
+         } else {
+            can_award = dpo.budget_pool >= params.total_platform_voted_award_amount;
+         }
+
          if (dpo.next_platform_voted_award_time > time_point_sec(0) && can_award)
          {
             flat_map<account_uid_type, uint64_t> platforms;
@@ -1853,6 +2133,59 @@ void database::process_platform_voted_awards()
             _dpo.next_platform_voted_award_time = time_point_sec(0);
          });
       }
+   }
+}
+
+void database::process_pledge_balance_release()
+{
+   const auto head_num = head_block_num();
+   const auto& pledge_idx = get_index_type<pledge_balance_index>().indices().get<by_earliest_release_block_number>();
+
+   //release pledge balance 
+   auto itr_pledge = pledge_idx.begin();
+   while (itr_pledge != pledge_idx.end() && itr_pledge->earliest_release_block_number() <= head_num)
+   {
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version == ENABLE_HEAD_FORK_04 && itr_pledge->type == pledge_balance_type::Witness){
+         const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
+         modify(get_account_statistics_by_uid(itr_pledge->superior_index), [&](_account_statistics_object& s) {
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, ENABLE_HEAD_FORK_04);
+         });
+      }
+
+      FC_ASSERT(itr_pledge->pledge >= 0, "pledge_balance_object`s pledge must >= 0. ");
+      modify(*itr_pledge, [&](pledge_balance_object& s) {
+         share_type delta = 0;
+         auto itr = s.releasing_pledges.begin();
+         while (itr != s.releasing_pledges.end() && itr->first <= head_num){
+            FC_ASSERT(s.total_releasing_pledge >= itr->second, "total_releasing_pledge must more than single pledge. \n pledge_balance_object`s detail:${d}", ("d",s));
+            s.total_releasing_pledge -= itr->second;
+            delta += itr->second;
+            s.releasing_pledges.erase(itr);
+            itr = s.releasing_pledges.begin();
+         }
+         if (itr_pledge->type == pledge_balance_type::Mine){
+            account_uid_type pledge_miner = get(pledge_mining_id_type(itr_pledge->superior_index)).pledge_account;
+            modify(get_account_statistics_by_uid(pledge_miner), [&](_account_statistics_object& s) {
+               s.total_mining_pledge -= delta;
+            });
+         }
+      });
+
+      if (itr_pledge->pledge == 0 && itr_pledge->releasing_pledges.size() == 0){
+         if (itr_pledge->type == pledge_balance_type::Mine){
+            remove(get(pledge_mining_id_type(itr_pledge->superior_index)));
+         }
+         else{
+            const _account_statistics_object& ant = get_account_statistics_by_uid(itr_pledge->superior_index);
+            modify(ant, [&](_account_statistics_object& a){
+               a.pledge_balance_ids.erase(itr_pledge->type);
+            });
+         }
+         remove(*itr_pledge);
+      }
+
+      itr_pledge = pledge_idx.begin();
    }
 }
 

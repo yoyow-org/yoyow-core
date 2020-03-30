@@ -48,16 +48,42 @@ void account_balance_object::adjust_balance(const asset& delta)
    balance += delta.amount;
 }
 
-std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const bool reduce_witness)const
+std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_seconds_earned_fix(const uint64_t window, const fc::time_point_sec now, const database& db, uint8_t enable_hard_fork_type)const
+{
+   if (enable_hard_fork_type < ENABLE_HEAD_FORK_05)
+      enable_hard_fork_type = ENABLE_HEAD_FORK_NONE;
+   return compute_coin_seconds_earned(window,now,db, enable_hard_fork_type);
+}
+
+
+std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)const
 {
    fc::time_point_sec now_rounded((now.sec_since_epoch() / 60) * 60);
    // check average coins and max coin-seconds
    share_type new_average_coins;
    fc::uint128_t max_coin_seconds;
-
-   share_type effective_balance = core_balance + core_leased_in - core_leased_out;
-   if (reduce_witness)
-      effective_balance -= total_witness_pledge;
+   share_type effective_balance;
+   switch (enable_hard_fork_type){
+   case ENABLE_HEAD_FORK_NONE :
+      effective_balance = core_balance + core_leased_in - core_leased_out;
+      break;
+   case ENABLE_HEAD_FORK_04 :
+      if (pledge_balance_ids.count(pledge_balance_type::Witness)) {
+         effective_balance = core_balance + core_leased_in - core_leased_out -
+            get_pledge_balance(GRAPHENE_CORE_ASSET_AID, pledge_balance_type::Witness, db);
+      } else
+         effective_balance = core_balance + core_leased_in - core_leased_out;
+      break;
+   case ENABLE_HEAD_FORK_05 :
+      if (pledge_balance_ids.count(pledge_balance_type::Lock_balance)) {
+         auto pledge_balance_obj = pledge_balance_ids.at(pledge_balance_type::Lock_balance)(db);
+         if (GRAPHENE_CORE_ASSET_AID == pledge_balance_obj.asset_id)
+            effective_balance = pledge_balance_obj.pledge;
+      } 
+      break;
+   default:
+      break;
+   }
 
    if (now_rounded <= average_coins_last_update)
       new_average_coins = average_coins;
@@ -99,24 +125,35 @@ std::pair<fc::uint128_t, share_type> account_statistics_object::compute_coin_sec
    return std::make_pair(new_coin_seconds_earned, new_average_coins);
 }
 
-void account_statistics_object::update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const bool reduce_witness)
+void _account_statistics_object::update_coin_seconds_earned(const uint64_t window, const fc::time_point_sec now, const database& db, const uint8_t enable_hard_fork_type)
 {
    fc::time_point_sec now_rounded( ( now.sec_since_epoch() / 60 ) * 60 );
    if( now_rounded <= coin_seconds_earned_last_update && now_rounded <= average_coins_last_update )
       return;
-   const auto& result = compute_coin_seconds_earned( window, now_rounded , reduce_witness);
+   const auto& result = compute_coin_seconds_earned( window, now_rounded , db, enable_hard_fork_type);
    coin_seconds_earned = result.first;
    coin_seconds_earned_last_update = now_rounded;
    average_coins = result.second;
    average_coins_last_update = now_rounded;
 }
 
-void account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now)
+void _account_statistics_object::set_coin_seconds_earned(const fc::uint128_t new_coin_seconds, const fc::time_point_sec now)
 {
    fc::time_point_sec now_rounded( ( now.sec_since_epoch() / 60 ) * 60 );
    coin_seconds_earned = new_coin_seconds;
    if( coin_seconds_earned_last_update < now_rounded )
       coin_seconds_earned_last_update = now_rounded;
+}
+
+void _account_statistics_object::add_uncollected_market_fee(asset_aid_type asset_aid, share_type amount)
+{
+   auto iter = uncollected_market_fees.find(asset_aid);
+   if (iter != uncollected_market_fees.end()){
+      iter->second += amount;
+   }
+   else{
+      uncollected_market_fees.insert(std::make_pair(asset_aid, amount));
+   }
 }
 
 set<account_uid_type> account_member_index::get_account_members(const account_object& a)const

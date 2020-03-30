@@ -134,7 +134,7 @@ namespace graphene { namespace chain {
       // The advertising order id
       advertising_order_oid_type   advertising_order_oid;
       // Advertising order confirm status, accepted or refused
-      bool                         isconfirm;
+      bool                         isconfirm = false;
 
       extensions_type              extensions;
 

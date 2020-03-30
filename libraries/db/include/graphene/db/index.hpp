@@ -219,7 +219,7 @@ namespace graphene { namespace db {
 
          fc::sha256 get_object_version()const
          {
-            std::string desc = "1.0";//get_type_description<object_type>();
+            std::string desc = "2.0";//get_type_description<object_type>();
             return fc::sha256::hash(desc);
          }
 

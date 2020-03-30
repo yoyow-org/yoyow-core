@@ -62,8 +62,8 @@ fc::time_point_sec database::get_slot_time(uint32_t slot_num)const
    if( dpo.dynamic_flags & dynamic_global_property_object::maintenance_flag )
       slot_num += gpo.parameters.maintenance_skip_slots;
 
-   if(dpo.content_award_done)
-   	slot_num += gpo.parameters.get_award_params().content_award_skip_slots;
+   if (dpo.content_award_skip_flag)
+   	slot_num += gpo.parameters.get_extension_params().content_award_skip_slots;
    	
 
    // "slot 0" is head_slot_time
@@ -166,7 +166,7 @@ void database::update_witness_schedule()
       uint16_t pledge_added = 0;
       vector<const witness_object*> by_pledge_processed;
       fc::uint128_t new_by_pledge_time = wso.current_by_pledge_time;
-      share_type min_witness_blcok_produce_pledge = gpo.parameters.get_award_params().min_witness_block_produce_pledge;
+      share_type min_witness_blcok_produce_pledge = gpo.parameters.get_extension_params().min_witness_block_produce_pledge;
       const auto& pledge_idx = get_index_type<witness_index>().indices().get<by_pledge_schedule>();
       auto pledge_itr = pledge_idx.lower_bound( true );
       while( pledge_itr != pledge_idx.end() && pledge_added < pledge_max )
@@ -191,7 +191,8 @@ void database::update_witness_schedule()
          bool reset_by_pledge_time = false;
          for( auto& wit : by_pledge_processed )
          {
-            fc::uint128_t new_time = new_by_pledge_time + GRAPHENE_VIRTUAL_LAP_LENGTH / ( wit->average_pledge + 1 );
+            //total_mining_pledge defalt value is 0 ,so don`t need hardfork logic
+            fc::uint128_t new_time = new_by_pledge_time + GRAPHENE_VIRTUAL_LAP_LENGTH / (wit->average_pledge + wit->total_mining_pledge + 1);
             if( new_time < new_by_pledge_time ) // overflow
             {
                reset_by_pledge_time = true;
@@ -257,8 +258,9 @@ void database::update_witness_schedule()
          }
          _wso.next_schedule_block_num += _wso.current_shuffled_witnesses.size();
       });
-      dlog( "witness schedule updated on block ${n}, next reschedule block is ${b}",
-            ("n",head_block_num())("b",wso.next_schedule_block_num) );
+      if (!(get_node_properties().skip_flags & skip_uint_test))
+         dlog("witness schedule updated on block ${n}, next reschedule block is ${b}",
+         ("n", head_block_num())("b", wso.next_schedule_block_num));
    }
 }
 
@@ -311,12 +313,23 @@ void database::update_witness_avg_pledge( const witness_object& wit )
    {
       // need to schedule next update because average_pledge < pledge, and need to update average_pledge
       uint64_t delta_seconds = ( now - wit.average_pledge_last_update ).to_seconds();
-      uint64_t old_seconds = window - delta_seconds;
+      uint64_t new_average_coins;
+      const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+      {
+         uint64_t old_seconds = window - delta_seconds;
 
-      fc::uint128_t old_coin_seconds = fc::uint128_t( wit.average_pledge ) * old_seconds;
-      fc::uint128_t new_coin_seconds = fc::uint128_t( wit.pledge ) * delta_seconds;
+         fc::uint128_t old_coin_seconds = fc::uint128_t( wit.average_pledge ) * old_seconds;
+         fc::uint128_t new_coin_seconds = fc::uint128_t( wit.pledge ) * delta_seconds;
 
-      uint64_t new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+         new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+      }
+      else
+      {
+         uint64_t total_seconds = window - ( wit.average_pledge_last_update - wit.pledge_last_update ).to_seconds();
+
+         new_average_coins = wit.average_pledge + ( fc::uint128_t( wit.pledge - wit.average_pledge ) * delta_seconds / total_seconds ).to_uint64();
+      }
 
       modify( wit, [&]( witness_object& w )
       {
@@ -339,7 +352,7 @@ void database::update_witness_avg_pledge( const witness_object& wit )
    {
       modify( wit, [&]( witness_object& w )
       {
-         const auto need_time = ( GRAPHENE_VIRTUAL_LAP_LENGTH - w.by_pledge_position ) / ( w.average_pledge + 1 );
+         const auto need_time = ( GRAPHENE_VIRTUAL_LAP_LENGTH - w.by_pledge_position ) / ( w.average_pledge + w.total_mining_pledge + 1 );
          w.by_pledge_scheduled_time = w.by_pledge_position_last_update + need_time;
          // check for overflow
          if( w.by_pledge_scheduled_time < wso.current_by_pledge_time )
@@ -363,7 +376,7 @@ void database::reset_witness_by_pledge_schedule()
       {
          w.by_pledge_position             = fc::uint128_t();
          w.by_pledge_position_last_update = fc::uint128_t();
-         w.by_pledge_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.average_pledge + 1 );
+         w.by_pledge_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.average_pledge + w.total_mining_pledge + 1 );
       } );
    }
 }

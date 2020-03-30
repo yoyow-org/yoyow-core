@@ -68,7 +68,7 @@ void non_consensus_plugin_impl::update_custom_vote(const account_uid_type& accou
    while (cast_vote_itr != cast_vote_idx.end() && cast_vote_itr->voter == account
       && cast_vote_itr->vote_asset_id == delta.asset_id)
    {
-      auto custom_vote_itr = custom_vote_idx.find(std::make_tuple(cast_vote_itr->custom_vote_creater,
+      auto custom_vote_itr = custom_vote_idx.find(std::make_tuple(cast_vote_itr->custom_vote_creator,
          cast_vote_itr->custom_vote_vid));
       FC_ASSERT(custom_vote_itr != custom_vote_idx.end(),
          "custom vote ${id} not found.", ("id", cast_vote_itr->custom_vote_vid));
@@ -86,16 +86,16 @@ void non_consensus_plugin_impl::create_custom_vote_index(const custom_vote_cast_
 {
    graphene::chain::database& db = database();
 
-   auto custom_vote_obj = db.find_custom_vote_by_vid(op.custom_vote_creater, op.custom_vote_vid);
-   auto votes = db.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
+   auto custom_vote_obj = db.find_custom_vote_by_vid(op.custom_vote_creator, op.custom_vote_vid);
+   uint64_t votes = db.get_account_statistics_by_uid(op.voter).get_votes_from_core_balance();
    const auto& cast_idx = db.get_index_type<cast_custom_vote_index>().indices().get<by_custom_voter>();
-   auto cast_itr = cast_idx.find(std::make_tuple(op.voter, op.custom_vote_creater, op.custom_vote_vid));
+   auto cast_itr = cast_idx.find(std::make_tuple(op.voter, op.custom_vote_creator, op.custom_vote_vid));
  
    if (cast_itr == cast_idx.end()) {
       db.create<cast_custom_vote_object>([&](cast_custom_vote_object& obj)
       {
          obj.voter = op.voter;
-         obj.custom_vote_creater = op.custom_vote_creater;
+         obj.custom_vote_creator = op.custom_vote_creator;
          obj.custom_vote_vid = op.custom_vote_vid;
          obj.vote_result = op.vote_result;
          obj.vote_asset_id = custom_vote_obj->vote_asset_id;
@@ -104,16 +104,16 @@ void non_consensus_plugin_impl::create_custom_vote_index(const custom_vote_cast_
       db.modify(*custom_vote_obj, [&](custom_vote_object& obj)
       {
          for (const auto& v : op.vote_result)
-            obj.vote_result.at(v) += votes.value;
+            obj.vote_result.at(v) += votes;
       });
    }
    else {
       db.modify(*custom_vote_obj, [&](custom_vote_object& obj)
       {
          for (const auto& v : cast_itr->vote_result)
-            obj.vote_result.at(v) -= votes.value;
+            obj.vote_result.at(v) -= votes;
          for (const auto& v : op.vote_result)
-            obj.vote_result.at(v) += votes.value;
+            obj.vote_result.at(v) += votes;
       });
       db.modify(*cast_itr, [&](cast_custom_vote_object& obj)
       {

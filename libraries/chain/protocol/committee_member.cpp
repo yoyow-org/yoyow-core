@@ -186,7 +186,7 @@ void committee_updatable_parameters::validate()const
                  "Platform average pledge update interval must be positive" );
 }
 
-void committee_updatable_content_parameters::validate()const
+void committee_updatable_extension_parameters::validate()const
 {
    if (approval_casf_min_weight.valid() && approval_casf_first_rate.valid() && approval_casf_second_rate.valid())
    {
@@ -237,6 +237,28 @@ void committee_updatable_content_parameters::validate()const
       FC_ASSERT(*content_award_interval <= 86400*365, "content award interval must be less than or equal to one year");
    if (platform_award_interval.valid())
       FC_ASSERT(*platform_award_interval <= 86400*365, "platform award interval must be less than or equal to one year");
+
+   if (max_pledge_mining_bonus_rate.valid())
+      FC_ASSERT(*max_pledge_mining_bonus_rate >= 10 * GRAPHENE_1_PERCENT && *max_pledge_mining_bonus_rate <= (GRAPHENE_100_PERCENT - 10 * GRAPHENE_1_PERCENT),
+               "max pledge to witness mining rate should be in range 10-90%");
+   if (registrar_referrer_rate_from_score.valid())
+      FC_ASSERT(*registrar_referrer_rate_from_score >= 0 && *registrar_referrer_rate_from_score <= 25 * GRAPHENE_1_PERCENT,
+      "registrar referrer rate from score should be in range 0-25%");
+   if (max_pledge_releasing_size.valid())
+      FC_ASSERT(*max_pledge_releasing_size >= 1,"max pledge releasing size must more than 1");
+   if (scorer_earnings_rate.valid())
+      FC_ASSERT(*scorer_earnings_rate < GRAPHENE_100_PERCENT, "scorer earnings rate must less than 100%");
+   if (platform_content_award_min_votes.valid())
+      FC_ASSERT(*platform_content_award_min_votes >= 0, "platform content award min votes must be positive");
+   if (csaf_limit_lock_balance_modulus.valid())
+      FC_ASSERT(*csaf_limit_lock_balance_modulus >= 0, "csaf limit lock balance modulus must be positive");
+}
+
+void committee_withdraw_platform_pledge_item_type::validate()const
+{
+   validate_account_uid(platform_account, "platform account ");
+   validate_account_uid(receiver, "target ");
+   FC_ASSERT(withdraw_amount > 0, "Withdraw amount should be positive");
 }
 
 void committee_proposal_create_operation::validate()const
@@ -249,7 +271,7 @@ void committee_proposal_create_operation::validate()const
    uint32_t account_item_count = 0;
    uint32_t fee_item_count = 0;
    uint32_t param_item_count = 0;
-   uint32_t award_item_count = 0;
+   uint32_t extension_param_item_count = 0;
    //flat_map< account_uid_type, committee_update_account_priviledge_item_type::account_priviledge_update_options > account_items;
    for( const auto& item : items )
    {
@@ -276,12 +298,17 @@ void committee_proposal_create_operation::validate()const
          const auto& param_item = item.get< committee_update_global_parameter_item_type >();
          param_item.value.validate();
       }
-      else if (item.which() == committee_proposal_item_type::tag< committee_update_global_content_parameter_item_type >::value)
+      else if (item.which() == committee_proposal_item_type::tag< committee_update_global_extension_parameter_item_type >::value)
       {
-         award_item_count += 1;
-         FC_ASSERT(award_item_count <= 1, "No more than one global parameter award update item is allowed");
-         const auto& param_item = item.get< committee_update_global_content_parameter_item_type >();
+         extension_param_item_count += 1;
+         FC_ASSERT(extension_param_item_count <= 1, "No more than one global parameter award update item is allowed");
+         const auto& param_item = item.get< committee_update_global_extension_parameter_item_type >();
          param_item.value.validate();
+      }
+      else if (item.which() == committee_proposal_item_type::tag< committee_withdraw_platform_pledge_item_type >::value)
+      {
+         const auto& platform_punish_item = item.get< committee_withdraw_platform_pledge_item_type >();
+         platform_punish_item.validate();
       }
       else
          FC_ASSERT( false, "Bad proposal item type: ${n}", ("n",item.which()) );

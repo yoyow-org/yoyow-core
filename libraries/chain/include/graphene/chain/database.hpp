@@ -81,7 +81,8 @@ namespace graphene { namespace chain {
             skip_undo_history_check     = 1 << 9,  ///< used while reindexing
             skip_witness_schedule_check = 1 << 10, ///< used while reindexing
             skip_invariants_check       = 1 << 11, ///< used while reindexing and used by non-witness nodes
-            skip_validate               = 1 << 12  ///< used prior to checkpoint, skips validate() call on transaction
+            skip_validate               = 1 << 12, ///< used prior to checkpoint, skips validate() call on transaction
+            skip_uint_test              = 1 << 13  ///< used for uint test 
          };
 
          /**
@@ -323,7 +324,8 @@ namespace graphene { namespace chain {
          const account_object& get_account_by_uid( account_uid_type uid )const;
          const account_object* find_account_by_uid( account_uid_type uid )const;
          const optional<account_id_type> find_account_id_by_uid( account_uid_type uid )const;
-         const account_statistics_object& get_account_statistics_by_uid( account_uid_type uid )const;
+         const _account_statistics_object& get_account_statistics_by_uid( account_uid_type uid )const;
+         account_statistics_object get_account_statistics_struct_by_uid(account_uid_type uid)const;
          const account_auth_platform_object* find_account_auth_platform_object_by_account_platform(account_uid_type account,
                                                                                                    account_uid_type platform)const;
          const account_auth_platform_object& get_account_auth_platform_object_by_account_platform(account_uid_type account,
@@ -333,6 +335,9 @@ namespace graphene { namespace chain {
 
          const witness_object& get_witness_by_uid( account_uid_type uid )const;
          const witness_object* find_witness_by_uid( account_uid_type uid )const;
+
+         const pledge_mining_object& get_pledge_mining(account_uid_type witness, account_uid_type pledge_account)const;
+         const pledge_mining_object* find_pledge_mining(account_uid_type witness, account_uid_type pledge_account)const;
 
          const witness_vote_object* find_witness_vote( account_uid_type voter_uid,
                                                        uint32_t         voter_sequence,
@@ -384,8 +389,8 @@ namespace graphene { namespace chain {
          const advertising_order_object*  find_advertising_order(account_uid_type platform, advertising_aid_type advertising_aid, advertising_order_oid_type order_oid)const;
          const advertising_order_object&  get_advertising_order(account_uid_type platform, advertising_aid_type advertising_aid, advertising_order_oid_type order_oid)const;
 
-         const custom_vote_object& get_custom_vote_by_vid(account_uid_type creater, custom_vote_vid_type vote_vid)const;
-         const custom_vote_object* find_custom_vote_by_vid(account_uid_type creater, custom_vote_vid_type vote_vid)const;
+         const custom_vote_object& get_custom_vote_by_vid(account_uid_type creator, custom_vote_vid_type vote_vid)const;
+         const custom_vote_object* find_custom_vote_by_vid(account_uid_type creator, custom_vote_vid_type vote_vid)const;
 
          //////////////////// db_init.cpp ////////////////////
 
@@ -424,7 +429,7 @@ namespace graphene { namespace chain {
          void adjust_balance(const account_object& account, asset delta);
 
          // helper to handle witness pay
-         void deposit_witness_pay(const witness_object& wit, share_type amount);
+         void deposit_witness_pay(const witness_object& wit, share_type amount, scheduled_witness_type wit_type);
 
 
          //////////////////// db_debug.cpp ////////////////////
@@ -434,6 +439,48 @@ namespace graphene { namespace chain {
          void debug_update( const fc::variant_object& update );
 
          //////////////////// db_notify.cpp ////////////////////
+
+         //////////////////// db_market.cpp ////////////////////
+
+         /// @{ @group Market Helpers
+         void cancel_limit_order(const limit_order_object& order, bool create_virtual_op = true, bool skip_cancel_fee = false);
+
+         /**
+         * @brief Process a new limit order through the markets
+         * @param order The new order to process
+         * @return true if order was completely filled; false otherwise
+         *
+         * This function takes a new limit order, and runs the markets attempting to match it with existing orders
+         * already on the books.
+         */
+         //bool apply_order_before_hardfork_625(const limit_order_object& new_order_object, bool allow_black_swan = true);
+         bool apply_order(const limit_order_object& new_order_object, bool allow_black_swan = true);
+
+         /**
+         * Matches the two orders, the first parameter is taker, the second is maker.
+         *
+         * @return a bit field indicating which orders were filled (and thus removed)
+         *
+         * 0 - no orders were matched
+         * 1 - taker was filled
+         * 2 - maker was filled
+         * 3 - both were filled
+         */
+         ///@{
+         int match(const limit_order_object& taker, const limit_order_object& maker, const price& trade_price);
+
+         /**
+         * @return true if the order was completely filled and thus freed.
+         */
+         bool fill_limit_order(const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
+             const price& fill_price, const bool is_maker);
+
+         // helpers to fill_order
+         void pay_order(const account_object& receiver, const asset& receives, const asset& pays);
+
+         asset calculate_market_fee(const asset_object& recv_asset, const asset& trade_amount);
+         asset pay_market_fees(const asset_object& recv_asset, const asset& receives);
+         asset pay_market_fees(const account_object& seller, const asset_object& recv_asset, const asset& receives);
 
       private:
          void notify_changed_objects();
@@ -448,7 +495,7 @@ namespace graphene { namespace chain {
          optional<undo_database::session>       _pending_tx_session;
          vector< unique_ptr<op_evaluator> >     _operation_evaluators;
 
-         bool                                   _enable_check_invariants = false;
+         uint32_t                               _check_invariants_interval = uint32_t(-1);
          uint32_t                               _advertising_order_remaining_time = 86400*365;
          uint32_t                               _custom_vote_remaining_time = 86400*365;
 
@@ -461,7 +508,7 @@ namespace graphene { namespace chain {
          processed_transaction apply_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing );
          operation_result      apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs = signed_information());
 
-         void set_check_invariants(bool check){ _enable_check_invariants = check; }
+         void set_check_invariants_interval(uint32_t interval){ _check_invariants_interval = interval; }
          void set_advertising_remain_time(uint32_t time){ _advertising_order_remaining_time = time; }
          void set_custom_vote_remain_time(uint32_t time){ _custom_vote_remaining_time = time; }
          /**
@@ -501,15 +548,18 @@ namespace graphene { namespace chain {
          void clear_unnecessary_objects();//advertising order, custom vote and cast custom vote
          void update_reduce_witness_csaf();//only execute once for HARDFORK_0_4_BLOCKNUM
          void update_account_permission();
+         void update_account_feepoint(); //only execute once for HARDFORK_0_5_BLOCKNUM
+         void update_account_reg_info(); //only execute once for HARDFORK_0_5_BLOCKNUM
+         void update_core_asset_flags(); //only execute once for HARDFORK_0_5_BLOCKNUM
 
          std::tuple<set<std::tuple<score_id_type, share_type, bool>>, share_type>
               get_effective_csaf(const active_post_object& active_post);
          void clear_expired_scores();
+         void clear_expired_limit_orders();
          void update_maintenance_flag( bool new_maintenance_flag );
          void clear_expired_csaf_leases();
          void update_average_witness_pledges();
-         void release_witness_pledges();
-         void release_committee_member_pledges();
+         void update_average_platform_pledges();
          void clear_resigned_witness_votes();
          void clear_resigned_committee_member_votes();
          void invalidate_expired_governance_voters();
@@ -520,15 +570,20 @@ namespace graphene { namespace chain {
          void clear_unapproved_committee_proposals();
          void execute_committee_proposals();
          void check_invariants();
-         void release_platform_pledges();
          void clear_resigned_platform_votes();
          void process_content_platform_awards();
          void process_platform_voted_awards();
+         void process_pledge_balance_release();
 
          void update_platform_avg_pledge( const account_uid_type uid );
+        
       public:
+         void resign_pledge_mining(const witness_object& wit);
          void update_platform_avg_pledge( const platform_object& pla );
          void adjust_platform_votes( const platform_object& platform, share_type delta );
+         void update_pledge_mining_bonus();
+         void update_pledge_mining_bonus_by_witness(const witness_object& witness_obj);
+         share_type update_pledge_mining_bonus_by_account(const pledge_mining_object& pledge_mining_obj, share_type bonus_per_pledge);
 
 
       public:

@@ -20,6 +20,7 @@ if( GRAPHENE_DISABLE_UNITY_BUILD )
         db_voter.cpp
         db_witness_schedule.cpp
         db_notify.cpp
+		db_market.cpp
       )
    message( STATUS "Graphene database unity build disabled" )
 else( GRAPHENE_DISABLE_UNITY_BUILD )
@@ -53,6 +54,9 @@ add_library( graphene_chain
              protocol/fee_schedule.cpp
              protocol/advertising.cpp
              protocol/custom_vote.cpp
+             protocol/balance_lock.cpp
+             protocol/pledge_mining.cpp
+			 protocol/market.cpp
 			 
              genesis_state.cpp
              get_config.cpp
@@ -68,6 +72,9 @@ add_library( graphene_chain
              proposal_evaluator.cpp
              advertising_evaluator.cpp
              custom_vote_evaluator.cpp
+             balance_lock_evaluator.cpp
+             pledge_mining_evaluator.cpp
+			 market_evaluator.cpp
 
              account_object.cpp
              asset_object.cpp

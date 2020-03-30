@@ -38,6 +38,9 @@
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/advertising_object.hpp>
+#include <graphene/chain/market_object.hpp>
+#include <graphene/market_history/market_history_plugin.hpp>
+#include <graphene/chain/pledge_mining_object.hpp>
 
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
@@ -55,9 +58,68 @@
 namespace graphene { namespace app {
 
 using namespace graphene::chain;
+using namespace graphene::market_history;
 using namespace std;
 
 class database_api_impl;
+
+struct order
+{
+   string                     price;
+   string                     quote;
+   string                     base;
+};
+
+struct order_book
+{
+   string                      base;
+   string                      quote;
+   vector< order >             bids;
+   vector< order >             asks;
+};
+
+struct market_ticker
+{
+   time_point_sec             time;
+   string                     base;
+   string                     quote;
+   string                     latest;
+   string                     lowest_ask;
+   string                     highest_bid;
+   string                     percent_change;
+   string                     base_volume;
+   string                     quote_volume;
+
+   market_ticker() {}
+   market_ticker(const market_ticker_object& mto,
+                 const fc::time_point_sec& now,
+                 const asset_object& asset_base,
+                 const asset_object& asset_quote,
+                 const order_book& orders);
+   market_ticker(const fc::time_point_sec& now,
+                 const asset_object& asset_base,
+                 const asset_object& asset_quote);
+};
+
+struct market_volume
+{
+   time_point_sec             time;
+   string                     base;
+   string                     quote;
+   string                     base_volume;
+   string                     quote_volume;
+};
+
+struct market_trade
+{
+   int64_t                    sequence = 0;
+   fc::time_point_sec         date;
+   string                     price;
+   string                     amount;
+   string                     value;
+   account_uid_type           side1_account_id = GRAPHENE_NULL_ACCOUNT_UID;
+   account_uid_type           side2_account_id = GRAPHENE_NULL_ACCOUNT_UID;
+};
 
 struct required_fee_data
 {
@@ -115,7 +177,7 @@ struct Platform_Period_Profit_Detail
     account_uid_type                       platform_account;
     string                                 platform_name;
 
-    flat_map<asset_aid_type, share_type>   rewards_profits;
+    map<asset_aid_type, share_type>        rewards_profits;
     share_type                             foward_profits = 0;
     share_type                             post_profits = 0;
     share_type                             post_profits_by_platform = 0;
@@ -130,7 +192,7 @@ struct Poster_Period_Profit_Detail
     account_uid_type                       poster_account;
 
     share_type                             total_forward = 0;
-    flat_map<asset_aid_type, share_type>   total_rewards;
+    map<asset_aid_type, share_type>        total_rewards;
     share_type                             total_post_award = 0;
 
     vector<active_post_object>             active_objects;
@@ -145,7 +207,7 @@ struct Poster_Period_Profit_Detail
 class database_api
 {
    public:
-      database_api(graphene::chain::database& db);
+      database_api(graphene::chain::database& db, const application_options* app_options = nullptr);
       ~database_api();
 
       /////////////
@@ -304,8 +366,11 @@ class database_api
       std::map<account_uid_type,full_account> get_full_accounts_by_uid( const vector<account_uid_type>& uids,
                                                                         const full_account_query_options& options );
 
+      vector<pledge_balance_object> get_account_core_asset_pledge(account_uid_type account_uid)const;
 
       account_statistics_object get_account_statistics_by_uid(account_uid_type uid)const;
+
+      std::pair<fc::uint128_t, share_type> compute_coin_seconds_earned(const account_uid_type uid, const uint64_t window, const fc::time_point_sec now)const;
 
       /**
        * @brief Get an account by name
@@ -343,6 +408,17 @@ class database_api
       vector<account_auth_platform_object> list_account_auth_platform_by_account(const account_uid_type account, 
                                                                                  const account_uid_type lower_bound_platform, 
                                                                                  const uint32_t limit)const;
+      /////////////////////////
+      // pledge mining //
+      /////////////////////////
+
+      vector<pledge_mining_object> list_pledge_mining_by_witness(const account_uid_type witness,
+         const account_uid_type lower_bound_account,
+         const uint32_t limit)const;
+
+      vector<pledge_mining_object> list_pledge_mining_by_account(const account_uid_type account,
+         const account_uid_type lower_bound_witness,
+         const uint32_t limit)const;
 
       //////////////
       // Balances //
@@ -468,10 +544,11 @@ class database_api
                                                                           const advertising_order_oid_type lower_bound_advertising_order, 
                                                                           uint32_t limit)const;
 
-      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creater, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const;
-      vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit)const;
+      vector<custom_vote_object> lookup_custom_votes(const account_uid_type creator, const custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)const;
 
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const account_uid_type creater, 
+      vector<custom_vote_object> list_custom_votes(optional<custom_vote_id_type> lower_bound_custom_vote_id, optional<bool> is_finished, uint32_t limit)const;
+
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const account_uid_type creator, 
                                                                    const custom_vote_vid_type vote_vid, 
                                                                    const object_id_type lower_bound_cast_custom_vote, 
                                                                    uint32_t limit)const;
@@ -511,13 +588,19 @@ class database_api
       // FIXME if limit is 100, will be buggy when too many posts in same second
       vector<post_object> get_posts_by_platform_poster( const account_uid_type platform_owner,
                                                         optional<account_uid_type> poster,
-                                                        const std::pair<time_point_sec, time_point_sec> create_time_range,
                                                         const object_id_type lower_bound_post,
                                                         const uint32_t limit )const;
 
       ////////////
       // Assets //
       ////////////
+
+      /**
+      * @brief Get asset id from a symbol or ID
+      * @param symbol_or_id ID or symbol of the asset
+      * @return asset id
+      */
+      asset_aid_type get_asset_id_from_string(const std::string& symbol_or_id) const;
 
       /**
        * @brief Get a list of assets by AID
@@ -544,6 +627,134 @@ class database_api
        * This function has semantics identical to @ref get_objects
        */
       vector<optional<asset_object_with_data>> lookup_asset_symbols(const vector<string>& symbols_or_ids)const;
+
+      /////////////////////
+      // Markets / feeds //
+      /////////////////////
+
+      /**
+      * @brief Get limit orders in a given market
+      * @param a Symbol or ID of asset being sold
+      * @param b Symbol or ID of asset being purchased
+      * @param limit Maximum number of orders to retrieve
+      * @return The limit orders, ordered from least price to greatest
+      */
+      vector<limit_order_object> get_limit_orders(std::string a, std::string b, uint32_t limit)const;
+
+      /**
+      * @brief Fetch all orders relevant to the specified account and specified market, result orders
+      *        are sorted descendingly by price
+      *
+      * @param account_name_or_id  The name or ID of an account to retrieve
+      * @param base  Base asset
+      * @param quote  Quote asset
+      * @param limit  The limitation of items each query can fetch, not greater than 101
+      * @param start_id  Start order id, fetch orders which price lower than this order, or price equal to this order
+      *                  but order ID greater than this order
+      * @param start_price  Fetch orders with price lower than or equal to this price
+      *
+      * @return List of orders from @ref account_name_or_id to the corresponding account
+      *
+      * @note
+      * 1. if @ref account_name_or_id cannot be tied to an account, empty result will be returned
+      * 2. @ref start_id and @ref start_price can be empty, if so the api will return the "first page" of orders;
+      *    if start_id is specified, its price will be used to do page query preferentially, otherwise the start_price
+      *    will be used; start_id and start_price may be used cooperatively in case of the order specified by start_id
+      *    was just canceled accidentally, in such case, the result orders' price may lower or equal to start_price,
+      *    but orders' id greater than start_id
+      */
+      vector<limit_order_object> get_account_limit_orders(const string& account_name_or_id,
+         const string &base,
+         const string &quote,
+         uint32_t limit = 101,
+         optional<limit_order_id_type> ostart_id = optional<limit_order_id_type>(),
+         optional<price> ostart_price = optional<price>());
+
+      vector<limit_order_object> get_account_all_limit_orders(const string& account_name_or_id,
+         uint32_t limit = 101,
+         optional<limit_order_id_type> ostart_id = optional<limit_order_id_type>());
+
+      /**
+      * @brief Request notification when the active orders in the market between two assets changes
+      * @param callback Callback method which is called when the market changes
+      * @param a First asset Symbol or ID
+      * @param b Second asset Symbol or ID
+      *
+      * Callback will be passed a variant containing a vector<pair<operation, operation_result>>. The vector will
+      * contain, in order, the operations which changed the market, and their results.
+      */
+      void subscribe_to_market(std::function<void(const variant&)> callback,
+         const std::string& a, const std::string& b);
+
+      /**
+      * @brief Unsubscribe from updates to a given market
+      * @param a First asset Symbol ID
+      * @param b Second asset Symbol ID
+      */
+      void unsubscribe_from_market(const std::string& a, const std::string& b);
+
+      /**
+      * @brief Returns the ticker for the market assetA:assetB
+      * @param a String name of the first asset
+      * @param b String name of the second asset
+      * @return The market ticker for the past 24 hours.
+      */
+      market_ticker get_ticker(const string& base, const string& quote)const;
+
+      /**
+      * @brief Returns the 24 hour volume for the market assetA:assetB
+      * @param a String name of the first asset
+      * @param b String name of the second asset
+      * @return The market volume over the past 24 hours
+      */
+      market_volume get_24_volume(const string& base, const string& quote)const;
+
+      /**
+      * @brief Returns the order book for the market base:quote
+      * @param base String name of the first asset
+      * @param quote String name of the second asset
+      * @param depth of the order book. Up to depth of each asks and bids, capped at 50. Prioritizes most moderate of each
+      * @return Order book of the market
+      */
+      order_book get_order_book(const string& base, const string& quote, unsigned limit = 50)const;
+
+      /**
+      * @brief Returns vector of tickers sorted by reverse base_volume
+      * Note: this API is experimental and subject to change in next releases
+      * @param limit Max number of results
+      * @return Desc Sorted ticker vector
+      */
+      vector<market_ticker> get_top_markets(uint32_t limit)const;
+
+      /**
+      * @brief Returns recent trades for the market base:quote, ordered by time, most recent first.
+      * Note: Currently, timezone offsets are not supported. The time must be UTC. The range is [stop, start).
+      *       In case when there are more than 100 trades occurred in the same second, this API only returns
+      *       the first 100 records, can use another API `get_trade_history_by_sequence` to query for the rest.
+      * @param base symbol or ID of the base asset
+      * @param quote symbol or ID of the quote asset
+      * @param start Start time as a UNIX timestamp, the latest trade to retrieve
+      * @param stop Stop time as a UNIX timestamp, the earliest trade to retrieve
+      * @param limit Number of trasactions to retrieve, capped at 100.
+      * @return Recent transactions in the market
+      */
+      vector<market_trade> get_trade_history(const string& base, const string& quote,
+         fc::time_point_sec start, fc::time_point_sec stop,
+         unsigned limit = 100)const;
+
+      /**
+      * @brief Returns trades for the market base:quote, ordered by time, most recent first.
+      * Note: Currently, timezone offsets are not supported. The time must be UTC. The range is [stop, start).
+      * @param base symbol or ID of the base asset
+      * @param quote symbol or ID of the quote asset
+      * @param start Start sequence as an Integer, the latest trade to retrieve
+      * @param stop Stop time as a UNIX timestamp, the earliest trade to retrieve
+      * @param limit Number of trasactions to retrieve, capped at 100
+      * @return Transactions in the market
+      */
+      vector<market_trade> get_trade_history_by_sequence(const string& base, const string& quote,
+         int64_t start, fc::time_point_sec stop,
+         unsigned limit = 100)const;
 
       ///////////////
       // Witnesses //
@@ -673,12 +884,19 @@ class database_api
        *  @return the set of proposed transactions relevant to the specified account id.
        */
       vector<proposal_object> get_proposed_transactions( account_uid_type uid )const;
-
+  
    private:
       std::shared_ptr< database_api_impl > my;
 };
 
 } }
+
+FC_REFLECT(graphene::app::order, (price)(quote)(base));
+FC_REFLECT(graphene::app::order_book, (base)(quote)(bids)(asks));
+FC_REFLECT(graphene::app::market_ticker,
+           (time)(base)(quote)(latest)(lowest_ask)(highest_bid)(percent_change)(base_volume)(quote_volume));
+FC_REFLECT(graphene::app::market_volume, (time)(base)(quote)(base_volume)(quote_volume));
+FC_REFLECT(graphene::app::market_trade, (sequence)(date)(price)(amount)(value)(side1_account_id)(side2_account_id));
 
 FC_REFLECT( graphene::app::required_fee_data, (fee_payer_uid)(min_fee)(min_real_fee) );
 
@@ -761,7 +979,9 @@ FC_API( graphene::app::database_api,
    (get_accounts_by_uid)
    //(get_full_accounts)
    (get_full_accounts_by_uid)
+   (get_account_core_asset_pledge)
    (get_account_statistics_by_uid)
+   (compute_coin_seconds_earned)
    (get_account_by_name)
    (get_account_references)
    //(lookup_account_names)
@@ -811,6 +1031,19 @@ FC_API( graphene::app::database_api,
    (list_assets)
    (lookup_asset_symbols)
 
+   //market
+   (get_limit_orders)
+   (get_account_limit_orders)
+   (get_account_all_limit_orders)
+   (subscribe_to_market)
+   (unsubscribe_from_market)
+   (get_ticker)
+   (get_24_volume)
+   (get_order_book)
+   (get_top_markets)
+   (get_trade_history)
+   (get_trade_history_by_sequence)
+
    // Witnesses
    (get_witnesses)
    (get_witness_by_account)
@@ -837,4 +1070,7 @@ FC_API( graphene::app::database_api,
    // Proposed transactions
    //(get_proposed_transactions)
 
+   //mining pledger
+   (list_pledge_mining_by_witness)
+   (list_pledge_mining_by_account)
 )

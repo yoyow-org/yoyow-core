@@ -104,7 +104,7 @@ namespace graphene { namespace chain {
    typedef uint16_t                    asset_flags_type;
    enum asset_issuer_permission_flags
    {
-      //charge_market_fee    = 0x01, /**< an issuer-specified percentage of all market trades in this asset is paid to the issuer */
+      charge_market_fee    = 0x01, /**< an issuer-specified percentage of all market trades in this asset is paid to the issuer */
       white_list           = 0x02, /**< accounts must be whitelisted in order to hold this asset */
       override_authority   = 0x04, /**< issuer may transfer asset back to himself */
       transfer_restricted  = 0x08, /**< require the issuer to be one party to every transfer */
@@ -120,7 +120,7 @@ namespace graphene { namespace chain {
 
    //const static uint32_t UIA_ASSET_ISSUER_PERMISSION_MASK = charge_market_fee|white_list|override_authority|transfer_restricted|disable_confidential;
 
-   const static asset_flags_type ASSET_ISSUER_PERMISSION_MASK = white_list|override_authority|transfer_restricted|issue_asset|change_max_supply;
+   const static asset_flags_type ASSET_ISSUER_PERMISSION_MASK = charge_market_fee | white_list | override_authority | transfer_restricted | issue_asset | change_max_supply;
 
    enum scheduled_witness_type
    {
@@ -159,6 +159,7 @@ namespace graphene { namespace chain {
       proposal_object_type,
       operation_history_object_type,
       active_post_object_type,
+      limit_order_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -187,6 +188,8 @@ namespace graphene { namespace chain {
       impl_custom_vote_object_type,
       impl_cast_custom_vote_object_type,
       impl_account_auth_platform_object_type,
+      impl_pledge_mining_object_type,
+      impl_pledge_balance_object_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
    };
 
@@ -206,6 +209,8 @@ namespace graphene { namespace chain {
    class custom_vote_object;
    class cast_custom_vote_object;
    class account_auth_platform_object;
+   class pledge_mining_object;
+   class limit_order_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -216,14 +221,15 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, committee_proposal_object_type, committee_proposal_object>    committee_proposal_id_type;
    typedef object_id< protocol_ids, proposal_object_type,           proposal_object>              proposal_id_type;
    typedef object_id< protocol_ids, operation_history_object_type,  operation_history_object>     operation_history_id_type;
-   typedef object_id< protocol_ids, active_post_object_type,      active_post_object>           active_post_id_type;
+   typedef object_id< protocol_ids, active_post_object_type,		  active_post_object>			  active_post_id_type;
+   typedef object_id< protocol_ids, limit_order_object_type,        limit_order_object>           limit_order_id_type;
 
    // implementation types
    class global_property_object;
    class dynamic_global_property_object;
    class asset_dynamic_data_object;
    class account_balance_object;
-   class account_statistics_object;
+   class _account_statistics_object;
    class voter_object;
    class witness_vote_object;
    class platform_vote_object;
@@ -236,12 +242,13 @@ namespace graphene { namespace chain {
    class chain_property_object;
    class witness_schedule_object;
    class score_object;
+   class pledge_balance_object;
 
    typedef object_id< implementation_ids, impl_global_property_object_type,  global_property_object>                    global_property_id_type;
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,  dynamic_global_property_object>    dynamic_global_property_id_type;
    typedef object_id< implementation_ids, impl_asset_dynamic_data_type,      asset_dynamic_data_object>                 asset_dynamic_data_id_type;
    typedef object_id< implementation_ids, impl_account_balance_object_type,  account_balance_object>                    account_balance_id_type;
-   typedef object_id< implementation_ids, impl_account_statistics_object_type,account_statistics_object>                account_statistics_id_type;
+   typedef object_id< implementation_ids, impl_account_statistics_object_type, _account_statistics_object>              account_statistics_id_type;
    typedef object_id< implementation_ids, impl_voter_object_type,            voter_object>                              voter_id_type;
    typedef object_id< implementation_ids, impl_witness_vote_object_type,     witness_vote_object>                       witness_vote_id_type;
    typedef object_id< implementation_ids, impl_committee_member_vote_object_type,     committee_member_vote_object>     committee_member_vote_id_type;
@@ -263,6 +270,8 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_custom_vote_object_type,      custom_vote_object>                        custom_vote_id_type;
    typedef object_id< implementation_ids, impl_cast_custom_vote_object_type, cast_custom_vote_object>                   cast_custom_vote_id_type;
    typedef object_id< implementation_ids, impl_account_auth_platform_object_type, account_auth_platform_object>         account_auth_platform_id_type;
+   typedef object_id< implementation_ids, impl_pledge_mining_object_type,    pledge_mining_object>                      pledge_mining_id_type;
+   typedef object_id< implementation_ids, impl_pledge_balance_object_type,   pledge_balance_object>                     pledge_balance_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -338,6 +347,14 @@ namespace graphene { namespace chain {
       friend bool operator == ( const extended_private_key_type& p1, const extended_private_key_type& p2);
       friend bool operator != ( const extended_private_key_type& p1, const extended_private_key_type& p2);
    };
+
+   enum ENABLE_HEAD_FORK_TYPE{
+      ENABLE_HEAD_FORK_NONE = 0,
+      ENABLE_HEAD_FORK_04 = 1,
+      ENABLE_HEAD_FORK_05 = 2,
+
+      ENABLE_HEAD_FORK_NUM
+   };
 } }  // graphene::chain
 
 namespace fc
@@ -370,6 +387,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (proposal_object_type)
                  (operation_history_object_type)
                  (active_post_object_type)
+                 (limit_order_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,
@@ -396,6 +414,8 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_custom_vote_object_type)
                  (impl_cast_custom_vote_object_type)
                  (impl_account_auth_platform_object_type)
+                 (impl_pledge_mining_object_type)
+                 (impl_pledge_balance_object_type)
                  (IMPL_OBJECT_TYPE_COUNT)
                )
 
@@ -411,6 +431,7 @@ FC_REFLECT_TYPENAME( graphene::chain::committee_proposal_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::proposal_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::operation_history_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::active_post_id_type)
+FC_REFLECT_TYPENAME( graphene::chain::limit_order_id_type)
 
 FC_REFLECT_TYPENAME( graphene::chain::global_property_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::dynamic_global_property_id_type )
@@ -433,6 +454,8 @@ FC_REFLECT_TYPENAME( graphene::chain::csaf_lease_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::transaction_obj_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::block_summary_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::account_transaction_history_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::pledge_mining_id_type)
+FC_REFLECT_TYPENAME( graphene::chain::pledge_balance_id_type)
 
 FC_REFLECT( graphene::chain::void_t, )
 

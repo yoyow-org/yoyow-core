@@ -16,7 +16,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const platform_create_operation& op );
          object_id_type do_apply( const platform_create_operation& op );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const account_object* account_obj = nullptr;
    };
 
@@ -28,7 +28,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const platform_update_operation& o );
          void_result do_apply( const platform_update_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const platform_object* platform_obj = nullptr;
    };
 
@@ -40,7 +40,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const platform_vote_update_operation& o );
          void_result do_apply( const platform_vote_update_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const voter_object* voter_obj = nullptr;
          const voter_object* invalid_voter_obj = nullptr;
          const voter_object* invalid_current_proxy_voter_obj = nullptr;
@@ -58,7 +58,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const operation_type& o );
          object_id_type do_apply( const operation_type& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const post_operation::ext* ext_para = nullptr;
          const account_auth_platform_object* auth_object = nullptr;
          const post_object* origin_post = nullptr;
@@ -127,6 +127,17 @@ namespace graphene { namespace chain {
          void_result do_evaluate(const operation_type& op);
          object_id_type do_apply(const operation_type& op);
 
-         const account_statistics_object* platform_ant = nullptr;
+         const _account_statistics_object* platform_ant = nullptr;
+   };
+
+   class score_bonus_collect_evaluator : public evaluator < score_bonus_collect_evaluator >
+   {
+   public:
+      typedef score_bonus_collect_operation operation_type;
+
+      void_result do_evaluate(const score_bonus_collect_operation& o);
+      void_result do_apply(const score_bonus_collect_operation& o);
+
+      const _account_statistics_object* account_stats = nullptr;
    };
 } } // graphene::chain

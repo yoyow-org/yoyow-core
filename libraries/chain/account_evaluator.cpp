@@ -56,8 +56,17 @@ void_result account_create_evaluator::do_evaluate( const account_create_operatio
 
    FC_ASSERT( fee_paying_account->is_registrar, "Only registrars may register an account." );
    const auto& referrer = d.get_account_by_uid( op.reg_info.referrer );
-   FC_ASSERT( referrer.is_full_member, "The referrer must be a valid platform or full member." );
+   //FC_ASSERT( referrer.is_full_member, "The referrer must be a valid platform or full member." );
 
+   const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+   {
+      FC_ASSERT(op.uid > 99999999,"The uid must > 99999999");
+      FC_ASSERT(op.reg_info.registrar != GRAPHENE_NULL_ACCOUNT_UID, "The registrar must not be a null account.");
+      FC_ASSERT(op.reg_info.referrer != GRAPHENE_NULL_ACCOUNT_UID, "The referrer must not be a null account.");
+      FC_ASSERT(op.reg_info.referrer_percent + op.reg_info.registrar_percent == GRAPHENE_100_PERCENT, 
+         "The referrer percent  and registrar percent must be equal to 100%");
+   }
 /*
    if( d.head_block_num() > 0 )
    {
@@ -107,13 +116,13 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.referrer_by_platform = platform == nullptr ? 0 : platform->sequence;
          obj.create_time          = d.head_block_time();
          obj.last_update_time     = d.head_block_time();
-         if (dpo.enabled_hardfork_04) {
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_04) {
              //After hardfork_0_4_time, make account_object can_rate and can_reply by default
              obj.can_rate = true;
              obj.can_reply = true;
          }
 
-         obj.statistics = d.create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.uid;}).id;
+         obj.statistics = d.create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = obj.uid; }).id;
    });
 
    return new_acnt_object.id;
@@ -585,7 +594,7 @@ void_result account_update_proxy_evaluator::do_apply( const account_update_proxy
    }
    else // need to create a new voter object for this account
    {
-      d.modify( *account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.is_voter = true;
          s.last_voter_sequence += 1;
       });
@@ -594,7 +603,7 @@ void_result account_update_proxy_evaluator::do_apply( const account_update_proxy
          v.uid               = op.voter;
          v.sequence          = account_stats->last_voter_sequence;
          //v.is_valid          = true; // default
-         v.votes             = account_stats->core_balance.value;
+         v.votes             = account_stats->get_votes_from_core_balance();
          v.votes_last_update = head_block_time;
 
          //v.effective_votes                 = 0; // default
@@ -741,5 +750,125 @@ void_result account_whitelist_evaluator::do_apply(const account_whitelist_operat
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result beneficiary_assign_evaluator::do_evaluate(const beneficiary_assign_operation& o)
+{
+   try {
+      database& d = db();
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      FC_ASSERT(dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05, "Can only assign beneficiary after HARDFORK_0_5_TIME");
+
+      account_stats = &d.get_account_statistics_by_uid(o.owner); //check owner exist
+      d.find_account_by_uid(o.new_beneficiary); //check new beneficiary exist    
+      if (account_stats->beneficiary.valid())
+         FC_ASSERT(*account_stats->beneficiary != o.new_beneficiary, "beneficiary specified but did not change");
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((o))
+}
+
+void_result beneficiary_assign_evaluator::do_apply(const beneficiary_assign_operation& o)
+{
+   try {
+      database& d = db();
+
+      d.modify(*account_stats, [&o](_account_statistics_object& s) {
+         s.beneficiary = o.new_beneficiary;
+      });
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((o))
+}
+
+void_result benefit_collect_evaluator::do_evaluate(const benefit_collect_operation& op)
+{
+   try {
+      database& d = db();
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      FC_ASSERT(dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05, "Can only collect benefit after HARDFORK_0_5_TIME");
+
+      d.get_account_by_uid(op.issuer);
+      from_stats = &d.get_account_statistics_by_uid(op.from);
+      FC_ASSERT(from_stats->beneficiary.valid(), "from account`s beneficiary must be valid. ");
+      FC_ASSERT(*(from_stats->beneficiary) == op.issuer, "from account`s beneficiary must be issuer. ");
+
+      FC_ASSERT(op.benefit_type == benefit_collect_operation::BENEFIT_TYPE_CSAF ||
+         op.benefit_type == benefit_collect_operation::BENEFIT_TYPE_WITNESS, "benefit_type is error. ");
+      if (op.benefit_type == benefit_collect_operation::BENEFIT_TYPE_CSAF){
+         FC_ASSERT(op.to.valid(), "to_account is invalid. ");
+         FC_ASSERT(op.time.valid(), "time is invalid. ");
+         to_stats = &d.get_account_statistics_by_uid(*(op.to));
+
+         const auto& global_params = d.get_global_properties().parameters;         
+         if (to_stats->pledge_balance_ids.count(pledge_balance_type::Lock_balance)) 
+         {
+            auto csaf_limit_modulus = global_params.get_extension_params().csaf_limit_lock_balance_modulus;
+            auto pledge_balance_obj = d.get(to_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));
+            share_type lock_balance_csaf = ((fc::uint128)pledge_balance_obj.pledge.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
+
+            FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account + lock_balance_csaf,
+               "Maximum CSAF per account exceeded");
+
+         } else {
+            FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account,
+               "Maximum CSAF per account exceeded");
+         } 
+
+         const auto head_time = d.head_block_time();
+         const uint64_t csaf_window = global_params.csaf_accumulate_window;
+
+         FC_ASSERT(*(op.time) <= head_time, "Time should not be later than head block time");
+         FC_ASSERT(*(op.time) + GRAPHENE_MAX_CSAF_COLLECTING_TIME_OFFSET >= head_time,
+            "Time should not be earlier than 5 minutes before head block time");
+
+         const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+         available_coin_seconds = from_stats->compute_coin_seconds_earned_fix(csaf_window, *(op.time), d, dpo.enabled_hardfork_version).first;
+
+         collecting_coin_seconds = fc::uint128_t(op.amount.amount.value) * global_params.csaf_rate;
+
+         FC_ASSERT(available_coin_seconds >= collecting_coin_seconds,
+            "Insufficient CSAF: account ${a}'s available CSAF of ${b} is less than required ${r}",
+            ("a", op.from)
+            ("b", d.to_pretty_core_string((available_coin_seconds / global_params.csaf_rate).to_uint64()))
+            ("r", d.to_pretty_string(op.amount)));
+      }
+      else if (op.benefit_type == benefit_collect_operation::BENEFIT_TYPE_WITNESS){
+         if (op.to.valid())
+            FC_ASSERT(*(op.to) == op.issuer, "to_account must be issuer. ");
+         FC_ASSERT(!op.time.valid(), "time must be invalid. ");
+         FC_ASSERT(op.amount.asset_id == GRAPHENE_CORE_ASSET_AID, "asset must be yoyo. ");
+         FC_ASSERT(from_stats->uncollected_witness_pay >= op.amount.amount,
+            "Can not collect so much: have ${b}, requested ${r}",
+            ("b", d.to_pretty_core_string(from_stats->uncollected_witness_pay))
+            ("r", d.to_pretty_string(op.amount)));
+      }
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result benefit_collect_evaluator::do_apply(const benefit_collect_operation& op)
+{
+   try {
+      database& d = db();
+
+      if (op.benefit_type == benefit_collect_operation::BENEFIT_TYPE_CSAF){
+         d.modify(*from_stats, [&](_account_statistics_object& s) {
+            s.set_coin_seconds_earned(available_coin_seconds - collecting_coin_seconds, *(op.time));
+         });
+
+         d.modify(*to_stats, [&](_account_statistics_object& s) {
+            s.csaf += op.amount.amount;
+         });
+      }
+      else if (op.benefit_type == benefit_collect_operation::BENEFIT_TYPE_WITNESS){
+         d.adjust_balance(op.issuer, op.amount);
+         d.modify(*from_stats, [&](_account_statistics_object& s) {
+            s.uncollected_witness_pay -= op.amount.amount;
+         });
+      }
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((op))
+}
 
 } } // graphene::chain

@@ -73,6 +73,41 @@ namespace graphene { namespace chain {
          uint64_t            total_missed = 0;
          string              url;
 
+         ///account pledge asset to witness switch
+         bool                can_pledge = false;
+         ///part of witness pay as a bonus that divided to pledge account 
+         uint32_t            bonus_rate = 0;
+         ///account pledge asset to witness, total
+         uint64_t            total_mining_pledge = 0;
+         ///map<head block num, bonus_per_pledge>
+         map<uint32_t, share_type> bonus_per_pledge;
+         share_type          unhandled_bonus;
+         share_type          need_distribute_bonus;
+         share_type          already_distribute_bonus;
+         uint32_t            last_update_bonus_block_num = 0;
+
+         uint32_t get_bonus_block_num()const {
+            if (total_mining_pledge > 0 && (!bonus_per_pledge.empty() || unhandled_bonus > 0))
+               return last_update_bonus_block_num + 10000;
+            else
+               return -1;
+            }
+
+         share_type accumulate_bonus_per_pledge(uint32_t start_block_num)const {
+            auto itr = bonus_per_pledge.lower_bound(start_block_num);
+            share_type result= std::accumulate(itr, bonus_per_pledge.end(), 0, 
+               [](uint64_t bonus, std::pair<uint32_t, share_type> p) {
+               return bonus + p.second.value; 
+            });
+            
+            if (unhandled_bonus > 0 && total_mining_pledge > 0)
+            {
+               result = result + ((fc::uint128_t)unhandled_bonus.value* GRAPHENE_PLEDGE_BONUS_PRECISION
+                  / total_mining_pledge).to_uint64();
+            }
+
+            return result;
+         }
    };
 
    struct by_account;
@@ -82,6 +117,7 @@ namespace graphene { namespace chain {
    struct by_valid;
    struct by_pledge;
    struct by_votes;
+   struct by_pledge_mining_bonus;
 
    /**
     * @ingroup object_index
@@ -162,6 +198,10 @@ namespace graphene { namespace chain {
                std::less< account_uid_type >,
                std::less< uint32_t >
             >
+         >,
+         ordered_non_unique< tag<by_pledge_mining_bonus>, 
+            const_mem_fun<witness_object, uint32_t, &witness_object::get_bonus_block_num  >,
+            std::greater<uint32_t>
          >
       >
    > witness_multi_index_type;
@@ -250,6 +290,14 @@ FC_REFLECT_DERIVED( graphene::chain::witness_object, (graphene::db::object),
                     (total_produced)
                     (total_missed)
                     (url)
+                    (can_pledge)
+                    (bonus_rate)
+                    (total_mining_pledge)
+                    (bonus_per_pledge)
+                    (unhandled_bonus)
+                    (need_distribute_bonus)
+                    (already_distribute_bonus)
+                    (last_update_bonus_block_num)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::witness_vote_object, (graphene::db::object),

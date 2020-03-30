@@ -16,8 +16,8 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const operation_type& o );
          void_result do_apply( const operation_type& o );
 
-         const account_statistics_object* from_stats = nullptr;
-         const account_statistics_object* to_stats = nullptr;
+         const _account_statistics_object* from_stats = nullptr;
+         const _account_statistics_object* to_stats = nullptr;
          fc::uint128_t                    available_coin_seconds;
          fc::uint128_t                    collecting_coin_seconds;
    };
@@ -30,8 +30,8 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const operation_type& o );
          object_id_type do_apply( const operation_type& o );
 
-         const account_statistics_object* from_stats = nullptr;
-         const account_statistics_object* to_stats = nullptr;
+         const _account_statistics_object* from_stats = nullptr;
+         const _account_statistics_object* to_stats = nullptr;
          const csaf_lease_object*         current_lease = nullptr;
          share_type                       delta;
    };

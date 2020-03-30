@@ -24,7 +24,7 @@ namespace graphene { namespace chain {
 
          struct Platform_Period_Profits
          {
-             flat_map<asset_aid_type, share_type>   rewards_profits;
+             map<asset_aid_type, share_type>        rewards_profits;
              share_type                             foward_profits    = 0;
              share_type                             post_profits      = 0; //if poster and platform is the same account , include post,platform and buyout profits from content
              share_type                             post_profits_by_platform = 0;//only platform from content
@@ -106,6 +106,7 @@ namespace graphene { namespace chain {
    struct by_valid{};
    struct by_platform_pledge;
    struct by_platform_votes;
+   struct by_pledge_next_update;
 
    /**
     * @ingroup object_index
@@ -158,6 +159,14 @@ namespace graphene { namespace chain {
                std::less< account_uid_type >,
                std::less< uint32_t >
             >
+         >,
+         ordered_unique< tag<by_pledge_next_update>,
+            composite_key<
+               platform_object,
+               member<platform_object, uint32_t, &platform_object::average_pledge_next_update_block>,
+               member<platform_object, account_uid_type, &platform_object::owner>,
+               member<platform_object, uint32_t, &platform_object::sequence>
+         >
          >
       >
    > platform_multi_index_type;
@@ -248,6 +257,8 @@ namespace graphene { namespace chain {
          account_uid_type             poster;
          /// The post's pid.
          post_pid_type                post_pid;
+         /// The post's type.
+         post_operation::Post_Type    post_type = post_operation::Post_Type::Post_Type_Post;
          /// If it is a transcript, this value is requested as the source author uid
          optional<account_uid_type>   origin_poster;
          /// If it is a transcript, this value is required for the source id
@@ -293,8 +304,8 @@ namespace graphene { namespace chain {
 
 
    struct by_post_pid{};
-   struct by_platform_create_time{};
-   struct by_platform_poster_create_time{};
+   struct by_platform_id{};
+   struct by_platform_poster{};
 
    /**
     * @ingroup object_index
@@ -312,29 +323,25 @@ namespace graphene { namespace chain {
             >
          >,
          // TODO move non-consensus indexes to plugin
-         ordered_unique< tag<by_platform_create_time>,
+         ordered_unique< tag<by_platform_id>,
             composite_key<
                post_object,
                member< post_object, account_uid_type, &post_object::platform >,
-               member< post_object, time_point_sec,    &post_object::create_time >,
                member< object,      object_id_type,    &post_object::id>
             >,
             composite_key_compare< std::less<account_uid_type>,
-                                   std::greater<time_point_sec>,
                                    std::greater<object_id_type> >
 
          >,
-         ordered_unique< tag<by_platform_poster_create_time>,
+         ordered_unique< tag<by_platform_poster>,
             composite_key<
                post_object,
                member< post_object, account_uid_type, &post_object::platform >,
                member< post_object, account_uid_type,  &post_object::poster >,
-               member< post_object, time_point_sec,    &post_object::create_time >,
                member< object,      object_id_type,    &post_object::id>
             >,
             composite_key_compare< std::less<account_uid_type>,
                                    std::less<account_uid_type>,
-                                   std::greater<time_point_sec>,
                                    std::greater<object_id_type> >
 
          >
@@ -362,7 +369,7 @@ namespace graphene { namespace chain {
        {
           share_type  forward;
           share_type  post_award;
-          flat_map<asset_aid_type, share_type> rewards;
+          map<asset_aid_type, share_type> rewards;
        };
 
        /// The platform's pid.
@@ -374,14 +381,14 @@ namespace graphene { namespace chain {
        /// approvals of a post, csaf.
        share_type                             total_csaf;
        /// rewards of a post.
-       flat_map<asset_aid_type, share_type>   total_rewards;
+       map<asset_aid_type, share_type>   total_rewards;
        /// period sequence of a post.
        uint64_t                               period_sequence;
-
-       bool                                   positive_win;
+       
+       bool                                   positive_win = true;
        share_type                             post_award;
        share_type                             forward_award;
-       flat_map<account_uid_type, receiptor_detail> receiptor_details;
+       map<account_uid_type, receiptor_detail> receiptor_details;
 
        void insert_receiptor(account_uid_type uid, share_type post_award = 0, share_type forward = 0)
        {
@@ -398,7 +405,7 @@ namespace graphene { namespace chain {
              receiptor_details.emplace(uid, detail);
           }
        }
-       void insert_receiptor(account_uid_type uid, asset reward)
+       void insert_reward_receiptor(account_uid_type uid, asset reward)
        {
           if (receiptor_details.count(uid))
           {
@@ -517,7 +524,11 @@ namespace graphene { namespace chain {
                                   score_object,
                                   member< score_object, account_uid_type, &score_object::from_account_uid >,
                                   member< score_object, uint64_t,         &score_object::period_sequence >,
-                                  member< object,       object_id_type,   &object::id >>
+                                  member< object,       object_id_type,   &object::id >>,
+                                  composite_key_compare<
+                                  std::less<account_uid_type>,
+                                  std::less<uint64_t>,
+                                  std::greater<object_id_type >>
                                  >,
          ordered_unique< tag<by_post_pid>, 
                               composite_key<
@@ -533,8 +544,13 @@ namespace graphene { namespace chain {
                                   member< score_object, account_uid_type, &score_object::platform >,
                                   member< score_object, account_uid_type, &score_object::poster >,
                                   member< score_object, post_pid_type,    &score_object::post_pid >,
-                                  member< object,       object_id_type,   &object::id >
-                              > >,
+                                  member< object,       object_id_type,   &object::id >> ,
+                              composite_key_compare <
+                              std::less<account_uid_type>,
+                              std::less<account_uid_type>,
+                              std::less<post_pid_type>,
+                              std::greater < object_id_type >>
+                              > ,
          ordered_unique< tag<by_period_sequence>, 
                               composite_key<
                                   score_object,
@@ -636,7 +652,7 @@ FC_REFLECT_DERIVED( graphene::chain::platform_vote_object, (graphene::db::object
 
 FC_REFLECT_DERIVED( graphene::chain::post_object,
                     (graphene::db::object),
-                    (platform)(poster)(post_pid)(origin_poster)(origin_post_pid)(origin_platform)
+                    (platform)(poster)(post_pid)(post_type)(origin_poster)(origin_post_pid)(origin_platform)
                     (hash_value)(extra_data)(title)(body)
                     (create_time)(last_update_time)(receiptors)(forward_price)(license_lid)(permission_flags)(score_settlement)
                   )

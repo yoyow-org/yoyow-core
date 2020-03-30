@@ -35,6 +35,21 @@ namespace graphene { namespace app {
 
    class abstract_plugin;
 
+   class application_options
+   {
+   public:
+      bool enable_subscribe_to_all = false;
+      bool has_market_history_plugin = false;
+      uint64_t api_limit_get_account_history_operations = 100;
+      uint64_t api_limit_get_account_history = 100;
+      uint64_t api_limit_get_grouped_limit_orders = 101;
+      uint64_t api_limit_get_relative_account_history = 100;
+      uint64_t api_limit_get_account_history_by_operations = 100;
+      uint64_t api_limit_get_asset_holders = 100;
+      uint64_t api_limit_get_key_references = 100;
+      uint64_t api_limit_get_htlc_by = 100;
+   };
+
    class application
    {
       public:
@@ -49,6 +64,8 @@ namespace graphene { namespace app {
          void shutdown();
          void startup_plugins();
          void shutdown_plugins();
+
+         const application_options& get_options();
 
          template<typename PluginType>
          std::shared_ptr<PluginType> register_plugin()

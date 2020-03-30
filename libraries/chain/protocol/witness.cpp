@@ -37,7 +37,10 @@ void witness_update_operation::validate() const
 {
    validate_op_fee( fee, "witness update " );
    validate_account_uid( account, "witness " );
-   FC_ASSERT( new_pledge.valid() || new_signing_key.valid() || new_url.valid(), "Should change something" );
+   if (!extensions.valid())
+      FC_ASSERT(new_pledge.valid() || new_signing_key.valid() || new_url.valid(), "Should change something");
+   else
+      FC_ASSERT(extensions->value.can_pledge.valid() || extensions->value.bonus_rate.valid(), "Should change something");
    if( new_pledge.valid() )
       validate_non_negative_core_asset( *new_pledge, "new pledge" );
    if( new_url.valid() )

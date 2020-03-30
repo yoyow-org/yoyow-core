@@ -29,9 +29,9 @@ namespace graphene { namespace chain {
 
 static fc::smart_ref<fee_schedule> tmp;
 
-void committee_proposal_object::update_approve_threshold()
+void committee_proposal_object::update_approve_threshold(const uint8_t enable_hard_fork_type)
 {
-   approve_threshold = get_approve_threshold();
+   approve_threshold = get_approve_threshold(enable_hard_fork_type);
 }
 
 struct fee_parameter_get_approve_threshold_visitor
@@ -50,9 +50,12 @@ struct fee_parameter_get_approve_threshold_visitor
    }
 };
 
-uint16_t committee_proposal_object::get_approve_threshold()const
+uint16_t committee_proposal_object::get_approve_threshold(const uint8_t enable_hard_fork_type)const
 {
    uint16_t threshold = 0;
+   if (enable_hard_fork_type >= ENABLE_HEAD_FORK_05)
+      threshold = std::max(threshold, GRAPHENE_CPPT_FEE_DEFAULT);
+      
    for( const auto& item : items )
    {
       if( item.which() == committee_proposal_item_type::tag< committee_update_account_priviledge_item_type >::value )

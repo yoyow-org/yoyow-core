@@ -548,9 +548,9 @@ public:
    {
       return _remote_db->get_global_properties();
    }
-   content_parameter_extension_type get_global_properties_extensions() const
+   extension_parameter_type get_global_properties_extensions() const
    {
-      return _remote_db->get_global_properties().parameters.get_award_params();
+      return _remote_db->get_global_properties().parameters.get_extension_params();
    }
    dynamic_global_property_object get_dynamic_global_properties() const
    {
@@ -921,27 +921,17 @@ public:
       account_object referrer_account_object =
          this->get_account(referrer_account);
 
-      // TODO review
-      /*
-      account_id_type registrar_account_id = registrar_account_object.id;
-
-      account_object referrer_account_object =
-            this->get_account( referrer_account );
-      account_create_op.referrer = referrer_account_object.id;
-      account_create_op.referrer_percent = uint16_t( referrer_percent * GRAPHENE_1_PERCENT );
-
-      account_create_op.registrar = registrar_account_id;
-      */
+      account_create_op.reg_info.referrer = referrer_account_object.uid;
+      account_create_op.reg_info.referrer_percent = uint16_t(referrer_percent * GRAPHENE_1_PERCENT);
+      account_create_op.reg_info.registrar = registrar_account_object.uid;
+      account_create_op.reg_info.registrar_percent = uint16_t((100 - referrer_percent) * GRAPHENE_1_PERCENT);
+      
       account_create_op.name = name;
       account_create_op.owner = authority(1, owner, 1);
       account_create_op.active = authority(1, active, 1);
       account_create_op.secondary = authority(1, owner, 1);
       account_create_op.memo_key = active;
       account_create_op.uid = graphene::chain::calc_account_uid(seed);
-      account_reg_info reg_info;
-      reg_info.registrar = registrar_account_object.uid;
-      reg_info.referrer = referrer_account_object.uid;
-      account_create_op.reg_info = reg_info;
 
       signed_transaction tx;
 
@@ -1363,6 +1353,8 @@ public:
                                                   string pledge_amount,
                                                   string pledge_asset_symbol,
                                                   string url,
+                                                  optional<bool> can_pledge,
+                                                  optional<uint32_t> bonus_rate,
                                                   bool csaf_fee,
                                                   bool broadcast /* = false */)
    { try {
@@ -1379,6 +1371,11 @@ public:
       witness_create_op.block_signing_key = block_signing_key;
       witness_create_op.pledge = asset_obj->amount_from_string( pledge_amount );
       witness_create_op.url = url;
+      witness_create_op.extensions = graphene::chain::extension<pledge_mining::ext>();
+      pledge_mining::ext exts;
+      exts.can_pledge = can_pledge;
+      exts.bonus_rate = bonus_rate;
+      witness_create_op.extensions->value = exts;
 
       signed_transaction tx;
       tx.operations.push_back( witness_create_op );
@@ -1386,10 +1383,12 @@ public:
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (owner_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(csaf_fee)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW((owner_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(can_pledge)(bonus_rate)(csaf_fee)(broadcast))
+   }
 
    signed_transaction create_witness(string owner_account,
                                      string url,
+                                     share_type pledge,
                                      bool csaf_fee,
                                      bool broadcast /* = false */)
    { try {
@@ -1403,6 +1402,7 @@ public:
       witness_create_op.account = witness_account.uid;
       witness_create_op.block_signing_key = witness_public_key;
       witness_create_op.url = url;
+      witness_create_op.pledge = asset(pledge);
 
       if (_remote_db->get_witness_by_account(witness_create_op.account))
          FC_THROW("Account ${owner_account} is already a witness", ("owner_account", owner_account));
@@ -1600,6 +1600,8 @@ signed_transaction account_cancel_auth_platform(string account,
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        optional<bool> can_pledge,
+                                        optional<uint32_t> bonus_rate,
                                         bool csaf_fee,
                                         bool broadcast /* = false */)
    { try {
@@ -1621,6 +1623,13 @@ signed_transaction account_cancel_auth_platform(string account,
       witness_update_op.new_signing_key = block_signing_key;
       witness_update_op.new_pledge = pledge;
       witness_update_op.new_url = url;
+      if (can_pledge.valid() || bonus_rate.valid()){
+         witness_update_op.extensions = graphene::chain::extension<pledge_mining::ext>();
+         pledge_mining::ext exts;
+         exts.can_pledge = can_pledge;
+         exts.bonus_rate = bonus_rate;
+         witness_update_op.extensions->value = exts;
+      }
 
       signed_transaction tx;
       tx.operations.push_back( witness_update_op );
@@ -1628,7 +1637,7 @@ signed_transaction account_cancel_auth_platform(string account,
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (witness_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(csaf_fee)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (witness_account)(block_signing_key)(pledge_amount)(pledge_asset_symbol)(can_pledge)(bonus_rate)(csaf_fee)(broadcast) ) }
 
    signed_transaction update_witness(string witness_name,
                                      string url,
@@ -2747,8 +2756,6 @@ signed_transaction account_cancel_auth_platform(string account,
 
    vector<post_object> get_posts_by_platform_poster(string           platform_owner,
                                                     optional<string> poster,
-                                                    time_point_sec   begin_time_range,
-                                                    time_point_sec   end_time_range,
                                                     object_id_type   lower_bound_post,
                                                     uint32_t         limit)
    {
@@ -2756,13 +2763,13 @@ signed_transaction account_cancel_auth_platform(string account,
          account_uid_type platform = get_account_uid(platform_owner);
          if (poster.valid()){
             account_uid_type poster_uid = get_account_uid(*poster);
-            return _remote_db->get_posts_by_platform_poster(platform, poster_uid, std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+            return _remote_db->get_posts_by_platform_poster(platform, poster_uid, lower_bound_post, limit);
          }
          else{
-            return _remote_db->get_posts_by_platform_poster(platform, optional<account_uid_type>(), std::make_pair(begin_time_range, end_time_range), lower_bound_post, limit);
+            return _remote_db->get_posts_by_platform_poster(platform, optional<account_uid_type>(), lower_bound_post, limit);
          }
 
-      } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(begin_time_range)(end_time_range)(lower_bound_post)(limit))
+      } FC_CAPTURE_AND_RETHROW((platform_owner)(poster)(lower_bound_post)(limit))
    }
 
    uint64_t get_posts_count(optional<string> platform, optional<string> poster)
@@ -3037,11 +3044,11 @@ signed_transaction account_cancel_auth_platform(string account,
       try {
          FC_ASSERT(!self.is_locked(), "Should unlock first");
 
-         account_uid_type creater = get_account_uid(create_account);
-         const account_statistics_object& creater_statistics = _remote_db->get_account_statistics_by_uid(creater);
+         account_uid_type creator = get_account_uid(create_account);
+         const account_statistics_object& creater_statistics = _remote_db->get_account_statistics_by_uid(creator);
 
          custom_vote_create_operation create_op;
-         create_op.custom_vote_creater = creater;
+         create_op.custom_vote_creator = creator;
          create_op.vote_vid = creater_statistics.last_custom_vote_sequence + 1;
          create_op.title = title;
          create_op.description = description;
@@ -3063,7 +3070,7 @@ signed_transaction account_cancel_auth_platform(string account,
    }
 
    signed_transaction cast_custom_vote(string                voter,
-                                       string                custom_vote_creater,
+                                       string                custom_vote_creator,
                                        custom_vote_vid_type  custom_vote_vid,
                                        set<uint8_t>          vote_result,
                                        bool csaf_fee,
@@ -3073,10 +3080,10 @@ signed_transaction account_cancel_auth_platform(string account,
          FC_ASSERT(!self.is_locked(), "Should unlock first");
 
          account_uid_type cast_voter = get_account_uid(voter);
-         account_uid_type creater = get_account_uid(custom_vote_creater);
+         account_uid_type creator = get_account_uid(custom_vote_creator);
          custom_vote_cast_operation vote_op;
          vote_op.voter = cast_voter;
-         vote_op.custom_vote_creater = creater;
+         vote_op.custom_vote_creator = creator;
          vote_op.custom_vote_vid = custom_vote_vid;
          vote_op.vote_result = vote_result;
 
@@ -3086,7 +3093,7 @@ signed_transaction account_cancel_auth_platform(string account,
          tx.validate();
 
          return sign_transaction(tx, broadcast);
-      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creater)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
+      } FC_CAPTURE_AND_RETHROW((voter)(custom_vote_creator)(custom_vote_vid)(vote_result)(csaf_fee)(broadcast))
    }
 
    uint64_t get_account_auth_platform_count(string platform)
@@ -3115,6 +3122,305 @@ signed_transaction account_cancel_auth_platform(string account,
          account_uid_type account_uid = get_account_uid(account);
          return _remote_db->list_account_auth_platform_by_account(account_uid, lower_bound_platform, limit);
       } FC_CAPTURE_AND_RETHROW((account)(lower_bound_platform)(limit))
+   }
+
+   vector<pledge_mining_object> list_pledge_mining_by_witness(string   witness,
+                                                              account_uid_type   lower_bound_account,
+                                                              uint32_t limit)
+   {
+      try {
+         account_uid_type witness_uid = get_account_uid(witness);
+         return _remote_db->list_pledge_mining_by_witness(witness_uid, lower_bound_account, limit);
+      } FC_CAPTURE_AND_RETHROW((witness)(lower_bound_account)(limit))
+   }
+
+   vector<pledge_mining_object> list_pledge_mining_by_account(string   account,
+                                                              account_uid_type   lower_bound_witness,
+                                                              uint32_t limit)
+   {
+      try {
+         account_uid_type account_uid = get_account_uid(account);
+         return _remote_db->list_pledge_mining_by_account(account_uid, lower_bound_witness, limit);
+      } FC_CAPTURE_AND_RETHROW((account)(lower_bound_witness)(limit))
+   }
+
+   signed_transaction update_lock_balance(
+      string lock_balance_account,
+      string lock_balance_amount,
+      bool csaf_fee,
+      bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         auto asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         share_type lock_balance = asset_obj.amount_from_string(lock_balance_amount).amount;
+         account_uid_type account_uid = get_account_uid(lock_balance_account);
+
+         balance_lock_update_operation balance_lock_update_op;
+         balance_lock_update_op.account = account_uid;
+         balance_lock_update_op.new_lock_balance = lock_balance;
+
+         signed_transaction tx;
+         tx.operations.push_back(balance_lock_update_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((lock_balance_account)(lock_balance_amount)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction update_mining_pledge(string pledge_account,
+      string witness,
+      string new_pledge,
+      bool csaf_fee,
+      bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         auto asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         share_type pledge = asset_obj.amount_from_string(new_pledge).amount;
+
+         account_uid_type pledge_account_uid = get_account_uid(pledge_account);
+         account_uid_type witness_uid = get_account_uid(witness);
+
+         pledge_mining_update_operation pledge_mining_update_op;
+         pledge_mining_update_op.pledge_account = pledge_account_uid;
+         pledge_mining_update_op.witness = witness_uid;
+         pledge_mining_update_op.new_pledge = pledge;
+
+         signed_transaction tx;
+         tx.operations.push_back(pledge_mining_update_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((pledge_account)(witness)(new_pledge)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction collect_pledge_mining_bonus(string collect_account,
+      string bonus_amount,
+      bool csaf_fee,
+      bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         account_uid_type collect_account_uid = get_account_uid(collect_account);
+         auto asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         share_type bonus = asset_obj.amount_from_string(bonus_amount).amount;
+
+         pledge_bonus_collect_operation pledge_bonus_collect_op;
+         pledge_bonus_collect_op.account = collect_account_uid;
+         pledge_bonus_collect_op.bonus = bonus;
+
+         signed_transaction tx;
+         tx.operations.push_back(pledge_bonus_collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((collect_account)(bonus_amount)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction collect_score_bonus(string collect_account,
+      string bonus_amount,
+      bool csaf_fee,
+      bool broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         account_uid_type collect_account_uid = get_account_uid(collect_account);
+         auto asset_obj = get_asset(GRAPHENE_CORE_ASSET_AID);
+         share_type bonus = asset_obj.amount_from_string(bonus_amount).amount;
+
+         score_bonus_collect_operation score_bonus_collect_op;
+         score_bonus_collect_op.account = collect_account_uid;
+         score_bonus_collect_op.bonus = bonus;
+
+         signed_transaction tx;
+         tx.operations.push_back(score_bonus_collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((collect_account)(bonus_amount)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction create_limit_order(string           seller,
+      string           sell_asset_symbol,
+      string           sell_amount,
+      string           min_receive_asset_symbol,
+      string           min_receive_amount,
+      uint32_t         expiration,
+      bool             fill_or_kill,
+      bool             csaf_fee,
+      bool             broadcast)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         optional<asset_object_with_data> asset_to_sell = find_asset(sell_asset_symbol);
+         FC_ASSERT(asset_to_sell.valid(), "Can not find asset ${a}", ("a", sell_asset_symbol));
+         optional<asset_object_with_data> asset_to_buy = find_asset(min_receive_asset_symbol);
+         FC_ASSERT(asset_to_buy.valid(), "Can not find asset ${a}", ("a", min_receive_asset_symbol));
+
+         account_uid_type account_uid = get_account_uid(seller);
+         time_point_sec expiration_time(expiration);
+         limit_order_create_operation create_op;
+         create_op.seller = account_uid;
+         create_op.amount_to_sell = asset_to_sell->amount_from_string(sell_amount);
+         create_op.min_to_receive = asset_to_buy->amount_from_string(min_receive_amount);
+         create_op.expiration = expiration_time;
+         create_op.fill_or_kill = fill_or_kill;
+
+         signed_transaction tx;
+         tx.operations.push_back(create_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+      } FC_CAPTURE_AND_RETHROW((seller)(sell_asset_symbol)(sell_amount)(min_receive_asset_symbol)(min_receive_amount)(expiration)(fill_or_kill)(broadcast))
+   }
+
+   signed_transaction cancel_limit_order(string               seller,
+      limit_order_id_type  order_id,
+      bool                 csaf_fee,
+      bool                 broadcast)
+   {
+
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         account_uid_type account_uid = get_account_uid(seller);
+         limit_order_cancel_operation cancel_op;
+         cancel_op.fee_paying_account = account_uid;
+         cancel_op.order = order_id;
+
+         signed_transaction tx;
+         tx.operations.push_back(cancel_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((seller)(order_id)(broadcast))
+   }
+
+
+   signed_transaction collect_market_fee(string               account,
+      string               asset_symbol,
+      string               amount,
+      bool                 csaf_fee = true,
+      bool                 broadcast = false
+      )
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         optional<asset_object_with_data> asset_to_reserve = find_asset(asset_symbol);
+         FC_ASSERT(asset_to_reserve.valid(), "Can not find asset ${a}", ("a", asset_symbol));
+
+         account_uid_type account_uid = get_account_uid(account);
+         market_fee_collect_operation collect_op;
+         collect_op.account = account_uid;
+         collect_op.asset_aid = asset_to_reserve->asset_id;
+         collect_op.amount = asset_to_reserve->amount_from_string(amount).amount;
+
+         signed_transaction tx;
+         tx.operations.push_back(collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((account)(asset_symbol)(amount)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction assign_beneficiary(string   account,
+      string   new_beneficiary,
+      bool     csaf_fee = true,
+      bool     broadcast = false)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+
+         account_uid_type account_uid = get_account_uid(account);
+         account_uid_type beneficiary_uid = get_account_uid(new_beneficiary);
+         beneficiary_assign_operation assign_op;
+         assign_op.owner = account_uid;
+         assign_op.new_beneficiary = beneficiary_uid;
+
+         signed_transaction tx;
+         tx.operations.push_back(assign_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((account)(new_beneficiary)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction collect_benefit(string           issuer,
+      string                   from,
+      uint8_t                  benefit_type,
+      string                   amount,
+      string                   asset_symbol,
+      optional<string>         to,
+      optional<uint32_t>       time,
+      bool                     csaf_fee = true,
+      bool                     broadcast = false)
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         fc::optional<asset_object_with_data> asset_obj = get_asset(asset_symbol);
+         FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
+
+         account_uid_type issuer_uid = get_account_uid(issuer);
+         account_uid_type from_uid = get_account_uid(from);
+
+         benefit_collect_operation collect_op;
+         collect_op.issuer = issuer_uid;
+         collect_op.from = from_uid;
+         collect_op.amount = asset_obj->amount_from_string(amount);
+         collect_op.benefit_type = benefit_type;
+
+         if (to.valid())
+            collect_op.to = get_account_uid(*to);
+         if (time.valid())
+            collect_op.time = time_point_sec(*time);
+
+         signed_transaction tx;
+         tx.operations.push_back(collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((issuer)(from)(benefit_type)(amount)(asset_symbol)(to)(time)(csaf_fee)(broadcast))
+   }
+
+   signed_transaction asset_claim_fees(string               issuer,
+      string               asset_symbol,
+      string               amount_to_claim,
+      bool                 csaf_fee = true,
+      bool                 broadcast = false
+      )
+   {
+      try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         optional<asset_object_with_data> asset_to_reserve = find_asset(asset_symbol);
+         FC_ASSERT(asset_to_reserve.valid(), "Can not find asset ${a}", ("a", asset_symbol));
+
+         account_uid_type account_uid = get_account_uid(issuer);
+         asset_claim_fees_operation collect_op;
+         collect_op.issuer = account_uid;
+         collect_op.amount_to_claim = asset_to_reserve->amount_from_string(amount_to_claim);
+
+         signed_transaction tx;
+         tx.operations.push_back(collect_op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((issuer)(asset_symbol)(amount_to_claim)(csaf_fee)(broadcast))
    }
 
    signed_transaction approve_proposal(
@@ -3709,6 +4015,14 @@ full_account wallet_api::get_full_account(string account_name_or_uid) const
    return results.at( uid );
 }
 
+vector<pledge_balance_object> wallet_api::get_account_core_asset_pledge(string account_name_or_uid)const
+{
+   account_uid_type uid = my->get_account_uid(account_name_or_uid);
+   vector<pledge_balance_object> pledge_objs;
+   pledge_objs = my->_remote_db->get_account_core_asset_pledge(uid);
+   return pledge_objs;
+}
+
 asset_object_with_data wallet_api::get_asset(string asset_name_or_id) const
 {
    auto a = my->find_asset(asset_name_or_id);
@@ -4025,10 +4339,12 @@ signed_transaction wallet_api::create_witness(string owner_account,
                                               string pledge_amount,
                                               string pledge_asset_symbol,
                                               string url,
+                                              optional<bool> can_pledge,
+                                              optional<uint32_t> bonus_rate,
                                               bool csaf_fee,
                                               bool broadcast /* = false */)
 {
-   return my->create_witness_with_details(owner_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, csaf_fee, broadcast);
+   return my->create_witness_with_details(owner_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, can_pledge, bonus_rate, csaf_fee, broadcast);
    //return my->create_witness(owner_account, url, broadcast);
 }
 
@@ -4093,10 +4409,12 @@ signed_transaction wallet_api::update_witness(
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        optional<bool> can_pledge,
+                                        optional<uint32_t> bonus_rate,
                                         bool csaf_fee,
                                         bool broadcast /* = false */)
 {
-   return my->update_witness_with_details(witness_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, csaf_fee, broadcast);
+   return my->update_witness_with_details(witness_account, block_signing_key, pledge_amount, pledge_asset_symbol, url, can_pledge, bonus_rate, csaf_fee, broadcast);
    //return my->update_witness(witness_name, url, block_signing_key, broadcast);
 }
 
@@ -4151,9 +4469,13 @@ string wallet_api::compute_available_csaf(string account_name_or_uid)
    const auto& results = my->_remote_db->get_full_accounts_by_uid( uids, opt );
    auto& account = results.at( uid );
    const auto& global_params = my->get_global_properties().parameters;
-   auto csaf = account.statistics.compute_coin_seconds_earned( global_params.csaf_accumulate_window, time_point_sec(time_point::now()) ).first;
+   auto csaf = my->_remote_db->compute_coin_seconds_earned(uid, global_params.csaf_accumulate_window, time_point_sec(time_point::now())).first;
    auto ao = my->get_asset( GRAPHENE_CORE_ASSET_AID );
-   auto s1 = global_params.max_csaf_per_account - account.statistics.csaf;
+
+   auto csaf_limit_modulus = global_params.get_extension_params().csaf_limit_lock_balance_modulus;
+   auto lock_balance_amount = my->_remote_db->get_account_statistics_by_uid(uid).locked_balance;
+   auto lock_balance_csaf = ((fc::uint128)lock_balance_amount.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
+   auto s1 = global_params.max_csaf_per_account + lock_balance_csaf - account.statistics.csaf;
    auto s2 = (csaf / global_params.csaf_rate).to_uint64();
    return ao.amount_to_string(s1 > s2 ? s2 : s1);
 }
@@ -4466,14 +4788,10 @@ post_object wallet_api::get_post(string platform_owner,
 
 vector<post_object> wallet_api::get_posts_by_platform_poster(string           platform_owner,
                                                              optional<string> poster,
-                                                             uint32_t         begin_time_range,
-                                                             uint32_t         end_time_range,
                                                              object_id_type   lower_bound_post,
                                                              uint32_t         limit)
 {
-   time_point_sec  begin_time(begin_time_range);
-   time_point_sec  end_time(end_time_range);
-   return my->get_posts_by_platform_poster(platform_owner, poster, begin_time, end_time, lower_bound_post, limit);
+   return my->get_posts_by_platform_poster(platform_owner, poster, lower_bound_post, limit);
 }
 
 uint64_t wallet_api::get_posts_count(optional<string> platform, optional<string> poster)
@@ -4624,32 +4942,32 @@ signed_transaction wallet_api::create_custom_vote(string           create_accoun
 }
 
 signed_transaction wallet_api::cast_custom_vote(string                voter,
-                                                string                custom_vote_creater,
+                                                string                custom_vote_creator,
                                                 custom_vote_vid_type  custom_vote_vid,
                                                 set<uint8_t>          vote_result,
                                                 bool csaf_fee,
                                                 bool broadcast)
 {
-   return my->cast_custom_vote(voter, custom_vote_creater, custom_vote_vid, vote_result, csaf_fee, broadcast);
+   return my->cast_custom_vote(voter, custom_vote_creator, custom_vote_vid, vote_result, csaf_fee, broadcast);
 }
 
-vector<custom_vote_object> wallet_api::list_custom_votes(const account_uid_type lowerbound, uint32_t limit)
+vector<custom_vote_object> wallet_api::list_custom_votes(optional<custom_vote_id_type> lower_bound_custom_vote_id, optional<bool> is_finished, uint32_t limit)
 {
-   return my->_remote_db->list_custom_votes(lowerbound, limit);
+   return my->_remote_db->list_custom_votes(lower_bound_custom_vote_id, is_finished, limit);
 }
 
-vector<custom_vote_object> wallet_api::lookup_custom_votes(string creater, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)
+vector<custom_vote_object> wallet_api::lookup_custom_votes(string creator, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit)
 {
-   account_uid_type account = my->get_account_uid(creater);
+   account_uid_type account = my->get_account_uid(creator);
    return my->_remote_db->lookup_custom_votes(account, lower_bound_custom_vote, limit);
 }
 
-vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(const string creater,
+vector<cast_custom_vote_object> wallet_api::list_cast_custom_votes_by_id(const string creator,
                                                                          const custom_vote_vid_type vote_vid,
                                                                          const object_id_type lower_bound_cast_custom_vote,
                                                                          uint32_t limit)
 {
-   account_uid_type creater_account = my->get_account_uid(creater);
+   account_uid_type creater_account = my->get_account_uid(creator);
    return my->_remote_db->list_cast_custom_votes_by_id(creater_account, vote_vid, lower_bound_cast_custom_vote, limit);
 }
 
@@ -4678,6 +4996,191 @@ vector<account_auth_platform_object> wallet_api::list_account_auth_platform_by_a
    return my->list_account_auth_platform_by_account(account, lower_bound_platform, limit);
 }
 
+vector<pledge_mining_object> wallet_api::list_pledge_mining_by_witness(string   witness,
+                                                                       account_uid_type   lower_bound_account,
+                                                                       uint32_t limit)
+{
+   return my->list_pledge_mining_by_witness(witness, lower_bound_account, limit);
+}
+
+vector<pledge_mining_object> wallet_api::list_pledge_mining_by_account(string   account,
+                                                                       account_uid_type   lower_bound_witness,
+                                                                       uint32_t limit)
+{
+   return my->list_pledge_mining_by_account(account, lower_bound_witness, limit);
+}
+
+signed_transaction wallet_api::update_lock_balance(string lock_balance_account,
+                                       string lock_balance_amount,
+                                       bool csaf_fee,
+                                       bool broadcast)
+{
+   return my->update_lock_balance(lock_balance_account, lock_balance_amount, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::update_mining_pledge(string pledge_account,
+                                                    string witness,
+                                                    string new_pledge,
+                                                    bool csaf_fee,
+                                                    bool broadcast)
+{
+   return my->update_mining_pledge(pledge_account, witness, new_pledge, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::collect_pledge_mining_bonus(string collect_account,
+                                                           string bonus_amount,
+                                                           bool csaf_fee,
+                                                           bool broadcast)
+{
+   return my->collect_pledge_mining_bonus(collect_account, bonus_amount, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::collect_score_bonus(string collect_account,
+                                                   string bonus_amount,
+                                                   bool csaf_fee,
+                                                   bool broadcast)
+{
+   return my->collect_score_bonus(collect_account, bonus_amount, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::create_limit_order(string           seller,
+                                                  string           sell_asset_symbol,
+                                                  string           sell_amount,
+                                                  string           min_receive_asset_symbol,
+                                                  string           min_receive_amount,
+                                                  uint32_t         expiration,
+                                                  bool             fill_or_kill,
+                                                  bool             csaf_fee,
+                                                  bool             broadcast)
+{
+   return my->create_limit_order(seller, sell_asset_symbol, sell_amount, min_receive_asset_symbol, min_receive_amount, expiration, fill_or_kill, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::cancel_limit_order(string               seller,
+                                                  limit_order_id_type  order_id,
+                                                  bool                 csaf_fee,
+                                                  bool                 broadcast)
+{
+    return my->cancel_limit_order(seller, order_id, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::collect_market_fee(string               account,
+                                                  string               asset_symbol,
+                                                  string               amount,
+                                                  bool                 csaf_fee,
+                                                  bool                 broadcast
+                                                  )
+{
+   return my->collect_market_fee(account, asset_symbol, amount, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::asset_claim_fees(string               issuer,
+                                                string               asset_symbol,
+                                                string               amount_to_claim,
+                                                bool                 csaf_fee,
+                                                bool                 broadcast
+                                                )
+{
+   return my->asset_claim_fees(issuer, asset_symbol, amount_to_claim, csaf_fee, broadcast);
+}
+
+vector<bucket_object> wallet_api::get_market_history(string   symbol1,
+                                                     string   symbol2,
+                                                     uint32_t bucket,
+                                                     uint32_t start,
+                                                     uint32_t end)const
+{
+   time_point_sec start_time = time_point_sec(start);
+   time_point_sec end_time = time_point_sec(end);
+   return my->_remote_hist->get_market_history(symbol1, symbol2, bucket, start_time, end_time);
+}
+
+vector<order_history_object> wallet_api::get_fill_order_history(std::string a, std::string b, uint32_t limit)const
+{
+   return my->_remote_hist->get_fill_order_history(a, b, limit);
+}
+
+vector<limit_order_object> wallet_api::get_account_limit_orders(const string& name_or_id,
+                                                                const string &base,
+                                                                const string &quote,
+                                                                uint32_t limit,
+                                                                optional<limit_order_id_type> ostart_id,
+                                                                optional<price> ostart_price)
+{
+   return my->_remote_db->get_account_limit_orders(name_or_id, base, quote, limit, ostart_id, ostart_price);
+}
+
+vector<limit_order_object> wallet_api::get_account_all_limit_orders(const string& name_or_id,
+                                                                    uint32_t limit,
+                                                                    optional<limit_order_id_type> ostart_id)
+{
+   return my->_remote_db->get_account_all_limit_orders(name_or_id, limit, ostart_id);
+}
+
+vector<limit_order_object> wallet_api::get_limit_orders(std::string a, std::string b, uint32_t limit)const
+{
+   return my->_remote_db->get_limit_orders(a, b, limit);
+}
+
+order_book wallet_api::get_order_book(const string& base, const string& quote, unsigned limit)
+{
+   return(my->_remote_db->get_order_book(base, quote, limit));
+}
+
+market_ticker wallet_api::get_ticker(const string& base, const string& quote)const
+{
+   return my->_remote_db->get_ticker(base, quote);
+}
+
+market_volume wallet_api::get_24_volume(const string& base, const string& quote)const
+{
+   return my->_remote_db->get_24_volume(base, quote);
+}
+
+vector<market_ticker> wallet_api::get_top_markets(uint32_t limit)const
+{
+   return my->_remote_db->get_top_markets(limit);
+}
+
+vector<market_trade> wallet_api::get_trade_history(const string& base, const string& quote,
+                                                   uint32_t start, uint32_t stop,
+                                                   unsigned limit)const
+{
+   time_point_sec start_time = time_point_sec(start);
+   time_point_sec stop_time = time_point_sec(stop);
+   return my->_remote_db->get_trade_history(base, quote, start_time, stop_time, limit);
+}
+
+vector<market_trade> wallet_api::get_trade_history_by_sequence(const string& base, const string& quote,
+                                                               int64_t start, uint32_t stop,
+                                                               unsigned limit)const
+{
+   time_point_sec stop_time = time_point_sec(stop);
+   return my->_remote_db->get_trade_history_by_sequence(base, quote, start, stop_time, limit);
+}
+
+signed_transaction wallet_api::assign_beneficiary(string   account,
+                                                  string   new_beneficiary,
+                                                  bool     csaf_fee,
+                                                  bool     broadcast)
+{
+   return my->assign_beneficiary(account, new_beneficiary, csaf_fee, broadcast);
+}
+
+signed_transaction wallet_api::collect_benefit(string                   issuer,
+                                               string                   from,
+                                               uint8_t                  benefit_type,
+                                               string                   amount,
+                                               string                   asset_symbol,
+                                               optional<string>         to,
+                                               optional<uint32_t>       time,
+                                               bool                     csaf_fee,
+                                               bool                     broadcast)
+{
+   return my->collect_benefit(issuer, from, benefit_type, amount, asset_symbol, to, time, csaf_fee, broadcast);
+}
+
+
 signed_transaction wallet_api::approve_proposal(
    const string& fee_paying_account,
    const string& proposal_id,
@@ -4701,7 +5204,7 @@ global_property_object wallet_api::get_global_properties() const
    return my->get_global_properties();
 }
 
-content_parameter_extension_type wallet_api::get_global_properties_extensions() const
+extension_parameter_type wallet_api::get_global_properties_extensions() const
 {
    return my->get_global_properties_extensions();
 }

@@ -18,13 +18,13 @@ void_result custom_vote_create_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create custom vote after HARDFORK_0_4_TIME");
 
-      d.get_account_by_uid(op.custom_vote_creater);//check create account exist
-      account_stats = &d.get_account_statistics_by_uid(op.custom_vote_creater);
+      d.get_account_by_uid(op.custom_vote_creator);//check create account exist
+      account_stats = &d.get_account_statistics_by_uid(op.custom_vote_creator);
       FC_ASSERT((account_stats->last_custom_vote_sequence + 1) == op.vote_vid,"vote_vid ${vid} is invalid.",("vid", op.vote_vid)); 
 
       d.get_asset_by_aid(op.vote_asset_id); //check asset exist
 
-      const auto& params = d.get_global_properties().parameters.get_award_params();
+      const auto& params = d.get_global_properties().parameters.get_extension_params();
       auto range_end_time = d.head_block_time() + params.custom_vote_effective_time;
       FC_ASSERT(op.vote_expired_time > d.head_block_time() && op.vote_expired_time < range_end_time,
          "vote expired time should in range ${start}--${end}", ("start", d.head_block_time())("end", range_end_time));
@@ -40,7 +40,7 @@ object_id_type custom_vote_create_evaluator::do_apply(const operation_type& op)
       database& d = db();
       const auto& custom_vote_obj = d.create<custom_vote_object>([&](custom_vote_object& obj)
       {
-         obj.custom_vote_creater = op.custom_vote_creater;
+         obj.custom_vote_creator = op.custom_vote_creator;
          obj.vote_vid = op.vote_vid;
          obj.title = op.title;
          obj.description = op.description;
@@ -54,7 +54,7 @@ object_id_type custom_vote_create_evaluator::do_apply(const operation_type& op)
          obj.options = op.options;
       });
 
-      d.modify(*account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.last_custom_vote_sequence += 1;
       });
 
@@ -70,13 +70,13 @@ void_result custom_vote_cast_evaluator::do_evaluate(const operation_type& op)
 
       d.get_account_by_uid(op.voter);//check custom voter account exist
        
-      auto custom_vote_obj = d.find_custom_vote_by_vid(op.custom_vote_creater, op.custom_vote_vid);
+      auto custom_vote_obj = d.find_custom_vote_by_vid(op.custom_vote_creator, op.custom_vote_vid);
       FC_ASSERT(custom_vote_obj != nullptr, "custom vote ${vid} not found.", ("id", op.custom_vote_vid));
       FC_ASSERT(d.head_block_time() <= custom_vote_obj->vote_expired_time, "custom vote already overdue");
       FC_ASSERT(op.vote_result.size() >= custom_vote_obj->minimum_selected_items && op.vote_result.size() <= custom_vote_obj->maximum_selected_items, 
          "vote options num is not in range ${min} - ${max}.", ("min", custom_vote_obj->minimum_selected_items)("max", custom_vote_obj->maximum_selected_items));
 
-      auto votes = d.get_balance(op.voter, custom_vote_obj->vote_asset_id).amount;
+      auto votes = d.get_account_statistics_by_uid(op.voter).get_votes_from_core_balance();
       FC_ASSERT(votes >= custom_vote_obj->required_asset_amount, "asset ${aid} balance less than required amount for vote ${amount}", 
          ("aid", custom_vote_obj->vote_asset_id)("amount", custom_vote_obj->required_asset_amount));
 

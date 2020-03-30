@@ -349,4 +349,12 @@ share_type license_create_operation::calculate_fee(const fee_parameters_type& k)
    return core_fee_required;
 }
 
+void score_bonus_collect_operation::validate() const
+{
+   validate_op_fee(fee, "score bonus collecting ");
+   validate_account_uid(account, "score collecting account");
+   validate_positive_core_asset(bonus, "bonus");
+   FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
+}
+
 } } // graphene::chain

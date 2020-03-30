@@ -28,6 +28,11 @@
 
 namespace graphene { namespace chain {
 
+   struct additional_asset_options
+   {
+      optional<uint16_t>   reward_percent;
+   };
+   typedef extension<additional_asset_options> additional_asset_options_t;
    /// Checks whether a ticker symbol is valid.
    /// @param symbol a ticker symbol
    void validate_asset_symbol( const string& symbol );
@@ -73,7 +78,7 @@ namespace graphene { namespace chain {
        */
       string description;
 
-      extensions_type extensions;
+      optional<additional_asset_options_t> extensions;
 
       /// How much size for calculating data fee
       inline uint64_t data_size_for_fee() const
@@ -90,7 +95,35 @@ namespace graphene { namespace chain {
       void validate()const;
    };
 
+   /**
+   * @brief The bitasset_options struct contains configurable options available only to BitAssets.
+   *
+   * @note Changes to this struct will break protocol compatibility
+   */
+   //struct bitasset_options {
+   //    /// Time before a price feed expires
+   //    uint32_t feed_lifetime_sec = GRAPHENE_DEFAULT_PRICE_FEED_LIFETIME;
+   //    /// Minimum number of unexpired feeds required to extract a median feed from
+   //    uint8_t minimum_feeds = 1;
+   //    /// This is the delay between the time a long requests settlement and the chain evaluates the settlement
+   //    uint32_t force_settlement_delay_sec = GRAPHENE_DEFAULT_FORCE_SETTLEMENT_DELAY;
+   //    /// This is the percent to adjust the feed price in the short's favor in the event of a forced settlement
+   //    uint16_t force_settlement_offset_percent = GRAPHENE_DEFAULT_FORCE_SETTLEMENT_OFFSET;
+   //    /// Force settlement volume can be limited such that only a certain percentage of the total existing supply
+   //    /// of the asset may be force-settled within any given chain maintenance interval. This field stores the
+   //    /// percentage of the current supply which may be force settled within the current maintenance interval. If
+   //    /// force settlements come due in an interval in which the maximum volume has already been settled, the new
+   //    /// settlements will be enqueued and processed at the beginning of the next maintenance interval.
+   //    uint16_t maximum_force_settlement_volume = GRAPHENE_DEFAULT_FORCE_SETTLEMENT_MAX_VOLUME;
+   //    /// This speicifies which asset type is used to collateralize short sales
+   //    /// This field may only be updated if the current supply of the asset is zero.
+   //    asset_aid_type short_backing_asset;
+   //    extensions_type extensions;
 
+   //    /// Perform internal consistency checks.
+   //    /// @throws fc::exception if any check fails
+   //    void validate()const;
+   //};
 
    /**
     * @ingroup operations
@@ -265,12 +298,12 @@ namespace graphene { namespace chain {
 	  }
    };
 
-
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::asset_claim_fees_operation, (fee)(issuer)(amount_to_claim)(extensions) )
 FC_REFLECT( graphene::chain::asset_claim_fees_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 
+FC_REFLECT(graphene::chain::additional_asset_options, (reward_percent))
 FC_REFLECT( graphene::chain::asset_options,
             (max_supply)
             (market_fee_percent)
@@ -284,6 +317,16 @@ FC_REFLECT( graphene::chain::asset_options,
             (description)
             (extensions)
           )
+
+//FC_REFLECT( graphene::chain::bitasset_options,
+//            (feed_lifetime_sec)
+//            (minimum_feeds)
+//            (force_settlement_delay_sec)
+//            (force_settlement_offset_percent)
+//            (maximum_force_settlement_volume)
+//            (short_backing_asset)
+//            (extensions)
+//          )
 
 FC_REFLECT( graphene::chain::asset_create_operation::fee_parameters_type,
             (symbol3)(symbol4)(long_symbol)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )

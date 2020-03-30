@@ -321,7 +321,7 @@ class wallet_api
        * @returns the global properties
        */
       global_property_object            get_global_properties() const;
-      content_parameter_extension_type  get_global_properties_extensions() const;
+      extension_parameter_type  get_global_properties_extensions() const;
 
       /** Returns the block chain's rapidly-changing properties.
        * The returned object contains information that changes every block interval
@@ -344,6 +344,13 @@ class wallet_api
        * @returns the public account data stored in the blockchain
        */
       full_account                      get_full_account(string account_name_or_uid) const;
+
+      /** Returns all pledges about the given account.
+      *
+      * @param account_name_or_uid the name or uid of the account to provide information about
+      * @returns the public account data stored in the blockchain
+      */
+      vector<pledge_balance_object>     get_account_core_asset_pledge(string account_name_or_uid)const;
 
       /** Returns information about the given asset.
        * @param asset_name_or_id the symbol or id of the asset in question
@@ -1023,6 +1030,8 @@ class wallet_api
                                         string pledge_amount,
                                         string pledge_asset_symbol,
                                         string url,
+                                        optional<bool> can_pledge,
+                                        optional<uint32_t> bonus_rate,
                                         bool csaf_fee = true,
                                         bool broadcast = false);
 
@@ -1043,6 +1052,8 @@ class wallet_api
                                         optional<string> pledge_amount,
                                         optional<string> pledge_asset_symbol,
                                         optional<string> url,
+                                        optional<bool> can_pledge,
+                                        optional<uint32_t> bonus_rate,
                                         bool csaf_fee = true,
                                         bool broadcast = false);
 
@@ -1641,8 +1652,6 @@ class wallet_api
 
       vector<post_object> get_posts_by_platform_poster(string           platform_owner,
                                                        optional<string> poster,
-                                                       uint32_t         begin_time_range,
-                                                       uint32_t         end_time_range,
                                                        object_id_type   lower_bound_post,
                                                        uint32_t         limit);
 
@@ -1750,16 +1759,16 @@ class wallet_api
                                             bool broadcast = false);
 
       signed_transaction cast_custom_vote(string                voter,
-                                          string                custom_vote_creater,
+                                          string                custom_vote_creator,
                                           custom_vote_vid_type  custom_vote_vid,
                                           set<uint8_t>          vote_result,
                                           bool csaf_fee = true,
                                           bool broadcast = false);
 
-      vector<custom_vote_object> list_custom_votes(const account_uid_type lowerbound, uint32_t limit);
-      vector<custom_vote_object> lookup_custom_votes(string creater, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit);
+      vector<custom_vote_object> list_custom_votes(optional<custom_vote_id_type> lower_bound_custom_vote_id, optional<bool> is_finished, uint32_t limit);
+      vector<custom_vote_object> lookup_custom_votes(string creator, custom_vote_vid_type lower_bound_custom_vote, uint32_t limit);
 
-      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const string creater,
+      vector<cast_custom_vote_object> list_cast_custom_votes_by_id(const string creator,
                                                                    const custom_vote_vid_type vote_vid,
                                                                    const object_id_type lower_bound_cast_custom_vote,
                                                                    uint32_t limit);
@@ -1778,7 +1787,132 @@ class wallet_api
       vector<account_auth_platform_object> list_account_auth_platform_by_account(string   account,
                                                                                  account_uid_type   lower_bound_platform,
                                                                                  uint32_t limit = 100);
+
+      vector<pledge_mining_object> list_pledge_mining_by_witness(string   witness,
+                                                                 account_uid_type   lower_bound_account,
+                                                                 uint32_t limit = 100);
+
+      vector<pledge_mining_object> list_pledge_mining_by_account(string   account,
+                                                                 account_uid_type   lower_bound_witness,
+                                                                 uint32_t limit = 100);
+
+      signed_transaction update_lock_balance(string lock_balance_account,
+                                             string lock_balance_amount,
+                                             bool csaf_fee = true,
+                                             bool broadcast = false);
+
+      signed_transaction update_mining_pledge(string   pledge_account,
+                                              string   witness,
+                                              string   new_pledge,
+                                              bool csaf_fee = true,
+                                              bool broadcast = false);
+      signed_transaction collect_pledge_mining_bonus(string collect_account,
+                                                     string bonus_amount,
+                                                     bool csaf_fee = true,
+                                                     bool broadcast = false);
+
+      signed_transaction collect_score_bonus(string collect_account,
+                                             string bonus_amount,
+                                             bool csaf_fee = true,
+                                             bool broadcast = false);
          
+      signed_transaction create_limit_order(string           seller,
+                                            string           sell_asset_symbol,
+                                            string           sell_amount,
+                                            string           min_receive_asset_symbol,
+                                            string           min_receive_amount,
+                                            uint32_t         expiration,
+                                            bool             fill_or_kill,
+                                            bool             csaf_fee = true,
+                                            bool             broadcast = false);
+
+      signed_transaction cancel_limit_order(string               seller,
+                                            limit_order_id_type  order_id,
+                                            bool                 csaf_fee = true,
+                                            bool                 broadcast = false);
+
+      signed_transaction collect_market_fee(string               account,
+                                            string               asset_symbol,
+                                            string               amount,
+                                            bool                 csaf_fee = true,
+                                            bool                 broadcast = false
+                                            );
+
+      signed_transaction asset_claim_fees(string               issuer,
+                                          string               asset_symbol,
+                                          string               amount_to_claim,
+                                          bool                 csaf_fee = true,
+                                          bool                 broadcast = false
+                                          );
+
+      vector<bucket_object> get_market_history(string   symbol, 
+                                               string   symbol2, 
+                                               uint32_t bucket, 
+                                               uint32_t start_time,
+                                               uint32_t end_time
+                                               )const;
+
+      vector<order_history_object> get_fill_order_history(std::string a, std::string b, uint32_t limit)const;
+
+      /**
+      * @brief Fetch all orders relevant to the specified account sorted descendingly by price
+      *
+      * @param name_or_id  The name or ID of an account to retrieve
+      * @param base  Base asset
+      * @param quote  Quote asset
+      * @param limit  The limitation of items each query can fetch (max: 101)
+      * @param ostart_id  Start order id, fetch orders which price are lower than or equal to this order
+      * @param ostart_price  Fetch orders with price lower than or equal to this price
+      *
+      * @return List of orders from \c name_or_id to the corresponding account
+      *
+      * @note
+      * 1. if \c name_or_id cannot be tied to an account, empty result will be returned
+      * 2. \c ostart_id and \c ostart_price can be \c null, if so the api will return the "first page" of orders;
+      *    if \c ostart_id is specified and valid, its price will be used to do page query preferentially,
+      *    otherwise the \c ostart_price will be used
+      */
+      vector<limit_order_object> get_account_limit_orders(const string& name_or_id,
+                                                          const string &base,
+                                                          const string &quote,
+                                                          uint32_t limit = 101,
+                                                          optional<limit_order_id_type> ostart_id = optional<limit_order_id_type>(),
+                                                          optional<price> ostart_price = optional<price>());
+
+      vector<limit_order_object> get_account_all_limit_orders(const string& name_or_id,
+                                                              uint32_t limit = 101,
+                                                              optional<limit_order_id_type> ostart_id = optional<limit_order_id_type>());
+
+      vector<limit_order_object> get_limit_orders(string a, string b, uint32_t limit)const;
+
+      order_book get_order_book(const string& base, const string& quote, unsigned limit = 50);
+      market_ticker get_ticker(const string& base, const string& quote)const;
+      market_volume get_24_volume(const string& base, const string& quote)const;
+      vector<market_ticker> get_top_markets(uint32_t limit)const;
+
+      vector<market_trade> get_trade_history(const string& base, const string& quote,
+                                             uint32_t start_time, uint32_t stop_time,
+                                             unsigned limit = 100)const;
+      vector<market_trade> get_trade_history_by_sequence(const string& base, const string& quote,
+                                                         int64_t start, uint32_t stop_time,
+                                                         unsigned limit = 100)const;
+
+      signed_transaction assign_beneficiary(string   account,
+                                            string   new_beneficiary,
+                                            bool     csaf_fee = true,
+                                            bool     broadcast = false);
+
+      signed_transaction collect_benefit(string                   issuer,
+                                         string                   from,
+                                         uint8_t                  benefit_type,
+                                         string                   amount,
+                                         string                   asset_symbol,
+                                         optional<string>         to,
+                                         optional<uint32_t>       time,
+                                         bool                     csaf_fee =  true,
+                                         bool                     broadcast = false);
+
+
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
       void dbg_generate_blocks( std::string debug_wif_key, uint32_t count );
@@ -1951,6 +2085,7 @@ FC_API( graphene::wallet::wallet_api,
         (set_voting_proxy)
         (get_account)
         (get_full_account)
+        (get_account_core_asset_pledge)
         (get_block)
         (get_account_count)
         (get_relative_account_history)
@@ -2017,4 +2152,31 @@ FC_API( graphene::wallet::wallet_api,
         (list_account_auth_platform_by_platform)
         (list_account_auth_platform_by_account)
         (get_global_properties_extensions)
+        (update_lock_balance)
+        (update_mining_pledge)
+        (collect_pledge_mining_bonus)
+        (list_pledge_mining_by_witness)
+        (list_pledge_mining_by_account)
+        (collect_score_bonus)
+
+        //market
+        (create_limit_order)
+        (cancel_limit_order)
+        (collect_market_fee)
+        (asset_claim_fees)
+        (get_market_history)
+        (get_fill_order_history)
+        (get_account_limit_orders)
+        (get_account_all_limit_orders)
+        (get_limit_orders)
+        (get_order_book)
+        (get_ticker)
+        (get_24_volume)
+        (get_top_markets)
+        (get_trade_history)
+        (get_trade_history_by_sequence)
+
+        //for_benefit
+        (assign_beneficiary)
+        (collect_benefit)
       )

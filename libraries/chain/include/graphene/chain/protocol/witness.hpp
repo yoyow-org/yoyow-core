@@ -34,6 +34,15 @@ namespace graphene { namespace chain {
     * Accounts which wish to become witnesses may use this operation to create a witness object which stakeholders may
     * vote on to approve its position as a witness.
     */
+
+   namespace pledge_mining {
+      struct ext
+      {
+         optional<bool>        can_pledge;
+         optional<uint32_t>    bonus_rate;
+      };
+   }
+
    struct witness_create_operation : public base_operation
    {
       struct fee_parameters_type
@@ -50,7 +59,7 @@ namespace graphene { namespace chain {
       public_key_type   block_signing_key;
       asset             pledge;
       string            url;
-      extensions_type   extensions;
+      optional< extension<pledge_mining::ext> > extensions;
 
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
@@ -87,7 +96,7 @@ namespace graphene { namespace chain {
       /// The new URL.
       optional< string          >  new_url;
 
-      extensions_type   extensions;
+      optional< extension<pledge_mining::ext> > extensions;
 
       account_uid_type  fee_payer_uid()const { return account; }
       void              validate()const;
@@ -213,3 +222,5 @@ FC_REFLECT( graphene::chain::witness_collect_pay_operation, (fee)(account)(pay)(
 
 FC_REFLECT( graphene::chain::witness_report_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::witness_report_operation, (fee)(reporter)(first_block)(second_block)(extensions) )
+
+FC_REFLECT( graphene::chain::pledge_mining::ext, (can_pledge)(bonus_rate))

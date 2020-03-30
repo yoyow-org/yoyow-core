@@ -49,13 +49,14 @@ void_result proposal_create_evaluator::do_evaluate(const proposal_create_operati
    vector<authority> other;
    flat_set<account_uid_type> tmp_active;
    flat_set<account_uid_type> tmp_secondary;
+   bool enable_hardfork_04 = d.get_dynamic_global_properties().enabled_hardfork_version >= ENABLE_HEAD_FORK_04;
    for( auto& op : _proposed_trx.operations )
       operation_get_required_uid_authorities(op,
                                              required_owner,
                                              tmp_active,
                                              tmp_secondary,
                                              other,
-                                             d.get_dynamic_global_properties().enabled_hardfork_04);
+                                             enable_hardfork_04);
 
    std::set_difference(tmp_active.begin(), tmp_active.end(),
                        required_owner.begin(), required_owner.end(),

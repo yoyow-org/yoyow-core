@@ -28,6 +28,7 @@
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/advertising_object.hpp>
+#include <graphene/chain/pledge_mining_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 
@@ -139,17 +140,100 @@ const optional<account_id_type> database::find_account_id_by_uid( account_uid_ty
    const auto& accounts_by_uid = get_index_type<account_index>().indices().get<by_uid>();
    auto itr = accounts_by_uid.find(uid);
    if( itr != accounts_by_uid.end() )
-      return itr->get_id();
+      return optional<account_id_type>(itr->get_id());
    else
       return optional<account_id_type>();
 }
 
-const account_statistics_object& database::get_account_statistics_by_uid( account_uid_type uid )const
+const _account_statistics_object& database::get_account_statistics_by_uid( account_uid_type uid )const
 {
    const auto& idx = get_index_type<account_statistics_index>().indices().get<by_uid>();
    auto itr = idx.find(uid);
    FC_ASSERT( itr != idx.end(), "account ${uid} not found.", ("uid",uid) );
    return *itr;
+}
+
+account_statistics_object database::get_account_statistics_struct_by_uid(account_uid_type uid)const
+{
+   const auto& idx = get_index_type<account_statistics_index>().indices().get<by_uid>();
+   auto itr = idx.find(uid);
+   FC_ASSERT(itr != idx.end(), "account ${uid} not found.", ("uid", uid));
+   const _account_statistics_object& ant = *itr;
+
+   account_statistics_object obj;
+   obj.owner          = ant.owner;
+   obj.most_recent_op = ant.most_recent_op;
+   obj.total_ops      = ant.total_ops;
+   obj.removed_ops    = ant.removed_ops;
+
+   obj.prepaid              = ant.prepaid;
+   obj.csaf                 = ant.csaf;
+   obj.core_balance         = ant.core_balance;
+   obj.core_leased_in       = ant.core_leased_in;
+   obj.core_leased_out      = ant.core_leased_out;
+   obj.total_core_in_orders = ant.total_core_in_orders;
+
+   obj.average_coins                   = ant.average_coins;
+   obj.average_coins_last_update       = ant.average_coins_last_update;
+   obj.coin_seconds_earned             = ant.coin_seconds_earned;
+   obj.coin_seconds_earned_last_update = ant.coin_seconds_earned_last_update;
+
+   obj.last_witness_sequence          = ant.last_witness_sequence;
+   obj.last_committee_member_sequence = ant.last_committee_member_sequence;
+   obj.last_voter_sequence            = ant.last_voter_sequence;
+   obj.last_platform_sequence         = ant.last_platform_sequence;
+   obj.last_post_sequence             = ant.last_post_sequence;
+   obj.last_custom_vote_sequence      = ant.last_custom_vote_sequence;
+   obj.last_advertising_sequence      = ant.last_advertising_sequence;
+   obj.last_license_sequence          = ant.last_license_sequence;
+
+   obj.can_vote = ant.can_vote;
+   obj.is_voter = ant.is_voter;
+
+   obj.uncollected_witness_pay  = ant.uncollected_witness_pay;
+   obj.uncollected_pledge_bonus = ant.uncollected_pledge_bonus;
+   obj.uncollected_market_fees  = ant.uncollected_market_fees;
+   obj.uncollected_score_bonus  = ant.uncollected_score_bonus;
+
+   obj.witness_last_confirmed_block_num = ant.witness_last_confirmed_block_num;
+   obj.witness_last_aslot               = ant.witness_last_aslot;
+   obj.witness_total_produced           = ant.witness_total_produced;
+   obj.witness_total_missed             = ant.witness_total_missed;
+   obj.witness_last_reported_block_num  = ant.witness_last_reported_block_num;
+   obj.witness_total_reported           = ant.witness_total_reported;
+
+   obj.total_mining_pledge = ant.total_mining_pledge;
+   obj.beneficiary = ant.beneficiary;
+
+   if (ant.pledge_balance_ids.count(pledge_balance_type::Commitment)){
+      const pledge_balance_object& pledge_balance_obj = get<pledge_balance_object>(ant.pledge_balance_ids.at(pledge_balance_type::Commitment));
+      obj.total_committee_member_pledge = pledge_balance_obj.pledge;
+      obj.releasing_committee_member_pledge = pledge_balance_obj.total_releasing_pledge;
+      obj.committee_member_pledge_release_block_number = pledge_balance_obj.last_release_block_number();
+   }
+
+   if (ant.pledge_balance_ids.count(pledge_balance_type::Witness)){
+      const pledge_balance_object& pledge_balance_obj = get<pledge_balance_object>(ant.pledge_balance_ids.at(pledge_balance_type::Witness));
+      obj.total_witness_pledge = pledge_balance_obj.pledge;
+      obj.releasing_witness_pledge = pledge_balance_obj.total_releasing_pledge;
+      obj.witness_pledge_release_block_number = pledge_balance_obj.last_release_block_number();
+   }
+
+   if (ant.pledge_balance_ids.count(pledge_balance_type::Platform)){
+      const pledge_balance_object& pledge_balance_obj = get<pledge_balance_object>(ant.pledge_balance_ids.at(pledge_balance_type::Platform));
+      obj.total_platform_pledge = pledge_balance_obj.pledge;
+      obj.releasing_platform_pledge = pledge_balance_obj.total_releasing_pledge;
+      obj.platform_pledge_release_block_number = pledge_balance_obj.last_release_block_number();
+   }
+
+   if (ant.pledge_balance_ids.count(pledge_balance_type::Lock_balance)){
+      const pledge_balance_object& pledge_balance_obj = get<pledge_balance_object>(ant.pledge_balance_ids.at(pledge_balance_type::Lock_balance));
+      obj.locked_balance = pledge_balance_obj.pledge;
+      obj.releasing_locked_balance = pledge_balance_obj.total_releasing_pledge;
+      obj.locked_balance_release_block_number = pledge_balance_obj.last_release_block_number();
+   }
+
+   return obj;
 }
 
 const account_auth_platform_object* database::find_account_auth_platform_object_by_account_platform(account_uid_type account,
@@ -195,6 +279,24 @@ const witness_object* database::find_witness_by_uid( account_uid_type uid )const
    const auto& idx = get_index_type<witness_index>().indices().get<by_valid>();
    auto itr = idx.find( std::make_tuple( true, uid ) );
    if( itr != idx.end() )
+      return &(*itr);
+   else
+      return nullptr;
+}
+
+const pledge_mining_object& database::get_pledge_mining(account_uid_type witness, account_uid_type pledge_account)const
+{
+   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto itr = idx.find(std::make_tuple(witness, pledge_account));
+   FC_ASSERT(itr != idx.end(), "account ${uid} pledge to witness ${wid}not found.", ("wid", witness)("uid", pledge_account));
+   return *itr;
+}
+
+const pledge_mining_object* database::find_pledge_mining(account_uid_type witness, account_uid_type pledge_account)const
+{
+   const auto& idx = get_index_type<pledge_mining_index>().indices().get<by_pledge_witness>();
+   auto itr = idx.find(std::make_tuple(witness, pledge_account));
+   if (itr != idx.end())
       return &(*itr);
    else
       return nullptr;
@@ -420,18 +522,18 @@ const advertising_order_object&  database::get_advertising_order(account_uid_typ
       ("platform", platform)("uid", advertising_aid)("order", order_oid));
    return *itr;
 }
-const custom_vote_object& database::get_custom_vote_by_vid(account_uid_type creater, custom_vote_vid_type vote_vid)const
+const custom_vote_object& database::get_custom_vote_by_vid(account_uid_type creator, custom_vote_vid_type vote_vid)const
 {
    const auto& custom_votes_by_vid = get_index_type<custom_vote_index>().indices().get<by_creater>();
-   auto itr = custom_votes_by_vid.find(std::make_tuple(creater, vote_vid));
+   auto itr = custom_votes_by_vid.find(std::make_tuple(creator, vote_vid));
    FC_ASSERT(itr != custom_votes_by_vid.end(), "custom vote ${vid} not found.", ("vid", vote_vid));
    return *(itr);
 }
 
-const custom_vote_object* database::find_custom_vote_by_vid(account_uid_type creater, custom_vote_vid_type vote_vid)const
+const custom_vote_object* database::find_custom_vote_by_vid(account_uid_type creator, custom_vote_vid_type vote_vid)const
 {
    const auto& custom_votes_by_vid = get_index_type<custom_vote_index>().indices().get<by_creater>();
-   auto itr = custom_votes_by_vid.find(std::make_tuple(creater, vote_vid));
+   auto itr = custom_votes_by_vid.find(std::make_tuple(creator, vote_vid));
    if (itr != custom_votes_by_vid.end())
       return &(*itr);
    else 

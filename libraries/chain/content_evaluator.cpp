@@ -28,10 +28,8 @@ void_result platform_create_evaluator::do_evaluate( const platform_create_operat
                  ("p",d.to_pretty_string(op.pledge))
                  ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
 
-   auto available_balance = account_stats->core_balance
-                          - account_stats->core_leased_out
-                          - account_stats->total_committee_member_pledge
-                          - account_stats->total_witness_pledge;
+   // releasing platform pledge can be reused.
+   auto available_balance = account_stats->get_available_core_balance(pledge_balance_type::Platform, d);
    FC_ASSERT( available_balance >= op.pledge.amount,
               "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
               ("a",op.account)
@@ -72,20 +70,28 @@ object_id_type platform_create_evaluator::do_apply( const platform_create_operat
          a.is_full_member = true;
    });
 
-   d.modify( *account_stats, [&](account_statistics_object& s) {
+   d.modify(*account_stats, [&](_account_statistics_object& s) {
       s.last_platform_sequence += 1;
-      if( s.releasing_platform_pledge > op.pledge.amount.value )
-         s.releasing_platform_pledge -= op.pledge.amount.value;
-      else
-      {
-         s.total_platform_pledge = op.pledge.amount.value;
-         if( s.releasing_platform_pledge > 0 )
-         {
-            s.releasing_platform_pledge = 0;
-            s.platform_pledge_release_block_number = -1;
-         }
-      }
    });
+
+   if (account_stats->pledge_balance_ids.count(pledge_balance_type::Platform)){
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         s.update_pledge(op.pledge.amount, -1,d);
+      });
+   }
+   else{
+      auto ple_obj = d.create<pledge_balance_object>([&](pledge_balance_object& obj){
+         obj.superior_index = op.account;
+         obj.pledge = op.pledge.amount;
+         obj.asset_id = op.pledge.asset_id;
+         obj.type = pledge_balance_type::Platform;
+      });
+
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
+         s.pledge_balance_ids.insert(std::make_pair(pledge_balance_type::Platform, ple_obj.id));
+      });
+   }
 
    return new_platform_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -110,10 +116,8 @@ void_result platform_update_evaluator::do_evaluate( const platform_update_operat
                     ("p",d.to_pretty_string(*op.new_pledge))
                     ("r",d.to_pretty_core_string(global_params.platform_min_pledge)) );
 
-         auto available_balance = account_stats->core_balance
-                                - account_stats->core_leased_out
-                                - account_stats->total_committee_member_pledge
-                                - account_stats->total_witness_pledge;
+         // releasing platform pledge can be reused.
+         auto available_balance = account_stats->get_available_core_balance(pledge_balance_type::Platform, d);
          FC_ASSERT( available_balance >= op.new_pledge->amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",op.account)
@@ -152,6 +156,14 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    const auto& global_params = d.get_global_properties().parameters;
    const account_object* account_obj = &d.get_account_by_uid( op.account );
 
+   if (op.new_pledge.valid()){
+      uint32_t pledge_release_block = d.head_block_num() + global_params.platform_pledge_release_delay;
+      const pledge_balance_object& pledge_balance_obj = d.get<pledge_balance_object>(account_stats->pledge_balance_ids.at(pledge_balance_type::Platform));
+      d.modify(pledge_balance_obj, [&](pledge_balance_object& s) {
+         s.update_pledge(*(op.new_pledge), pledge_release_block,d);
+      });
+   }
+
    if( !op.new_pledge.valid() ) // change url or name or extra_data
    {
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
@@ -165,12 +177,11 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    }
    else if( op.new_pledge->amount == 0 ) // resign
    {
-      d.modify( *account_stats, [&](account_statistics_object& s) {
-         s.releasing_platform_pledge = s.total_platform_pledge;
-         s.platform_pledge_release_block_number = d.head_block_num() + global_params.platform_pledge_release_delay;
-      });
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
          pfo.is_valid = false; // Processing will be delayed
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+            pfo.average_pledge_next_update_block = -1;
       });
       d.modify( *account_obj, [&]( account_object& acc ){
          acc.is_full_member = false;
@@ -178,31 +189,9 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
    }
    else // change pledge
    {
-      // update account stats
-      share_type delta = op.new_pledge->amount.value - platform_obj->pledge;
-      if( delta > 0 ) // Increase the mortgage
-      {
-         d.modify( *account_stats, [&](account_statistics_object& s) {
-            if( s.releasing_platform_pledge > delta )
-               s.releasing_platform_pledge -= delta.value;
-            else
-            {
-               s.total_platform_pledge = op.new_pledge->amount.value;
-               if( s.releasing_platform_pledge > 0 )
-               {
-                  s.releasing_platform_pledge = 0;
-                  s.platform_pledge_release_block_number = -1;
-               }
-            }
-         });
-      }
-      else // Reduce the mortgage
-      {
-         d.modify( *account_stats, [&](account_statistics_object& s) {
-            s.releasing_platform_pledge -= delta.value;
-            s.platform_pledge_release_block_number = d.head_block_num() + global_params.platform_pledge_release_delay;
-         });
-      }
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+         d.update_platform_avg_pledge(*platform_obj);
 
       // update platform data
       d.modify( *platform_obj, [&]( platform_object& pfo ) {
@@ -215,9 +204,12 @@ void_result platform_update_evaluator::do_apply( const platform_update_operation
 
          pfo.pledge              = op.new_pledge->amount.value;
          pfo.last_update_time  = d.head_block_time();
+         if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+            pfo.pledge_last_update = d.head_block_time();
 
       });
-      d.update_platform_avg_pledge( *platform_obj );
+      if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+         d.update_platform_avg_pledge( *platform_obj );
    }
 
    return void_result();
@@ -383,7 +375,7 @@ void_result platform_vote_update_evaluator::do_apply( const platform_vote_update
    }
    else // need to create a new voter object for this account
    {
-      d.modify( *account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.is_voter = true;
          s.last_voter_sequence += 1;
       });
@@ -391,7 +383,7 @@ void_result platform_vote_update_evaluator::do_apply( const platform_vote_update
       voter_obj = &d.create<voter_object>( [&]( voter_object& v ){
          v.uid               = op.voter;
          v.sequence          = account_stats->last_voter_sequence;
-         v.votes             = account_stats->core_balance.value;
+         v.votes             = account_stats->get_votes_from_core_balance();
          v.votes_last_update = head_block_time;
 
          v.effective_votes_last_update       = head_block_time;
@@ -449,7 +441,7 @@ void_result post_evaluator::do_evaluate( const post_operation& op )
 
    if( op.origin_post_pid.valid() ) // is Reprint
    {
-      const account_statistics_object* origin_account_stats = &d.get_account_statistics_by_uid( *op.origin_poster );
+      const _account_statistics_object* origin_account_stats = &d.get_account_statistics_by_uid(*op.origin_poster);
 
       FC_ASSERT( origin_account_stats != nullptr,
                  "the ${uid} origin poster not exists.",
@@ -551,7 +543,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 { try {
       database& d = db();
 
-      d.modify( *account_stats, [&](account_statistics_object& s) {
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.last_post_sequence += 1;
       });
 
@@ -566,7 +558,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                obj.cur_used += forwardprice;
             });
          }
-         d.modify(*account_stats, [&](account_statistics_object& obj)
+         d.modify(*account_stats, [&](_account_statistics_object& obj)
          {
             obj.prepaid -= forwardprice;
          });
@@ -580,14 +572,14 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
                continue;
             uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
             surplus -= temp;
-            d.modify(d.get_account_statistics_by_uid(iter.first), [&](account_statistics_object& obj)
+            d.modify(d.get_account_statistics_by_uid(iter.first), [&](_account_statistics_object& obj)
             {
                obj.prepaid += temp.convert_to<int64_t>();
             });
             receiptors.emplace(iter.first, temp.convert_to<int64_t>());
          }
          receiptors.emplace(origin_post->platform, surplus.convert_to<int64_t>());
-         d.modify(d.get_account_statistics_by_uid(origin_post->platform), [&](account_statistics_object& obj)
+         d.modify(d.get_account_statistics_by_uid(origin_post->platform), [&](_account_statistics_object& obj)
          {
             obj.prepaid += surplus.convert_to<int64_t>();
          });
@@ -609,7 +601,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
             else
             {
                time_point_sec expiration_time = origin_post->create_time;
-               expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration;
+               expiration_time += d.get_global_properties().parameters.get_extension_params().post_award_expiration;
                if (expiration_time >= d.head_block_time())
                {
                   d.create<active_post_object>([&](active_post_object& obj)
@@ -653,6 +645,7 @@ object_id_type post_evaluator::do_apply( const post_operation& o )
 
          if (ext_para)
          {
+            obj.post_type = (post_operation::Post_Type)*(ext_para->post_type);
             if (ext_para->forward_price.valid())
                obj.forward_price = *(ext_para->forward_price);
             if (ext_para->license_lid.valid())
@@ -696,7 +689,7 @@ void_result post_update_evaluator::do_evaluate( const operation_type& op )
 
    d.get_platform_by_owner( op.platform ); // make sure pid exists
    const account_object* poster_account = &d.get_account_by_uid( op.poster );
-   const account_statistics_object* account_stats = &d.get_account_statistics_by_uid( op.poster );
+   const _account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.poster);
    account_uid_type sign_account = sigs.real_secondary_uid(op.poster, 1);
 
    if (d.head_block_time() >= HARDFORK_0_4_TIME){
@@ -855,14 +848,17 @@ void_result score_create_evaluator::do_evaluate(const operation_type& op)
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only create_score after HARDFORK_0_4_TIME");
 
-      const auto& global_params = d.get_global_properties().parameters.get_award_params();
+      if (d.head_block_time() >= HARDFORK_0_5_TIME)
+         d.get_platform_by_owner(op.platform); // make sure pid exists
+
+      const auto& global_params = d.get_global_properties().parameters.get_extension_params();
       auto from_account = d.get_account_by_uid(op.from_account_uid);// make sure uid exists
       const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
       FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Liked) > 0, "post_object ${p} not allowed to liked.", ("p", op.post_pid));
       FC_ASSERT((from_account.can_rate), "account ${uid} is not allowed to appraise.", ("uid", op.from_account_uid));
       FC_ASSERT(op.csaf <= global_params.max_csaf_per_approval, "The score_create_operation`s member points is over the maximum limit");
 
-      const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+      const _account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
       account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
       if (sign_account != 0 && sign_account != op.from_account_uid){
          auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
@@ -893,8 +889,8 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
    try {
       database& d = db();
 
-      const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
-      d.modify(*account_stats, [&](account_statistics_object& s) {
+      const _account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
          s.csaf -= op.csaf;
       });
       const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
@@ -924,7 +920,7 @@ object_id_type score_create_evaluator::do_apply(const operation_type& op)
          {
             const post_object* post = &d.get_post_by_platform(op.platform, op.poster, op.post_pid);
             time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            if ((expiration_time += d.get_global_properties().parameters.get_extension_params().post_award_expiration) >= d.head_block_time())
             {
                const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
                d.create<active_post_object>([&](active_post_object& obj)
@@ -948,11 +944,13 @@ void_result reward_evaluator::do_evaluate(const operation_type& op)
    try {
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only be reward after HARDFORK_0_4_TIME");
+      if (d.head_block_time() >= HARDFORK_0_5_TIME)
+         d.get_platform_by_owner(op.platform); // make sure pid exists
 
       d.get_account_by_uid(op.from_account_uid);// make sure uid exists
       const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
       FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Reward) > 0, "post_object ${p} not allowed to reward.", ("p", op.post_pid));
-      const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+      const _account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 
       const account_object* from_account = &d.get_account_by_uid(op.from_account_uid);
       const asset_object&   transfer_asset_object = d.get_asset_by_aid(op.amount.asset_id);
@@ -1000,7 +998,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
       {
          if (iter.first == post->platform)
             continue;
-         uint128_t temp = (amount*(iter.second.cur_ratio)) / 10000;
+         uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
          ast.amount = temp.convert_to<int64_t>();
          surplus -= temp;
          d.adjust_balance(iter.first, ast);
@@ -1031,13 +1029,13 @@ void_result reward_evaluator::do_apply(const operation_type& op)
                   s.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
 
                for (const auto& p : receiptors)
-                  s.insert_receiptor(p.first, p.second);
+                  s.insert_reward_receiptor(p.first, p.second);
             });
          }
          else
          {
             time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            if ((expiration_time += d.get_global_properties().parameters.get_extension_params().post_award_expiration) >= d.head_block_time())
             {
                d.create<active_post_object>([&](active_post_object& obj)
                {
@@ -1049,7 +1047,7 @@ void_result reward_evaluator::do_apply(const operation_type& op)
                   obj.total_rewards.emplace(op.amount.asset_id, op.amount.amount);
 
                   for (const auto& p : receiptors)
-                     obj.insert_receiptor(p.first, p.second);
+                     obj.insert_reward_receiptor(p.first, p.second);
                });
             }
          }
@@ -1064,11 +1062,13 @@ void_result reward_proxy_evaluator::do_evaluate(const operation_type& op)
    try {
       const database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only be reward_proxy after HARDFORK_0_4_TIME");
+      if (d.head_block_time() >= HARDFORK_0_5_TIME)
+         d.get_platform_by_owner(op.platform); // make sure pid exists
 
       d.get_account_by_uid(op.from_account_uid);// make sure uid exists
       const post_object& origin_post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
       FC_ASSERT((origin_post.permission_flags & post_object::Post_Permission_Reward) > 0, "post_object ${p} not allowed to reward.", ("p", op.post_pid));
-      const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+      const _account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
 
       account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
       FC_ASSERT(op.platform == sign_account, "reward_proxy must signed by platform. ");
@@ -1103,8 +1103,8 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
       {
          obj.cur_used += op.amount;
       });
-      const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
-      d.modify(*account_stats, [&](account_statistics_object& obj)
+      const _account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+      d.modify(*account_stats, [&](_account_statistics_object& obj)
       {
          obj.prepaid -= op.amount;
       });
@@ -1121,13 +1121,13 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
             continue;
          uint128_t temp = (amount*(iter.second.cur_ratio)) / GRAPHENE_100_PERCENT;
          surplus -= temp;
-         d.modify(d.get_account_statistics_by_uid(iter.first), [&](account_statistics_object& obj)
+         d.modify(d.get_account_statistics_by_uid(iter.first), [&](_account_statistics_object& obj)
          {
             obj.prepaid += temp.convert_to<int64_t>();
          });
          receiptors.emplace(iter.first, asset(temp.convert_to<int64_t>()));
       }
-      d.modify(d.get_account_statistics_by_uid(post->platform), [&](account_statistics_object& obj)
+      d.modify(d.get_account_statistics_by_uid(post->platform), [&](_account_statistics_object& obj)
       {
          obj.prepaid += surplus.convert_to<int64_t>();
       });
@@ -1153,13 +1153,13 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
                else
                   s.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
                for (const auto& p : receiptors)
-                  s.insert_receiptor(p.first, p.second);
+                  s.insert_reward_receiptor(p.first, p.second);
             });
          }
          else
          {
             time_point_sec expiration_time = post->create_time;
-            if ((expiration_time += d.get_global_properties().parameters.get_award_params().post_award_expiration) >= d.head_block_time())
+            if ((expiration_time += d.get_global_properties().parameters.get_extension_params().post_award_expiration) >= d.head_block_time())
             {
                d.create<active_post_object>([&](active_post_object& obj)
                {
@@ -1170,7 +1170,7 @@ void_result reward_proxy_evaluator::do_apply(const operation_type& op)
                   obj.period_sequence = dpo.current_active_post_sequence;
                   obj.total_rewards.emplace(GRAPHENE_CORE_ASSET_AID, op.amount);
                   for (const auto& p : receiptors)
-                     obj.insert_receiptor(p.first, p.second);
+                     obj.insert_reward_receiptor(p.first, p.second);
                });
             }
          }
@@ -1186,6 +1186,8 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
       database& d = db();
       FC_ASSERT(d.head_block_time() >= HARDFORK_0_4_TIME, "Can only buyout after HARDFORK_0_4_TIME");
       d.get_account_by_uid(op.from_account_uid);// make sure uid exists
+      if (d.head_block_time() >= HARDFORK_0_5_TIME)
+         d.get_platform_by_owner(op.platform); // make sure pid exists
 
       auto post = d.get_post_by_platform(op.platform, op.poster, op.post_pid);// make sure pid exists
       FC_ASSERT((post.permission_flags & post_object::Post_Permission_Buyout) > 0, "post_object ${p} not allowed to buyout.", ("p", op.post_pid));
@@ -1216,7 +1218,7 @@ void_result buyout_evaluator::do_evaluate(const operation_type& op)
          }
       }
 
-      const account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
+      const _account_statistics_object* account_stats = &d.get_account_statistics_by_uid(op.from_account_uid);
       account_uid_type sign_account = sigs.real_secondary_uid(op.from_account_uid, 1);
       if (sign_account != op.from_account_uid)
          auth_object = d.find_account_auth_platform_object_by_account_platform(op.from_account_uid, sign_account);
@@ -1262,11 +1264,11 @@ void_result buyout_evaluator::do_apply(const operation_type& op)
             obj.cur_used += para.buyout_price;
          });
       }
-      d.modify(d.get_account_statistics_by_uid(op.from_account_uid), [&](account_statistics_object& obj)
+      d.modify(d.get_account_statistics_by_uid(op.from_account_uid), [&](_account_statistics_object& obj)
       {
          obj.prepaid -= para.buyout_price;
       });
-      d.modify(d.get_account_statistics_by_uid(op.receiptor_account_uid), [&](account_statistics_object& obj)
+      d.modify(d.get_account_statistics_by_uid(op.receiptor_account_uid), [&](_account_statistics_object& obj)
       {
          obj.prepaid += para.buyout_price;
       });
@@ -1319,7 +1321,7 @@ object_id_type license_create_evaluator::do_apply(const operation_type& op)
 {try {
     database& d = db();
 
-    d.modify(*platform_ant, [&](account_statistics_object& s) {
+    d.modify(*platform_ant, [&](_account_statistics_object& s) {
         s.last_license_sequence += 1;
     });
 
@@ -1338,5 +1340,36 @@ object_id_type license_create_evaluator::do_apply(const operation_type& op)
     return new_license_object.id;
 
 } FC_CAPTURE_AND_RETHROW((op)) }
+
+void_result score_bonus_collect_evaluator::do_evaluate(const score_bonus_collect_operation& op)
+{
+   try {
+      database& d = db();
+      const dynamic_global_property_object& dpo = d.get_dynamic_global_properties();
+      FC_ASSERT(dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05, "Can only collect score bonus after HARDFORK_0_5_TIME");
+      account_stats = &d.get_account_statistics_by_uid(op.account);
+
+      FC_ASSERT(account_stats->uncollected_score_bonus >= op.bonus,
+         "Can not collect so much: have ${b}, requested ${r}",
+         ("b", d.to_pretty_core_string(account_stats->uncollected_score_bonus))
+         ("r", d.to_pretty_core_string(op.bonus)));
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((op))
+}
+
+void_result score_bonus_collect_evaluator::do_apply(const score_bonus_collect_operation& op)
+{
+   try {
+      database& d = db();
+
+      d.adjust_balance(op.account, asset(op.bonus));
+      d.modify(*account_stats, [&](_account_statistics_object& s) {
+         s.uncollected_score_bonus -= op.bonus;
+      });
+
+      return void_result();
+   } FC_CAPTURE_AND_RETHROW((op))
+}
 
 } } // graphene::chain

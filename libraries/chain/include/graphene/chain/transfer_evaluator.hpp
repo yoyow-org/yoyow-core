@@ -38,8 +38,8 @@ namespace graphene { namespace chain {
 
          const account_object* from_account = nullptr;
          const account_object* to_account = nullptr;
-         const account_statistics_object* from_account_stats = nullptr;
-         const account_statistics_object* to_account_stats = nullptr;
+         const _account_statistics_object* from_account_stats = nullptr;
+         const _account_statistics_object* to_account_stats = nullptr;
          asset asset_from_balance, asset_from_prepaid, asset_to_balance, asset_to_prepaid;
          const account_auth_platform_object* auth_object=nullptr;
 

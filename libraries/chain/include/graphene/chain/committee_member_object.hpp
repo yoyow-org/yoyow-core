@@ -198,8 +198,8 @@ namespace graphene { namespace chain {
          uint16_t                                        approve_threshold;
          bool                                            is_approved = false;
 
-         uint16_t          get_approve_threshold()const;
-         void              update_approve_threshold();
+         uint16_t          get_approve_threshold(const uint8_t enable_hard_fork_type)const;
+         void              update_approve_threshold(const uint8_t enable_hard_fork_type);
    };
 
    struct by_number;

@@ -18,7 +18,7 @@ public:
    void_result do_evaluate(const operation_type& op);
    object_id_type do_apply(const operation_type& op);
 
-   const account_statistics_object* account_stats = nullptr; 
+   const _account_statistics_object* account_stats = nullptr;
 };
 
 class custom_vote_cast_evaluator : public evaluator < custom_vote_cast_evaluator >

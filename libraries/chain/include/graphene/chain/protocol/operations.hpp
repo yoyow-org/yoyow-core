@@ -33,6 +33,9 @@
 #include <graphene/chain/protocol/proposal.hpp>
 #include <graphene/chain/protocol/transfer.hpp>
 #include <graphene/chain/protocol/witness.hpp>
+#include <graphene/chain/protocol/balance_lock.hpp>
+#include <graphene/chain/protocol/pledge_mining.hpp>
+#include <graphene/chain/protocol/market.hpp>
 
 namespace graphene { namespace chain {
 
@@ -91,7 +94,17 @@ namespace graphene { namespace chain {
             advertising_confirm_operation,
             advertising_ransom_operation,
             custom_vote_create_operation,
-            custom_vote_cast_operation
+            custom_vote_cast_operation,
+            balance_lock_update_operation,
+            pledge_mining_update_operation,
+            pledge_bonus_collect_operation,
+            limit_order_create_operation,
+            limit_order_cancel_operation,
+            fill_order_operation,  // VIRTUAL
+            market_fee_collect_operation,
+            score_bonus_collect_operation,
+            beneficiary_assign_operation,
+            benefit_collect_operation
          > operation;
 
    /// @} // operations group

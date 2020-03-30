@@ -282,4 +282,33 @@ void account_update_allowed_assets_operation::validate() const
    }
 }
 
+void beneficiary_assign_operation::validate() const
+{
+   validate_op_fee(fee, "assign beneficiary");
+   validate_account_uid(owner, "owner ");
+   validate_account_uid(new_beneficiary, "new beneficiary ");
+   FC_ASSERT(owner != new_beneficiary, "account assign beneficiary to self is not allowed");
+   FC_ASSERT(!extensions.valid(), "extension is currently not allowed");
+}
+
+share_type benefit_collect_operation::calculate_fee(const fee_parameters_type& k)const
+{
+   share_type core_fee_required = k.fee;
+   return core_fee_required;
+}
+
+void benefit_collect_operation::validate()const
+{
+   validate_op_fee(fee, "benefit collect ");
+   validate_account_uid(issuer, "issuer ");
+   validate_account_uid(from, "from ");
+   if (to.valid())
+      validate_account_uid(*to, "to ");
+   FC_ASSERT(amount.amount > 0, "amount must greater than 0. ");
+   FC_ASSERT(benefit_type == BENEFIT_TYPE_CSAF || benefit_type == BENEFIT_TYPE_WITNESS, "benefit_type is error. ");
+   if (benefit_type == BENEFIT_TYPE_CSAF)
+      FC_ASSERT(time.valid(), "time is error. ");
+   if (benefit_type == BENEFIT_TYPE_WITNESS && to.valid())
+      FC_ASSERT(*to == issuer, "only collect benefit for self. ");
+}
 } } // graphene::chain

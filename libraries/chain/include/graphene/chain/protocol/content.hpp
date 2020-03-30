@@ -136,7 +136,7 @@ namespace graphene { namespace chain {
    {
    public:
       uint16_t          cur_ratio;        //the receiptor`s current ratio of the post
-      bool              to_buyout;        //is to sell receiptor`s ratio
+      bool              to_buyout = false;        //is to sell receiptor`s ratio
       uint16_t          buyout_ratio = 0; //the ratio to sell
       share_type        buyout_price = 0; //the price of the ratio for sell
       time_point_sec    buyout_expiration = time_point_sec::maximum(); //the expiration time for receiptor`s sell order
@@ -504,6 +504,38 @@ namespace graphene { namespace chain {
            a.insert(platform);    // Requires platform to change the permissions
        }
    };
+
+   /**
+   * @brief collects score bonus.
+   * @ingroup operations
+   */
+   struct score_bonus_collect_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee = 0;
+         uint16_t min_rf_percent = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type          fee;
+      account_uid_type  account;
+
+      /// The amount to collect
+      share_type        bonus;
+
+      extensions_type   extensions;
+
+      account_uid_type  fee_payer_uid()const { return account; }
+      void              validate()const;
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
+      {
+         // need active authority
+         a.insert(account);
+      }
+   };
+
 }} // graphene::chain
 
 FC_REFLECT_ENUM( graphene::chain::post_operation::Post_Type,
@@ -556,3 +588,6 @@ FC_REFLECT(graphene::chain::buyout_operation, (fee)(from_account_uid)(platform)(
 
 FC_REFLECT(graphene::chain::license_create_operation::fee_parameters_type, (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions))
 FC_REFLECT(graphene::chain::license_create_operation, (fee)(license_lid)(platform)(type)(hash_value)(extra_data)(title)(body)(extensions))
+
+FC_REFLECT(graphene::chain::score_bonus_collect_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
+FC_REFLECT(graphene::chain::score_bonus_collect_operation, (fee)(account)(bonus)(extensions))

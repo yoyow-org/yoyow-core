@@ -29,6 +29,8 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/hardfork.hpp>
 
+#include <fc/uint128.hpp>
+
 namespace graphene { namespace chain {
 
 asset database::get_balance(account_uid_type owner, asset_aid_type asset_id) const
@@ -99,14 +101,10 @@ void database::adjust_balance(account_uid_type account, asset delta )
    // Update coin_seconds_earned and etc
    if( delta.asset_id == GRAPHENE_CORE_ASSET_AID )
    {
-      const account_statistics_object& account_stats = get_account_statistics_by_uid( account );
+      const _account_statistics_object& account_stats = get_account_statistics_by_uid(account);
       if( delta.amount < 0 )
       {
-         auto available_balance = account_stats.core_balance
-                                - account_stats.core_leased_out
-                                - account_stats.total_witness_pledge
-                                - account_stats.total_platform_pledge
-                                - account_stats.total_committee_member_pledge;
+         auto available_balance = account_stats.get_available_core_balance(*this);
          FC_ASSERT( available_balance >= -delta.amount,
                     "Insufficient Balance: account ${a}'s available balance of ${b} is less than required ${r}",
                     ("a",account)
@@ -119,26 +117,27 @@ void database::adjust_balance(account_uid_type account, asset delta )
             invalidate_voter( *voter );
          }
       }
-      if( account_stats.is_voter )
-      {
-         const voter_object* voter = find_voter( account, account_stats.last_voter_sequence );
-         //refresh effective votes
-         update_voter_effective_votes( *voter );
-         //update votes
-         modify( *voter, [&]( voter_object& v )
-         {
-            v.votes += delta.amount.value;
-            v.votes_last_update = head_block_time();
-         } );
-         //refresh effective votes again
-         update_voter_effective_votes( *voter );
-      }
       const uint64_t csaf_window = get_global_properties().parameters.csaf_accumulate_window;
       const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-      modify( account_stats, [&](account_statistics_object& s) {
-         s.update_coin_seconds_earned(csaf_window, head_block_time(), dpo.enabled_hardfork_04);
+      modify(account_stats, [&](_account_statistics_object& s) {
+         if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)//HARDFORK_05 time, only locked balance produce coin second
+            s.update_coin_seconds_earned(csaf_window, head_block_time(), *this, dpo.enabled_hardfork_version);
          s.core_balance += delta.amount;
       });
+      if (account_stats.is_voter)
+      {
+         const voter_object* voter = find_voter(account, account_stats.last_voter_sequence);
+         //refresh effective votes
+         update_voter_effective_votes(*voter);
+         //update votes
+         modify(*voter, [&](voter_object& v)
+         {
+            v.votes = account_stats.get_votes_from_core_balance();
+            v.votes_last_update = head_block_time();
+         });
+         //refresh effective votes again
+         update_voter_effective_votes(*voter);
+      }
    }
 
    //update custom vote
@@ -146,17 +145,40 @@ void database::adjust_balance(account_uid_type account, asset delta )
    
 } FC_CAPTURE_AND_RETHROW( (account)(delta) ) }
 
-void database::deposit_witness_pay(const witness_object& wit, share_type amount)
+void database::deposit_witness_pay(const witness_object& wit, share_type amount, scheduled_witness_type wit_type)
 {
    FC_ASSERT( amount >= 0 );
 
    if( amount == 0 )
       return;
 
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    const auto& account_stats = get_account_statistics_by_uid( wit.account );
-   modify( account_stats, [&](account_statistics_object& s) {
-      s.uncollected_witness_pay += amount;
-   } );
+   if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05 || wit_type != scheduled_by_pledge || wit.total_mining_pledge == 0 || wit.bonus_rate == 0)
+   {
+      modify(account_stats, [&](_account_statistics_object& s) {
+         s.uncollected_witness_pay += amount;
+      });
+   }
+   else
+   {
+      share_type pledge_bonus = ((fc::bigint)amount.value * wit.bonus_rate * wit.total_mining_pledge
+         / ((wit.pledge + wit.total_mining_pledge) * GRAPHENE_100_PERCENT)).to_int64();
+      if (pledge_bonus > 0)
+      {
+         modify(wit, [&](witness_object& w) {
+            w.unhandled_bonus += pledge_bonus;
+            w.need_distribute_bonus += pledge_bonus;
+            if (w.last_update_bonus_block_num == 0)//up to now, witness not update pledge mining bonus 
+               w.last_update_bonus_block_num = head_block_num();
+         });
+      }
+
+      amount -= pledge_bonus;
+      modify(account_stats, [&](_account_statistics_object& s) {
+         s.uncollected_witness_pay += amount;
+      });
+   }
 
    return;
 }

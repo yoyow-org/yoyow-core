@@ -35,7 +35,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const witness_create_operation& o );
          object_id_type do_apply( const witness_create_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const account_object* account_obj = nullptr;
    };
 
@@ -47,7 +47,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const witness_update_operation& o );
          void_result do_apply( const witness_update_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const witness_object* witness_obj = nullptr;
    };
 
@@ -59,7 +59,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const witness_vote_update_operation& o );
          void_result do_apply( const witness_vote_update_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          const voter_object* voter_obj = nullptr;
          const voter_object* invalid_voter_obj = nullptr;
          const voter_object* invalid_current_proxy_voter_obj = nullptr;
@@ -77,7 +77,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const witness_collect_pay_operation& o );
          void_result do_apply( const witness_collect_pay_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
    };
 
    class witness_report_evaluator : public evaluator<witness_report_evaluator>
@@ -88,7 +88,7 @@ namespace graphene { namespace chain {
          void_result do_evaluate( const witness_report_operation& o );
          void_result do_apply( const witness_report_operation& o );
 
-         const account_statistics_object* account_stats = nullptr;
+         const _account_statistics_object* account_stats = nullptr;
          uint32_t reporting_block_num = 0;
    };
 

@@ -39,8 +39,8 @@ namespace graphene { namespace chain {
       account_uid_type referrer = GRAPHENE_NULL_ACCOUNT_UID;
 
       /// The percentages go to the registrar and the referrer.
-      uint16_t        registrar_percent = 0;
-      uint16_t        referrer_percent = 0;
+      uint16_t        registrar_percent = GRAPHENE_100_PERCENT/2;
+      uint16_t        referrer_percent = GRAPHENE_100_PERCENT/2;
       asset           allowance_per_article;
       asset           max_share_per_article;
       asset           max_share_total;
@@ -440,6 +440,72 @@ namespace graphene { namespace chain {
       }
    };
 
+   /**
+   *  @ingroup operations
+   *  @brief assign beneficiary
+   */
+   struct beneficiary_assign_operation : public base_operation
+   {
+      struct fee_parameters_type
+      {
+         uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION; 
+         uint64_t min_real_fee = 0;
+         uint16_t min_rf_percent = 0;
+         extensions_type        extensions;
+      };
+
+      fee_type         fee;
+      account_uid_type owner;
+      account_uid_type new_beneficiary;
+      extensions_type  extensions;
+
+      account_uid_type fee_payer_uid()const { return owner; }
+      void             validate()const;
+
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
+      {
+         a.insert(owner);
+      }
+   };
+
+   /**
+   *  @ingroup operations
+   *  @brief collect benefits
+   */
+   struct benefit_collect_operation : public base_operation
+   {
+      enum BENEFIT_TYPE{
+         BENEFIT_TYPE_CSAF = 0,
+         BENEFIT_TYPE_WITNESS = 1
+      };
+
+      struct fee_parameters_type
+      {
+         uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t min_real_fee = 0;
+         uint16_t min_rf_percent = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type                   fee;
+      account_uid_type           issuer;
+      account_uid_type           from;
+      asset                      amount;
+      uint8_t                    benefit_type;
+      optional<account_uid_type> to;
+      optional<time_point_sec>   time;
+
+      extensions_type            extensions;
+
+      account_uid_type  fee_payer_uid()const { return issuer; }
+      void              validate()const;
+      share_type        calculate_fee(const fee_parameters_type& k)const;
+      void get_required_active_uid_authorities(flat_set<account_uid_type>& a, bool enabled_hardfork)const
+      {
+         // need active authority
+         a.insert(issuer);
+      }
+   };
 } } // graphene::chain
 
 FC_REFLECT(graphene::chain::account_reg_info, (registrar)(referrer)(registrar_percent)(referrer_percent)
@@ -505,3 +571,14 @@ FC_REFLECT( graphene::chain::account_update_allowed_assets_operation::fee_parame
 
 FC_REFLECT( graphene::chain::account_whitelist_operation, (fee)(authorizing_account)(account_to_list)(new_listing)(extensions))
 FC_REFLECT( graphene::chain::account_whitelist_operation::fee_parameters_type, (fee) )
+
+FC_REFLECT( graphene::chain::beneficiary_assign_operation, (fee)(owner)(new_beneficiary)(extensions))
+FC_REFLECT( graphene::chain::beneficiary_assign_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions))
+
+FC_REFLECT_ENUM(graphene::chain::benefit_collect_operation::BENEFIT_TYPE,(BENEFIT_TYPE_CSAF)(BENEFIT_TYPE_WITNESS))
+
+FC_REFLECT(graphene::chain::benefit_collect_operation::fee_parameters_type,
+          (fee)(min_real_fee)(min_rf_percent)(extensions))
+
+FC_REFLECT(graphene::chain::benefit_collect_operation,
+          (fee)(issuer)(from)(amount)(benefit_type)(to)(time)(extensions))

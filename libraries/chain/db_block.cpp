@@ -526,13 +526,16 @@ void database::_apply_block( const signed_block& next_block )
    clear_expired_transactions();
    clear_expired_proposals();
    clear_expired_scores();
+   clear_expired_limit_orders();
 
    //dlog("after update_withdraw_permissions");
    clear_expired_csaf_leases();
    update_average_witness_pledges();
-   release_witness_pledges();
-   release_committee_member_pledges();
-   release_platform_pledges();
+
+   //release pledges, including:
+   //witness pledges, committee member pledges, platform pledges, locked balance, mining pledge.
+   process_pledge_balance_release();
+
    clear_resigned_witness_votes();
    clear_resigned_committee_member_votes();
    clear_resigned_platform_votes();
@@ -544,21 +547,58 @@ void database::_apply_block( const signed_block& next_block )
 
    process_content_platform_awards();
    process_platform_voted_awards();
+   update_pledge_mining_bonus();
 
    clear_unnecessary_objects();
 
+
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   if (head_block_time() >= HARDFORK_0_4_TIME && !dpo.enabled_hardfork_04)
+   if (head_block_time() >= HARDFORK_0_4_TIME && dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_04)
    {
       update_reduce_witness_csaf();
       modify(dpo, [&](dynamic_global_property_object& dp)
       {
-         dp.enabled_hardfork_04 = true;
+         dp.enabled_hardfork_version = ENABLE_HEAD_FORK_04;
       });
       
       //modify default value, can_reply,can_rate default to true
       update_account_permission();
-   }       
+   }    
+
+   if (head_block_time() >= HARDFORK_0_5_TIME && dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
+   {
+      update_account_feepoint();
+      //update account that created before hardfork_0_5_time registrar,referrer,registrar_percent, referrer_percent
+      update_account_reg_info();
+      update_core_asset_flags();
+      modify(dpo, [&](dynamic_global_property_object& dp)
+      {
+         dp.total_witness_pledge += dpo.resign_witness_pledge_before_05;
+         dp.enabled_hardfork_version = ENABLE_HEAD_FORK_05;
+      });
+
+      if (dpo.budget_pool >= GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT)
+      {
+         modify(dpo, [&](dynamic_global_property_object& dp)
+         {
+            dp.budget_pool -= GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT;
+         });
+
+         const asset_object& ast_obj = get_asset_by_aid(GRAPHENE_CORE_ASSET_AID);
+         modify(ast_obj, [&](asset_object& dyn)
+         {
+            dyn.options.max_supply -= GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT;
+         });
+         const auto& ast_dyn_data = ast_obj.dynamic_data(*this);
+         modify(ast_dyn_data, [&](asset_dynamic_data_object& dyn)
+         {
+            dyn.current_supply -= GRAPHENE_HARDFORK_DESTORY_BUDGET_POOL_AMOUNT;
+         });
+      }
+   }
+
+   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
+      update_average_platform_pledges();
 
    //dlog("before update_witness_schedule");
    update_witness_schedule();
@@ -566,7 +606,7 @@ void database::_apply_block( const signed_block& next_block )
       apply_debug_updates();
 
    //dlog("before check invariants");
-   if(_enable_check_invariants)
+   if(next_block.block_num()%_check_invariants_interval==0)
    {
       check_invariants();
    }
@@ -628,19 +668,21 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
    };
    if (!(skip & (skip_transaction_signatures | skip_authority_check)) || to_check_transaction())
    {
-      //auto get_active = [&]( account_id_type id ) { return &id(*this).active; };
-      //auto get_owner  = [&]( account_id_type id ) { return &id(*this).owner;  };
-      //trx.verify_authority( chain_id, get_active, get_owner, get_global_properties().parameters.max_authority_depth );
+      if(!(skip&skip_uint_test)){
+         //auto get_active = [&]( account_id_type id ) { return &id(*this).active; };
+         //auto get_owner  = [&]( account_id_type id ) { return &id(*this).owner;  };
+         //trx.verify_authority( chain_id, get_active, get_owner, get_global_properties().parameters.max_authority_depth );
 
-      auto get_owner_by_uid      = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).owner);     };
-      auto get_active_by_uid     = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).active);    };
-      auto get_secondary_by_uid  = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).secondary); };
-      sigs = trx.verify_authority(chain_id,
-                            get_owner_by_uid,
-                            get_active_by_uid,
-                            get_secondary_by_uid,
-                            get_dynamic_global_properties().enabled_hardfork_04,
-                            chain_parameters.max_authority_depth );
+         auto get_owner_by_uid      = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).owner);     };
+         auto get_active_by_uid     = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).active);    };
+         auto get_secondary_by_uid  = [&]( account_uid_type uid ) { return &(this->get_account_by_uid(uid).secondary); };
+         sigs = trx.verify_authority(chain_id,
+                               get_owner_by_uid,
+                               get_active_by_uid,
+                               get_secondary_by_uid,
+                               get_dynamic_global_properties().enabled_hardfork_version >= ENABLE_HEAD_FORK_04,
+                               chain_parameters.max_authority_depth );
+      }
    }
 
    //Skip all manner of expiration and TaPoS checking if we're on block 1; It's impossible that the transaction is

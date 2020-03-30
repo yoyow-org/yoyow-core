@@ -205,6 +205,12 @@ struct get_impacted_account_uid_visitor
             if( account_item.new_priviledges.value.takeover_registrar.valid() )
                _impacted.insert( *account_item.new_priviledges.value.takeover_registrar );
          }
+         else if (item.which() == committee_proposal_item_type::tag< committee_withdraw_platform_pledge_item_type >::value)
+         {
+            const auto& platform_punish_item = item.get< committee_withdraw_platform_pledge_item_type >();
+            _impacted.insert(platform_punish_item.platform_account);
+            _impacted.insert(platform_punish_item.receiver);
+         }
       }
    }
    void operator()( const committee_proposal_update_operation& op )
@@ -355,6 +361,56 @@ struct get_impacted_account_uid_visitor
    {
        _impacted.insert(op.fee_payer_uid()); // fee payer
    }
+
+   void operator()(const balance_lock_update_operation& op)
+   {
+      _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
+
+   void operator()(const pledge_mining_update_operation& op)
+   {
+      _impacted.insert(op.fee_payer_uid()); // fee payer
+      _impacted.insert(op.witness);
+   }
+
+   void operator()(const pledge_bonus_collect_operation& op)
+   {
+      _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
+
+   void operator()(const score_bonus_collect_operation& op)
+   {
+      _impacted.insert(op.fee_payer_uid()); // fee payer
+   }
+
+   void operator()(const limit_order_create_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // seller
+   }
+   void operator()(const limit_order_cancel_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // fee_paying_account
+   }
+   void operator()(const fill_order_operation& op)
+   {
+       _impacted.insert(op.fee_payer_uid()); // account_id
+   }
+   void operator()(const market_fee_collect_operation& op)
+   {
+      _impacted.insert(op.fee_payer_uid()); // account_id
+   }
+   void operator()(const beneficiary_assign_operation& op)
+   {
+      _impacted.insert(op.fee_payer_uid()); // account_id
+      _impacted.insert(op.new_beneficiary); // account_id
+   }
+   void operator()(const benefit_collect_operation& op)
+   {
+      _impacted.insert(op.issuer);
+      _impacted.insert(op.from);
+      if (op.to.valid())
+         _impacted.insert(*(op.to));
+   }
 };
 
 void operation_get_impacted_account_uids( const operation& op, flat_set<account_uid_type>& result )
@@ -430,6 +486,11 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
            accounts.insert( aobj->platform );
            accounts.insert( aobj->poster );
            break;
+        }case limit_order_object_type:{
+            const auto& aobj = dynamic_cast<const limit_order_object*>(obj);
+            FC_ASSERT(aobj != nullptr);
+            accounts.insert(aobj->seller);
+            break;
         }
       }
    }
@@ -451,7 +512,7 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
               accounts.insert( aobj->owner );
               break;
            } case impl_account_statistics_object_type:{
-              const auto& aobj = dynamic_cast<const account_statistics_object*>(obj);
+              const auto& aobj = dynamic_cast<const _account_statistics_object*>(obj);
               assert( aobj != nullptr );
               accounts.insert( aobj->owner );
               break;
@@ -508,6 +569,8 @@ void get_relevant_accounts( const object* obj, flat_set<account_uid_type>& accou
              case impl_witness_schedule_object_type:
               break;
              case impl_account_auth_platform_object_type:
+              break;
+             case impl_pledge_balance_object_type:
               break;
       }
    }
