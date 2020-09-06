@@ -23,29 +23,12 @@
  */
 #include <algorithm>
 #include <graphene/chain/protocol/fee_schedule.hpp>
-#include <fc/smart_ref_impl.hpp>
+#include <fc/io/raw.hpp>
 
-
-namespace fc
-{
-   // explicitly instantiate the smart_ref, gcc fails to instantiate it in some release builds
-   //template graphene::chain::fee_schedule& smart_ref<graphene::chain::fee_schedule>::operator=(smart_ref<graphene::chain::fee_schedule>&&);
-   //template graphene::chain::fee_schedule& smart_ref<graphene::chain::fee_schedule>::operator=(U&&);
-   //template graphene::chain::fee_schedule& smart_ref<graphene::chain::fee_schedule>::operator=(const smart_ref&);
-   //template smart_ref<graphene::chain::fee_schedule>::smart_ref();
-#ifdef __APPLE__
-   template const graphene::chain::fee_schedule& smart_ref<graphene::chain::fee_schedule>::operator*() const;
-#endif
-}
 
 #define MAX_FEE_STABILIZATION_ITERATION 4
 
 namespace graphene { namespace chain {
-
-   typedef fc::smart_ref<fee_schedule> smart_fee_schedule;
-
-   static smart_fee_schedule tmp;
-
    fee_schedule::fee_schedule()
    {
    }
@@ -214,14 +197,14 @@ namespace graphene { namespace chain {
       auto itr = parameters.find(params);
       if( itr != parameters.end() ) params = *itr;
       auto base_value = op.visit( calc_fee_visitor( params ) );
-      auto scaled = fc::uint128(base_value) * scale;
+      auto scaled = fc::uint128_t(base_value) * scale;
       scaled /= GRAPHENE_100_PERCENT;
       FC_ASSERT( scaled <= GRAPHENE_MAX_SHARE_SUPPLY );
       //idump( (base_value)(scaled)(core_exchange_rate) );
-      auto result = asset( scaled.to_uint64(), GRAPHENE_CORE_ASSET_AID ) * core_exchange_rate;
+      auto result = asset(static_cast<int64_t>(scaled), GRAPHENE_CORE_ASSET_AID ) * core_exchange_rate;
       //FC_ASSERT( result * core_exchange_rate >= asset( scaled.to_uint64()) );
 
-      while( result * core_exchange_rate < asset( scaled.to_uint64()) )
+      while( result * core_exchange_rate < asset(static_cast<int64_t>(scaled)) )
         result.amount++;
 
       FC_ASSERT( result.amount <= GRAPHENE_MAX_SHARE_SUPPLY );

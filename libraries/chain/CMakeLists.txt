@@ -20,7 +20,7 @@ if( GRAPHENE_DISABLE_UNITY_BUILD )
         db_voter.cpp
         db_witness_schedule.cpp
         db_notify.cpp
-		db_market.cpp
+			db_market.cpp
       )
    message( STATUS "Graphene database unity build disabled" )
 else( GRAPHENE_DISABLE_UNITY_BUILD )
@@ -35,6 +35,8 @@ add_library( graphene_chain
              # As database takes the longest to compile, start it first
              ${GRAPHENE_DB_FILES}
              fork_database.cpp
+             exceptions.cpp
+	     name.cpp
 
              protocol/types.cpp
              protocol/authority.cpp
@@ -74,7 +76,19 @@ add_library( graphene_chain
              custom_vote_evaluator.cpp
              balance_lock_evaluator.cpp
              pledge_mining_evaluator.cpp
-			 market_evaluator.cpp
+	     market_evaluator.cpp
+	     contract_evaluator.cpp
+	     apply_context.cpp
+             transaction_context.cpp
+             wast_to_wasm.cpp
+             wasm_interface.cpp
+             wasm_validation.cpp
+             wasm_injection.cpp
+
+             webassembly/wavm.cpp
+             webassembly/binaryen.cpp
+             webassembly/wabt.cpp
+
 
              account_object.cpp
              asset_object.cpp
@@ -84,6 +98,8 @@ add_library( graphene_chain
              block_database.cpp
 
              is_authorized_asset.cpp
+	     abi_serializer.cpp
+	     
 
              ${HEADERS}
              ${PROTOCOL_HEADERS}
@@ -91,9 +107,14 @@ add_library( graphene_chain
            )
 
 add_dependencies( graphene_chain build_hardfork_hpp )
-target_link_libraries( graphene_chain graphene_utilities fc graphene_db )
+target_link_libraries( graphene_chain fc graphene_db Logging IR WAST WASM Runtime wasm
+    asmjs passes ast emscripten-optimizer support softfloat builtins wabt)
 target_include_directories( graphene_chain
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
+                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" 
+			    "${CMAKE_CURRENT_SOURCE_DIR}/../wasm-jit/Include"
+		           "${CMAKE_CURRENT_SOURCE_DIR}/../../externals/binaryen/src"
+		           "${CMAKE_SOURCE_DIR}/libraries/wabt"
+		           "${CMAKE_BINARY_DIR}/libraries/wabt")
 
 if(MSVC)
   set_source_files_properties( db_init.cpp db_block.cpp database.cpp block_database.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )

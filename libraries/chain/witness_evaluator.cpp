@@ -235,8 +235,8 @@ void_result witness_update_evaluator::do_apply( const witness_update_operation& 
       d.modify( *witness_obj, [&]( witness_object& wit ) {
          wit.is_valid = false; // will be processed later
          wit.average_pledge_next_update_block = -1;
-         wit.by_pledge_scheduled_time = fc::uint128_t::max_value();
-         wit.by_vote_scheduled_time = fc::uint128_t::max_value();
+         wit.by_pledge_scheduled_time = UINT128_MAX_VALUE;
+         wit.by_vote_scheduled_time = UINT128_MAX_VALUE;
       });
       share_type delta = op.new_pledge->amount - witness_obj->pledge;
       if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05){

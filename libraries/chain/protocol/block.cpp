@@ -23,7 +23,6 @@
  */
 #include <graphene/chain/protocol/block.hpp>
 #include <fc/io/raw.hpp>
-#include <fc/bitutil.hpp>
 #include <algorithm>
 
 namespace graphene { namespace chain {
@@ -34,13 +33,13 @@ namespace graphene { namespace chain {
 
    uint32_t block_header::num_from_id(const block_id_type& id)
    {
-      return fc::endian_reverse_u32(id._hash[0]);
+      return boost::endian::endian_reverse(id._hash[0].value());
    }
 
    block_id_type signed_block_header::id()const
    {
       auto tmp = fc::sha224::hash( *this );
-      tmp._hash[0] = fc::endian_reverse_u32(block_num()); // store the block num in the ID, 160 bits is plenty for the hash
+      tmp._hash[0] = boost::endian::endian_reverse(block_num()); // store the block num in the ID, 160 bits is plenty for the hash
       static_assert( sizeof(tmp._hash[0]) == 4, "should be 4 bytes" );
       block_id_type result;
       memcpy(result._hash, tmp._hash, std::min(sizeof(result), sizeof(tmp)));

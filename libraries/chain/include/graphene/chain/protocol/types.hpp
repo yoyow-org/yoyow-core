@@ -22,10 +22,17 @@
  * THE SOFTWARE.
  */
 #pragma once
+#include <memory>
+#include <vector>
+#include <deque>
+#include <cstdint>
+
 #include <fc/container/flat_fwd.hpp>
 #include <fc/io/varint.hpp>
 #include <fc/io/enum_type.hpp>
 #include <fc/crypto/sha224.hpp>
+#include <fc/crypto/sha256.hpp>
+#include <fc/crypto/hash160.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/reflect/reflect.hpp>
@@ -35,19 +42,14 @@
 #include <fc/container/flat.hpp>
 #include <fc/string.hpp>
 
-#include <graphene/chain/protocol/ext.hpp>
-
-#include <fc/io/raw.hpp>
-#include <fc/uint128.hpp>
+#include <fc/io/datastream.hpp>
+#include <fc/io/raw_fwd.hpp>
 #include <fc/static_variant.hpp>
-#include <fc/smart_ref_fwd.hpp>
+#include <graphene/chain/protocol/name.hpp>
 
-#include <memory>
-#include <vector>
-#include <deque>
-#include <cstdint>
 #include <graphene/db/object_id.hpp>
 #include <graphene/chain/protocol/config.hpp>
+#include <boost/rational.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
@@ -66,13 +68,11 @@ namespace graphene { namespace chain {
    using                               std::tie;
    using                               std::make_pair;
 
-   using                               fc::smart_ref;
    using                               fc::variant_object;
    using                               fc::variant;
    using                               fc::enum_type;
    using                               fc::optional;
    using                               fc::unsigned_int;
-   using                               fc::signed_int;
    using                               fc::time_point_sec;
    using                               fc::time_point;
    using                               fc::safe;
@@ -82,10 +82,27 @@ namespace graphene { namespace chain {
    using                               fc::ecc::range_proof_type;
    using                               fc::ecc::range_proof_info;
    using                               fc::ecc::commitment_type;
+
+   using bytes              = std::vector<char>;
+
    struct void_t{};
+   
+   using action_name      = name;
+   using scope_name       = name;
+   using account_name     = uint64_t;
+   using permission_name  = name;
+   using table_name       = name;
+
+
+   using checksum256_type    = fc::sha256;
+   using checksum512_type    = fc::sha512;
+   using checksum160_type    = fc::ripemd160;
+
+   typedef vector<std::pair<uint16_t,vector<char>>> abi_extensions_type;
 
    typedef fc::ecc::private_key        private_key_type;
    typedef fc::sha256                  chain_id_type;
+   typedef boost::rational< int32_t >   ratio_type;
 
    typedef uint64_t                    account_uid_type;
    typedef uint64_t                    asset_aid_type;
@@ -190,6 +207,14 @@ namespace graphene { namespace chain {
       impl_account_auth_platform_object_type,
       impl_pledge_mining_object_type,
       impl_pledge_balance_object_type,
+	  impl_signature_object_type,
+      impl_table_id_object_type, 
+      impl_key_value_object_type, 
+      index64_object_type,
+      index128_object_type,
+      index256_object_type,
+      index_double_object_type,
+      index_long_double_object_type,
       IMPL_OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different impl object types
    };
 
@@ -243,6 +268,9 @@ namespace graphene { namespace chain {
    class witness_schedule_object;
    class score_object;
    class pledge_balance_object;
+   class signature_object;
+   class table_id_object;
+   class key_value_object;
 
    typedef object_id< implementation_ids, impl_global_property_object_type,  global_property_object>                    global_property_id_type;
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,  dynamic_global_property_object>    dynamic_global_property_id_type;
@@ -272,8 +300,10 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_account_auth_platform_object_type, account_auth_platform_object>         account_auth_platform_id_type;
    typedef object_id< implementation_ids, impl_pledge_mining_object_type,    pledge_mining_object>                      pledge_mining_id_type;
    typedef object_id< implementation_ids, impl_pledge_balance_object_type,   pledge_balance_object>                     pledge_balance_id_type;
+   typedef object_id< implementation_ids, impl_signature_object_type, signature_object>      signature_id_type;
+   typedef object_id< implementation_ids, impl_table_id_object_type, table_id_object>        table_id_object_id_type;
+   typedef object_id< implementation_ids, impl_key_value_object_type, key_value_object>      key_value_object_id_type;
 
-   typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
    typedef fc::ripemd160                                        checksum_type;
    typedef fc::ripemd160                                        transaction_id_type;
@@ -355,6 +385,9 @@ namespace graphene { namespace chain {
 
       ENABLE_HEAD_FORK_NUM
    };
+
+   
+   struct fee_schedule;
 } }  // graphene::chain
 
 namespace fc
@@ -365,6 +398,9 @@ namespace fc
     void from_variant( const fc::variant& var, graphene::chain::extended_public_key_type& vo, uint32_t max_depth = 2 );
     void to_variant( const graphene::chain::extended_private_key_type& var, fc::variant& vo, uint32_t max_depth = 2 );
     void from_variant( const fc::variant& var, graphene::chain::extended_private_key_type& vo, uint32_t max_depth = 2 );
+
+	void from_variant( const fc::variant& var, std::shared_ptr<const graphene::chain::fee_schedule>& vo,
+	                   uint32_t max_depth = 2 );
 }
 
 FC_REFLECT( graphene::chain::public_key_type, (key_data) )
@@ -416,6 +452,14 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_account_auth_platform_object_type)
                  (impl_pledge_mining_object_type)
                  (impl_pledge_balance_object_type)
+				 (impl_signature_object_type)
+			     ( impl_table_id_object_type)
+			     ( impl_key_value_object_type)
+			     ( index64_object_type)
+			     ( index128_object_type)
+			     ( index256_object_type)
+			     ( index_double_object_type)
+			     ( index_long_double_object_type)
                  (IMPL_OBJECT_TYPE_COUNT)
                )
 
@@ -456,6 +500,9 @@ FC_REFLECT_TYPENAME( graphene::chain::block_summary_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::account_transaction_history_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::pledge_mining_id_type)
 FC_REFLECT_TYPENAME( graphene::chain::pledge_balance_id_type)
+FC_REFLECT_TYPENAME( graphene::chain::signature_id_type)
+FC_REFLECT_TYPENAME( graphene::chain::table_id_object_id_type)
+FC_REFLECT_TYPENAME( graphene::chain::key_value_object_id_type)
 
 FC_REFLECT( graphene::chain::void_t, )
 

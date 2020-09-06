@@ -1,0 +1,162 @@
+#pragma once
+#include <functional>
+#include <graphenelib/types.h>
+#include <string>
+#include <tuple>
+
+namespace graphenelib
+{
+
+/**
+    *  @brief Converts a base32 symbol into its binary representation, used by string_to_name()
+    *
+    *  @details Converts a base32 symbol into its binary representation, used by string_to_name()
+    *  @ingroup types
+    */
+static constexpr char char_to_symbol(char c)
+{
+    if (c >= 'a' && c <= 'z')
+        return (c - 'a') + 6;
+    if (c >= '1' && c <= '5')
+        return (c - '1') + 1;
+    return 0;
+}
+
+/**
+    *  @brief Converts a base32 string to a uint64_t.
+    *
+    *  @details Converts a base32 string to a uint64_t. This is a constexpr so that
+    *  this method can be used in template arguments as well.
+    *
+    *  @ingroup types
+    */
+static constexpr uint64_t string_to_name(const char *str)
+{
+
+    uint32_t len = 0;
+    while (str[len])
+        ++len;
+
+    uint64_t value = 0;
+
+    for (uint32_t i = 0; i <= 12; ++i) {
+        uint64_t c = 0;
+        if (i < len && i <= 12) c = uint64_t(char_to_symbol(str[i]));
+
+        if (i < 12) {
+            c &= 0x1f;
+            c <<= 64 - 5 * (i + 1);
+        } else {
+            c &= 0x0f;
+        }
+
+        value |= c;
+    }
+
+    return value;
+}
+
+/**
+    * @brief used to generate a compile time uint64_t from the base32 encoded string interpretation of X
+    * @ingroup types
+    */
+#define N(X) ::graphenelib::string_to_name(#X)
+
+static constexpr uint64_t name_suffix(uint64_t tmp)
+{
+    uint64_t suffix = 0;
+    bool endsuffix = false;
+    uint32_t offset = 0;
+    for (uint32_t i = 0; i <= 12; ++i, ++offset) {
+        auto p = tmp >> 59;
+        if (!p) {
+            endsuffix = true;
+        } else {
+            if (!endsuffix) {
+                suffix |= uint64_t(p) << (59 - (5 * offset));
+            }
+        }
+        if (endsuffix && p) {
+            endsuffix = false;
+            offset = 0;
+            suffix = uint64_t(p) << (59 - (5 * offset));
+        }
+        tmp <<= 5;
+    }
+    return suffix;
+}
+/**
+    *  @brief wraps a uint64_t to ensure it is only passed to methods that expect a Name
+    *  @details wraps a uint64_t to ensure it is only passed to methods that expect a Name and
+    *         that no mathematical operations occur.  It also enables specialization of print
+    *         so that it is printed as a base32 string.
+    *
+    *  @ingroup types
+    *  @{
+    */
+struct name {
+    operator uint64_t() const { return value; }
+
+    // keep in sync with name::operator string() in graphene source code definition for name
+    std::string to_string() const
+    {
+        static const char *charmap = ".12345abcdefghijklmnopqrstuvwxyz";
+
+        std::string str(13, '.');
+
+        uint64_t tmp = value;
+        for (uint32_t i = 0; i <= 12; ++i) {
+            char c = charmap[tmp & (i == 0 ? 0x0f : 0x1f)];
+            str[12 - i] = c;
+            tmp >>= (i == 0 ? 4 : 5);
+        }
+
+        trim_right_dots(str);
+        return str;
+    }
+
+    friend bool operator==(const name &a, const name &b) { return a.value == b.value; }
+    uint64_t value = 0;
+
+  private:
+    static void trim_right_dots(std::string &str)
+    {
+        const auto last = str.find_last_not_of('.');
+        if (last != std::string::npos)
+            str = str.substr(0, last + 1);
+    }
+};
+/// @}
+
+} // namespace graphene
+
+namespace std
+{
+/**
+    * @brief provide less for checksum256
+    */
+template <>
+struct less<checksum256> : binary_function<checksum256, checksum256, bool> {
+    bool operator()(const checksum256 &lhs, const checksum256 &rhs) const
+    {
+        return memcmp(&lhs, &rhs, sizeof(lhs)) < 0;
+    }
+};
+
+} // namespace std
+
+/**
+ * Provide == for checksum256 in global namespace
+ */
+bool operator==(const checksum256 &lhs, const checksum256 &rhs)
+{
+    return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
+}
+bool operator==(const checksum160 &lhs, const checksum160 &rhs)
+{
+    return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
+}
+bool operator!=(const checksum160 &lhs, const checksum160 &rhs)
+{
+    return memcmp(&lhs, &rhs, sizeof(lhs)) != 0;
+}

@@ -120,4 +120,16 @@ void override_transfer_operation::validate()const
    FC_ASSERT( issuer != from, "can not override-transfer from self" );
 }
 
+share_type inline_transfer_operation::calculate_fee( const fee_parameters_type& schedule )const
+{
+    share_type core_fee_required = schedule.fee + calculate_data_fee(fc::raw::pack_size(memo), schedule.price_per_kbyte);
+    return core_fee_required;
+}
+
+void inline_transfer_operation::validate()const
+{
+   FC_ASSERT(false,"virtual operation");
+}
+
+
 } } // graphene::chain

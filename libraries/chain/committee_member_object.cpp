@@ -23,11 +23,9 @@
  */
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/committee_member_object.hpp>
-#include <fc/smart_ref_impl.hpp>
 
 namespace graphene { namespace chain {
 
-static fc::smart_ref<fee_schedule> tmp;
 
 void committee_proposal_object::update_approve_threshold(const uint8_t enable_hard_fork_type)
 {

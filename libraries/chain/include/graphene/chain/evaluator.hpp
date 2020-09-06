@@ -25,6 +25,7 @@
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/transaction_evaluation_state.hpp>
 #include <graphene/chain/protocol/operations.hpp>
+#include <graphene/chain/protocol/transaction.hpp>
 
 namespace graphene { namespace chain {
 
@@ -53,6 +54,7 @@ namespace graphene { namespace chain {
 
       void set_signed_information(const signed_information& s){ sigs = s; }
 
+	  void set_billed_cpu_time_us(const uint32_t& s){ _billed_cpu_time_us = s; }
       //void check_required_authorities(const operation& op);
    protected:
       /**
@@ -105,23 +107,25 @@ namespace graphene { namespace chain {
       const _account_statistics_object* fee_paying_account_statistics = nullptr;
       transaction_evaluation_state*    trx_state;
       signed_information               sigs;
+	  uint32_t			   			   _billed_cpu_time_us;
    };
 
    class op_evaluator
    {
    public:
       virtual ~op_evaluator(){}
-      virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply, const signed_information& sigs) = 0;
+      virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply, const signed_information& sigs,const uint32_t& billed_cpu_time_us) = 0;
    };
 
    template<typename T>
    class op_evaluator_impl : public op_evaluator
    {
    public:
-      virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply = true, const signed_information& sigs = signed_information()) override
+      virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply = true, const signed_information& sigs = signed_information(),const uint32_t& billed_cpu_time_us=0) override
       {
          T eval;
          eval.set_signed_information(sigs);
+		 eval.set_billed_cpu_time_us(billed_cpu_time_us);
          return eval.start_evaluate(eval_state, op, apply);
       }
    };

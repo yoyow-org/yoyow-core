@@ -34,9 +34,9 @@ namespace graphene { namespace app {
 
    typedef boost::multiprecision::uint256_t u256;
 
-   u256 to256( const fc::uint128& t );
-   fc::uint128 to_capped128( const u256& t );
-   string uint128_amount_to_string( const fc::uint128& amount, const uint8_t precision );
+   u256 to256( const fc::uint128_t& t );
+   fc::uint128_t to_capped128( const u256& t );
+   string uint128_amount_to_string( const fc::uint128_t& amount, const uint8_t precision );
    string price_to_string( const price& _price, const uint8_t base_precision, const uint8_t quote_precision);
    string price_diff_percent_string( const price& old_price, const price& new_price );
 

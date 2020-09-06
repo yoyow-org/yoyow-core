@@ -27,34 +27,32 @@
 
 namespace graphene { namespace app {
 
-u256 to256( const fc::uint128& t )
+u256 to256( const fc::uint128_t& t )
 {
-   u256 v(t.hi);
+   u256 v(fc::uint128_hi64(t));
    v <<= 64;
-   v += t.lo;
+   v += fc::uint128_lo64(t);
    return v;
 }
 
-fc::uint128 to_capped128( const u256& t )
+fc::uint128_t to_capped128( const u256& t )
 {
-   static u256 max128 = to256( fc::uint128::max_value() );
+   static u256 max128 = to256( UINT128_MAX_VALUE);
    if( t >= max128 )
-      return fc::uint128::max_value();
-   fc::uint128 result;
+      return UINT128_MAX_VALUE;;
+   fc::uint128_t result;
    u256 hi(t);
    hi >>= 64;
-   result.hi = static_cast< uint64_t >( hi );
    u256 lo(t);
-   hi <<= 64;
-   lo -= hi;
-   result.lo = static_cast< uint64_t >( lo );
+   lo -= (hi<<64);
+   result = fc::uint128(static_cast< uint64_t >( hi ),static_cast< uint64_t >( lo ));
    return result;
 }
 
-string uint128_amount_to_string( const fc::uint128& amount, const uint8_t precision )
+string uint128_amount_to_string( const fc::uint128_t& amount, const uint8_t precision )
 { try {
-   string s = string( amount );
-   if( precision == 0 || amount == fc::uint128() )
+   string s = fc::variant( amount, 2 ).as_string();
+   if( precision == 0 || amount == fc::uint128_t(0) )
       return s;
 
    std::stringstream ss;
@@ -93,7 +91,7 @@ string price_to_string( const price& _price, const uint8_t base_precision, const
    }
 
    // times (10**19) so won't overflow but have good accuracy
-   fc::uint128 price128 = fc::uint128( new_price.base.amount.value ) * uint64_t(10000000000000000000ULL)
+   fc::uint128_t price128 = fc::uint128_t( new_price.base.amount.value ) * uint64_t(10000000000000000000ULL)
                                                                      / new_price.quote.amount.value;
 
    return uint128_amount_to_string( price128, 19 + base_precision - quote_precision );
@@ -133,15 +131,15 @@ string price_diff_percent_string( const price& old_price, const price& new_price
    // change = new/old - 1 = (new_base/new_quote)/(old_base/old_quote) - 1
    //        = (new_base * old_quote) / (new_quote * old_base) - 1
    //        = (new_base * old_quote - new_quote * old_base) / (new_quote * old_base)
-   fc::uint128 new128 = fc::uint128( new_price1.base.amount.value ) * old_price1.quote.amount.value;
-   fc::uint128 old128 = fc::uint128( old_price1.base.amount.value ) * new_price1.quote.amount.value;
+   fc::uint128_t new128 = fc::uint128_t( new_price1.base.amount.value ) * old_price1.quote.amount.value;
+   fc::uint128_t old128 = fc::uint128_t( old_price1.base.amount.value ) * new_price1.quote.amount.value;
    bool non_negative = (new128 >= old128);
-   fc::uint128 diff128;
+   fc::uint128_t diff128;
    if( non_negative )
       diff128 = new128 - old128;
    else
       diff128 = old128 - new128;
-   static fc::uint128 max = fc::uint128::max_value() / 10000;
+   static fc::uint128_t max = UINT128_MAX_VALUE/ 10000;
    if( diff128 <= max )
       diff128 = diff128 * 10000 / old128;
    else

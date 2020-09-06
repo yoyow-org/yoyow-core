@@ -32,8 +32,8 @@
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/transaction_object.hpp>
 
+#include <fc/crypto/base64.hpp>
 #include <fc/crypto/hex.hpp>
-#include <fc/smart_ref_impl.hpp>
 
 namespace graphene { namespace app {
 
@@ -150,24 +150,46 @@ namespace graphene { namespace app {
        }
     }
 
-    void network_broadcast_api::broadcast_transaction(const signed_transaction& trx)
+    void network_broadcast_api::broadcast_transaction(const precomputable_transaction& trx)
     {
-       trx.validate();
+       _app.chain_database()->precompute_parallel( trx ).wait();
        _app.chain_database()->push_transaction(trx);
        if( _app.p2p_node() != nullptr )
           _app.p2p_node()->broadcast_transaction(trx);
     }
 
+	void network_broadcast_api::broadcast_transaction_batch(const vector<precomputable_transaction>& trxs)
+    {
+       _app.chain_database()->precompute_parallel( trxs ).wait();
+	   for(const auto& trx:trxs)
+	   {
+	       _app.chain_database()->push_transaction(trx);
+	       if( _app.p2p_node() != nullptr )
+	          _app.p2p_node()->broadcast_transaction(trx);
+	   }
+    }
+
+    fc::variant network_broadcast_api::broadcast_transaction_synchronous(const precomputable_transaction& trx)
+    {
+       fc::promise<fc::variant>::ptr prom = fc::promise<fc::variant>::create();
+       broadcast_transaction_with_callback( [prom]( const fc::variant& v ){
+        prom->set_value(v);
+       }, trx );
+
+       return fc::future<fc::variant>(prom).wait();
+    }
+
     void network_broadcast_api::broadcast_block( const signed_block& b )
     {
+       _app.chain_database()->precompute_parallel( b ).wait();
        _app.chain_database()->push_block(b);
        if( _app.p2p_node() != nullptr )
           _app.p2p_node()->broadcast( net::block_message( b ));
     }
 
-    void network_broadcast_api::broadcast_transaction_with_callback(confirmation_callback cb, const signed_transaction& trx)
+    void network_broadcast_api::broadcast_transaction_with_callback(confirmation_callback cb, const precomputable_transaction& trx)
     {
-       trx.validate();
+       _app.chain_database()->precompute_parallel( trx ).wait();
        _callbacks[trx.id()] = cb;
        _app.chain_database()->push_transaction(trx);
        if( _app.p2p_node() != nullptr )
@@ -432,20 +454,6 @@ namespace graphene { namespace app {
     }
 
     crypto_api::crypto_api(){};
-    
-    blind_signature crypto_api::blind_sign( const extended_private_key_type& key, const blinded_hash& hash, int i )
-    {
-       return fc::ecc::extended_private_key( key ).blind_sign( hash, i );
-    }
-         
-    signature_type crypto_api::unblind_signature( const extended_private_key_type& key,
-                                                     const extended_public_key_type& bob,
-                                                     const blind_signature& sig,
-                                                     const fc::sha256& hash,
-                                                     int i )
-    {
-       return fc::ecc::extended_private_key( key ).unblind_signature( extended_public_key( bob ), sig, hash, i );
-    }
                                                                
     commitment_type crypto_api::blind( const blind_factor_type& blind, uint64_t value )
     {

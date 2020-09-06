@@ -1913,6 +1913,98 @@ class wallet_api
                                          bool                     broadcast = false);
 
 
+	  signed_transaction account_update_auth(string       account,
+                                       	optional<authority> owner,
+									    optional<authority> active,
+									    optional<authority> secondary,
+									    optional<public_key_type> memo_key,
+                                        bool                     csaf_fee =  true,
+                                        bool                     broadcast = false);
+
+	   /** Deploy contract
+       *
+       * deploy contract
+       * @param name name
+       * @param account this account use to deploy contract
+       * @param vm_type vm_type
+       * @param vm_version vm_version
+       * @param contract_dir contract_dir
+       * @param csaf_fee pay fee from csaf
+       * @param broadcast broadcast
+       * @returns signed_transaction
+       */
+      signed_transaction deploy_contract(string name,
+                                         string account,
+                                         uint64_t contract_id,
+                                         string vm_type,
+                                         string vm_version,
+                                         string contract_dir,
+                                         bool csaf_fee =  true,
+                                         bool broadcast = false);
+
+
+    /** Call contract
+     *
+     * call contract
+     * @param account this account use to call contract
+     * @param contract contract
+     * @param amount amount of asset sent to contract
+     * @param method method
+     * @param arg arg
+     * @param csaf_fee pay fee from csaf
+     * @param broadcast broadcast
+     * @returns signed_transaction
+     */
+    signed_transaction call_contract(string account,
+                                     string contract,
+                                     optional<asset> amount,
+                                     string method,
+                                     string arg,
+                                     bool csaf_fee =  true,
+                                     bool broadcast = false);
+    
+    /** Update contract
+     *
+     * update contract
+     * @param contract contract
+     * @param new_owner new_owner, can be null
+     * @param contract_dir contract_dir
+     * @param csaf_fee pay fee from csaf
+     * @param broadcast broadcast
+     * @returns signed_transaction
+     */
+    signed_transaction update_contract(string contract,
+                                     optional<string> new_owner,
+                                     string contract_dir,
+                                     bool csaf_fee =  true,
+                                     bool broadcast = false);
+
+      /** Returns table infos about the given contract.
+       *
+       * @param contract the name of the contract to query
+       * @returns the table names/types stored in the blockchain
+       */
+      variant get_contract_tables(string contract) const;
+      /** Returns table infos about the given contract.
+       *
+       * @param contract the name of the contract to query
+       * @param table the table of the contract to query
+       * @param start the start primary key of the table primary index
+       * @param limit the max item to return
+       * @param index_type the type of index(primary secondary  )
+       * @returns the table rows stored in the blockchain
+       */
+      get_table_rows_result get_table_rows_ex(string contract, string table,const get_table_rows_params& params) const;
+      /** Returns table infos about the given contract.
+       *
+       * @param contract the name of the contract to query
+       * @param table the table of the contract to query
+       * @param start the start primary key of the table primary index
+       * @param limit the max item to return
+       * @returns the table rows stored in the blockchain
+       */
+      get_table_rows_result get_table_rows(string contract, string table,uint64_t start, uint64_t limit) const;
+
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
       void dbg_generate_blocks( std::string debug_wif_key, uint32_t count );
@@ -2179,4 +2271,14 @@ FC_API( graphene::wallet::wallet_api,
         //for_benefit
         (assign_beneficiary)
         (collect_benefit)
+
+		(account_update_auth)
+		
+			//for contracts
+		(deploy_contract)
+		(update_contract)
+		(call_contract)
+		(get_contract_tables)
+		(get_table_rows_ex)
+		(get_table_rows)
       )

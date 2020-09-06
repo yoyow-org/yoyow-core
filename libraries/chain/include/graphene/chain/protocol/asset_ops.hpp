@@ -300,6 +300,9 @@ namespace graphene { namespace chain {
 
 } } // graphene::chain
 
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::additional_asset_options>)
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::asset_create_operation::ext>)	
+
 FC_REFLECT( graphene::chain::asset_claim_fees_operation, (fee)(issuer)(amount_to_claim)(extensions) )
 FC_REFLECT( graphene::chain::asset_claim_fees_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 

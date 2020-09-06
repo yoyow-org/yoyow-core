@@ -28,7 +28,6 @@
 
 #include <graphene/utilities/key_conversion.hpp>
 
-#include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
 
 #include <iostream>
@@ -69,6 +68,7 @@ void witness_plugin::plugin_set_program_options(
          ("required-participation", bpo::bool_switch()->notifier([this](int e){_required_witness_participation = uint32_t(e*GRAPHENE_1_PERCENT);}), "Percent of witnesses (0-99) that must be participating in order to produce blocks")
          ("witness,w", bpo::value<vector<string>>()->composing()->multitoken(),
           "Account UID of witness controlled by this node (may specify multiple times)")
+         ("max-transaction-time", bpo::value<uint32_t>()->default_value(10000))
          ("private-key", bpo::value<vector<string>>()->composing()->multitoken()->
           DEFAULT_VALUE_VECTOR(std::make_pair(chain::public_key_type(default_priv_key.get_public_key()), graphene::utilities::key_to_wif(default_priv_key))),
           "Tuple of [PublicKey, WIF private key] (may specify multiple times)")

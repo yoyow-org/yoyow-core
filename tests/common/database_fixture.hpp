@@ -26,7 +26,6 @@
 #include <graphene/app/application.hpp>
 #include <graphene/chain/database.hpp>
 #include <fc/io/json.hpp>
-#include <fc/smart_ref_impl.hpp>
 
 #include <graphene/chain/operation_history_object.hpp>
 #include <boost/multiprecision/cpp_int.hpp>

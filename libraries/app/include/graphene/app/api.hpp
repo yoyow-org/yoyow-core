@@ -198,14 +198,29 @@ namespace graphene { namespace app {
           * The transaction will be checked for validity in the local database prior to broadcasting. If it fails to
           * apply locally, an error will be thrown and the transaction will not be broadcast.
           */
-         void broadcast_transaction(const signed_transaction& trx);
+         void broadcast_transaction(const precomputable_transaction& trx);
 
-         /** this version of broadcast transaction registers a callback method that will be called when the transaction is
-          * included into a block.  The callback method includes the transaction id, block number, and transaction number in the
-          * block.
+		 void broadcast_transaction_batch(const vector<precomputable_transaction>& trxs);
+
+         /** This version of broadcast transaction registers a callback method that will be called when the
+          * transaction is included into a block.  The callback method includes the transaction id, block number,
+          * and transaction number in the block.
+          * @param cb the callback method
+          * @param trx the transaction
           */
-         void broadcast_transaction_with_callback( confirmation_callback cb, const signed_transaction& trx);
+         void broadcast_transaction_with_callback( confirmation_callback cb, const precomputable_transaction& trx);
 
+         /** This version of broadcast transaction waits until the transaction is included into a block,
+          *  then the transaction id, block number, and transaction number in the block will be returned.
+          * @param trx the transaction
+          * @return info about the block including the transaction
+          */
+         fc::variant broadcast_transaction_synchronous(const precomputable_transaction& trx);
+
+         /**
+          * @brief Broadcast a signed block to the network
+          * @param block The signed block to broadcast
+          */
          void broadcast_block( const signed_block& block );
 
          /**
@@ -273,15 +288,7 @@ namespace graphene { namespace app {
    {
       public:
          crypto_api();
-         
-         fc::ecc::blind_signature blind_sign( const extended_private_key_type& key, const fc::ecc::blinded_hash& hash, int i );
-         
-         signature_type unblind_signature( const extended_private_key_type& key,
-                                              const extended_public_key_type& bob,
-                                              const fc::ecc::blind_signature& sig,
-                                              const fc::sha256& hash,
-                                              int i );
-                                                                  
+                                                            
          fc::ecc::commitment_type blind( const fc::ecc::blind_factor_type& blind, uint64_t value );
          
          fc::ecc::blind_factor_type blind_sum( const std::vector<blind_factor_type>& blinds_in, uint32_t non_neg );
@@ -403,7 +410,9 @@ FC_API(graphene::app::block_api,
      )
 FC_API(graphene::app::network_broadcast_api,
        (broadcast_transaction)
+       (broadcast_transaction_batch)
        (broadcast_transaction_with_callback)
+       (broadcast_transaction_synchronous)
        (broadcast_block)
      )
 FC_API(graphene::app::network_node_api,
@@ -415,8 +424,6 @@ FC_API(graphene::app::network_node_api,
        (set_advanced_node_parameters)
      )
 FC_API(graphene::app::crypto_api,
-       (blind_sign)
-       (unblind_signature)
        (blind)
        (blind_sum)
        (verify_sum)

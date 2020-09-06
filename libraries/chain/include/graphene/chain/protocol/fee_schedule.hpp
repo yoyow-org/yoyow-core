@@ -77,7 +77,7 @@ namespace graphene { namespace chain {
       /**
        *  @note must be sorted by fee_parameters.which() and have no duplicates
        */
-      flat_set<fee_parameters> parameters;
+      fee_parameters::flat_set_type parameters;
       uint32_t                 scale = GRAPHENE_100_PERCENT; ///< fee * scale / GRAPHENE_100_PERCENT
    };
 

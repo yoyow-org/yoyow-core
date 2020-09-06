@@ -538,6 +538,12 @@ namespace graphene { namespace chain {
 
 }} // graphene::chain
 
+
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::post_operation::ext>)
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::post_update_operation::ext>)
+
+
+
 FC_REFLECT_ENUM( graphene::chain::post_operation::Post_Type,
                (Post_Type_Post)
                (Post_Type_Comment)

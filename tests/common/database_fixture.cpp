@@ -41,7 +41,6 @@
 #include <graphene/utilities/tempdir.hpp>
 
 #include <fc/crypto/digest.hpp>
-#include <fc/smart_ref_impl.hpp>
 
 #include <iostream>
 #include <iomanip>
@@ -101,7 +100,7 @@ database_fixture::database_fixture()
          genesis_state.initial_committee_candidates.push_back({ name });
          genesis_state.initial_witness_candidates.push_back({ name, init_account_priv_key.get_public_key() });
       }
-      genesis_state.initial_parameters.current_fees->zero_all_fees();
+      genesis_state.initial_parameters.get_mutable_fees().zero_all_fees();
       open_database();
 
       // app.initialize();
@@ -517,7 +516,7 @@ void database_fixture::change_fees(
    )
 {
    const chain_parameters& current_chain_params = db.get_global_properties().parameters;
-   const fee_schedule& current_fees = *(current_chain_params.current_fees);
+   const fee_schedule& current_fees = (current_chain_params.get_current_fees());
 
    flat_map< int, fee_parameters > fee_map;
    fee_map.reserve(current_fees.parameters.size());
@@ -534,7 +533,7 @@ void database_fixture::change_fees(
       new_fees.scale = new_scale;
 
    chain_parameters new_chain_params = current_chain_params;
-   new_chain_params.current_fees = new_fees;
+   new_chain_params.get_mutable_fees() = new_fees;
 
    db.modify(db.get_global_properties(), [&](global_property_object& p) {
       p.parameters = new_chain_params;
@@ -789,7 +788,7 @@ void database_fixture::enable_fees()
 {
    db.modify(global_property_id_type()(db), [](global_property_object& gpo)
    {
-      gpo.parameters.current_fees = fee_schedule::get_default();
+      gpo.parameters.get_mutable_fees() = fee_schedule::get_default();
    });
 }
 
@@ -2144,7 +2143,7 @@ fc::uint128_t database_fixture::compute_coin_seconds_earned(_account_statistics_
          fc::uint128_t new_coin_seconds = fc::uint128_t(effective_balance.value) * delta_seconds;
 
          max_coin_seconds = old_coin_seconds + new_coin_seconds;
-         new_average_coins = (max_coin_seconds / window).to_uint64();
+         new_average_coins = static_cast<int64_t>(max_coin_seconds / window);
       }
    }
    // kill rounding issue

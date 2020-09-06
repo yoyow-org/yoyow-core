@@ -36,8 +36,7 @@
 
 #include <graphene/utilities/key_conversion.hpp>
 
-#include <fc/smart_ref_impl.hpp>
-
+#include <fc/asio.hpp>
 #include <fc/io/fstream.hpp>
 #include <fc/rpc/api_connection.hpp>
 #include <fc/rpc/websocket_api.hpp>
@@ -54,6 +53,7 @@
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/logger_config.hpp>
+#include <fc/thread/parallel.hpp>
 
 #include <boost/range/adaptor/reversed.hpp>
 
@@ -80,7 +80,7 @@ namespace detail {
       auto nathan_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("nathan")));
       dlog("Allocating all stake to ${key}", ("key", utilities::key_to_wif(nathan_key)));
       genesis_state_type initial_state;
-      initial_state.initial_parameters.current_fees = fee_schedule::get_default();//->set_all_fees(GRAPHENE_BLOCKCHAIN_PRECISION);
+      initial_state.initial_parameters.get_mutable_fees() = fee_schedule::get_default();//->set_all_fees(GRAPHENE_BLOCKCHAIN_PRECISION);
       initial_state.initial_active_witnesses = GRAPHENE_DEFAULT_MIN_WITNESS_COUNT;
       initial_state.initial_timestamp = time_point_sec(time_point::now().sec_since_epoch() /
             initial_state.initial_parameters.block_interval *
@@ -131,6 +131,7 @@ namespace detail {
       bool _is_block_producer = false;
       bool _force_validate = false;
       application_options _app_options;
+	  fc::serial_valve valve;
 
       void reset_p2p_node(const fc::path& data_dir)
       { try {
@@ -242,7 +243,7 @@ namespace detail {
 
       void new_connection( const fc::http::websocket_connection_ptr& c )
       {
-         auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(*c, GRAPHENE_NET_MAX_NESTED_OBJECTS);
+         auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c, GRAPHENE_NET_MAX_NESTED_OBJECTS);
          auto login = std::make_shared<graphene::app::login_api>( std::ref(*_self) );
          login->enable_api("database_api");
 
@@ -440,6 +441,10 @@ namespace detail {
          }
          _chain_db->add_checkpoints( loaded_checkpoints );
 
+		 if (_options->count("max-transaction-time")) {
+             _chain_db->set_max_trx_cpu_time(_options->at("max-transaction-time").as<uint32_t>());
+         }
+
          if( _options->count("replay-blockchain") )
             _chain_db->wipe( _data_dir / "blockchain", false );
 
@@ -566,11 +571,17 @@ namespace detail {
          FC_ASSERT( (latency.count()/1000) > -2500, "Rejecting block with timestamp in the future" );
 
          try {
-            // TODO: in the case where this block is valid but on a fork that's too old for us to switch to,
-            // you can help the network code out by throwing a block_older_than_undo_history exception.
-            // when the net code sees that, it will stop trying to push blocks from that chain, but
-            // leave that peer connected so that they can get sync blocks from us
-            bool result = _chain_db->push_block(blk_msg.block, (_is_block_producer | _force_validate) ? database::skip_nothing : ( database::skip_transaction_signatures | database::skip_invariants_check ) );
+		 
+		 const uint32_t skip = (_is_block_producer | _force_validate) ? database::skip_nothing : ( database::skip_transaction_signatures | database::skip_invariants_check );
+	      bool result = valve.do_serial( [this,&blk_msg,skip] () {
+	         _chain_db->precompute_parallel( blk_msg.block, skip ).wait();
+	      }, [this,&blk_msg,skip] () {
+	         // TODO: in the case where this block is valid but on a fork that's too old for us to switch to,
+	         // you can help the network code out by throwing a block_older_than_undo_history exception.
+	         // when the net code sees that, it will stop trying to push blocks from that chain, but
+	         // leave that peer connected so that they can get sync blocks from us
+	         return _chain_db->push_block( blk_msg.block, skip );
+	      });
             // the block was accepted, so we now know all of the transactions contained in the block
             if (!sync_mode)
             {
@@ -614,7 +625,9 @@ namespace detail {
             last_call = now;
             trx_count = 0;
          }
-
+		 
+		 
+		 _chain_db->precompute_parallel( transaction_message.trx ).wait();
          _chain_db->push_transaction( transaction_message.trx );
       } FC_CAPTURE_AND_RETHROW( (transaction_message) ) }
 

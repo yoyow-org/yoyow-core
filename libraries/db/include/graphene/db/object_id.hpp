@@ -34,7 +34,6 @@ namespace graphene { namespace db {
    using  fc::flat_map;
    using  fc::variant;
    using  fc::unsigned_int;
-   using  fc::signed_int;
 
    struct object_id_type
    {
@@ -154,8 +153,7 @@ template<uint8_t SpaceID, uint8_t TypeID, typename T>
 struct reflector<graphene::db::object_id<SpaceID,TypeID,T> >
 {
     typedef graphene::db::object_id<SpaceID,TypeID,T> type;
-    typedef fc::true_type  is_defined;
-    typedef fc::false_type is_enum;
+    typedef std::true_type  is_defined;
     enum  member_count_enum {
       local_member_count = 1,
       total_member_count = 1

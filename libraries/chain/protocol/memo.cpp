@@ -35,7 +35,7 @@ void memo_data::set_message(const fc::ecc::private_key& priv, const fc::ecc::pub
       to = pub;
       if( custom_nonce == 0 )
       {
-         uint64_t entropy = fc::sha224::hash(fc::ecc::private_key::generate())._hash[0];
+         uint64_t entropy = fc::sha224::hash(fc::ecc::private_key::generate())._hash[0].value();
          entropy <<= 32;
          entropy                                                     &= 0xff00000000000000;
          nonce = (fc::time_point::now().time_since_epoch().count()   &  0x00ffffffffffffff) | entropy;
@@ -43,7 +43,7 @@ void memo_data::set_message(const fc::ecc::private_key& priv, const fc::ecc::pub
          nonce = custom_nonce;
       auto secret = priv.get_shared_secret(pub);
       auto nonce_plus_secret = fc::sha512::hash(fc::to_string(nonce) + secret.str());
-      string text = memo_message(digest_type::hash(msg)._hash[0], msg).serialize();
+      string text = memo_message(digest_type::hash(msg)._hash[0].value(), msg).serialize();
       message = fc::aes_encrypt( nonce_plus_secret, vector<char>(text.begin(), text.end()) );
    }
    else
@@ -62,7 +62,7 @@ string memo_data::get_message(const fc::ecc::private_key& priv,
       auto nonce_plus_secret = fc::sha512::hash(fc::to_string(nonce) + secret.str());
       auto plain_text = fc::aes_decrypt( nonce_plus_secret, message );
       auto result = memo_message::deserialize(string(plain_text.begin(), plain_text.end()));
-      FC_ASSERT( result.checksum == uint32_t(digest_type::hash(result.text)._hash[0]) );
+      FC_ASSERT( result.checksum == uint32_t(digest_type::hash(result.text)._hash[0].value()) );
       return result.text;
    }
    else

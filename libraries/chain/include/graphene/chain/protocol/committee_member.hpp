@@ -24,7 +24,6 @@
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
 #include <graphene/chain/protocol/chain_parameters.hpp>
-#include <fc/smart_ref_fwd.hpp>
 
 namespace graphene { namespace chain { 
 
@@ -154,7 +153,7 @@ namespace graphene { namespace chain {
     *
     * Committee update fee schedule.
     */
-   typedef smart_ref<fee_schedule> committee_update_fee_schedule_item_type;
+   typedef std::shared_ptr<fee_schedule> committee_update_fee_schedule_item_type;
 
    /**
     * @ingroup operations
@@ -258,6 +257,11 @@ namespace graphene { namespace chain {
        optional< uint32_t        >    scorer_earnings_rate;
        optional< share_type      >    platform_content_award_min_votes;
        optional< uint32_t        >    csaf_limit_lock_balance_modulus;
+	   
+	   optional< uint32_t        > 	  trx_cpu_limit;
+       optional< uint32_t 	  	 >	  block_cpu_limit;
+       optional< uint8_t 	     >	  max_inter_contract_depth;
+       optional< uint32_t 	  	 >	  max_inline_action_size;
 
        void validate()const;
     };
@@ -469,7 +473,11 @@ FC_REFLECT(graphene::chain::committee_updatable_extension_parameters,
             (max_pledge_releasing_size)
             (scorer_earnings_rate)
             (platform_content_award_min_votes)
-            (csaf_limit_lock_balance_modulus))
+            (csaf_limit_lock_balance_modulus)
+			(trx_cpu_limit)
+			(block_cpu_limit)
+			(max_inter_contract_depth)
+			(max_inline_action_size))
 
 FC_REFLECT( graphene::chain::committee_withdraw_platform_pledge_item_type,
             (platform_account)

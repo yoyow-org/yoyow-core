@@ -52,13 +52,13 @@ void database::update_voter_effective_votes( const voter_object& voter )
          fc::uint128_t old_coin_seconds = fc::uint128_t( voter.effective_votes ) * old_seconds;
          fc::uint128_t new_coin_seconds = fc::uint128_t( voter.votes ) * delta_seconds;
 
-         new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+         new_average_coins = static_cast<uint64_t>( ( old_coin_seconds + new_coin_seconds ) / window );
       }
       else
       {
          uint64_t total_seconds = window - ( voter.effective_votes_last_update - voter.votes_last_update ).to_seconds();
 
-         new_average_coins = voter.effective_votes + ( fc::uint128_t( voter.votes - voter.effective_votes ) * delta_seconds / total_seconds ).to_uint64();
+         new_average_coins = voter.effective_votes + static_cast<uint64_t>( fc::uint128_t( voter.votes - voter.effective_votes ) * delta_seconds / total_seconds );
       }
 
       modify( voter, [&]( voter_object& v )

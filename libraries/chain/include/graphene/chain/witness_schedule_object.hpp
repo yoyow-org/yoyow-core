@@ -37,8 +37,8 @@ class witness_schedule_object : public graphene::db::abstract_object<witness_sch
       static const uint8_t type_id = impl_witness_schedule_object_type;
 
       uint32_t                   next_schedule_block_num = 0;
-      fc::uint128_t              current_by_pledge_time;
-      fc::uint128_t              current_by_vote_time;
+      fc::uint128_t              current_by_pledge_time=0;
+      fc::uint128_t              current_by_vote_time=0;
       vector< account_uid_type > current_shuffled_witnesses;
 };
 

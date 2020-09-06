@@ -23,6 +23,7 @@
  */
 #pragma once
 #include <graphene/chain/protocol/operations.hpp>
+#include <graphene/chain/abi_def.hpp>
 #include <graphene/db/generic_index.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <boost/multi_index/composite_key.hpp>
@@ -199,7 +200,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
           */
          // TODO maybe better to use a struct to store coin_seconds_earned and coin_seconds_earned_last_update
          //      and related functions e.g. compute_coin_seconds_earned and update_coin_seconds_earned
-         fc::uint128_t                  coin_seconds_earned;
+         fc::uint128_t                  coin_seconds_earned=0;
 
          /**
           * Tracks the most recent time when @ref coin_seconds_earned was updated.
@@ -439,7 +440,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
       */
       // TODO maybe better to use a struct to store coin_seconds_earned and coin_seconds_earned_last_update
       //      and related functions e.g. compute_coin_seconds_earned and update_coin_seconds_earned
-      fc::uint128_t                  coin_seconds_earned;
+      fc::uint128_t                  coin_seconds_earned=0;
 
       /**
       * Tracks the most recent time when @ref coin_seconds_earned was updated.
@@ -650,29 +651,34 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
           *
           * See @ref is_lifetime_member, @ref is_basic_account, @ref is_annual_member, and @ref is_member
           */
-         time_point_sec membership_expiration_date;
+       //  time_point_sec membership_expiration_date;
 
          uint32_t         referrer_by_platform = 0;  //if referrered by platform, == platform.sequence
          ///The account that paid the fee to register this account. Receives a percentage of referral rewards.
-         account_uid_type registrar;
+         //account_uid_type registrar;
          /// The account credited as referring this account. Receives a percentage of referral rewards.
-         account_uid_type referrer;
+      //   account_uid_type referrer;
          /// The lifetime member at the top of the referral tree. Receives a percentage of referral rewards.
-         account_uid_type lifetime_referrer;
+     //    account_uid_type lifetime_referrer;
 
          /// Percentage of fee which should go to network.
-         uint16_t network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+      //   uint16_t network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
          /// Percentage of fee which should go to lifetime referrer.
-         uint16_t lifetime_referrer_fee_percentage = 0;
+     //    uint16_t lifetime_referrer_fee_percentage = 0;
          /// Percentage of referral rewards (leftover fee after paying network and lifetime referrer) which should go
          /// to referrer. The remainder of referral rewards goes to the registrar.
-         uint16_t referrer_rewards_percentage = 0;
+      //   uint16_t referrer_rewards_percentage = 0;
 
          /// The account's uid. This uid must be unique among all account uids.
          account_uid_type uid = 0;
 
          /// The account's name. This name must be unique among all account names on the graph. May not be empty.
          string name;
+		 string                 vm_type;
+         string                 vm_version;
+         bytes                  code;
+         string                 code_version;
+         abi_def                abi;
 
          /**
           * The owner authority represents absolute control over the account. Usually the keys in this authority will
@@ -748,6 +754,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          optional< flat_set<asset_aid_type> > allowed_assets;
 
          /// @return true if this is a lifetime member account; false otherwise.
+         /*
          bool is_lifetime_member()const
          {
             return membership_expiration_date == time_point_sec::maximum();
@@ -768,6 +775,7 @@ class pledge_balance_object:public graphene::db::abstract_object<pledge_balance_
          {
             return !is_basic_account(now);
          }
+         */
 
          /// @return true if the account has enabled allowed_assets; false otherwise.
          bool enabled_allowed_assets()const { return allowed_assets.valid(); }
@@ -1169,7 +1177,7 @@ FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (referrer_by_platform)
                     //(registrar)(referrer)(lifetime_referrer)
                     //(network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
-                    (uid)(name)(owner)(active)(secondary)(memo_key)(reg_info)
+                    (uid)(name)(vm_type)(vm_version)(code)(code_version)(abi)(owner)(active)(secondary)(memo_key)(reg_info)
                     (can_post)(can_reply)(can_rate)
                     (is_full_member)(is_registrar)(is_admin)
                     (create_time)(last_update_time)

@@ -26,6 +26,7 @@
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
+#include <fc/popcount.hpp>
 
 namespace graphene { namespace chain {
 
@@ -84,7 +85,7 @@ uint32_t database::get_slot_at_time(fc::time_point_sec when)const
 uint32_t database::witness_participation_rate()const
 {
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   return uint64_t(GRAPHENE_100_PERCENT) * dpo.recent_slots_filled.popcount() / 128;
+   return uint64_t(GRAPHENE_100_PERCENT) * fc::popcount(dpo.recent_slots_filled) / 128;
 }
 
 void database::update_witness_schedule()
@@ -146,7 +147,7 @@ void database::update_witness_schedule()
             }
             modify( *wit, [&]( witness_object& w )
             {
-               w.by_vote_position             = fc::uint128_t();
+               w.by_vote_position             = fc::uint128_t(0);
                w.by_vote_position_last_update = new_by_vote_time;
                w.by_vote_scheduled_time       = new_time;
             } );
@@ -200,7 +201,7 @@ void database::update_witness_schedule()
             }
             modify( *wit, [&]( witness_object& w )
             {
-               w.by_pledge_position             = fc::uint128_t();
+               w.by_pledge_position             = fc::uint128_t(0);
                w.by_pledge_position_last_update = new_by_pledge_time;
                w.by_pledge_scheduled_time       = new_time;
             } );
@@ -322,13 +323,13 @@ void database::update_witness_avg_pledge( const witness_object& wit )
          fc::uint128_t old_coin_seconds = fc::uint128_t( wit.average_pledge ) * old_seconds;
          fc::uint128_t new_coin_seconds = fc::uint128_t( wit.pledge ) * delta_seconds;
 
-         new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+         new_average_coins = static_cast<uint64_t>( ( old_coin_seconds + new_coin_seconds ) / window );
       }
       else
       {
          uint64_t total_seconds = window - ( wit.average_pledge_last_update - wit.pledge_last_update ).to_seconds();
 
-         new_average_coins = wit.average_pledge + ( fc::uint128_t( wit.pledge - wit.average_pledge ) * delta_seconds / total_seconds ).to_uint64();
+         new_average_coins = wit.average_pledge + static_cast<uint64_t>( fc::uint128_t( wit.pledge - wit.average_pledge ) * delta_seconds / total_seconds );
       }
 
       modify( wit, [&]( witness_object& w )
@@ -356,7 +357,7 @@ void database::update_witness_avg_pledge( const witness_object& wit )
          w.by_pledge_scheduled_time = w.by_pledge_position_last_update + need_time;
          // check for overflow
          if( w.by_pledge_scheduled_time < wso.current_by_pledge_time )
-            w.by_pledge_scheduled_time = fc::uint128_t::max_value();
+            w.by_pledge_scheduled_time = UINT128_MAX_VALUE;
       } );
    }
 }
@@ -366,7 +367,7 @@ void database::reset_witness_by_pledge_schedule()
    const witness_schedule_object& wso = witness_schedule_id_type()(*this);
    modify( wso, [&](witness_schedule_object& o )
    {
-       o.current_by_pledge_time = fc::uint128_t(); // reset it to 0
+       o.current_by_pledge_time = fc::uint128_t(0); // reset it to 0
    } );
 
    const auto& idx = get_index_type<witness_index>().indices().get<by_valid>();
@@ -374,8 +375,8 @@ void database::reset_witness_by_pledge_schedule()
    {
       modify( *itr, [&]( witness_object& w )
       {
-         w.by_pledge_position             = fc::uint128_t();
-         w.by_pledge_position_last_update = fc::uint128_t();
+         w.by_pledge_position             = fc::uint128_t(0);
+         w.by_pledge_position_last_update = fc::uint128_t(0);
          w.by_pledge_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.average_pledge + w.total_mining_pledge + 1 );
       } );
    }
@@ -386,7 +387,7 @@ void database::reset_witness_by_vote_schedule()
    const witness_schedule_object& wso = witness_schedule_id_type()(*this);
    modify( wso, [&](witness_schedule_object& o )
    {
-       o.current_by_vote_time = fc::uint128_t(); // reset it to 0
+       o.current_by_vote_time = fc::uint128_t(0); // reset it to 0
    } );
 
    const auto& idx = get_index_type<witness_index>().indices().get<by_valid>();
@@ -394,8 +395,8 @@ void database::reset_witness_by_vote_schedule()
    {
       modify( *itr, [&]( witness_object& w )
       {
-         w.by_vote_position             = fc::uint128_t();
-         w.by_vote_position_last_update = fc::uint128_t();
+         w.by_vote_position             = fc::uint128_t(0);
+         w.by_vote_position_last_update = fc::uint128_t(0);
          w.by_vote_scheduled_time       = GRAPHENE_VIRTUAL_LAP_LENGTH / ( w.total_votes + 1 );
       } );
    }
@@ -423,7 +424,7 @@ void database::adjust_witness_votes( const witness_object& witness, share_type d
       w.by_vote_scheduled_time = w.by_vote_position_last_update + need_time;
       // check for overflow
       if( w.by_vote_scheduled_time < wso.current_by_vote_time )
-         w.by_vote_scheduled_time = fc::uint128_t::max_value();
+         w.by_vote_scheduled_time = UINT128_MAX_VALUE;
    } );
 }
 

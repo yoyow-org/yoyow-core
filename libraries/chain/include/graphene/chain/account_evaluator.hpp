@@ -171,8 +171,8 @@ public:
 
    const _account_statistics_object* from_stats = nullptr;
    const _account_statistics_object* to_stats = nullptr;
-   fc::uint128_t                    available_coin_seconds;
-   fc::uint128_t                    collecting_coin_seconds;
+   fc::uint128_t                    available_coin_seconds=0;
+   fc::uint128_t                    collecting_coin_seconds=0;
 };
 
 } } // graphene::chain

@@ -22,7 +22,6 @@
  * THE SOFTWARE.
  */
 
-#include <fc/smart_ref_impl.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/database.hpp>
@@ -714,7 +713,7 @@ void_result account_whitelist_evaluator::do_evaluate(const account_whitelist_ope
 
    listed_account = d.find_account_by_uid( o.account_to_list );
    if( !d.get_global_properties().parameters.allow_non_member_whitelists )
-      FC_ASSERT(d.get_account_by_uid( o.authorizing_account ).is_lifetime_member());
+      d.get_account_by_uid( o.authorizing_account );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
@@ -804,7 +803,7 @@ void_result benefit_collect_evaluator::do_evaluate(const benefit_collect_operati
          {
             auto csaf_limit_modulus = global_params.get_extension_params().csaf_limit_lock_balance_modulus;
             auto pledge_balance_obj = d.get(to_stats->pledge_balance_ids.at(pledge_balance_type::Lock_balance));
-            share_type lock_balance_csaf = ((fc::uint128)pledge_balance_obj.pledge.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
+            share_type lock_balance_csaf = static_cast<int64_t>((fc::uint128_t)pledge_balance_obj.pledge.value*csaf_limit_modulus / GRAPHENE_100_PERCENT);
 
             FC_ASSERT(op.amount.amount + to_stats->csaf <= global_params.max_csaf_per_account + lock_balance_csaf,
                "Maximum CSAF per account exceeded");
@@ -829,7 +828,7 @@ void_result benefit_collect_evaluator::do_evaluate(const benefit_collect_operati
          FC_ASSERT(available_coin_seconds >= collecting_coin_seconds,
             "Insufficient CSAF: account ${a}'s available CSAF of ${b} is less than required ${r}",
             ("a", op.from)
-            ("b", d.to_pretty_core_string((available_coin_seconds / global_params.csaf_rate).to_uint64()))
+            ("b", d.to_pretty_core_string(static_cast<uint64_t>(available_coin_seconds / global_params.csaf_rate)))
             ("r", d.to_pretty_string(op.amount)));
       }
       else if (op.benefit_type == benefit_collect_operation::BENEFIT_TYPE_WITNESS){

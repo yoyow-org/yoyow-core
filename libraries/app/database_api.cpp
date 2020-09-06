@@ -26,15 +26,17 @@
 #include <graphene/app/util.hpp>
 #include <graphene/chain/get_config.hpp>
 #include <graphene/utilities/string_escape.hpp>
+#include <graphene/chain/contract_table_objects.hpp>
+#include <graphene/chain/abi_serializer.hpp>
 
 #include <fc/bloom_filter.hpp>
-#include <fc/smart_ref_impl.hpp>
 
 #include <fc/crypto/hex.hpp>
 
 #include <boost/range/iterator_range.hpp>
 #include <boost/rational.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <cctype>
 
@@ -67,6 +69,12 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // Objects
       fc::variants get_objects(const vector<object_id_type>& ids)const;
 
+	  //contract
+	  get_table_rows_result get_table_rows_ex(string contract, string table, const get_table_rows_params &params) const;
+      get_table_rows_result get_table_rows(string contract, string table, uint64_t start, uint64_t limit=10) const;
+      fc::variants get_table_objects(uint64_t code, uint64_t scope, uint64_t table, uint64_t lower, uint64_t uppper, uint64_t limit=10) const;
+      bytes serialize_contract_call_args(string contract, string method, string json_args) const;
+
       // Subscriptions
       void set_subscribe_callback( std::function<void(const variant&)> cb, bool notify_remove_create );
       void set_pending_transaction_callback( std::function<void(const variant&)> cb );
@@ -76,6 +84,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // Blocks and transactions
       optional<block_header> get_block_header(uint32_t block_num)const;
       map<uint32_t, optional<block_header>> get_block_header_batch(const vector<uint32_t> block_nums)const;
+	  map<uint32_t, pair<uint32_t,block_header>> get_block_header_with_tx_count(const vector<uint32_t> block_nums) const;
       optional<signed_block_with_info> get_block(uint32_t block_num)const;
       processed_transaction get_transaction( uint32_t block_num, uint32_t trx_in_block )const;
 
@@ -457,8 +466,8 @@ market_ticker::market_ticker(const market_ticker_object& mto,
    lowest_ask = "0";
    highest_bid = "0";
 
-   fc::uint128 bv;
-   fc::uint128 qv;
+   fc::uint128_t bv;
+   fc::uint128_t qv;
    price latest_price = asset(mto.latest_base, mto.base) / asset(mto.latest_quote, mto.quote);
    if (mto.base != asset_base.asset_id)
       latest_price = ~latest_price;
@@ -629,6 +638,29 @@ map<uint32_t, optional<block_header>> database_api_impl::get_block_header_batch(
    }
    return results;
 }
+
+
+map<uint32_t, pair<uint32_t,block_header>>	 database_api::get_block_header_with_tx_count(const vector<uint32_t> block_nums)const
+{
+   return my->get_block_header_with_tx_count( block_nums );
+}
+
+map<uint32_t, pair<uint32_t,block_header>> database_api_impl::get_block_header_with_tx_count(const vector<uint32_t> block_nums) const
+{
+   FC_ASSERT( block_nums.size() <= 1000 );
+   map<uint32_t, pair<uint32_t,block_header>>  results;
+   for (const uint32_t block_num : block_nums)
+   {
+	  auto blk = _db.fetch_block_by_number(block_num);
+	  if(!blk.valid())
+	  	break;
+	  
+      results[block_num] = make_pair((uint32_t)(blk->transactions.size()),block_header(*blk));
+   }
+   return results;
+}
+
+
 
 optional<signed_block_with_info> database_api::get_block(uint32_t block_num)const
 {
@@ -882,15 +914,15 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
       full_account acnt;
       acnt.account = *account;
       acnt.statistics = _db.get_account_statistics_struct_by_uid(account->uid);//account->statistics(_db);
-      auto reg = _db.find_account_by_uid( account->registrar );
+	  auto reg = _db.find_account_by_uid( account->reg_info.registrar );
       if(reg != nullptr)
          acnt.registrar_name = reg->name;
-      auto ref = _db.find_account_by_uid( account->referrer );
+      auto ref = _db.find_account_by_uid( account->reg_info.referrer );
       if(ref != nullptr)
          acnt.referrer_name = ref->name;
-      auto lref = _db.find_account_by_uid( account->lifetime_referrer );
-      if(lref != nullptr)
-         acnt.lifetime_referrer_name = lref->name;
+     // auto lref = _db.find_account_by_uid( account->reg_info.lifetime_referrer );
+ //     if(lref != nullptr)
+      //   acnt.lifetime_referrer_name = lref->name;
 
       // Add the account's proposals
       const auto& proposal_idx = _db.get_index_type<proposal_index>();
@@ -1264,6 +1296,296 @@ vector<pledge_mining_object> database_api_impl::list_pledge_mining_by_account(co
    return result;
 }
 
+
+uint64_t get_table_index_name(name tablename, const std::string &index_position, bool &primary)
+{
+    try {
+
+        using boost::algorithm::starts_with;
+        // see multi_index packing of index name
+        const uint64_t table = tablename;
+        uint64_t index = table & 0xFFFFFFFFFFFFFFF0ULL;
+
+        FC_ASSERT(index == table, "Unsupported table name: ${n}", ("n", tablename));
+
+        primary = false;
+        uint64_t pos = 0;
+        if (index_position.empty() || index_position == "first" || index_position == "primary" ||
+            index_position == "one") {
+            primary = true;
+        } else if (starts_with(index_position, "sec") || index_position == "two") { // second, secondary
+        } else if (starts_with(index_position, "ter") ||
+                   starts_with(index_position, "th")) { // tertiary, ternary, third, three
+            pos = 1;
+        } else if (starts_with(index_position, "fou")) { // four, fourth
+            pos = 2;
+        } else if (starts_with(index_position, "fi")) { // five, fifth
+            pos = 3;
+        } else if (starts_with(index_position, "six")) { // six, sixth
+            pos = 4;
+        } else if (starts_with(index_position, "sev")) { // seven, seventh
+            pos = 5;
+        } else if (starts_with(index_position, "eig")) { // eight, eighth
+            pos = 6;
+        } else if (starts_with(index_position, "nin")) { // nine, ninth
+            pos = 7;
+        } else if (starts_with(index_position, "ten")) { // ten, tenth
+            pos = 8;
+        } else {
+            try {
+                pos = fc::to_uint64(index_position);
+            } catch (...) {
+                FC_ASSERT(false, "Invalid index_position: ${p}", ("p", index_position));
+            }
+            if (pos < 2) {
+                primary = true;
+                pos = 0;
+            } else {
+                pos -= 2;
+            }
+        }
+        index |= (pos & 0x000000000000000FULL);
+        return index;
+    }
+    FC_CAPTURE_AND_RETHROW((tablename)(index_position)(primary))
+}
+
+
+fc::variants get_table_objects(bool &more, const database &db, const account_object &account_obj, uint64_t table, uint64_t lower_id, uint64_t uppper_id, uint64_t limit)
+{ try {
+    fc::variants result;
+
+    abi_serializer abis(account_obj.abi, fc::milliseconds(10000));
+
+    const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
+    auto existing_tid = table_idx.find(boost::make_tuple(account_obj.id.instance(), name(account_obj.id.instance()), name(table)));
+    if (existing_tid != table_idx.end()) {
+        const auto &kv_idx = db.get_index_type<key_value_index>().indices().get<by_scope_primary>();
+
+        auto lower = kv_idx.lower_bound(boost::make_tuple(existing_tid->id, lower_id));
+        auto upper = kv_idx.lower_bound(boost::make_tuple(existing_tid->id, uppper_id));
+
+        auto end = fc::time_point::now() + fc::microseconds(1000 * 10);
+        name tname(table);
+        uint64_t count = 0;
+        auto it = lower;
+        for(; it != upper; ++it) {
+            if(fc::time_point::now() > end || count == limit) break;
+            result.emplace_back(abis.binary_to_variant(tname.to_string(), it->value, fc::microseconds(1000 * 10)));
+            ++count;
+        }
+
+        if(count < limit && it != upper && ++it != upper) {
+        	more = true;
+        }
+    }
+    return result;
+    }
+    FC_CAPTURE_AND_RETHROW((account_obj)(table)(lower_id)(uppper_id)(limit))
+}
+
+
+fc::variants get_table_objects_ex(bool &more, const database &db, const account_object &account_obj, uint64_t table, const get_table_rows_params &params)
+{
+    try {
+        fc::variants result;
+        // check lower_bound and upper_bound
+        FC_ASSERT(params.lower_bound < params.upper_bound, "lower_bound must < upper_bound");
+        abi_serializer abis(account_obj.abi, fc::milliseconds(10000));
+
+        name tname(table);
+        uint64_t count = 0;
+        auto end = fc::time_point::now() + fc::microseconds(1000 * 10);
+
+        bool is_primary = false;
+        uint64_t _index_position = get_table_index_name(tname, params.index_position, is_primary);
+
+        if (is_primary == true) { // get table by primary
+            const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
+            auto existing_tid = table_idx.find(boost::make_tuple(account_obj.id.instance(), name(account_obj.id.instance()), name(table)));
+            if (existing_tid != table_idx.end()) {
+                // auto num = existing_tid->count; get the data count of table
+                const auto &kv_idx = db.get_index_type<key_value_index>().indices().get<by_scope_primary>();
+                auto lower = kv_idx.lower_bound(boost::make_tuple(existing_tid->id, params.lower_bound));
+                auto upper = kv_idx.lower_bound(boost::make_tuple(existing_tid->id, params.upper_bound));
+
+                auto traver = [&](auto lower, auto upper) {
+                    auto it = lower;
+                    for (; it != upper; ++it) {
+                        if (fc::time_point::now() > end || count == params.limit) break;
+                        result.emplace_back(abis.binary_to_variant(tname.to_string(), it->value, fc::microseconds(1000 * 10)));
+                        ++count;
+                    }
+                    if (count < params.limit && it != upper && ++it != upper) {
+                        more = true;
+                    }
+                };
+                auto traver_reverse = [&](auto lower, auto upper) {
+                    auto it = upper; // the itor before of the end
+                    for (; it != lower;) {
+                        --it;
+                        if (fc::time_point::now() > end || count == params.limit) break;
+                        result.emplace_back(abis.binary_to_variant(tname.to_string(), it->value, fc::microseconds(1000 * 10)));
+                        ++count;
+                    }
+                    if (count < params.limit && it != lower && --it != lower) {
+                        more = true;
+                    }
+                };
+                if (params.reverse && *params.reverse) // reverse
+                {
+                    traver_reverse(lower, upper);
+                } else { //  unreverse
+                    traver(lower, upper);
+                }
+            }
+        } else { // get table by secondary/ternary
+            const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
+            auto primary_tid = table_idx.find(boost::make_tuple(account_obj.id.instance(), name(account_obj.id.instance()), name(table)));
+            auto sec_tid = table_idx.find(boost::make_tuple(account_obj.id.instance(), name(account_obj.id.instance()), _index_position)); // table name with index
+            if (sec_tid != table_idx.end()) {
+
+                const auto &sec_idx = db.get_index_type<index64_index>().indices().get<by_secondary>();
+                auto sec_lower = sec_idx.lower_bound(boost::make_tuple(sec_tid->id, params.lower_bound, std::numeric_limits<uint64_t>::lowest()));
+                //auto sec_upper = sec_idx.lower_bound(boost::make_tuple(sec_tid->id, params.upper_bound, std::numeric_limits<uint64_t>::max()));
+                auto sec_upper = sec_idx.lower_bound(boost::make_tuple(sec_tid->id, params.upper_bound, std::numeric_limits<uint64_t>::lowest()));
+                auto traver = [&](auto lower, auto upper) {
+                    const auto &kv_idx_for_sec = db.get_index_type<key_value_index>().indices().get<by_scope_primary>();
+                    auto sec_it = lower;
+
+                    for (; sec_it != upper; ++sec_it) {
+                        if (fc::time_point::now() > end || count == params.limit)
+                            break;
+                        auto itr2 = kv_idx_for_sec.find(boost::make_tuple(primary_tid->id, sec_it->primary_key));
+                        result.emplace_back(abis.binary_to_variant(tname.to_string(), itr2->value, fc::microseconds(1000 * 10)));
+                        ++count;
+                    }
+                    if (count < params.limit && sec_it != upper && ++sec_it != upper) {
+                        more = true;
+                    }
+                };
+                auto traver_reverse = [&](auto lower, auto upper) {
+                    const auto &kv_idx_for_sec = db.get_index_type<key_value_index>().indices().get<by_scope_primary>();
+                    auto sec_it = upper;
+
+                    for (; sec_it != lower;) {
+                        --sec_it;
+                        if (fc::time_point::now() > end || count == params.limit)
+                            break;
+                        auto itr2 = kv_idx_for_sec.find(boost::make_tuple(primary_tid->id, sec_it->primary_key));
+                        result.emplace_back(abis.binary_to_variant(tname.to_string(), itr2->value, fc::microseconds(1000 * 10)));
+                        ++count;
+                    }
+                    if (count < params.limit && sec_it != lower && --sec_it != lower) {
+                        more = true;
+                    }
+                };
+                if (params.reverse && *params.reverse) // reverse
+                {
+                    traver_reverse(sec_lower, sec_upper);
+                } else { //  unreverse
+                    traver(sec_lower, sec_upper);
+                }
+            }
+        }
+
+        return result;
+    }
+    FC_CAPTURE_AND_RETHROW((account_obj)(table)(params))
+}
+
+
+get_table_rows_result database_api::get_table_rows_ex(string contract, string table, const get_table_rows_params &params) const
+{
+    return my->get_table_rows_ex(contract, table, params);
+}
+
+get_table_rows_result database_api_impl::get_table_rows_ex(string contract, string table, const get_table_rows_params &params) const
+{
+    try {
+        get_table_rows_result result;
+
+        const auto &accounts_idx = _db.get_index_type<account_index>().indices().get<by_name>();
+        const auto &account_itr = accounts_idx.find(contract);
+        if (account_itr == accounts_idx.end()) {
+            return result;
+        }
+
+        const account_object &account_obj = *account_itr;
+
+        result.rows =::graphene::app::get_table_objects_ex(result.more, _db, account_obj, name(table).value, params);
+        return result;
+    }
+    FC_CAPTURE_AND_RETHROW((contract)(table))
+}
+
+
+get_table_rows_result database_api::get_table_rows(string contract, string table, uint64_t start, uint64_t limit) const
+{
+    return my->get_table_rows(contract, table, start, limit);
+}
+
+get_table_rows_result database_api_impl::get_table_rows(string contract, string table, uint64_t start, uint64_t limit) const
+{ try {
+	get_table_rows_result result;
+
+    const auto& accounts_idx = _db.get_index_type<account_index>().indices().get<by_name>();
+    const auto& account_itr = accounts_idx.find(contract);
+    if(account_itr == accounts_idx.end()) {
+    	return result;
+    }
+
+    const account_object &account_obj = *account_itr;
+
+    result.rows = ::graphene::app::get_table_objects(result.more, _db, account_obj, name(table).value, start, start + limit, limit);
+    return result;
+    }
+    FC_CAPTURE_AND_RETHROW((contract)(table))
+}
+
+
+fc::variants database_api::get_table_objects(uint64_t code, uint64_t scope, uint64_t table, uint64_t lower, uint64_t uppper, uint64_t limit) const
+{
+    return my->get_table_objects(code, scope, table, lower, uppper, limit);
+}
+
+fc::variants database_api_impl::get_table_objects(uint64_t code, uint64_t scope, uint64_t table, uint64_t lower_id, uint64_t uppper_id, uint64_t limit) const
+{ try {
+    fc::variants result;
+
+    const auto &account_obj = _db.find_account_by_uid(code);
+    if(account_obj == nullptr)
+        return result;
+
+    bool more = false;
+    return ::graphene::app::get_table_objects(more, _db, *account_obj, table, lower_id, uppper_id, limit);
+    }
+    FC_CAPTURE_AND_RETHROW((code)(scope)(table))
+}
+
+
+bytes database_api::serialize_contract_call_args(string contract, string method, string json_args) const 
+{
+    return my->serialize_contract_call_args(contract, method, json_args);
+}
+
+bytes database_api_impl::serialize_contract_call_args(string contract, string method, string json_args) const
+{
+    auto contract_obj = get_account_by_name(contract);
+    if(!contract_obj) {
+        return bytes();
+    }
+
+    fc::variant action_args_var = fc::json::from_string(json_args);
+
+    abi_serializer abis(contract_obj->abi, fc::milliseconds(10000));
+    auto action_type = abis.get_action_type(method);
+    GRAPHENE_ASSERT(!action_type.empty(), action_validate_exception, "Unknown action ${action} in contract ${contract}", ("action", method)("contract", contract));
+    bytes bin_data = abis.variant_to_binary(action_type, action_args_var, fc::milliseconds(10000));
+    return bin_data;
+}
+
+
 uint64_t database_api::get_account_count()const
 {
    return my->get_account_count();
@@ -1556,8 +1878,8 @@ vector<score_object> database_api_impl::list_scores(const account_uid_type platf
       {
          result.push_back(*itr_begin);
          ++count;
-         if (itr_begin == idx.begin()) break;
-         --itr_begin;
+         //if (itr_begin == idx.begin()) break;
+         ++itr_begin;
       }
    }
    else{
@@ -2970,7 +3292,7 @@ std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_se
 
 std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_set<signature_type>> database_api_impl::get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const
 {
-   wdump((trx)(available_keys));
+   //wdump((trx)(available_keys));
    bool enable_hardfork_04 = _db.get_dynamic_global_properties().enabled_hardfork_version >= ENABLE_HEAD_FORK_04;
    auto result = trx.get_required_signatures( _db.get_chain_id(),
                                        available_keys,
@@ -2979,7 +3301,7 @@ std::pair<std::pair<flat_set<public_key_type>,flat_set<public_key_type>>,flat_se
                                        [&]( account_uid_type uid ){ return &(_db.get_account_by_uid(uid).secondary); },
                                        enable_hardfork_04,
                                        _db.get_global_properties().parameters.max_authority_depth );
-   wdump((std::get<0>(result))(std::get<1>(result))(std::get<2>(result)));
+   //wdump((std::get<0>(result))(std::get<1>(result))(std::get<2>(result)));
    return std::make_pair( std::make_pair( std::get<0>(result), std::get<1>(result) ), std::get<2>(result) );
 }
 

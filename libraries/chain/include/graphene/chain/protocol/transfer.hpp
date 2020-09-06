@@ -97,6 +97,43 @@ namespace graphene { namespace chain {
             a.insert( from );
       }
    };
+   
+   /**
+    * @ingroup operations
+    *
+    * @brief Transfers an amount of one asset from one account to another, with plain memo
+    *
+    *  Fees are paid by the "from" account
+    *
+    *  @pre amount.amount > 0
+    *  @pre fee.amount >= 0
+    *  @pre from != to
+    *  @post from account's balance will be reduced by fee and amount
+    *  @post to account's balance will be increased by amount
+    *  @return n/a
+    */
+   struct inline_transfer_operation : public base_operation
+   {
+      struct fee_parameters_type {
+         uint64_t fee              = GRAPHENE_BLOCKCHAIN_PRECISION/10;
+         uint32_t price_per_kbyte  = GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
+         uint64_t min_real_fee     = 0;
+         uint16_t min_rf_percent   = 0;
+         extensions_type   extensions;
+      };
+
+      fee_type            fee;
+      account_uid_type  from;
+      account_uid_type  to;
+      asset            amount;
+
+      string           memo;
+      extensions_type  extensions;
+
+      account_uid_type fee_payer_uid()const { return from; }
+      void            validate()const;
+      share_type      calculate_fee(const fee_parameters_type& k)const;
+   };
 
    /**
     *  @class override_transfer_operation
@@ -141,6 +178,10 @@ namespace graphene { namespace chain {
 
 }} // graphene::chain
 
+
+
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::transfer_operation::ext>)
+
 FC_REFLECT( graphene::chain::transfer_operation::fee_parameters_type,
             (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::override_transfer_operation::fee_parameters_type,
@@ -149,3 +190,5 @@ FC_REFLECT( graphene::chain::override_transfer_operation::fee_parameters_type,
             FC_REFLECT(graphene::chain::transfer_operation::ext, (from_balance)(from_prepaid)(to_balance)(to_prepaid)(sign_platform))
 FC_REFLECT( graphene::chain::transfer_operation, (fee)(from)(to)(amount)(memo)(extensions) )
 FC_REFLECT( graphene::chain::override_transfer_operation, (fee)(issuer)(from)(to)(amount)(memo)(extensions) )
+FC_REFLECT( graphene::chain::inline_transfer_operation::fee_parameters_type,  (fee)(price_per_kbyte)(min_real_fee)(min_rf_percent)(extensions)  )
+FC_REFLECT( graphene::chain::inline_transfer_operation, (fee)(from)(to)(amount)(memo)(extensions) )

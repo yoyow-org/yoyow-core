@@ -37,8 +37,8 @@
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/evaluator.hpp>
 #include <graphene/chain/chain_property_object.hpp>
+#include <fc/thread/parallel.hpp>
 
-#include <fc/smart_ref_impl.hpp>
 
 namespace graphene { namespace chain {
 
@@ -225,7 +225,7 @@ bool database::_push_block(const signed_block& new_block)
  * queues full as well, it will be kept in the queue to be propagated later when a new block flushes out the pending
  * queues.
  */
-processed_transaction database::push_transaction( const signed_transaction& trx, uint32_t skip )
+processed_transaction database::push_transaction( const precomputable_transaction& trx, uint32_t skip )
 { try {
    processed_transaction result;
    detail::with_skip_flags( *this, skip, [&]()
@@ -235,7 +235,7 @@ processed_transaction database::push_transaction( const signed_transaction& trx,
    return result;
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
-processed_transaction database::_push_transaction( const signed_transaction& trx )
+processed_transaction database::_push_transaction( const precomputable_transaction& trx )
 {
    // If this is the first transaction pushed after applying a block, start a new undo session.
    // This allows us to quickly rewind to the clean state of the head block, in case a new block arrives.
@@ -351,6 +351,8 @@ signed_block database::_generate_block(
 
    update_global_dynamic_data(pending_block);
 
+   uint64_t block_cpu_limit = get_global_extension_params().block_cpu_limit;
+   uint64_t new_block_cpu = 0;
    uint64_t postponed_tx_count = 0;
    // pop pending state (reset to head block state)
    for( const processed_transaction& tx : _pending_tx )
@@ -358,7 +360,7 @@ signed_block database::_generate_block(
       size_t new_total_size = total_block_size + fc::raw::pack_size( tx );
 
       // postpone transaction if it would make block too big
-      if( new_total_size >= maximum_block_size )
+      if( new_total_size >= maximum_block_size || new_block_cpu >= block_cpu_limit)
       {
          postponed_tx_count++;
          continue;
@@ -368,6 +370,20 @@ signed_block database::_generate_block(
       {
          auto temp_session = _undo_db.start_undo_session();
          processed_transaction ptx = _apply_transaction( tx );
+
+		 // check block cpu limit
+           for (const auto op_result : ptx.operation_results) {
+               if (op_result.which() == operation_result::tag<contract_receipt>::value) {
+                   new_block_cpu += op_result.get<contract_receipt>().billed_cpu_time_us;
+               }
+           }
+           if (new_block_cpu >= block_cpu_limit) {
+               wlog("posponed due to block cpu limit");
+               postponed_tx_count++;
+               continue;
+           }
+
+		 
          temp_session.merge();
 
          // We have to recompute pack_size(ptx) because it may be different
@@ -511,9 +527,20 @@ void database::_apply_block( const signed_block& next_block )
        * for transactions when validating broadcast transactions or
        * when building a block.
        */
-      apply_transaction( trx, skip );
+      apply_transaction( trx, skip,trx.operation_results );
       ++_current_trx_in_block;
    }
+
+    // check block cpu limit
+   uint64_t block_cpu_time_us = 0;
+   for (const auto &trx : next_block.transactions) {
+       for (const auto op_result : trx.operation_results) {
+           if (op_result.which() == operation_result::tag<contract_receipt>::value) {
+               block_cpu_time_us += op_result.get<contract_receipt>().billed_cpu_time_us;
+           }
+       }
+   }
+   FC_ASSERT(block_cpu_time_us <= get_global_extension_params().block_cpu_limit, "block cpu time exceed global block limit");
 
    //dlog("after apply_transaction");
    execute_committee_proposals();
@@ -623,17 +650,17 @@ void database::_apply_block( const signed_block& next_block )
 
 
 
-processed_transaction database::apply_transaction(const signed_transaction& trx, uint32_t skip)
+processed_transaction database::apply_transaction(const signed_transaction& trx, uint32_t skip, const vector<operation_result> &operation_results)
 {
    processed_transaction result;
    detail::with_skip_flags( *this, skip, [&]()
    {
-      result = _apply_transaction(trx);
+      result = _apply_transaction(trx,operation_results);
    });
    return result;
 }
 
-processed_transaction database::_apply_transaction(const signed_transaction& trx)
+processed_transaction database::_apply_transaction(const signed_transaction& trx, const vector<operation_result> &operation_results)
 { try {
    uint32_t skip = get_node_properties().skip_flags;
 
@@ -694,7 +721,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
          const auto& tapos_block_summary = block_summary_id_type( trx.ref_block_num )(*this);
 
          //Verify TaPoS block summary has correct ID prefix, and that this block's time is not past the expiration
-         FC_ASSERT( trx.ref_block_prefix == tapos_block_summary.block_id._hash[1] );
+         FC_ASSERT( trx.ref_block_prefix == tapos_block_summary.block_id._hash[1].value() );
       }
 
       fc::time_point_sec now = head_block_time();
@@ -717,12 +744,29 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
 
    //Finally process the operations
    processed_transaction ptrx(trx);
-   _current_op_in_trx = 0;
-   for( const auto& op : ptrx.operations )
+
+   // set current trx
+   set_cur_trx(dynamic_cast<const transaction*>(&trx));
+   _current_op_in_trx = 0;   
+   for (uint16_t i = 0; i < ptrx.operations.size(); ++i) 
    {
-      eval_state.operation_results.emplace_back(apply_operation(eval_state, op, sigs));
+       const auto &op = ptrx.operations.at(i);   	   
+	   uint32_t billed_cpu_time_us = 0;
+       if (i < operation_results.size()) {
+           const auto &op_result = operation_results.at(i);
+           // get billed_cpu_time_us
+           if (op_result.which() == operation_result::tag<contract_receipt>::value) {
+               billed_cpu_time_us = op_result.get<contract_receipt>().billed_cpu_time_us;
+           }
+       }
+
+	  auto op_result = apply_operation(eval_state, op, sigs,billed_cpu_time_us);
+      eval_state.operation_results.emplace_back(op_result);
       ++_current_op_in_trx;
    }
+   
+   set_cur_trx(nullptr); // reset current trx
+
    ptrx.operation_results = std::move(eval_state.operation_results);
 
    return ptrx;
@@ -731,7 +775,7 @@ void database::handle_non_consensus_index(const operation & op){
    if(op.which()==operation::tag<custom_vote_cast_operation>::value)
       update_non_consensus_index(op);
 }
-operation_result database::apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs)
+operation_result database::apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs,const uint32_t& billed_cpu_time_us)
 { try {
    int i_which = op.which();
    uint64_t u_which = uint64_t( i_which );
@@ -740,7 +784,7 @@ operation_result database::apply_operation(transaction_evaluation_state& eval_st
    unique_ptr<op_evaluator>& eval = _operation_evaluators[ u_which ];
    FC_ASSERT( eval, "No registered evaluator for operation ${op}", ("op",op) );
    auto op_id = push_applied_operation( op );
-   auto result = eval->evaluate( eval_state, op, true, sigs);
+   auto result = eval->evaluate( eval_state, op, true, sigs,billed_cpu_time_us);
    set_applied_operation_result( op_id, result );
    handle_non_consensus_index(op);
    return result;
@@ -787,5 +831,79 @@ bool database::before_last_checkpoint()const
 {
    return (_checkpoints.size() > 0) && (_checkpoints.rbegin()->first >= head_block_num());
 }
-   
+
+
+static const uint32_t skip_expensive = database::skip_transaction_signatures | database::skip_witness_signature
+                                       | database::skip_merkle_check | database::skip_transaction_dupe_check;
+
+template<typename Trx>
+void database::_precompute_parallel( const Trx* trx, const size_t count, const uint32_t skip )const
+{
+   for( size_t i = 0; i < count; ++i, ++trx )
+   {
+      trx->validate(); // TODO - parallelize wrt confidential operations
+      if ( !(skip & skip_block_size_check) )
+         trx->get_packed_size();
+      if( !(skip&skip_transaction_dupe_check) )
+         trx->id();
+      if( !(skip&skip_transaction_signatures) )
+         trx->get_signature_keys( get_chain_id() );
+   }
+}
+
+fc::future<void> database::precompute_parallel( const signed_block& block, const uint32_t skip )const
+{ try {
+   std::vector<fc::future<void>> workers;
+   if( !block.transactions.empty() )
+   {
+      if( (skip & skip_expensive) == skip_expensive )
+         _precompute_parallel( &block.transactions[0], block.transactions.size(), skip );
+      else
+      {
+         uint32_t chunks = fc::asio::default_io_service_scope::get_num_threads();
+         uint32_t chunk_size = ( block.transactions.size() + chunks - 1 ) / chunks;
+         workers.reserve( chunks + 1 );
+         for( size_t base = 0; base < block.transactions.size(); base += chunk_size )
+            workers.push_back( fc::do_parallel( [this,&block,base,chunk_size,skip] () {
+               _precompute_parallel( &block.transactions[base],
+                                     base + chunk_size < block.transactions.size() ? chunk_size : block.transactions.size() - base,
+                                     skip );
+            }) );
+      }
+   }
+
+   if( !(skip&skip_witness_signature) )
+      workers.push_back( fc::do_parallel( [&block] () { block.signee(); } ) );
+   if( !(skip&skip_merkle_check) )
+      block.calculate_merkle_root();
+   block.id();
+
+   if( workers.empty() )
+      return fc::future< void >( fc::promise< void >::create( true ) );
+
+   auto first = workers.begin();
+   auto worker = first;
+   while( ++worker != workers.end() )
+      worker->wait();
+   return *first;
+} FC_LOG_AND_RETHROW() }
+
+fc::future<void> database::precompute_parallel( const precomputable_transaction& trx )const
+{
+   return fc::do_parallel([this,&trx] () {
+      _precompute_parallel( &trx, 1, skip_nothing );
+   });
+}
+
+fc::future<void> database::precompute_parallel( const vector<precomputable_transaction>& trxs )const
+{
+	if(trxs.empty())
+		return fc::future< void >( fc::promise< void >::create( true ) );
+	
+   return fc::do_parallel([this,&trxs] () {
+      _precompute_parallel( &(trxs[0]), trxs.size(), skip_nothing );
+   });
+}
+
+
 } }

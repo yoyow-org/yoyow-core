@@ -29,7 +29,6 @@
 #include <graphene/chain/transaction_evaluation_state.hpp>
 #include <graphene/chain/hardfork.hpp>
 
-#include <fc/smart_ref_impl.hpp>
 
 namespace graphene { namespace chain {
 

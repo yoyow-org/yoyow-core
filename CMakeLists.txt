@@ -1,8 +1,11 @@
 # Defines YOYOW library target.
 project( YOYOW )
-cmake_minimum_required( VERSION 2.8.12 )
+cmake_minimum_required( VERSION  3.5 )
 
 set( BLOCKCHAIN_NAME "YOYOW" )
+set( CMAKE_CXX_STANDARD 14 )
+set( CMAKE_CXX_EXTENSIONS ON )
+set( CXX_STANDARD_REQUIRED ON)
 
 set( CLI_CLIENT_EXECUTABLE_NAME yoyow_client )
 set( GUI_CLIENT_EXECUTABLE_NAME yoyow )
@@ -21,6 +24,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 endif()
 
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
+include( GNUInstallDirs )
+include( InstallDirectoryPermissions )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 set(GRAPHENE_EGENESIS_JSON "${CMAKE_CURRENT_SOURCE_DIR}/genesis.json" )
@@ -32,9 +37,7 @@ if (USE_PCH)
   include (cotire)
 endif(USE_PCH)
 
-IF( NOT WIN32 )
-  list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
-ENDIF( NOT WIN32 )
+list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVersionGen" )
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
@@ -60,9 +63,8 @@ IF( WIN32 )
   set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
 ENDIF(WIN32)
 
-FIND_PACKAGE(Boost 1.57 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
-# For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
-IF(NOT "${Boost_VERSION}" MATCHES "1.53(.*)")
+FIND_PACKAGE(Boost 1.67 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+IF(NOT "${Boost_VERSION}" MATCHES "1.67(.*)")
    SET(BOOST_LIBRARIES_TEMP ${Boost_LIBRARIES})
    FIND_PACKAGE(Boost 1.54 REQUIRED COMPONENTS coroutine)
    LIST(APPEND BOOST_COMPONENTS coroutine)
@@ -72,12 +74,11 @@ ENDIF()
 if( WIN32 )
 
     message( STATUS "Configuring YOYOW on WIN32")
-    #set compile option
-    add_compile_options(/MP)
-
+ 
     set( DB_VERSION 60 )
     set( BDB_STATIC_LIBS 1 )
 
+    set( ZLIB_LIBRARIES "" )
     SET( DEFAULT_EXECUTABLE_INSTALL_DIR bin/ )
 
     set(CRYPTO_LIB)
@@ -109,11 +110,11 @@ else( WIN32 ) # Apple AND Linux
     if( APPLE )
         # Apple Specific Options Here
         message( STATUS "Configuring YOYOW on OS X" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++ -Wall" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++14 -stdlib=libc++ -Wall -Wno-invalid-partial-specialization" )
     else( APPLE )
         # Linux Specific Options Here
         message( STATUS "Configuring YOYOW on Linux" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++14 -Wall -fPIC" )
         set( rt_library rt )
         set( pthread_library pthread)
         if ( NOT DEFINED crypto_library )
@@ -128,10 +129,6 @@ else( WIN32 ) # Apple AND Linux
 
     if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
         set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-memcmp" )
-    elseif( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )
-        if( CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 4.0.0 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.0.0 )
-            set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-partial-specialization" )
-        endif()
     endif()
 
     if( "${CMAKE_GENERATOR}" STREQUAL "Ninja" )
@@ -152,9 +149,18 @@ if(ENABLE_COVERAGE_TESTING)
     SET(CMAKE_CXX_FLAGS "--coverage ${CMAKE_CXX_FLAGS}")
 endif()
 
+add_subdirectory( externals )
+
+include(wasm)
+include(installer)
 add_subdirectory( libraries )
+add_subdirectory( contracts )
 add_subdirectory( programs )
 add_subdirectory( tests )
+add_subdirectory( tools )
+
+
+install_directory_permissions(DIRECTORY ${CMAKE_INSTALL_FULL_SYSCONFDIR}/yy)
 
 
 if (ENABLE_INSTALLER)
@@ -187,7 +193,7 @@ if(WIN32)
  set(CPACK_NSIS_EXECUTABLES_DIRECTORY .)
  set(CPACK_NSIS_PACKAGE_NAME "YOYOW v${CPACK_PACKAGE_VERSION}")
  set(CPACK_NSIS_DISPLAY_NAME "${CPACK_NSIS_PACKAGE_NAME}")
- set(CPACK_NSIS_DEFINES "  !define MUI_STARTMENUPAGE_DEFAULTFOLDER \\\"YOYOW\\\"")
+ set(CPACK_NSIS_DEFINES "  !define MUI_STARTMENUPAGE_DEFAULTFOLDER \\\"yy\\\"")
  # it seems like windows zip files usually don't have a single directory inside them, unix tgz frequently do
  SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
 

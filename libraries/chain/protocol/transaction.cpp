@@ -24,9 +24,9 @@
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/protocol/transaction.hpp>
+
 #include <fc/io/raw.hpp>
-#include <fc/bitutil.hpp>
-#include <fc/smart_ref_impl.hpp>
 #include <algorithm>
 
 namespace graphene { namespace chain {
@@ -60,12 +60,16 @@ void transaction::validate() const
       operation_validate(op);
 }
 
-graphene::chain::transaction_id_type graphene::chain::transaction::id() const
+uint64_t transaction::get_packed_size() const
+{
+   return fc::raw::pack_size(*this);
+}
+
+const transaction_id_type& transaction::id() const
 {
    auto h = digest();
-   transaction_id_type result;
-   memcpy(result._hash, h._hash, std::min(sizeof(result), sizeof(h)));
-   return result;
+   memcpy(_tx_id_buffer._hash, h._hash, std::min(sizeof(_tx_id_buffer), sizeof(h)));
+   return _tx_id_buffer;
 }
 
 const signature_type& graphene::chain::signed_transaction::sign(const private_key_type& key, const chain_id_type& chain_id)
@@ -90,8 +94,8 @@ void transaction::set_expiration( fc::time_point_sec expiration_time )
 
 void transaction::set_reference_block( const block_id_type& reference_block )
 {
-   ref_block_num = fc::endian_reverse_u32(reference_block._hash[0]);
-   ref_block_prefix = reference_block._hash[1];
+   ref_block_num = boost::endian::endian_reverse(reference_block._hash[0].value());
+   ref_block_prefix = reference_block._hash[1].value();
 }
 
 void transaction::get_required_uid_authorities( flat_set<account_uid_type>& owner_uids,
@@ -104,7 +108,6 @@ void transaction::get_required_uid_authorities( flat_set<account_uid_type>& owne
       operation_get_required_uid_authorities( op, owner_uids, active_uids, secondary_uids, other,enabled_hardfork );
 }
 
-const std::function<const authority*(account_uid_type)> null_by_uid = []( account_uid_type uid ){ return nullptr; };
 const flat_set<public_key_type> empty_public_key_set = flat_set<public_key_type>();
 
 struct sign_state
@@ -458,7 +461,7 @@ void get_authority_uid( const authority* au,
 } FC_CAPTURE_AND_RETHROW() }
 
 
-flat_map<public_key_type,signature_type> signed_transaction::get_signature_keys( const chain_id_type& chain_id )const
+const flat_map<public_key_type,signature_type>& signed_transaction::get_signature_keys( const chain_id_type& chain_id )const
 { try {
    auto d = sig_digest( chain_id );
    flat_map<public_key_type,signature_type> result;
@@ -471,7 +474,8 @@ flat_map<public_key_type,signature_type> signed_transaction::get_signature_keys(
          "Duplicate Signature detected" );
       result[key] = sig;
    }
-   return result;
+   _signees = std::move( result );
+   return _signees;
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -536,6 +540,39 @@ std::tuple<flat_set<public_key_type>,flat_set<public_key_type>,flat_set<signatur
 
    return std::make_tuple( used_keys, missed_keys, unused_sigs );
 }
+
+const transaction_id_type& precomputable_transaction::id()const
+{
+   if( !_tx_id_buffer._hash[0].value() )
+      transaction::id();
+   return _tx_id_buffer;
+}
+
+void precomputable_transaction::validate() const
+{
+   if( _validated ) return;
+   transaction::validate();
+   _validated = true;
+}
+
+uint64_t precomputable_transaction::get_packed_size()const
+{
+   if( _packed_size == 0 )
+      _packed_size = transaction::get_packed_size();
+   return _packed_size;
+}
+
+const flat_map<public_key_type,signature_type>& precomputable_transaction::get_signature_keys( const chain_id_type& chain_id )const
+{
+   // Strictly we should check whether the given chain ID is same as the one used to initialize the `signees` field.
+   // However, we don't pass in another chain ID so far, for better performance, we skip the check.
+   if( _signees.empty() )
+      signed_transaction::get_signature_keys( chain_id );
+   return _signees;
+}
+
+
+
 
 signed_information signed_transaction::verify_authority(
    const chain_id_type& chain_id,

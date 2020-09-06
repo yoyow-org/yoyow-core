@@ -116,7 +116,7 @@ namespace graphene { namespace chain {
          /**
           * used to compute witness participation.
           */
-         fc::uint128_t recent_slots_filled;
+         fc::uint128_t recent_slots_filled=0;
 
          /**
           * dynamic_flags specifies chain state properties that can be

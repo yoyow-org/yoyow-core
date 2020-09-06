@@ -26,6 +26,7 @@
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
+#include <fc/uint128.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
@@ -45,12 +46,12 @@ namespace graphene { namespace chain {
 
          account_uid_type    account;
          string              name;
-         uint32_t            sequence;
+         uint32_t            sequence=0;
          bool                is_valid = true;
 
          public_key_type     signing_key;
 
-         uint64_t            pledge;
+         uint64_t            pledge=0;
          fc::time_point_sec  pledge_last_update;
          uint64_t            average_pledge = 0;
          fc::time_point_sec  average_pledge_last_update;
@@ -58,13 +59,13 @@ namespace graphene { namespace chain {
 
          uint64_t            total_votes = 0;
 
-         fc::uint128_t       by_pledge_position;
-         fc::uint128_t       by_pledge_position_last_update;
-         fc::uint128_t       by_pledge_scheduled_time = fc::uint128_t::max_value();
+         fc::uint128_t       by_pledge_position=0;
+         fc::uint128_t       by_pledge_position_last_update=0;
+         fc::uint128_t       by_pledge_scheduled_time = UINT128_MAX_VALUE;
 
-         fc::uint128_t       by_vote_position;
-         fc::uint128_t       by_vote_position_last_update;
-         fc::uint128_t       by_vote_scheduled_time = fc::uint128_t::max_value();
+         fc::uint128_t       by_vote_position=0;
+         fc::uint128_t       by_vote_position_last_update=0;
+         fc::uint128_t       by_vote_scheduled_time = UINT128_MAX_VALUE;
 
          uint32_t            last_confirmed_block_num = 0;
 
@@ -102,8 +103,8 @@ namespace graphene { namespace chain {
             
             if (unhandled_bonus > 0 && total_mining_pledge > 0)
             {
-               result = result + ((fc::uint128_t)unhandled_bonus.value* GRAPHENE_PLEDGE_BONUS_PRECISION
-                  / total_mining_pledge).to_uint64();
+               result = result + static_cast<uint64_t>((fc::uint128_t)unhandled_bonus.value* GRAPHENE_PLEDGE_BONUS_PRECISION
+                  / total_mining_pledge);
             }
 
             return result;

@@ -203,4 +203,28 @@ void_result override_transfer_evaluator::do_apply( const override_transfer_opera
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
+void_result inline_transfer_evaluator::do_evaluate(const inline_transfer_operation &op)
+{ try {
+   const database& d = db();
+
+   const account_object& from_account    = d.get_account_by_uid(op.from);
+   const account_object& to_account      = d.get_account_by_uid(op.to);
+   const asset_object&   asset_type      = d.get_asset_by_aid( op.amount.asset_id );
+
+   bool insufficient_balance = d.get_balance(from_account, asset_type).amount >= op.amount.amount;
+   FC_ASSERT(insufficient_balance,
+             "Insufficient Balance: ${balance}, unable to transfer '${total_transfer}' from account '${a}' to '${t}'",
+             ("a", from_account.name)("t", to_account.name)("total_transfer", d.to_pretty_string(op.amount))("balance", d.to_pretty_string(d.get_balance(from_account, asset_type))));
+
+   return void_result();
+   
+} FC_CAPTURE_AND_RETHROW((op))}
+
+void_result inline_transfer_evaluator::do_apply(const inline_transfer_operation& op)
+{ try {
+    db().adjust_balance(op.from, -op.amount);
+    db().adjust_balance(op.to, op.amount);
+    return void_result();
+} FC_CAPTURE_AND_RETHROW((op))}
+
 } } // graphene::chain

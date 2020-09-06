@@ -74,14 +74,21 @@
 #include <graphene/wallet/api_documentation.hpp>
 #include <graphene/wallet/reflect_util.hpp>
 #include <graphene/debug_witness/debug_api.hpp>
-#include <fc/smart_ref_impl.hpp>
-
+#include <fc/popcount.hpp>
+#include <graphene/chain/abi_serializer.hpp>
+#include <graphene/chain/wast_to_wasm.hpp>
+#include <graphene/chain/protocol/name.hpp>
 #ifndef WIN32
 # include <sys/types.h>
 # include <sys/stat.h>
 #endif
 
+#include <unistd.h>
+
 #define BRAIN_KEY_WORD_COUNT 16
+
+using namespace std;
+using namespace fc;
 
 namespace graphene { namespace wallet {
 
@@ -99,20 +106,21 @@ public:
    std::string operator()(const object_id_type& oid);
    std::string operator()(const asset& a);
    std::string operator()(const advertising_confirm_result& a);
+   std::string operator()(const contract_receipt& a);
 };
 
 // BLOCK  TRX  OP  VOP
 struct operation_printer
 {
 private:
-   ostream& out;
+   std::ostream& out;
    const wallet_api_impl& wallet;
    operation_result result;
 
    std::string fee(const asset& a) const;
 
 public:
-   operation_printer( ostream& out, const wallet_api_impl& wallet, const operation_result& r = operation_result() )
+   operation_printer( std::ostream& out, const wallet_api_impl& wallet, const operation_result& r = operation_result() )
       : out(out),
         wallet(wallet),
         result(r)
@@ -439,7 +447,7 @@ public:
       while( fc::exists(dest_path) )
       {
          ++suffix;
-         dest_path = destination_filename + "-" + to_string( suffix ) + _wallet_filename_extension;
+         dest_path = destination_filename + "-" + fc::to_string( suffix ) + _wallet_filename_extension;
       }
       wlog( "backing up wallet ${src} to ${dest}",
             ("src", src_path)
@@ -500,7 +508,7 @@ public:
       //result["next_maintenance_time"] = fc::get_approximate_relative_time_string(dynamic_props.next_maintenance_time);
       result["last_irreversible_block_num"] = dynamic_props.last_irreversible_block_num;
       result["chain_id"] = chain_props.chain_id;
-      result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
+      result["participation"] = (100* fc::popcount(dynamic_props.recent_slots_filled)) / 128.0;
       result["active_witnesses"] = fc::variant( global_props.active_witnesses, GRAPHENE_MAX_NESTED_OBJECTS );
       result["active_committee_members"] = fc::variant( global_props.active_committee_members, GRAPHENE_MAX_NESTED_OBJECTS );
       return result;
@@ -852,7 +860,7 @@ public:
 
       auto gprops = _remote_db->get_global_properties().parameters;
       for( auto& op : _builder_transactions[handle].operations )
-         total_fee += gprops.current_fees->set_fee( op );
+         total_fee += gprops.get_current_fees().set_fee( op );
 
       return total_fee;
    }
@@ -884,7 +892,7 @@ public:
       if( review_period_seconds )
          op.review_period_seconds = review_period_seconds;
       trx.operations = {op};
-      _remote_db->get_global_properties().parameters.current_fees->set_fee( trx.operations.front() );
+      _remote_db->get_global_properties().parameters.get_current_fees().set_fee( trx.operations.front() );
 
       return trx = sign_transaction(trx, broadcast);
    }
@@ -937,7 +945,7 @@ public:
 
       tx.operations.push_back( account_create_op );
 
-      auto current_fees = _remote_db->get_global_properties().parameters.current_fees;
+      auto current_fees = _remote_db->get_global_properties().parameters.get_current_fees();
       set_operation_fees( tx, current_fees, csaf_fee );
 
       vector<public_key_type> paying_keys = registrar_account_object.active.get_keys();
@@ -1057,7 +1065,7 @@ public:
 
          tx.operations.push_back( account_create_op );
 
-         set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
 
          vector<public_key_type> paying_keys = registrar_account_object.active.get_keys();
 
@@ -1130,7 +1138,7 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1153,7 +1161,7 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1175,7 +1183,7 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( reserve_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1194,7 +1202,7 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( whitelist_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1222,7 +1230,7 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( committee_member_create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1379,7 +1387,7 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( witness_create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1409,7 +1417,7 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( witness_create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       _wallet.pending_witness_registrations[owner_account] = key_to_wif(witness_private_key);
@@ -1444,7 +1452,7 @@ public:
 
       signed_transaction tx;
       tx.operations.push_back( platform_create_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1484,7 +1492,7 @@ signed_transaction update_platform(string platform_account,
 
       signed_transaction tx;
       tx.operations.push_back( platform_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1532,7 +1540,7 @@ signed_transaction account_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(op);
-      set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -1553,7 +1561,7 @@ signed_transaction account_cancel_auth_platform(string account,
       op.platform = platform_account.uid;
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1588,7 +1596,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( committee_member_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1633,7 +1641,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( witness_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1658,7 +1666,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( witness_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1681,7 +1689,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( witness_collect_pay_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1711,7 +1719,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(cc_op);
-      set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -1740,7 +1748,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( witness_vote_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1769,7 +1777,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( platform_vote_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee );
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1798,7 +1806,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( committee_member_vote_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1819,7 +1827,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( account_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1836,7 +1844,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -1865,7 +1873,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -2030,7 +2038,7 @@ signed_transaction account_cancel_auth_platform(string account,
       //xfer_op.fee = fee_type(asset(_remote_db->get_required_fee_data({ xfer_op }).at(0).min_fee));
       signed_transaction tx;
       tx.operations.push_back(xfer_op);
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -2077,7 +2085,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(xfer_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2113,7 +2121,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(xfer_op);
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -2143,7 +2151,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(issue_op);
-      set_operation_fees(tx,_remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees(tx,_remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction(tx, broadcast);
@@ -2224,7 +2232,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -2246,7 +2254,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back( update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
 
       return sign_transaction( tx, broadcast );
@@ -2269,7 +2277,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
@@ -2307,7 +2315,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
@@ -2329,7 +2337,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
            signed_transaction tx;
            tx.operations.push_back(op);
-           set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+           set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
            tx.validate();
 
            return sign_transaction(tx, broadcast);
@@ -2364,7 +2372,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(create_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2394,7 +2402,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(reward_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2427,7 +2435,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(reward_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2458,7 +2466,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(buyout_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2493,7 +2501,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(create_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2566,7 +2574,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(create_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2632,7 +2640,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(update_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2656,7 +2664,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(manage_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2702,7 +2710,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(buy_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2729,7 +2737,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(confirm_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2959,7 +2967,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(create_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -2995,7 +3003,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(update_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3022,7 +3030,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(ransom_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3061,7 +3069,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(create_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3089,7 +3097,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(vote_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3162,7 +3170,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(balance_lock_update_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3190,7 +3198,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(pledge_mining_update_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3214,7 +3222,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(pledge_bonus_collect_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3238,7 +3246,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(score_bonus_collect_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3273,7 +3281,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(create_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3296,7 +3304,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(cancel_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3325,7 +3333,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(collect_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3349,7 +3357,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(assign_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3388,13 +3396,257 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(collect_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
 
       } FC_CAPTURE_AND_RETHROW((issuer)(from)(benefit_type)(amount)(asset_symbol)(to)(time)(csaf_fee)(broadcast))
    }
+
+
+   signed_transaction account_update_auth(string       account,
+                                       	optional<authority> owner,
+									    optional<authority> active,
+									    optional<authority> secondary,
+									    optional<public_key_type> memo_key,
+                                        bool                     csaf_fee =  true,
+                                        bool                     broadcast = false)
+   {
+   	try {
+         FC_ASSERT(!self.is_locked(), "Should unlock first");
+         
+         account_uid_type account_uid = get_account_uid(account);
+         account_update_auth_operation  op;
+         op.uid = account_uid;
+         op.owner = owner;
+		 op.active = active;
+		 op.secondary = secondary;
+		 op.memo_key = memo_key;
+
+         signed_transaction tx;
+         tx.operations.push_back(op);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
+         tx.validate();
+
+         return sign_transaction(tx, broadcast);
+
+      } FC_CAPTURE_AND_RETHROW((account)(owner)(active)(secondary)(memo_key)(csaf_fee)(broadcast))
+   }
+
+get_table_rows_result get_table_rows_ex(string contract, string table, const get_table_rows_params &params)
+	{
+	   try {
+	       FC_ASSERT(params.lower_bound >= 0 && params.limit > 0, "lower_bound must >=0 and limit must > 0");
+	       account_object contract_obj = get_account(contract);
+
+	       const auto &tables = contract_obj.abi.tables;
+	       auto iter = std::find_if(tables.begin(), tables.end(),
+	                                [&](const table_def &t) { return t.name == table; });
+
+	       if (iter != tables.end()) {
+	           return _remote_db->get_table_rows_ex(contract, table, params);
+	       } else {
+	           FC_ASSERT(false, "No table found for ${contract}", ("contract", contract));
+	       }
+	       return get_table_rows_result();
+	   }
+	   FC_CAPTURE_AND_RETHROW((contract)(table))
+	}
+
+	get_table_rows_result get_table_rows(string contract, string table, uint64_t start, uint64_t limit)
+	{ try {
+	     FC_ASSERT(start>=0 && limit > 0, "start must >=0 and limit must > 0");
+	     account_object contract_obj = get_account(contract);
+
+	     const auto& tables = contract_obj.abi.tables;
+	     auto iter = std::find_if(tables.begin(), tables.end(),
+	             [&](const table_def& t) { return t.name == table; });
+
+	     if (iter != tables.end()) {
+	         return _remote_db->get_table_rows(contract, table, start, limit);
+	     } else {
+	         GRAPHENE_ASSERT(false, table_not_found_exception, "No table found for ${contract}", ("contract", contract));
+	     }
+	     return get_table_rows_result();
+	} FC_CAPTURE_AND_RETHROW((contract)(table)) }
+
+	variant get_contract_tables(string contract)
+	{ try {
+	     account_object contract_obj = get_account(contract);
+
+	     fc::variants result;
+	     const auto &tables = contract_obj.abi.tables;
+	     result.reserve(tables.size());
+
+	     std::transform(tables.begin(), tables.end(), std::back_inserter(result),
+	             [](const table_def &t_def) -> fc::variant {
+	                 return name(t_def.name).to_string();
+	             });
+
+	     return result;
+	} FC_CAPTURE_AND_RETHROW((contract)) }
+
+	signed_transaction deploy_contract(string name,
+	                                  string account,
+	                                  uint64_t contract_id,
+	                                  string vm_type,
+	                                  string vm_version,
+	                                  string contract_dir,
+	                                  bool csaf_fee =  true,
+	                                  bool broadcast = false)
+	{ try {
+	   FC_ASSERT(!self.is_locked());
+	   validate_account_name(name,"contract ");
+
+	   std::vector<uint8_t> wasm;
+	   variant abi_def_data;
+
+	   auto load_contract = [&]() {
+	       fc::path cpath(contract_dir);
+	       if (cpath.filename().generic_string() == ".") cpath = cpath.parent_path();
+
+	       fc::path wasm_path = cpath / (cpath.filename().generic_string() + ".wasm");
+	       fc::path abi_path = cpath / (cpath.filename().generic_string() + ".abi");
+
+	       bool wasm_exist = fc::exists(wasm_path);
+	       bool abi_exist = fc::exists(abi_path);
+
+	       FC_ASSERT(abi_exist, "no abi file exist");
+	       FC_ASSERT(wasm_exist, "no wasm file exist");
+
+	       abi_def_data = fc::json::from_file(abi_path);
+
+	       std::string wasm_string;
+	       fc::read_file_contents(wasm_path, wasm_string);
+	       const string binary_wasm_header("\x00\x61\x73\x6d", 4);
+	       FC_ASSERT(wasm_string.size() > 4 && (wasm_string.compare(0, 4, binary_wasm_header) == 0), "wasm invalid");
+
+	       for (auto it = wasm_string.begin(); it != wasm_string.end(); ++it) {
+	           wasm.push_back(*it); //TODO
+	       }
+	   };
+
+	   load_contract();
+
+	   account_object creator_account_object = this->get_account(account);
+	   account_uid_type creator_account_id = creator_account_object.uid;
+
+	   contract_deploy_operation op;
+	   op.name = name;
+	   op.contract_id = contract_id;
+	   op.owner = creator_account_id;
+	   op.vm_type = vm_type;
+	   op.vm_version = vm_version;
+	   op.code = bytes(wasm.begin(), wasm.end());
+	   op.abi = abi_def_data.as<abi_def>(GRAPHENE_MAX_NESTED_OBJECTS);
+
+	   signed_transaction tx;
+	   tx.operations.push_back(op);
+	   set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
+	   tx.validate();
+
+	   return sign_transaction(tx, broadcast);
+	} FC_CAPTURE_AND_RETHROW( (name)(account)(contract_id)(vm_type)(vm_version)(contract_dir)(csaf_fee)(broadcast)) }
+
+	signed_transaction update_contract(string contract,
+	                                optional<string> new_owner,
+	                                string contract_dir,
+	                                bool csaf_fee,
+	                                bool broadcast)
+	{ try {
+	   FC_ASSERT(!self.is_locked());
+	   
+
+	   std::vector<uint8_t> wasm;
+	   variant abi_def_data;
+
+	   auto load_contract = [&]() {
+	       fc::path cpath(contract_dir);
+	       if (cpath.filename().generic_string() == ".") cpath = cpath.parent_path();
+
+	       fc::path wasm_path = cpath / (cpath.filename().generic_string() + ".wasm");
+	       fc::path abi_path = cpath / (cpath.filename().generic_string() + ".abi");
+
+	       bool wasm_exist = fc::exists(wasm_path);
+	       bool abi_exist = fc::exists(abi_path);
+
+	       FC_ASSERT(abi_exist, "no abi file exist");
+	       FC_ASSERT(wasm_exist, "no wasm file exist");
+
+	       abi_def_data = fc::json::from_file(abi_path);
+
+	       std::string wasm_string;
+	       fc::read_file_contents(wasm_path, wasm_string);
+	       const string binary_wasm_header("\x00\x61\x73\x6d", 4);
+	       FC_ASSERT(wasm_string.size() > 4 && (wasm_string.compare(0, 4, binary_wasm_header) == 0), "wasm invalid");
+
+	       for (auto it = wasm_string.begin(); it != wasm_string.end(); ++it) {
+	           wasm.push_back(*it); //TODO
+	       }
+	   };
+
+	   load_contract();
+
+	   account_object contract_obj = this->get_account(contract);
+	   account_object owner_obj = this->get_account(contract_obj.reg_info.registrar);
+	   
+	   optional<account_uid_type> new_owner_account_id;
+	   if(new_owner.valid() && (*new_owner).length() > 0) {
+		   account_object new_owner_obj = this->get_account(*new_owner);
+		   new_owner_account_id = new_owner_obj.uid;
+	   }
+
+	   contract_update_operation op;
+	   op.owner = owner_obj.uid;
+	   op.contract_id = contract_obj.uid;
+	   op.new_owner = new_owner_account_id;
+	   op.code = bytes(wasm.begin(), wasm.end());
+	   op.abi = abi_def_data.as<abi_def>(GRAPHENE_MAX_NESTED_OBJECTS);
+
+	   signed_transaction tx;
+	   tx.operations.push_back(op);
+	   set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
+	   tx.validate();
+
+	   return sign_transaction(tx, broadcast);
+	} FC_CAPTURE_AND_RETHROW( (contract)(new_owner)(contract_dir)(csaf_fee)(broadcast)) }
+
+	signed_transaction call_contract(string account,
+	                                string contract,
+	                                optional<asset> amount,
+	                                string method,
+	                                string args,
+	                                bool csaf_fee,
+	                                bool broadcast)
+	{ try {
+	     FC_ASSERT(!self.is_locked());
+
+	     account_object caller = get_account(account);
+	     account_object contract_obj = get_account(contract);
+
+	     contract_call_operation contract_call_op;
+	     contract_call_op.account = caller.uid;
+	     contract_call_op.contract_id = contract_obj.uid;
+	     if (amount.valid()) {
+	         contract_call_op.amount = amount;
+	     }
+	     contract_call_op.method_name = string_to_name(method.c_str());
+	     fc::variant action_args_var = fc::json::from_string(args);
+
+	     abi_serializer abis(contract_obj.abi, fc::milliseconds(1000000));
+	     auto action_type = abis.get_action_type(method);
+	     GRAPHENE_ASSERT(!action_type.empty(), action_validate_exception, "Unknown action ${action} in contract ${contract}", ("action", method)("contract", contract));
+	     contract_call_op.data = abis.variant_to_binary(action_type, action_args_var, fc::milliseconds(1000000));
+
+	     signed_transaction tx;
+	     tx.operations.push_back(contract_call_op);
+	     set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
+	     tx.validate();
+
+	     return sign_transaction(tx, broadcast);
+	} FC_CAPTURE_AND_RETHROW( (account)(contract)(amount)(method)(args)(csaf_fee)(broadcast)) }
+
 
    signed_transaction asset_claim_fees(string               issuer,
       string               asset_symbol,
@@ -3415,7 +3667,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
          signed_transaction tx;
          tx.operations.push_back(collect_op);
-         set_operation_fees(tx, _remote_db->get_global_properties().parameters.current_fees, csaf_fee);
+         set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
          tx.validate();
 
          return sign_transaction(tx, broadcast);
@@ -3456,7 +3708,7 @@ signed_transaction account_cancel_auth_platform(string account,
 
       signed_transaction tx;
       tx.operations.push_back(update_op);
-      set_operation_fees(tx, get_global_properties().parameters.current_fees, csaf_fee);
+      set_operation_fees(tx, get_global_properties().parameters.get_current_fees(), csaf_fee);
       tx.validate();
       return sign_transaction(tx, broadcast);
    }
@@ -3629,6 +3881,7 @@ signed_transaction account_cancel_auth_platform(string account,
    optional< fc::api<network_node_api> > _remote_net_node;
    optional< fc::api<graphene::debug_witness::debug_api> > _remote_debug;
 
+   vector<signed_transaction> _trxs;
    flat_map<string, operation> _prototype_ops;
 
    static_variant_map _operation_which_map = create_static_variant_map< operation >();
@@ -3793,10 +4046,15 @@ std::string operation_result_printer::operator()(const advertising_confirm_resul
     std::string str = "Return the deposit money: \n";
     for (auto iter : a)
     {
-        str += "  account: " + to_string(iter.first) + " : " + to_string(iter.second.value) + "\n";
+        str += "  account: " + fc::to_string(iter.first) + " : " + fc::to_string(iter.second.value) + "\n";
     }
     return str;
 }
+std::string operation_result_printer::operator()(const contract_receipt& a)
+{
+    return a.to_string();
+}
+
 
 }}}
 
@@ -4474,9 +4732,9 @@ string wallet_api::compute_available_csaf(string account_name_or_uid)
 
    auto csaf_limit_modulus = global_params.get_extension_params().csaf_limit_lock_balance_modulus;
    auto lock_balance_amount = my->_remote_db->get_account_statistics_by_uid(uid).locked_balance;
-   auto lock_balance_csaf = ((fc::uint128)lock_balance_amount.value*csaf_limit_modulus / GRAPHENE_100_PERCENT).to_uint64();
+   auto lock_balance_csaf = static_cast<int64_t>((fc::uint128_t)lock_balance_amount.value*csaf_limit_modulus / GRAPHENE_100_PERCENT);
    auto s1 = global_params.max_csaf_per_account + lock_balance_csaf - account.statistics.csaf;
-   auto s2 = (csaf / global_params.csaf_rate).to_uint64();
+   auto s2 = static_cast<int64_t>(csaf / global_params.csaf_rate);
    return ao.amount_to_string(s1 > s2 ? s2 : s1);
 }
 
@@ -5179,6 +5437,62 @@ signed_transaction wallet_api::collect_benefit(string                   issuer,
 {
    return my->collect_benefit(issuer, from, benefit_type, amount, asset_symbol, to, time, csaf_fee, broadcast);
 }
+
+signed_transaction wallet_api::account_update_auth(string       account,
+                                       	optional<authority> owner,
+									    optional<authority> active,
+									    optional<authority> secondary,
+									    optional<public_key_type> memo_key,
+                                        bool                     csaf_fee,
+                                        bool                     broadcast)
+{
+	return my->account_update_auth(account,owner,active,secondary,memo_key,csaf_fee,broadcast);
+}
+
+signed_transaction wallet_api::deploy_contract(string name,
+                                                  string account,
+                                                  uint64_t contract_id,
+                                                  string vm_type,
+                                                  string vm_version,
+                                                  string contract_dir,
+                                                  bool csaf_fee,
+                                                  bool broadcast)
+    {
+        return my->deploy_contract(name, account,contract_id,vm_type, vm_version, contract_dir, csaf_fee, broadcast);
+    }
+    
+    signed_transaction wallet_api::update_contract(string contract,
+                                                  optional<string> new_owner,
+                                                  string contract_dir,
+                                                  bool csaf_fee,
+                                                  bool broadcast)
+    {
+        return my->update_contract(contract, new_owner, contract_dir, csaf_fee, broadcast);
+    }
+
+    signed_transaction wallet_api::call_contract(string account,
+                                      string contract,
+                                      optional<asset> amount,
+                                      string method,
+                                      string args,
+                                      bool csaf_fee,
+                                      bool broadcast)
+    {
+        return my->call_contract(account, contract, amount, method, args, csaf_fee, broadcast);
+    }
+
+    variant wallet_api::get_contract_tables(string contract) const
+    {
+        return my->get_contract_tables(contract);
+    }
+    get_table_rows_result wallet_api::get_table_rows_ex(string contract, string table, const get_table_rows_params &params) const
+    {
+        return my->get_table_rows_ex(contract, table, params);
+    }
+    get_table_rows_result wallet_api::get_table_rows(string contract, string table, uint64_t start, uint64_t limit) const
+    {
+        return my->get_table_rows(contract, table, start, limit);
+    }
 
 
 signed_transaction wallet_api::approve_proposal(

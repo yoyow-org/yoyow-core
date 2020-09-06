@@ -36,10 +36,10 @@ share_type cut_fee(share_type a, uint16_t p)
    if( p == GRAPHENE_100_PERCENT )
       return a;
 
-   fc::uint128 r(a.value);
+   fc::uint128_t r(a.value);
    r *= p;
    r /= GRAPHENE_100_PERCENT;
-   return r.to_uint64();
+   return static_cast<uint64_t>(r);
 }
 
 void account_balance_object::adjust_balance(const asset& delta)
@@ -100,7 +100,7 @@ std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_se
          fc::uint128_t new_coin_seconds = fc::uint128_t(effective_balance.value) * delta_seconds;
 
          max_coin_seconds = old_coin_seconds + new_coin_seconds;
-         new_average_coins = (max_coin_seconds / window).to_uint64();
+         new_average_coins = static_cast<uint64_t>(max_coin_seconds / window);
       }
    }
    // kill rounding issue

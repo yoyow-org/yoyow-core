@@ -29,6 +29,8 @@
 
 namespace graphene { namespace chain {
 
+   void validate_account_name( const string& name, const string& object_name);
+
    /// Account registration related info.
    struct account_reg_info
    {
@@ -508,6 +510,8 @@ namespace graphene { namespace chain {
    };
 } } // graphene::chain
 
+
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::account_auth_platform_operation::extension_parameter>)
 FC_REFLECT(graphene::chain::account_reg_info, (registrar)(referrer)(registrar_percent)(referrer_percent)
                                               (allowance_per_article)(max_share_per_article)(max_share_total)(buyout_percent)
                                               (extensions))

@@ -35,10 +35,184 @@
 #include <fc/crypto/digest.hpp>
 #include "../common/database_fixture.hpp"
 
+#include <graphene/chain/abi_serializer.hpp>
+#include <graphene/chain/wast_to_wasm.hpp>
+#include <graphene/chain/protocol/name.hpp>
+#include <fc/io/fstream.hpp>
+#include <fc/log/logger_config.hpp>
+
+
 using namespace graphene::chain;
 using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( performance_tests, database_fixture )
+
+BOOST_AUTO_TEST_CASE(contract_performance_test)
+{
+    try{
+    ACTORS((1000000)(9000000));
+
+	create_account(uint32_t(1000002),"ramaccount");
+
+	flat_map<account_uid_type, fc::ecc::private_key> account_map;
+    actor(1000003, 5000, account_map);
+
+	account_uid_type contract_id = graphene::chain::calc_account_uid(1000001);
+
+	transfer(committee_account, u_1000000_id, asset(10000000000ll));
+	
+	{
+	   std::vector<uint8_t> wasm;
+	   variant abi_def_data;
+
+	   auto load_contract = [&]() {
+	       fc::path wasm_path("/home/dev/yoyow-core/contracts/examples/transfer.wasm");
+	       fc::path abi_path("/home/dev/yoyow-core/contracts/examples/transfer.abi");
+
+	       bool wasm_exist = fc::exists(wasm_path);
+	       bool abi_exist = fc::exists(abi_path);
+
+	       FC_ASSERT(abi_exist, "no abi file exist");
+	       FC_ASSERT(wasm_exist, "no wasm file exist");
+
+	       abi_def_data = fc::json::from_file(abi_path);
+
+	       std::string wasm_string;
+	       fc::read_file_contents(wasm_path, wasm_string);
+	       const string binary_wasm_header("\x00\x61\x73\x6d", 4);
+	       FC_ASSERT(wasm_string.size() > 4 && (wasm_string.compare(0, 4, binary_wasm_header) == 0), "wasm invalid");
+
+	       for (auto it = wasm_string.begin(); it != wasm_string.end(); ++it) {
+	           wasm.push_back(*it); //TODO
+	       }
+	   };
+
+	   load_contract();
+
+	   
+
+//	   account_uid_type creator_account_id = creator_account_object.uid;
+
+	   contract_deploy_operation op;
+	   op.name = "testcontract";
+	   op.contract_id = contract_id;
+	   op.owner = u_1000000_id;
+	   op.vm_type = "0";
+	   op.vm_version = "1";
+	   op.code = bytes(wasm.begin(), wasm.end());
+	   op.abi = abi_def_data.as<abi_def>(GRAPHENE_MAX_NESTED_OBJECTS);
+
+	   signed_transaction tx;
+	   tx.operations.push_back(op);
+	   set_operation_fees(tx, db.current_fee_schedule());
+	   test::set_expiration(db, tx);
+	   tx.validate();
+
+	   db.push_transaction(tx, ~0);
+	}
+
+	
+	const auto & contract_obj = db.get_account_by_uid(contract_id);
+
+	{
+		contract_call_operation op;
+		op.account = u_1000000_id;
+		op.contract_id = contract_id;
+		op.method_name = string_to_name("add");
+
+		string args = string("{\"uid\":\"") + to_string(u_1000000_id) +"\",\"amount\":\"100000000\"}";
+		
+		fc::variant action_args_var = fc::json::from_string(args);
+
+		wlog("${a}",("a",contract_obj.abi.actions));
+		
+		abi_serializer abis(contract_obj.abi, fc::milliseconds(1000000));
+		auto action_type = abis.get_action_type(name(op.method_name));
+		GRAPHENE_ASSERT(!action_type.empty(), action_validate_exception, "Unknown action in contract");
+		op.data = abis.variant_to_binary(action_type, action_args_var, fc::milliseconds(1000000));
+		signed_transaction tx;
+		tx.operations.push_back(op);
+		set_operation_fees(tx, db.current_fee_schedule());
+		test::set_expiration(db, tx);
+		tx.validate();
+
+		db.push_transaction(tx, ~0);
+	}
+
+	//generate_blocks(100);
+
+	uint64_t init_amount = 0;
+
+	
+    std::vector<signed_transaction> transactions;
+
+	for (const auto& a : account_map)
+     {
+		contract_call_operation op;
+		op.account = u_1000000_id;
+		op.contract_id = contract_id;
+		op.method_name = string_to_name("transfer");
+
+		string args = string("{\"from\":\"")+to_string(u_1000000_id) + "\",\"to\":\"" + to_string(a.first) +"\",\"amount\":\"" + to_string(++init_amount) + "\"}";
+		
+		fc::variant action_args_var = fc::json::from_string(args);
+		
+		abi_serializer abis(contract_obj.abi, fc::milliseconds(1000000));
+		auto action_type = abis.get_action_type(name(op.method_name));
+		GRAPHENE_ASSERT(!action_type.empty(), action_validate_exception, "Unknown action in contract");
+		op.data = abis.variant_to_binary(action_type, action_args_var, fc::milliseconds(1000000));
+		signed_transaction tx;
+		tx.operations.push_back(op);
+		set_operation_fees(tx, db.current_fee_schedule());
+		test::set_expiration(db, tx);
+		tx.validate();
+
+		transactions.push_back(tx);
+     }
+
+    auto start = fc::time_point::now();
+    for (uint32_t i = 0; i < transactions.size(); ++i)
+    {
+        auto result = db.apply_transaction(transactions[i]);
+    }
+    auto end = fc::time_point::now();
+    auto elapsed = end - start;
+    wlog("call contract ${a} times with tps of ${aps}/s in ${total}ms",
+        ("a",transactions.size())("aps", (transactions.size() * 1000000) / elapsed.count())("total", elapsed.count() / 1000));
+/*
+	{
+		
+		contract_call_operation op;
+		op.account = u_9000000_id;
+		op.contract_id = contract_id;
+		op.method_name = string_to_name("transfer");
+
+		string args = string("{\"from\":\"")+to_string(u_9000000_id) + "\",\"to\":\"" + to_string(u_1000000_id) +"\",\"amount\":\"" + to_string(++init_amount) + "\"}";
+		
+		fc::variant action_args_var = fc::json::from_string(args);
+		
+		abi_serializer abis(contract_obj.abi, fc::milliseconds(1000000));
+		auto action_type = abis.get_action_type(name(op.method_name));
+		GRAPHENE_ASSERT(!action_type.empty(), action_validate_exception, "Unknown action in contract");
+		op.data = abis.variant_to_binary(action_type, action_args_var, fc::milliseconds(1000000));
+		signed_transaction tx;
+		tx.operations.push_back(op);
+		set_operation_fees(tx, db.current_fee_schedule());
+		test::set_expiration(db, tx);
+		tx.validate();
+		db.apply_transaction(tx);
+	}
+
+	*/
+
+    }
+    catch (fc::exception& e) {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
+
 
 BOOST_AUTO_TEST_CASE( sigcheck_benchmark )
 {
@@ -911,6 +1085,7 @@ BOOST_AUTO_TEST_CASE(one_hundred_k_benchmark)
    //db._undo_db.enable();
    // } FC_LOG_AND_RETHROW()
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

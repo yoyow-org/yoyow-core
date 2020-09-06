@@ -36,6 +36,12 @@ struct get_impacted_account_uid_visitor
       _impacted.insert( op.to );
    }
 
+   void operator()(const inline_transfer_operation &op)
+   {
+       _impacted.insert(op.from);
+       _impacted.insert(op.to);
+   }
+
    void operator()( const post_operation& op )
    {
       _impacted.insert( op.poster ); // fee payer
@@ -410,6 +416,25 @@ struct get_impacted_account_uid_visitor
       _impacted.insert(op.from);
       if (op.to.valid())
          _impacted.insert(*(op.to));
+   }
+   
+   void operator() (const contract_deploy_operation& op) {
+       _impacted.insert(op.owner);
+	   _impacted.insert(op.contract_id);
+   }
+   
+   void operator() (const contract_update_operation& op) {
+       _impacted.insert(op.owner);
+   }
+
+   void operator() (const contract_call_operation& op) {
+       _impacted.insert(op.account);
+       _impacted.insert(op.contract_id);
+   }
+
+   void operator() (const inter_contract_call_operation& op) {
+       _impacted.insert(op.sender_contract);
+       _impacted.insert(op.contract_id);
    }
 };
 

@@ -34,6 +34,8 @@
 #include <graphene/chain/block_database.hpp>
 #include <graphene/chain/genesis_state.hpp>
 #include <graphene/chain/evaluator.hpp>
+#include <graphene/chain/wasm_interface.hpp>
+#include <graphene/chain/transaction_context.hpp>
 
 #include <graphene/db/object_database.hpp>
 #include <graphene/db/object.hpp>
@@ -144,10 +146,14 @@ namespace graphene { namespace chain {
          const flat_map<uint32_t,block_id_type> get_checkpoints()const { return _checkpoints; }
          bool before_last_checkpoint()const;
 
+         // set / get max_trx_cpu_time
+         void set_max_trx_cpu_time(uint32_t max_trx_cpu_time) { _max_trx_cpu_time = max_trx_cpu_time; }
+         const uint32_t  get_max_trx_cpu_time() { return _max_trx_cpu_time; };
+
          bool push_block( const signed_block& b, uint32_t skip = skip_nothing );
-         processed_transaction push_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing );
+         processed_transaction push_transaction( const precomputable_transaction& trx, uint32_t skip = skip_nothing );
          bool _push_block( const signed_block& b );
-         processed_transaction _push_transaction( const signed_transaction& trx );
+         processed_transaction _push_transaction( const precomputable_transaction& trx );
 
          ///@throws fc::exception if the proposed transaction fails to apply.
          processed_transaction push_proposal(const proposal_object& proposal, const signed_information& sigs);
@@ -305,6 +311,13 @@ namespace graphene { namespace chain {
          const asset_object*                    find_asset_by_aid( asset_aid_type aid )const;
          const chain_property_object&           get_chain_properties()const;
          const global_property_object&          get_global_properties()const;
+		 
+		 extension_parameter_type        		get_global_extension_params() const;
+
+
+         const bool                             get_contract_log_to_console() const { return contract_log_to_console; }
+         void                                   set_contract_log_to_console(bool log_switch) { contract_log_to_console = log_switch; }
+         
          const dynamic_global_property_object&  get_dynamic_global_properties()const;
          const node_property_object&            get_node_properties()const;
          const fee_schedule&                    current_fee_schedule()const;
@@ -482,8 +495,31 @@ namespace graphene { namespace chain {
          asset pay_market_fees(const asset_object& recv_asset, const asset& receives);
          asset pay_market_fees(const account_object& seller, const asset_object& recv_asset, const asset& receives);
 
+		/** Precomputes digests, signatures and operation validations depending
+          *  on skip flags. "Expensive" computations may be done in a parallel
+          *  thread.
+          *
+          * @param block the block to preprocess
+          * @param skip indicates which computations can be skipped
+          * @return a future that will resolve to the input block with
+          *         precomputations applied
+          */
+         fc::future<void> precompute_parallel( const signed_block& block, const uint32_t skip = skip_nothing )const;
+
+         /** Precomputes digests, signatures and operation validations.
+          *  "Expensive" computations may be done in a parallel thread.
+          *
+          * @param trx the transaction to preprocess
+          * @return a future that will resolve to the input transaction with
+          *         precomputations applied
+          */
+         fc::future<void> precompute_parallel( const precomputable_transaction& trx )const;
+		 fc::future<void> precompute_parallel( const vector<precomputable_transaction>& trxs )const;
       private:
          void notify_changed_objects();
+		 
+		 template<typename Trx>
+         void _precompute_parallel( const Trx* trx, const size_t count, const uint32_t skip )const;
 
          //////////////////// db_block.cpp ////////////////////
 
@@ -503,10 +539,11 @@ namespace graphene { namespace chain {
          vector<std::reference_wrapper<const typename Index::object_type>> sort_votable_objects(size_t count)const;
 
       public:
+	  	 wasm_interface                 wasmif;
          // these were formerly private, but they have a fairly well-defined API, so let's make them public
          void                  apply_block( const signed_block& next_block, uint32_t skip = skip_nothing );
-         processed_transaction apply_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing );
-         operation_result      apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs = signed_information());
+         processed_transaction apply_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing, const vector<operation_result> &operation_results={} );
+         operation_result      apply_operation(transaction_evaluation_state& eval_state, const operation& op, const signed_information& sigs = signed_information(),const uint32_t& billed_cpu_time_us = 0);
 
          void set_check_invariants_interval(uint32_t interval){ _check_invariants_interval = interval; }
          void set_advertising_remain_time(uint32_t time){ _advertising_order_remaining_time = time; }
@@ -517,10 +554,19 @@ namespace graphene { namespace chain {
           */
          processed_transaction validate_transaction( const signed_transaction& trx );
 
+
+// set and get current trx
+       public:
+         const transaction *get_cur_trx() const { return cur_trx; }
+         void set_cur_trx(const transaction *trx) { cur_trx = trx; }
+
+       private:
+         const transaction *cur_trx = nullptr;
+
       private:
 
          void                  _apply_block( const signed_block& next_block );
-         processed_transaction _apply_transaction( const signed_transaction& trx );
+         processed_transaction _apply_transaction( const signed_transaction& trx,const vector<operation_result> &operation_results = {});
 
          ///Steps involved in applying a new block
          ///@{
@@ -623,9 +669,27 @@ namespace graphene { namespace chain {
 
          flat_map<uint32_t,block_id_type>  _checkpoints;
 
+         // max transaction cpu time, configured by config.ini
+         uint32_t                          _max_trx_cpu_time = 10000;
+
          node_property_object              _node_property_object;
 
+/**
+          * Whether database is successfully opened or not.
+          *
+          * The database is considered open when there's no exception
+          * or assertion fail during database::open() method, and
+          * database::close() has not been called, or failed during execution.
+          */
+         bool                              _opened = false;
+         bool                              contract_log_to_console = false;
          uint32_t                          _latest_active_post_periods = 10;
+ // for inter contract
+       public:
+          void                     set_contract_transaction_ctx(transaction_context *ctx) { contract_transaction_ctx = ctx; }
+          transaction_context*     get_contract_transaction_ctx() const { return contract_transaction_ctx; }
+       private:
+          transaction_context             *contract_transaction_ctx = nullptr;
    };
 
    namespace detail

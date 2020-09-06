@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include <fc/smart_ref_impl.hpp>
+#if 0
 #include <fc/uint128.hpp>
 
 #include <graphene/chain/hardfork.hpp>
@@ -75,3 +75,4 @@ BOOST_AUTO_TEST_CASE( nonzero_fee_test )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+#endif

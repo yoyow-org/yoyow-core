@@ -197,6 +197,25 @@ struct Poster_Period_Profit_Detail
 
     vector<active_post_object>             active_objects;
 };
+
+
+
+struct get_table_rows_result {
+   vector<fc::variant> rows;
+   bool                more = false;
+};
+
+struct get_table_rows_params {
+    uint64_t lower_bound = 0;
+    uint64_t upper_bound = -1; // 0xFFFFFFFFFFFFFFFF
+    uint32_t limit = 10;
+    std::string index_position = "1"; // 1 - primary (first), 2 - secondary index (in order defined by multi_index), 3 - third index, etc
+    optional<bool> reverse = false;
+};
+
+
+
+
 /**
  * @brief The database_api class implements the RPC API for the chain database.
  *
@@ -254,6 +273,8 @@ class database_api
       * @return array of headers of the referenced blocks, or null if no matching block was found
       */
       map<uint32_t, optional<block_header>> get_block_header_batch(const vector<uint32_t> block_nums)const;
+
+	  map<uint32_t, pair<uint32_t,block_header>> get_block_header_with_tx_count(const vector<uint32_t> block_nums)const;
 
 
       /**
@@ -884,6 +905,12 @@ class database_api
        *  @return the set of proposed transactions relevant to the specified account id.
        */
       vector<proposal_object> get_proposed_transactions( account_uid_type uid )const;
+
+	  
+	  fc::variants get_table_objects(uint64_t code, uint64_t scope, uint64_t table, uint64_t lower, uint64_t uppper, uint64_t limit) const;
+	  get_table_rows_result get_table_rows_ex(string contract, string table, const get_table_rows_params &params) const;
+	  get_table_rows_result get_table_rows(string contract, string table, uint64_t start=0, uint64_t limit=10) const;
+	  bytes serialize_contract_call_args(string contract, string method, string json_args) const;
   
    private:
       std::shared_ptr< database_api_impl > my;
@@ -945,6 +972,10 @@ FC_REFLECT_DERIVED( graphene::app::signed_block_with_info, (graphene::chain::sig
 
 FC_REFLECT_DERIVED( graphene::app::asset_object_with_data, (graphene::chain::asset_object),
    (dynamic_asset_data) )
+
+FC_REFLECT( graphene::app::get_table_rows_result, (rows)(more) );
+FC_REFLECT( graphene::app::get_table_rows_params, (lower_bound)(upper_bound)(limit)(index_position)(reverse));
+
 
 FC_API( graphene::app::database_api,
    // Objects
@@ -1073,4 +1104,11 @@ FC_API( graphene::app::database_api,
    //mining pledger
    (list_pledge_mining_by_witness)
    (list_pledge_mining_by_account)
+
+   (get_block_header_with_tx_count)
+    //contract
+  (get_table_objects)
+  (get_table_rows_ex)
+  (get_table_rows)
+  (serialize_contract_call_args)
 )

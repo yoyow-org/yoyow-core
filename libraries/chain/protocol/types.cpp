@@ -23,6 +23,7 @@
  */
 #include <graphene/chain/config.hpp>
 #include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/protocol/fee_schedule.hpp>
 
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/ripemd160.hpp>
@@ -51,7 +52,7 @@ namespace graphene { namespace chain {
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );
        auto bin_key = fc::raw::unpack<binary_key>(bin);
        key_data = bin_key.data;
-       FC_ASSERT( fc::ripemd160::hash( key_data.data, key_data.size() )._hash[0] == bin_key.check );
+       FC_ASSERT( fc::ripemd160::hash((char*)key_data.data(), key_data.size() )._hash[0].value() == bin_key.check );
     };
 
     public_key_type::operator fc::ecc::public_key_data() const
@@ -68,7 +69,7 @@ namespace graphene { namespace chain {
     {
        binary_key k;
        k.data = key_data;
-       k.check = fc::ripemd160::hash( k.data.data, k.data.size() )._hash[0];
+	   k.check = fc::ripemd160::hash( (char*)k.data.data(), k.data.size() )._hash[0].value();
        auto data = fc::raw::pack( k );
        return GRAPHENE_ADDRESS_PREFIX + fc::to_base58( data.data(), data.size() );
     }
@@ -114,7 +115,7 @@ namespace graphene { namespace chain {
        FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );
        auto bin_key = fc::raw::unpack<binary_key>(bin);
-       FC_ASSERT( fc::ripemd160::hash( bin_key.data.data, bin_key.data.size() )._hash[0] == bin_key.check );
+       FC_ASSERT( fc::ripemd160::hash((char*)bin_key.data.data(), bin_key.data.size() )._hash[0].value() == bin_key.check );
        key_data = bin_key.data;
     }
 
@@ -127,7 +128,7 @@ namespace graphene { namespace chain {
     {
        binary_key k;
        k.data = key_data;
-       k.check = fc::ripemd160::hash( k.data.data, k.data.size() )._hash[0];
+	   k.check = fc::ripemd160::hash( (char*) k.data.data(), k.data.size() )._hash[0].value();
        auto data = fc::raw::pack( k );
        return GRAPHENE_ADDRESS_PREFIX + fc::to_base58( data.data(), data.size() );
     }
@@ -168,7 +169,7 @@ namespace graphene { namespace chain {
        FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );
        auto bin_key = fc::raw::unpack<binary_key>(bin);
-       FC_ASSERT( fc::ripemd160::hash( bin_key.data.data, bin_key.data.size() )._hash[0] == bin_key.check );
+       FC_ASSERT( fc::ripemd160::hash((char*)  bin_key.data.data(), bin_key.data.size() )._hash[0].value() == bin_key.check );
        key_data = bin_key.data;
     }
     
@@ -181,7 +182,7 @@ namespace graphene { namespace chain {
     {
        binary_key k;
        k.data = key_data;
-       k.check = fc::ripemd160::hash( k.data.data, k.data.size() )._hash[0];
+       k.check = fc::ripemd160::hash((char*)  k.data.data(), k.data.size() )._hash[0].value();
        auto data = fc::raw::pack( k );
        return GRAPHENE_ADDRESS_PREFIX + fc::to_base58( data.data(), data.size() );
     }
@@ -210,7 +211,7 @@ namespace graphene { namespace chain {
        // so the result of conversion is lowest byte first.
        const auto hash = fc::sha256::hash( id );
        // Use the first byte of sha256 checksum as uid checksum. Remember it's little endian.
-       const auto head = ( hash._hash[0] & 0xFF );
+       const auto head = ( hash._hash[0].value() & 0xFF );
        return ( ( id << 8 ) | head );
     }
 
@@ -219,7 +220,7 @@ namespace graphene { namespace chain {
        const auto checksum = ( uid & 0xFF );
        const auto to_check = ( uid >> 8 );
        const auto hash = fc::sha256::hash( to_check );
-       const auto head = ( hash._hash[0] & 0xFF );
+       const auto head = ( hash._hash[0].value() & 0xFF );
        return ( checksum == head );
     }
 
@@ -256,6 +257,16 @@ namespace fc
     void from_variant( const fc::variant& var, graphene::chain::extended_private_key_type& vo, uint32_t max_depth )
     {
        vo = graphene::chain::extended_private_key_type( var.as_string() );
+    }
+
+	void from_variant( const fc::variant& var, std::shared_ptr<const graphene::chain::fee_schedule>& vo,
+                       uint32_t max_depth ) 
+	{
+        // If it's null, just make a new one
+        if (!vo) vo = std::make_shared<const graphene::chain::fee_schedule>();
+        // Convert the non-const shared_ptr<const fee_schedule> to a non-const fee_schedule& so we can write it
+        // Don't decrement max_depth since we're not actually deserializing at this step
+        from_variant(var, const_cast<graphene::chain::fee_schedule&>(*vo), max_depth);
     }
 
 } // fc

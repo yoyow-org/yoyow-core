@@ -36,6 +36,7 @@
 #include <graphene/chain/protocol/balance_lock.hpp>
 #include <graphene/chain/protocol/pledge_mining.hpp>
 #include <graphene/chain/protocol/market.hpp>
+#include <graphene/chain/protocol/contract_ops.hpp>
 
 namespace graphene { namespace chain {
 
@@ -104,7 +105,12 @@ namespace graphene { namespace chain {
             market_fee_collect_operation,
             score_bonus_collect_operation,
             beneficiary_assign_operation,
-            benefit_collect_operation
+            benefit_collect_operation,
+			contract_deploy_operation,
+            contract_call_operation,
+            contract_update_operation, 
+            inline_transfer_operation, 
+            inter_contract_call_operation 
          > operation;
 
    /// @} // operations group

@@ -428,9 +428,9 @@ database::get_effective_csaf(const active_post_object& active_post)
 
    auto get_part_effective_csaf = [=](uint128_t begin, uint128_t end) {
       uint128_t average_point = (begin + end) / 2;
-      auto slope = ((turn_point_second - average_point) * (GRAPHENE_100_PERCENT - params.approval_casf_min_weight) /
-         (turn_point_second - turn_point_first) + params.approval_casf_min_weight).to_uint64();
-      return ((end - begin) * slope / GRAPHENE_100_PERCENT).to_uint64();
+      auto slope = static_cast<int64_t> ((turn_point_second - average_point) * (GRAPHENE_100_PERCENT - params.approval_casf_min_weight) /
+         (turn_point_second - turn_point_first) + params.approval_casf_min_weight);
+      return static_cast<int64_t>((end - begin) * slope / GRAPHENE_100_PERCENT);
    };
    
    set<std::tuple<score_id_type, share_type, bool>> effective_csaf_container;
@@ -455,7 +455,7 @@ database::get_effective_csaf(const active_post_object& active_post)
       {
          if (last_total_csaf < turn_point_first)
          {
-            effective_casf = (turn_point_first - last_total_csaf).to_uint64();
+            effective_casf = static_cast<int64_t>(turn_point_first - last_total_csaf);
             effective_casf += get_part_effective_csaf(turn_point_first, total_csaf);
          }
          else
@@ -465,14 +465,14 @@ database::get_effective_csaf(const active_post_object& active_post)
       {
          if (last_total_csaf < turn_point_first)
          {
-            effective_casf += (turn_point_first - last_total_csaf).to_uint64();
+            effective_casf +=static_cast<int64_t> (turn_point_first - last_total_csaf);
             effective_casf += get_part_effective_csaf(turn_point_first, turn_point_second);            
-            effective_casf += ((total_csaf - turn_point_second) * params.approval_casf_min_weight / GRAPHENE_100_PERCENT).to_uint64();
+            effective_casf += static_cast<int64_t>((total_csaf - turn_point_second) * params.approval_casf_min_weight / GRAPHENE_100_PERCENT);
          }
          else if (last_total_csaf < turn_point_second)
          {
             effective_casf += get_part_effective_csaf(last_total_csaf, turn_point_second);       
-            effective_casf += ((total_csaf - turn_point_second) * params.approval_casf_min_weight / GRAPHENE_100_PERCENT).to_uint64();
+            effective_casf +=static_cast<int64_t> ((total_csaf - turn_point_second) * params.approval_casf_min_weight / GRAPHENE_100_PERCENT);
          }
          else
          {
@@ -762,8 +762,8 @@ void database::adjust_budgets()
       // Normally shouldn't overflow
       uint32_t blocks_per_year = 86400 * 365 / gparams.block_interval
                                - 86400 * 365 * gparams.maintenance_skip_slots / gparams.maintenance_interval;
-      uint64_t new_budget = ( fc::uint128_t( core_reserved.value ) * gparams.budget_adjust_target
-                              / blocks_per_year / GRAPHENE_100_PERCENT ).to_uint64();
+      uint64_t new_budget = static_cast<uint64_t>( fc::uint128_t( core_reserved.value ) * gparams.budget_adjust_target
+                              / blocks_per_year / GRAPHENE_100_PERCENT );
       modify( dpo, [&]( dynamic_global_property_object& _dpo )
       {
          _dpo.total_budget_per_block = new_budget;
@@ -1039,7 +1039,7 @@ void database::execute_committee_proposal( const committee_proposal_object& prop
       {
          modify( get_global_properties(), [&]( global_property_object& o )
          {
-            auto& cp = o.parameters.current_fees->parameters;
+            auto& cp = o.parameters.get_mutable_fees().parameters;
             for( const auto& f : (*fee_item)->parameters )
             {
                fee_parameters params; params.set_which(f.which());
@@ -1577,8 +1577,8 @@ share_type database::update_pledge_mining_bonus_by_account(const pledge_mining_o
    if (this->get(pledge_mining_obj.pledge_id).pledge == 0)
       return 0;
 
-   share_type total_bonus = ((uint128_t)bonus_per_pledge.value * get(pledge_mining_obj.pledge_id).pledge.value
-      / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+   share_type total_bonus = static_cast<int64_t> ((uint128_t)bonus_per_pledge.value * get(pledge_mining_obj.pledge_id).pledge.value
+      / GRAPHENE_PLEDGE_BONUS_PRECISION);
    if (total_bonus > 0) {
       modify(get_account_statistics_by_uid(pledge_mining_obj.pledge_account), [&](_account_statistics_object& o) {
          o.uncollected_pledge_bonus += total_bonus;
@@ -1637,13 +1637,13 @@ void database::update_platform_avg_pledge( const platform_object& pla )
          fc::uint128_t old_coin_seconds = fc::uint128_t( pla.average_pledge ) * old_seconds;
          fc::uint128_t new_coin_seconds = fc::uint128_t( pla.pledge ) * delta_seconds;
 
-         new_average_coins = ( ( old_coin_seconds + new_coin_seconds ) / window ).to_uint64();
+         new_average_coins = static_cast<uint64_t>( ( old_coin_seconds + new_coin_seconds ) / window );
       }
       else
       {
          uint64_t total_seconds = window - ( pla.average_pledge_last_update - pla.pledge_last_update ).to_seconds();
 
-         new_average_coins = pla.average_pledge + ( fc::uint128_t( pla.pledge - pla.average_pledge ) * delta_seconds / total_seconds ).to_uint64();
+         new_average_coins = pla.average_pledge + static_cast<uint64_t> ( fc::uint128_t( pla.pledge - pla.average_pledge ) * delta_seconds / total_seconds );
       }
 
       modify( pla, [&]( platform_object& p )
@@ -1767,7 +1767,7 @@ void database::process_content_platform_awards()
       {
          fc::uint128_t award_two_periods = (fc::uint128_t)(params.total_content_award_amount + params.total_platform_content_award_amount).value*2*
             (dpo.next_content_award_time - dpo.last_content_award_time).to_seconds() / (86400 * 365);
-         can_award = dpo.budget_pool >= award_two_periods.to_uint64();
+         can_award = dpo.budget_pool >= static_cast<uint64_t>(award_two_periods);
       } else {
          can_award = dpo.budget_pool >= (params.total_content_award_amount + params.total_platform_content_award_amount);
       }    
@@ -1842,18 +1842,18 @@ void database::process_content_platform_awards()
             std::map<account_uid_type, share_type> registrar_and_referrer_award;
             for (auto itr = post_effective_casf.begin(); itr != post_effective_casf.end(); ++itr)
             {
-               share_type post_earned = (content_award_amount_per_period * std::get<1>(*itr).value /
-                  total_effective_csaf_amount.value).to_uint64();
+               share_type post_earned =static_cast<int64_t> (content_award_amount_per_period * std::get<1>(*itr).value /
+                  total_effective_csaf_amount.value);
                share_type score_earned = 0;
                share_type receiptor_earned = 0;
                if (dpo.enabled_hardfork_version < ENABLE_HEAD_FORK_05)
-                  score_earned = ((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO / GRAPHENE_100_PERCENT).to_uint64();
+                  score_earned = static_cast<int64_t>((uint128_t)post_earned.value * GRAPHENE_DEFAULT_SCORE_RECEIPTS_RATIO / GRAPHENE_100_PERCENT);
                else
-                  score_earned = ((uint128_t)post_earned.value * params.scorer_earnings_rate / GRAPHENE_100_PERCENT).to_uint64(); 
+                  score_earned = static_cast<int64_t>((uint128_t)post_earned.value * params.scorer_earnings_rate / GRAPHENE_100_PERCENT);
                if (std::get<2>(*itr) >= 0)
                   receiptor_earned = post_earned - score_earned;
                else
-                  receiptor_earned = ((uint128_t)((post_earned - score_earned).value)*params.receiptor_award_modulus / GRAPHENE_100_PERCENT).to_uint64();
+                  receiptor_earned = static_cast<int64_t>((uint128_t)((post_earned - score_earned).value)*params.receiptor_award_modulus / GRAPHENE_100_PERCENT);
 
                const auto& post = get_post_by_platform(std::get<0>(*itr)->platform, std::get<0>(*itr)->poster, std::get<0>(*itr)->post_pid);
                share_type temp = receiptor_earned;
@@ -1862,7 +1862,7 @@ void database::process_content_platform_awards()
                {
                   if (r.first == post.platform)
                      continue;
-                  share_type to_add = ((uint128_t)receiptor_earned.value * r.second.cur_ratio / GRAPHENE_100_PERCENT).to_uint64();
+                  share_type to_add = static_cast<int64_t>((uint128_t)receiptor_earned.value * r.second.cur_ratio / GRAPHENE_100_PERCENT);
 
                   ///adjust_balance(r.first, asset(to_add));
                   adjust_balance_map[r.first] += to_add;
@@ -1874,8 +1874,8 @@ void database::process_content_platform_awards()
 
                share_type award_only_from_platform;
                if (post.poster == post.platform)
-                  award_only_from_platform = ((uint128_t)receiptor_earned.value * GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO /
-                  GRAPHENE_100_PERCENT).to_uint64();
+                  award_only_from_platform = static_cast<int64_t>((uint128_t)receiptor_earned.value * GRAPHENE_DEFAULT_PLATFORM_RECEIPTS_RATIO /
+                  GRAPHENE_100_PERCENT);
                else
                   award_only_from_platform = temp;
                if (platform_receiptor_award.count(post.platform))
@@ -1907,10 +1907,10 @@ void database::process_content_platform_awards()
                   uint128_t effective_csaf_per_account = (uint128_t)std::get<1>(e).value;
                   share_type to_add = 0;
                   if (std::get<2>(*itr) < 0 && !std::get<2>(e))
-                     to_add = (effective_csaf_per_account * score_earned.value * params.disapprove_award_modulus /
-                     (total_award_csaf * GRAPHENE_100_PERCENT)).to_uint64();
+                     to_add = static_cast<int64_t>(effective_csaf_per_account * score_earned.value * params.disapprove_award_modulus /
+                     (total_award_csaf * GRAPHENE_100_PERCENT));
                   else
-                     to_add = (effective_csaf_per_account * score_earned.value / total_award_csaf).to_uint64();
+                     to_add = static_cast<int64_t>(effective_csaf_per_account * score_earned.value / total_award_csaf);
                   const auto& score_obj = get(std::get<0>(e));
                   modify(score_obj, [&](score_object& obj)
                   {
@@ -1920,7 +1920,7 @@ void database::process_content_platform_awards()
                   //registrar and referrer get part of earning
                   if (dpo.enabled_hardfork_version >= ENABLE_HEAD_FORK_05)
                   {
-                     share_type to_registrar_and_referrer = ((uint128_t)to_add.value * params.registrar_referrer_rate_from_score / GRAPHENE_100_PERCENT).to_uint64();
+                     share_type to_registrar_and_referrer = static_cast<int64_t>((uint128_t)to_add.value * params.registrar_referrer_rate_from_score / GRAPHENE_100_PERCENT);
                      registrar_and_referrer_award[score_obj.from_account_uid] += to_registrar_and_referrer;
                      adjust_balance_map[score_obj.from_account_uid] += (to_add - to_registrar_and_referrer);
                   }
@@ -1965,8 +1965,8 @@ void database::process_content_platform_awards()
             for (const auto& r : registrar_and_referrer_award)
             {
                auto account_obj = get_account_by_uid(r.first);
-               share_type to_registrar = ((uint128_t)r.second.value * account_obj.reg_info.registrar_percent
-                  / GRAPHENE_100_PERCENT).to_uint64();
+               share_type to_registrar = static_cast<int64_t>((uint128_t)r.second.value * account_obj.reg_info.registrar_percent
+                  / GRAPHENE_100_PERCENT);
                bonus_map[account_obj.reg_info.registrar] += to_registrar;
                bonus_map[account_obj.reg_info.referrer] += (r.second - to_registrar);
             }
@@ -1988,8 +1988,8 @@ void database::process_content_platform_awards()
 
             for (const auto& p : platform_csaf_amount)
             {
-               share_type to_add = (content_platform_award_amount_per_period * p.second.value /
-                  total_csaf_amount.value).to_uint64();
+               share_type to_add = static_cast<int64_t>(content_platform_award_amount_per_period * p.second.value /
+                  total_csaf_amount.value);
                ///adjust_balance(p.first, asset(to_add));
                adjust_balance_map[p.first] += to_add;
 
@@ -2054,7 +2054,7 @@ void database::process_platform_voted_awards()
          {
             fc::uint128_t award_two_periods = (fc::uint128_t)params.total_platform_voted_award_amount.value * 2 *
                (dpo.next_platform_voted_award_time - dpo.last_platform_voted_award_time).to_seconds() / (86400 * 365);
-            can_award = dpo.budget_pool >= award_two_periods.to_uint64();
+            can_award = dpo.budget_pool >= static_cast<int64_t>(award_two_periods);
          } else {
             can_award = dpo.budget_pool >= params.total_platform_voted_award_amount;
          }
@@ -2083,7 +2083,7 @@ void database::process_platform_voted_awards()
                uint128_t value = (uint128_t)(params.total_platform_voted_award_amount.value) *
                   (dpo.next_platform_voted_award_time - dpo.last_platform_voted_award_time).to_seconds() / (86400 * 365);
 
-               share_type platform_award_basic = (value * params.platform_award_basic_rate / GRAPHENE_100_PERCENT).to_uint64();
+               share_type platform_award_basic = static_cast<int64_t>(value * params.platform_award_basic_rate / GRAPHENE_100_PERCENT);
                share_type platform_average_award_basic = platform_award_basic / platforms.size();
                flat_map<account_uid_type, share_type> platform_award;
                for (const auto& p : platforms)
@@ -2092,10 +2092,10 @@ void database::process_platform_voted_awards()
 
                if (total_votes > 0)
                {
-                  share_type platform_award_by_votes = value.to_uint64() - platform_award_basic;
+                  share_type platform_award_by_votes = static_cast<int64_t>(value) - platform_award_basic;
                   for (const auto& p : platforms)
                   {
-                     share_type to_add = ((uint128_t)platform_award_by_votes.value * p.second / total_votes).to_uint64();
+                     share_type to_add = static_cast<int64_t>((uint128_t)platform_award_by_votes.value * p.second / total_votes);
                      actual_awards += to_add;
                      platform_award.at(p.first) += to_add;
                   }

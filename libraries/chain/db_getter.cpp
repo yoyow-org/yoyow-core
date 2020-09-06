@@ -30,7 +30,6 @@
 #include <graphene/chain/advertising_object.hpp>
 #include <graphene/chain/pledge_mining_object.hpp>
 
-#include <fc/smart_ref_impl.hpp>
 
 namespace graphene { namespace chain {
 
@@ -57,6 +56,11 @@ const asset_object* database::find_asset_by_aid( asset_aid_type aid )const
       return nullptr;
 }
 
+extension_parameter_type database::get_global_extension_params() const
+{
+    return get_global_properties().parameters.get_extension_params();
+}
+
 const global_property_object& database::get_global_properties()const
 {
    return get( global_property_id_type() );
@@ -74,7 +78,7 @@ const dynamic_global_property_object&database::get_dynamic_global_properties() c
 
 const fee_schedule&  database::current_fee_schedule()const
 {
-   return get_global_properties().parameters.current_fees;
+   return get_global_properties().parameters.get_current_fees();
 }
 
 time_point_sec database::head_block_time()const

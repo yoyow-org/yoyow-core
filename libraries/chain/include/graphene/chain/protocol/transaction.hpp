@@ -62,8 +62,10 @@ namespace graphene { namespace chain {
    /**
     *  @brief groups operations that should be applied atomically
     */
-   struct transaction
+   class transaction
    {
+   public:
+      virtual ~transaction() = default;
       /**
        * Least significant 16 bits from the reference block number. If @ref relative_expiration is zero, this field
        * must be zero as well.
@@ -86,10 +88,8 @@ namespace graphene { namespace chain {
 
       /// Calculate the digest for a transaction
       digest_type         digest()const;
-      transaction_id_type id()const;
-      void                validate() const;
-      /// Calculate the digest used for signature validation
-      digest_type         sig_digest( const chain_id_type& chain_id )const;
+      virtual const transaction_id_type& id()const;
+      virtual void                       validate() const;
 
       void set_expiration( fc::time_point_sec expiration_time );
       void set_reference_block( const block_id_type& reference_block );
@@ -118,8 +118,16 @@ namespace graphene { namespace chain {
                                          vector<authority>& other,
                                          bool enabled_hardfork)const;
 
-   };
+	virtual uint64_t get_packed_size()const;
 
+   protected:
+      // Calculate the digest used for signature validation
+      digest_type sig_digest( const chain_id_type& chain_id )const;
+      mutable transaction_id_type _tx_id_buffer;
+   
+   };
+   
+   //signed_information should send to operation_apply for authority check
    struct signed_information
    {
       struct sign_tree
@@ -185,10 +193,12 @@ namespace graphene { namespace chain {
    /**
     *  @brief adds a signature to a transaction
     */
-   struct signed_transaction : public transaction
+   class signed_transaction : public transaction
    {
+   public:
       signed_transaction( const transaction& trx = transaction() )
          : transaction(trx){}
+      virtual ~signed_transaction() = default;
 
       /** signs and appends to signatures */
       const signature_type& sign( const private_key_type& key, const chain_id_type& chain_id );
@@ -241,12 +251,38 @@ namespace graphene { namespace chain {
          ) const;
       */
 
-      flat_map<public_key_type,signature_type> get_signature_keys( const chain_id_type& chain_id )const;
+      virtual const flat_map<public_key_type,signature_type>& get_signature_keys( const chain_id_type& chain_id )const;
 
       vector<signature_type> signatures;
 
       /// Removes all operations and signatures
       void clear() { operations.clear(); signatures.clear(); }
+
+      /** Removes all signatures */
+      void clear_signatures() { signatures.clear(); }
+   protected:
+      /** Public keys extracted from signatures */
+      mutable flat_map<public_key_type,signature_type> _signees;
+   };
+   
+   /** This represents a signed transaction that will never have its operations,
+    *  signatures etc. modified again, after initial creation. It is therefore
+    *  safe to cache results from various calls.
+    */
+   class precomputable_transaction : public signed_transaction {
+   public:
+      precomputable_transaction() {}
+      precomputable_transaction( const signed_transaction& tx ) : signed_transaction(tx) {};
+      precomputable_transaction( signed_transaction&& tx ) : signed_transaction( std::move(tx) ) {};
+      virtual ~precomputable_transaction() = default;
+
+      virtual const transaction_id_type&       id()const override;
+      virtual void                             validate()const override;
+      virtual const flat_map<public_key_type,signature_type>& get_signature_keys( const chain_id_type& chain_id )const override;
+      virtual uint64_t                         get_packed_size()const override;
+   protected:
+      mutable bool _validated = false;
+      mutable uint64_t _packed_size = 0;
    };
 
 signed_information verify_authority(const vector<operation>& ops, const flat_map<public_key_type, signature_type>& sigs,
@@ -287,10 +323,11 @@ void get_authority_uid( const authority* au,
     *  If an operation did not create any new object IDs then 0
     *  should be returned.
     */
-   struct processed_transaction : public signed_transaction
+   struct processed_transaction : public precomputable_transaction
    {
       processed_transaction( const signed_transaction& trx = signed_transaction() )
-         : signed_transaction(trx){}
+         : precomputable_transaction(trx){}
+      virtual ~processed_transaction() = default;
 
       vector<operation_result> operation_results;
 
@@ -303,4 +340,5 @@ void get_authority_uid( const authority* au,
 
 FC_REFLECT( graphene::chain::transaction, (ref_block_num)(ref_block_prefix)(expiration)(operations)(extensions) )
 FC_REFLECT_DERIVED( graphene::chain::signed_transaction, (graphene::chain::transaction), (signatures) )
-FC_REFLECT_DERIVED( graphene::chain::processed_transaction, (graphene::chain::signed_transaction), (operation_results) )
+FC_REFLECT_DERIVED( graphene::chain::precomputable_transaction, (graphene::chain::signed_transaction), )
+FC_REFLECT_DERIVED( graphene::chain::processed_transaction, (graphene::chain::precomputable_transaction), (operation_results) )

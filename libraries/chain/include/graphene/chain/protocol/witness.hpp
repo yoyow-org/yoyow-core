@@ -207,6 +207,8 @@ namespace graphene { namespace chain {
 
 } } // graphene::chain
 
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::pledge_mining::ext>)
+
 FC_REFLECT( graphene::chain::witness_create_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(extensions) )
 FC_REFLECT( graphene::chain::witness_create_operation, (fee)(account)(block_signing_key)(pledge)(url)(extensions) )
 

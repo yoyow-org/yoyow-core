@@ -28,7 +28,9 @@
 #include <graphene/chain/protocol/authority.hpp>
 #include <graphene/chain/protocol/ext.hpp>
 #include <boost/tti/has_member_data.hpp>
-
+#include <fc/uint128.hpp>
+#include <fc/io/raw.hpp>
+#include <graphene/chain/protocol/contract_receipt.hpp>
 
 
 namespace graphene { namespace chain {
@@ -86,7 +88,7 @@ namespace graphene { namespace chain {
 
    struct void_result{};
    typedef flat_map<account_uid_type, share_type> advertising_confirm_result;
-   typedef fc::static_variant<void_result,object_id_type,asset,advertising_confirm_result> operation_result;
+   typedef fc::static_variant<void_result,object_id_type,asset,advertising_confirm_result,contract_receipt> operation_result;
 
    struct fee_extension_type
    {
@@ -123,8 +125,8 @@ namespace graphene { namespace chain {
       template<typename T>
       std::pair<share_type, share_type> calculate_fee_pair(share_type fee, const T& params, std::true_type)const
       {
-         fc::uint128 min_percent_fee = ( fc::uint128( fee.value ) * params.min_rf_percent ) / GRAPHENE_100_PERCENT;
-         share_type min_real_fee = std::max( params.min_real_fee, min_percent_fee.to_uint64() );
+         fc::uint128_t min_percent_fee = ( fc::uint128_t( fee.value ) * params.min_rf_percent ) / GRAPHENE_100_PERCENT;
+         share_type min_real_fee = std::max( params.min_real_fee, static_cast<uint64_t>(min_percent_fee) );
          FC_ASSERT( min_real_fee <= GRAPHENE_MAX_SHARE_SUPPLY );
 
          return std::make_pair( fee, min_real_fee );
@@ -187,6 +189,11 @@ namespace graphene { namespace chain {
 FC_REFLECT_TYPENAME( graphene::chain::operation_result )
 FC_REFLECT_TYPENAME( graphene::chain::future_extensions )
 FC_REFLECT_TYPENAME( graphene::chain::advertising_confirm_result )
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::default_extension_type>)
+FC_REFLECT_TYPENAME( graphene::chain::extension<graphene::chain::fee_extension_type>)
+
+
+
 FC_REFLECT( graphene::chain::void_result, )
 FC_REFLECT( graphene::chain::default_extension_type, )
 

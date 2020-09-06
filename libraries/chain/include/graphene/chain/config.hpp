@@ -165,8 +165,10 @@
 #define GRAPHENE_DEFAULT_WITNESS_REPORT_ALLOW_PRE_LAST_BLOCK     (false) // don't allow reporting of blocks earlier than last block
 #define GRAPHENE_DEFAULT_WITNESS_REPORT_PLEDGE_DEDUCTION_AMOUNT  (GRAPHENE_BLOCKCHAIN_PRECISION * uint64_t(1000))
 
+#define UINT128_MAX_VALUE                           			(fc::uint128( std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max() ))
+
 //Constants
-#define GRAPHENE_VIRTUAL_LAP_LENGTH                           (fc::uint128_t::max_value())
+#define GRAPHENE_VIRTUAL_LAP_LENGTH                           UINT128_MAX_VALUE
 #define GRAPHENE_MIN_GOVERNANCE_VOTING_EXPIRATION_BLOCKS      (28800) // blocks, 1 day if 3 seconds per block
 #define GRAPHENE_MAX_EXPIRED_VOTERS_TO_PROCESS_PER_BLOCK      (10000)
 #define GRAPHENE_MAX_RESIGNED_WITNESS_VOTES_PER_BLOCK         (10000)

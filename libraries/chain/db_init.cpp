@@ -42,6 +42,9 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
 #include <graphene/chain/pledge_mining_object.hpp>
+#include <graphene/chain/signature_object.hpp>
+#include <graphene/chain/contract_table_objects.hpp>
+
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -56,10 +59,10 @@
 #include <graphene/chain/witness_evaluator.hpp>
 #include <graphene/chain/pledge_mining_evaluator.hpp>
 #include <graphene/chain/market_evaluator.hpp>
+#include <graphene/chain/contract_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
-#include <fc/smart_ref_impl.hpp>
 #include <fc/uint128.hpp>
 #include <fc/crypto/digest.hpp>
 
@@ -227,6 +230,11 @@ void database::initialize_evaluators()
    register_evaluator<score_bonus_collect_evaluator>();
    register_evaluator<beneficiary_assign_evaluator>();
    register_evaluator<benefit_collect_evaluator>();
+   register_evaluator<contract_deploy_evaluator>();
+   register_evaluator<contract_call_evaluator>();
+   register_evaluator<contract_update_evaluator>();
+   register_evaluator<inline_transfer_evaluator>();
+   register_evaluator<inter_contract_call_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -279,6 +287,13 @@ void database::initialize_indexes()
    add_index< primary_index<flat_index<  block_summary_object            >> >();
    add_index< primary_index<simple_index<chain_property_object          > > >();
    add_index< primary_index<simple_index<witness_schedule_object        > > >();
+
+   add_index< primary_index<signature_index                            > >();
+
+   // contract object indexes
+   add_index< primary_index< table_id_multi_index> >();
+   add_index< primary_index< key_value_index> >();
+   add_index< primary_index< index64_index> >();
 }
 
 void database::init_genesis(const genesis_state_type& genesis_state)
@@ -321,17 +336,17 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
-       a.membership_expiration_date = time_point_sec::maximum();
-       a.network_fee_percentage = 0;
-       a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
+      // a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
+      // a.membership_expiration_date = time_point_sec::maximum();
+      // a.network_fee_percentage = 0;
+      // a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
    }).get_id() == GRAPHENE_PROXY_TO_SELF_ACCOUNT);
    const account_object& committee_account =
       create<account_object>( [&](account_object& n) {
          n.uid = GRAPHENE_COMMITTEE_ACCOUNT_UID;
-         n.membership_expiration_date = time_point_sec::maximum();
-         n.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
-         n.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+         //n.membership_expiration_date = time_point_sec::maximum();
+        // n.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+       //  n.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
          n.owner.weight_threshold = 1;
          n.active.weight_threshold = 1;
          n.secondary.weight_threshold = 1;
@@ -349,10 +364,10 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_WITNESS_ACCOUNT_UID;
-       a.membership_expiration_date = time_point_sec::maximum();
-       a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
-       a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+     //  a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_WITNESS_ACCOUNT_UID;
+      // a.membership_expiration_date = time_point_sec::maximum();
+      // a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+      // a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
    }).get_id() == GRAPHENE_WITNESS_ACCOUNT);
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID;
@@ -361,10 +376,10 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.owner.weight_threshold = 1;
        a.active.weight_threshold = 1;
        a.secondary.weight_threshold = 1;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID;
-       a.membership_expiration_date = time_point_sec::maximum();
-       a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
-       a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+    //   a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_RELAXED_COMMITTEE_ACCOUNT_UID;
+      // a.membership_expiration_date = time_point_sec::maximum();
+     //  a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+     //  a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
    }).get_id() == GRAPHENE_RELAXED_COMMITTEE_ACCOUNT);
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_NULL_ACCOUNT_UID;
@@ -375,10 +390,10 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.secondary.weight_threshold = 1;
        a.is_registrar = true;
        a.is_full_member = true;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
-       a.membership_expiration_date = time_point_sec::maximum();
-       a.network_fee_percentage = 0;
-       a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
+      // a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
+      // a.membership_expiration_date = time_point_sec::maximum();
+     //  a.network_fee_percentage = 0;
+      // a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT;
    }).get_id() == GRAPHENE_NULL_ACCOUNT);
    FC_ASSERT(create<account_object>([this](account_object& a) {
        a.uid = GRAPHENE_TEMP_ACCOUNT_UID;
@@ -387,10 +402,10 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        a.owner.weight_threshold = 0;
        a.active.weight_threshold = 0;
        a.secondary.weight_threshold = 0;
-       a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
-       a.membership_expiration_date = time_point_sec::maximum();
-       a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
-       a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+       //a.registrar = a.lifetime_referrer = a.referrer = GRAPHENE_NULL_ACCOUNT_UID;
+     //  a.membership_expiration_date = time_point_sec::maximum();
+    //   a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+    //   a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
    }).get_id() == GRAPHENE_TEMP_ACCOUNT);
 
    // Create core asset
@@ -421,14 +436,14 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        p.parameters = genesis_state.initial_parameters;
        // Set fees to zero initially, so that genesis initialization needs not pay them
        // We'll fix it at the end of the function
-       p.parameters.current_fees->zero_all_fees();
+       p.parameters.get_mutable_fees().zero_all_fees();
 
    });
    create<dynamic_global_property_object>([&](dynamic_global_property_object& p) {
       p.time = genesis_state.initial_timestamp;
       p.dynamic_flags = 0;
       p.witness_budget = 0;
-      p.recent_slots_filled = fc::uint128::max_value();
+      p.recent_slots_filled = UINT128_MAX_VALUE;
    });
 
    FC_ASSERT( (genesis_state.immutable_parameters.min_witness_count & 1) == 1, "min_witness_count must be odd" );
@@ -571,7 +586,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
    // Enable fees
    modify(get_global_properties(), [&genesis_state](global_property_object& p) {
-      p.parameters.current_fees = genesis_state.initial_parameters.current_fees;
+	  p.parameters.get_mutable_fees() = genesis_state.initial_parameters.get_current_fees();
 
       /* auto fees = fee_schedule::get_default();
       auto& cp = fees.parameters;

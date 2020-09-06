@@ -24,7 +24,6 @@
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
 #include <graphene/chain/protocol/types.hpp>
-#include <fc/smart_ref_fwd.hpp>
 
 namespace graphene { namespace chain { struct fee_schedule; } }
 /*
@@ -72,12 +71,22 @@ namespace graphene { namespace chain {
 
       share_type  platform_content_award_min_votes = GRAPHENE_DEFAULT_PLATFORM_CONTENT_AWARD_MIN_VOTES;
       uint32_t    csaf_limit_lock_balance_modulus  = GRAPHENE_DEFAULT_CSAF_LIMIT_LOCK_BALANCE_MODULUS;
+
+
+      uint32_t    trx_cpu_limit 					  = 20000; // 20 ms
+      uint32_t 	  block_cpu_limit 					  = 800000; // 800 ms
+      uint8_t 	  max_inter_contract_depth 			  = 3;
+      uint32_t 	  max_inline_action_size 			  = 1024*64;
 	 };
 
    struct chain_parameters
    {
       /** using a smart ref breaks the circular dependency created between operations and the fee schedule */
-      smart_ref<fee_schedule> current_fees;                       ///< current schedule of fees
+      //std::shared_ptr<fee_schedule> current_fees;                       ///< current schedule of fees
+      std::shared_ptr<const fee_schedule> current_fees;                  ///< current schedule of fees
+      const fee_schedule& get_current_fees() const { FC_ASSERT(current_fees); return *current_fees; }
+      fee_schedule& get_mutable_fees() { FC_ASSERT(current_fees); return const_cast<fee_schedule&>(*current_fees); }
+	  
       uint8_t                 block_interval                      = GRAPHENE_DEFAULT_BLOCK_INTERVAL; ///< interval in seconds between blocks
       uint32_t                maintenance_interval                = GRAPHENE_DEFAULT_MAINTENANCE_INTERVAL; ///< interval in sections between blockchain maintenance events
       uint8_t                 maintenance_skip_slots              = GRAPHENE_DEFAULT_MAINTENANCE_SKIP_SLOTS; ///< number of block_intervals to skip at maintenance time
@@ -183,7 +192,11 @@ FC_REFLECT(	graphene::chain::extension_parameter_type,
    (max_pledge_releasing_size)
    (scorer_earnings_rate)
    (platform_content_award_min_votes)
-   (csaf_limit_lock_balance_modulus))
+   (csaf_limit_lock_balance_modulus)
+   (trx_cpu_limit)
+   (block_cpu_limit)
+   (max_inter_contract_depth)
+   (max_inline_action_size))
 
 FC_REFLECT( graphene::chain::chain_parameters,
             (current_fees)

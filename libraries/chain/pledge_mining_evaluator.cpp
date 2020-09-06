@@ -102,8 +102,8 @@ void_result pledge_mining_update_evaluator::do_apply(const pledge_mining_update_
       d.modify(*witness_obj, [&](witness_object& obj) {
          if (obj.unhandled_bonus > 0 && obj.total_mining_pledge > 0)//until witness produce block, only execute first op
          {
-            share_type bonus_per_pledge = ((fc::uint128_t)obj.unhandled_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
-               / obj.total_mining_pledge).to_uint64();
+            share_type bonus_per_pledge =static_cast<int64_t> ((fc::uint128_t)obj.unhandled_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
+               / obj.total_mining_pledge);
             obj.bonus_per_pledge.emplace(block_num, bonus_per_pledge);
             obj.unhandled_bonus = 0;
          }

@@ -36,10 +36,10 @@ namespace graphene {
       namespace detail {
          uint64_t calculate_percent(const share_type& value, uint16_t percent)
          {
-            fc::uint128 a(value.value);
+            fc::uint128_t a(value.value);
             a *= percent;
             a /= GRAPHENE_100_PERCENT;
-            return a.to_uint64();
+            return static_cast<uint64_t>(a);
          }
 
 } //detail
@@ -311,10 +311,10 @@ asset database::calculate_market_fee(const asset_object& trade_asset, const asse
    if( trade_asset.options.market_fee_percent == 0 )
       return trade_asset.amount(0);
 
-   fc::uint128 a(trade_amount.amount.value);
+   fc::uint128_t a(trade_amount.amount.value);
    a *= trade_asset.options.market_fee_percent;
    a /= GRAPHENE_100_PERCENT;
-   asset percent_fee = trade_asset.amount(a.to_uint64());
+   asset percent_fee = trade_asset.amount(static_cast<int64_t>(a));
 
    if( percent_fee.amount > trade_asset.options.max_market_fee )
       percent_fee.amount = trade_asset.options.max_market_fee;

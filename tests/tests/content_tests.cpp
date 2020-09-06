@@ -2662,11 +2662,11 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
             auto produce_blocks_per_cycle = wit.total_produced - last_produce_blocks;
             last_produce_blocks = wit.total_produced;
 
-            share_type bonus_per_pledge = ((fc::uint128_t)(produce_blocks_per_cycle * pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION
-               / wit.total_mining_pledge).to_uint64();
+            share_type bonus_per_pledge = static_cast<int64_t>((fc::uint128_t)(produce_blocks_per_cycle * pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION
+               / wit.total_mining_pledge);
 
-            total_bonus += ((fc::uint128_t)bonus_per_pledge.value * pledge_balance_obj.pledge.value
-               / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+            total_bonus +=static_cast<int64_t> ((fc::uint128_t)bonus_per_pledge.value * pledge_balance_obj.pledge.value
+               / GRAPHENE_PLEDGE_BONUS_PRECISION);
             auto account = db.get_account_statistics_by_uid(u_3001_id);
             BOOST_CHECK(account.uncollected_pledge_bonus == total_bonus);
             auto witness = db.get_account_statistics_by_uid(u_1000_id);
@@ -2726,19 +2726,19 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
                share_type last_bonus = ((fc::bigint)last_pledge_witness_pay.value * wit.bonus_rate * wit.total_mining_pledge
                   / ((wit.pledge + wit.total_mining_pledge) * GRAPHENE_100_PERCENT)).to_int64();
 
-               bonus_per_pledge = ((fc::uint128_t)((produce_blocks_per_cycle - 1) * pledge_bonus + last_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION
-                  / wit.total_mining_pledge).to_uint64();
+               bonus_per_pledge = static_cast<int64_t>((fc::uint128_t)((produce_blocks_per_cycle - 1) * pledge_bonus + last_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION
+                  / wit.total_mining_pledge);
             }
             else
-               bonus_per_pledge = ((fc::uint128_t)(produce_blocks_per_cycle * pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION
-               / wit.total_mining_pledge).to_uint64();
+               bonus_per_pledge = static_cast<int64_t>((fc::uint128_t)(produce_blocks_per_cycle * pledge_bonus).value * GRAPHENE_PLEDGE_BONUS_PRECISION
+               / wit.total_mining_pledge);
 
             int j = 0;
             for (const auto& m : mining_map)
             {
                auto mining_obj = db.get_pledge_mining(u_1000_id, u_3001_id);
-               share_type bonus = ((fc::uint128_t)bonus_per_pledge.value * mining_obj.pledge_id(db).pledge.value
-                  / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+               share_type bonus =static_cast<int64_t> ((fc::uint128_t)bonus_per_pledge.value * mining_obj.pledge_id(db).pledge.value
+                  / GRAPHENE_PLEDGE_BONUS_PRECISION);
                total_bonus2 += bonus;
                total_bonus_per_account.at(j) += bonus;
                auto account = db.get_account_statistics_by_uid(m.first);
@@ -2772,10 +2772,10 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_1)
          const dynamic_global_property_object& dpo3 = db.get_dynamic_global_properties();
          share_type pledge_bonus3 = ((fc::bigint)dpo3.by_pledge_witness_pay_per_block.value * wit3.bonus_rate * (wit3.total_mining_pledge + 200000 * prec.value)
             / ((wit3.pledge + wit3.total_mining_pledge + 200000 * prec.value) * GRAPHENE_100_PERCENT)).to_int64();
-         share_type bonus_per_pledge3 = ((fc::uint128_t)((wit3.total_produced - last_produce_blocks) * pledge_bonus3).value * GRAPHENE_PLEDGE_BONUS_PRECISION
-            / wit.total_mining_pledge).to_uint64();
-         share_type bonus3_3001 = ((fc::uint128_t)bonus_per_pledge3.value * 200000 * prec.value
-            / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+         share_type bonus_per_pledge3 =static_cast<int64_t>((fc::uint128_t)((wit3.total_produced - last_produce_blocks) * pledge_bonus3).value * GRAPHENE_PLEDGE_BONUS_PRECISION
+            / wit.total_mining_pledge);
+         share_type bonus3_3001 = static_cast<int64_t>((fc::uint128_t)bonus_per_pledge3.value * 200000 * prec.value
+            / GRAPHENE_PLEDGE_BONUS_PRECISION);
          auto account3_3001 = db.get_account_statistics_by_uid(u_3001_id);
          share_type uncollected_pledge_bonus_3001 = bonus3_3001 + last_account2_3001_bonus;
          BOOST_CHECK(account3_3001.uncollected_pledge_bonus == uncollected_pledge_bonus_3001);
@@ -2946,15 +2946,15 @@ BOOST_AUTO_TEST_CASE(pledge_mining_test_3)
          share_type bonus = ((fc::bigint)(last_witness_pay.value) * 6000 * 100000 * prec.value
             / (600000 * prec.value * GRAPHENE_100_PERCENT)).to_int64();
          auto total_bonus = (wit2.total_produced - last_produce_block - 1) * pledge_bonus2 + bonus;
-         bonus_per_pledge = ((fc::uint128_t)total_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
-            / wit2.total_mining_pledge).to_uint64();
+         bonus_per_pledge = static_cast<int64_t>((fc::uint128_t)total_bonus.value * GRAPHENE_PLEDGE_BONUS_PRECISION
+            / wit2.total_mining_pledge);
       }
       else
-         bonus_per_pledge = ((fc::uint128_t)((wit2.total_produced - last_produce_block) * pledge_bonus2).value * GRAPHENE_PLEDGE_BONUS_PRECISION
-         / wit2.total_mining_pledge).to_uint64();
+         bonus_per_pledge = static_cast<int64_t>((fc::uint128_t)((wit2.total_produced - last_produce_block) * pledge_bonus2).value * GRAPHENE_PLEDGE_BONUS_PRECISION
+         / wit2.total_mining_pledge);
 
-      share_type bonus2 = ((fc::uint128_t)bonus_per_pledge.value * 100000 * prec.value
-         / GRAPHENE_PLEDGE_BONUS_PRECISION).to_uint64();
+      share_type bonus2 = static_cast<int64_t>((fc::uint128_t)bonus_per_pledge.value * 100000 * prec.value
+         / GRAPHENE_PLEDGE_BONUS_PRECISION);
 
       auto account2 = db.get_account_statistics_by_uid(u_3001_id);
       auto account_uncollect_bonus = bonus1 + bonus2;
