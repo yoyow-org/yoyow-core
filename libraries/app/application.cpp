@@ -464,6 +464,10 @@ namespace detail {
             _force_validate = true;
          }
 
+		 if (_options->count("contracts-console")) {
+             _chain_db->set_contract_log_to_console(true);
+         }
+
          if (_options->count("enable-subscribe-to-all"))
             _app_options.enable_subscribe_to_all = _options->at("enable-subscribe-to-all").as<bool>();
 
@@ -1024,6 +1028,7 @@ void application::set_program_options(boost::program_options::options_descriptio
          ("check_invariants_interval", bpo::value<uint32_t>(),"check core balance, prepaid, csaf, voter of all account when per check_invariants_interval blocks, don`t check if unset this option")
          ("advertising-remain-time", bpo::value<uint32_t>(), "clear advertising order object after remaining time")
          ("custom-vote-remain-time", bpo::value<uint32_t>(), "clear custom vote object and cast custom vote object after remaining time")
+		 ("contracts-console", "print contract's output to console")
          ;
    command_line_options.add(_cli_options);
    configuration_file_options.add(_cfg_options);

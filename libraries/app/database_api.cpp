@@ -1358,7 +1358,7 @@ fc::variants get_table_objects(bool &more, const database &db, const account_obj
     abi_serializer abis(account_obj.abi, fc::milliseconds(10000));
 
     const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
-    auto existing_tid = table_idx.find(boost::make_tuple(account_obj.id.instance(), name(account_obj.id.instance()), name(table)));
+    auto existing_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(account_obj.uid), name(table)));
     if (existing_tid != table_idx.end()) {
         const auto &kv_idx = db.get_index_type<key_value_index>().indices().get<by_scope_primary>();
 
@@ -1402,7 +1402,7 @@ fc::variants get_table_objects_ex(bool &more, const database &db, const account_
 
         if (is_primary == true) { // get table by primary
             const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
-            auto existing_tid = table_idx.find(boost::make_tuple(account_obj.id.instance(), name(account_obj.id.instance()), name(table)));
+            auto existing_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(account_obj.uid), name(table)));
             if (existing_tid != table_idx.end()) {
                 // auto num = existing_tid->count; get the data count of table
                 const auto &kv_idx = db.get_index_type<key_value_index>().indices().get<by_scope_primary>();
@@ -1441,8 +1441,8 @@ fc::variants get_table_objects_ex(bool &more, const database &db, const account_
             }
         } else { // get table by secondary/ternary
             const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
-            auto primary_tid = table_idx.find(boost::make_tuple(account_obj.id.instance(), name(account_obj.id.instance()), name(table)));
-            auto sec_tid = table_idx.find(boost::make_tuple(account_obj.id.instance(), name(account_obj.id.instance()), _index_position)); // table name with index
+            auto primary_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(account_obj.uid), name(table)));
+            auto sec_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(account_obj.uid), _index_position)); // table name with index
             if (sec_tid != table_idx.end()) {
 
                 const auto &sec_idx = db.get_index_type<index64_index>().indices().get<by_secondary>();

@@ -1943,6 +1943,7 @@ signed_transaction account_cancel_auth_platform(string account,
                if( no_sig )
                {
                   tx.set_expiration( dyn_props.time + fc::seconds(120 + expiration_time_offset) );
+				  wlog("set_expiration");
                   tx.signatures.clear();
                }
 
@@ -3544,6 +3545,10 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 	   signed_transaction tx;
 	   tx.operations.push_back(op);
 	   set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
+	   auto dyn_props = get_dynamic_global_properties();
+      tx.set_reference_block( dyn_props.head_block_id );
+      tx.set_expiration( dyn_props.time + fc::seconds(30) );
+	  
 	   tx.validate();
 
 	   return sign_transaction(tx, broadcast);
@@ -3607,6 +3612,9 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 	   signed_transaction tx;
 	   tx.operations.push_back(op);
 	   set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
+	   auto dyn_props = get_dynamic_global_properties();
+      tx.set_reference_block( dyn_props.head_block_id );
+      tx.set_expiration( dyn_props.time + fc::seconds(30) );
 	   tx.validate();
 
 	   return sign_transaction(tx, broadcast);
@@ -3642,6 +3650,9 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 	     signed_transaction tx;
 	     tx.operations.push_back(contract_call_op);
 	     set_operation_fees(tx, _remote_db->get_global_properties().parameters.get_current_fees(), csaf_fee);
+		 auto dyn_props = get_dynamic_global_properties();
+      tx.set_reference_block( dyn_props.head_block_id );
+      tx.set_expiration( dyn_props.time + fc::seconds(30) );
 	     tx.validate();
 
 	     return sign_transaction(tx, broadcast);
