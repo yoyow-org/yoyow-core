@@ -6,3 +6,21 @@
     path = libraries/fc
     url = https://github.com/bitshares/bitshares-fc.git
     ignore = dirty
+[submodule "libraries/softfloat"]
+	path = libraries/softfloat
+	url = https://github.com/yoyow-org/berkeley-softfloat-3.git
+[submodule "externals/binaryen"]
+	path = externals/binaryen
+	url = https://github.com/yoyow-org/binaryen.git
+[submodule "externals/magic_get"]
+	path = externals/magic_get
+	url = https://github.com/yoyow-org/magic_get.git
+[submodule "contracts/libc++/upstream"]
+	path = contracts/libc++/upstream
+	url = https://github.com/yoyow-org/libcxx.git
+[submodule "contracts/musl/upstream"]
+	path = contracts/musl/upstream
+	url = https://github.com/yoyow-org/musl.git
+[submodule "libraries/wabt"]
+	path = libraries/wabt
+	url = https://github.com/yoyow-org/wabt.git
