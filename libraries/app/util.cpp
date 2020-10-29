@@ -40,7 +40,7 @@ fc::uint128_t to_capped128( const u256& t )
    static u256 max128 = to256( UINT128_MAX_VALUE);
    if( t >= max128 )
       return UINT128_MAX_VALUE;;
-   fc::uint128_t result;
+   fc::uint128_t result = 0;
    u256 hi(t);
    hi >>= 64;
    u256 lo(t);
@@ -134,7 +134,7 @@ string price_diff_percent_string( const price& old_price, const price& new_price
    fc::uint128_t new128 = fc::uint128_t( new_price1.base.amount.value ) * old_price1.quote.amount.value;
    fc::uint128_t old128 = fc::uint128_t( old_price1.base.amount.value ) * new_price1.quote.amount.value;
    bool non_negative = (new128 >= old128);
-   fc::uint128_t diff128;
+   fc::uint128_t diff128 = 0;
    if( non_negative )
       diff128 = new128 - old128;
    else

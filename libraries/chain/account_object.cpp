@@ -61,7 +61,7 @@ std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_se
    fc::time_point_sec now_rounded((now.sec_since_epoch() / 60) * 60);
    // check average coins and max coin-seconds
    share_type new_average_coins;
-   fc::uint128_t max_coin_seconds;
+   fc::uint128_t max_coin_seconds = 0;
    share_type effective_balance;
    switch (enable_hard_fork_type){
    case ENABLE_HEAD_FORK_NONE :
@@ -107,7 +107,7 @@ std::pair<fc::uint128_t, share_type> _account_statistics_object::compute_coin_se
    max_coin_seconds = fc::uint128_t(new_average_coins.value) * window;
 
    // check earned coin-seconds
-   fc::uint128_t new_coin_seconds_earned;
+   fc::uint128_t new_coin_seconds_earned = 0;
    if (now_rounded <= coin_seconds_earned_last_update)
       new_coin_seconds_earned = coin_seconds_earned;
    else

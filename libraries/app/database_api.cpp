@@ -466,8 +466,8 @@ market_ticker::market_ticker(const market_ticker_object& mto,
    lowest_ask = "0";
    highest_bid = "0";
 
-   fc::uint128_t bv;
-   fc::uint128_t qv;
+   fc::uint128_t bv = 0;
+   fc::uint128_t qv = 0;
    price latest_price = asset(mto.latest_base, mto.base) / asset(mto.latest_quote, mto.quote);
    if (mto.base != asset_base.asset_id)
       latest_price = ~latest_price;

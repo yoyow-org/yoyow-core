@@ -1374,9 +1374,9 @@ void database::check_invariants()
    uint64_t total_committee_members_voted = 0;
    uint64_t total_platform_voted = 0;
    uint64_t total_voter_votes = 0;
-   fc::uint128_t total_voter_witness_votes;
-   fc::uint128_t total_voter_committee_member_votes;
-   fc::uint128_t total_voter_platform_votes;
+   fc::uint128_t total_voter_witness_votes = 0;
+   fc::uint128_t total_voter_committee_member_votes = 0;
+   fc::uint128_t total_voter_platform_votes = 0;
    vector<share_type> total_got_proxied_votes;
    vector<share_type> total_proxied_votes;
    total_got_proxied_votes.resize( gpo.parameters.max_governance_voting_proxy_level );
@@ -1428,7 +1428,7 @@ void database::check_invariants()
    }
 
    share_type total_witness_pledges;
-   fc::uint128_t total_witness_received_votes;
+   fc::uint128_t total_witness_received_votes = 0;
    const auto& wit_idx = get_index_type<witness_index>().indices();
    for( const auto& s: wit_idx )
    {
@@ -1447,7 +1447,7 @@ void database::check_invariants()
    FC_ASSERT( total_witness_received_votes == total_voter_witness_votes );
 
    share_type total_committee_member_pledges;
-   fc::uint128_t total_committee_member_received_votes;
+   fc::uint128_t total_committee_member_received_votes = 0;
    const auto& com_idx = get_index_type<committee_member_index>().indices();
    for( const auto& s: com_idx )
    {
@@ -1464,7 +1464,7 @@ void database::check_invariants()
 
    /// platform
    share_type total_platform_pledges;
-   fc::uint128_t total_platform_received_votes;
+   fc::uint128_t total_platform_received_votes = 0;
    const auto& pla_idx = get_index_type<platform_index>().indices();
    for( const auto& s: pla_idx )
    {
