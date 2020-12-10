@@ -5505,6 +5505,16 @@ signed_transaction wallet_api::deploy_contract(string name,
         return my->get_table_rows(contract, table, start, limit);
     }
 
+    fc::variants wallet_api::get_table_objects(uint64_t code, string scope,bool is_name_scope,string table, uint64_t lower, uint64_t uppper, uint64_t limit) const
+    {
+        uint64_t nScope;
+        if(is_name_scope)
+            nScope = name(scope).value;
+        else
+            nScope = fc::to_uint64(scope);
+        return my->_remote_db->get_table_objects(code, nScope, name(table).value, lower, uppper, limit);
+    }
+
 
 signed_transaction wallet_api::approve_proposal(
    const string& fee_paying_account,

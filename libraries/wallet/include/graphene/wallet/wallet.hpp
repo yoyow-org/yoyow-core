@@ -2005,6 +2005,10 @@ class wallet_api
        */
       get_table_rows_result get_table_rows(string contract, string table,uint64_t start, uint64_t limit) const;
 
+
+        //code must be uid of contract
+      fc::variants get_table_objects(uint64_t code, string scope,bool is_name_scope, string table, uint64_t lower, uint64_t uppper, uint64_t limit) const;
+
       void dbg_make_uia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
       void dbg_generate_blocks( std::string debug_wif_key, uint32_t count );
@@ -2281,4 +2285,5 @@ FC_API( graphene::wallet::wallet_api,
 		(get_contract_tables)
 		(get_table_rows_ex)
 		(get_table_rows)
+		(get_table_objects)
       )

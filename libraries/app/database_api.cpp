@@ -1351,14 +1351,14 @@ uint64_t get_table_index_name(name tablename, const std::string &index_position,
 }
 
 
-fc::variants get_table_objects(bool &more, const database &db, const account_object &account_obj, uint64_t table, uint64_t lower_id, uint64_t uppper_id, uint64_t limit)
+fc::variants get_table_objects(bool &more, const database &db, const account_object &account_obj,uint64_t scope,uint64_t table, uint64_t lower_id, uint64_t uppper_id, uint64_t limit)
 { try {
     fc::variants result;
 
     abi_serializer abis(account_obj.abi, fc::milliseconds(10000));
 
     const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
-    auto existing_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(account_obj.uid), name(table)));
+    auto existing_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(scope), name(table)));
     if (existing_tid != table_idx.end()) {
         const auto &kv_idx = db.get_index_type<key_value_index>().indices().get<by_scope_primary>();
 
@@ -1385,7 +1385,7 @@ fc::variants get_table_objects(bool &more, const database &db, const account_obj
 }
 
 
-fc::variants get_table_objects_ex(bool &more, const database &db, const account_object &account_obj, uint64_t table, const get_table_rows_params &params)
+fc::variants get_table_objects_ex(bool &more, const database &db, const account_object &account_obj,uint64_t scope, uint64_t table, const get_table_rows_params &params)
 {
     try {
         fc::variants result;
@@ -1402,7 +1402,7 @@ fc::variants get_table_objects_ex(bool &more, const database &db, const account_
 
         if (is_primary == true) { // get table by primary
             const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
-            auto existing_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(account_obj.uid), name(table)));
+            auto existing_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(scope), name(table)));
             if (existing_tid != table_idx.end()) {
                 // auto num = existing_tid->count; get the data count of table
                 const auto &kv_idx = db.get_index_type<key_value_index>().indices().get<by_scope_primary>();
@@ -1441,8 +1441,8 @@ fc::variants get_table_objects_ex(bool &more, const database &db, const account_
             }
         } else { // get table by secondary/ternary
             const auto &table_idx = db.get_index_type<table_id_multi_index>().indices().get<by_code_scope_table>();
-            auto primary_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(account_obj.uid), name(table)));
-            auto sec_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(account_obj.uid), _index_position)); // table name with index
+            auto primary_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(scope), name(table)));
+            auto sec_tid = table_idx.find(boost::make_tuple(account_obj.uid, name(scope), _index_position)); // table name with index
             if (sec_tid != table_idx.end()) {
 
                 const auto &sec_idx = db.get_index_type<index64_index>().indices().get<by_secondary>();
@@ -1513,7 +1513,7 @@ get_table_rows_result database_api_impl::get_table_rows_ex(string contract, stri
 
         const account_object &account_obj = *account_itr;
 
-        result.rows =::graphene::app::get_table_objects_ex(result.more, _db, account_obj, name(table).value, params);
+        result.rows =::graphene::app::get_table_objects_ex(result.more, _db, account_obj,account_obj.uid,name(table).value, params);
         return result;
     }
     FC_CAPTURE_AND_RETHROW((contract)(table))
@@ -1537,7 +1537,7 @@ get_table_rows_result database_api_impl::get_table_rows(string contract, string 
 
     const account_object &account_obj = *account_itr;
 
-    result.rows = ::graphene::app::get_table_objects(result.more, _db, account_obj, name(table).value, start, start + limit, limit);
+    result.rows = ::graphene::app::get_table_objects(result.more, _db, account_obj, account_obj.uid, name(table).value, start, start + limit, limit);
     return result;
     }
     FC_CAPTURE_AND_RETHROW((contract)(table))
@@ -1558,7 +1558,7 @@ fc::variants database_api_impl::get_table_objects(uint64_t code, uint64_t scope,
         return result;
 
     bool more = false;
-    return ::graphene::app::get_table_objects(more, _db, *account_obj, table, lower_id, uppper_id, limit);
+    return ::graphene::app::get_table_objects(more, _db, *account_obj,scope,table, lower_id, uppper_id, limit);
     }
     FC_CAPTURE_AND_RETHROW((code)(scope)(table))
 }
