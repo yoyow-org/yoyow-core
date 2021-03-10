@@ -52,6 +52,8 @@ void_result contract_deploy_evaluator::do_evaluate(const contract_deploy_operati
 void_result contract_deploy_evaluator::do_apply(const contract_deploy_operation &op)
 { try {
     db().modify(*contract_obj, [&](account_object &obj) {
+        obj.vm_type = op.vm_type;            
+        obj.vm_version = op.vm_version;
         obj.code = op.code;
         obj.code_version = fc::sha256::hash(op.code);
         obj.abi = op.abi;
