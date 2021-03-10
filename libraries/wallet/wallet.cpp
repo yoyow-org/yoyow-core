@@ -3488,8 +3488,7 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 	     return result;
 	} FC_CAPTURE_AND_RETHROW((contract)) }
 
-	signed_transaction deploy_contract(string name,
-	                                  string account,
+	signed_transaction deploy_contract(
 	                                  uint64_t contract_id,
 	                                  string vm_type,
 	                                  string vm_version,
@@ -3498,7 +3497,6 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 	                                  bool broadcast = false)
 	{ try {
 	   FC_ASSERT(!self.is_locked());
-	   validate_account_name(name,"contract ");
 
 	   std::vector<uint8_t> wasm;
 	   variant abi_def_data;
@@ -3530,13 +3528,8 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 
 	   load_contract();
 
-	   account_object creator_account_object = this->get_account(account);
-	   account_uid_type creator_account_id = creator_account_object.uid;
-
 	   contract_deploy_operation op;
-	   op.name = name;
 	   op.contract_id = contract_id;
-	   op.owner = creator_account_id;
 	   op.vm_type = vm_type;
 	   op.vm_version = vm_version;
 	   op.code = bytes(wasm.begin(), wasm.end());
@@ -3552,10 +3545,9 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 	   tx.validate();
 
 	   return sign_transaction(tx, broadcast);
-	} FC_CAPTURE_AND_RETHROW( (name)(account)(contract_id)(vm_type)(vm_version)(contract_dir)(csaf_fee)(broadcast)) }
+	} FC_CAPTURE_AND_RETHROW( (contract_id)(vm_type)(vm_version)(contract_dir)(csaf_fee)(broadcast)) }
 
 	signed_transaction update_contract(string contract,
-	                                optional<string> new_owner,
 	                                string contract_dir,
 	                                bool csaf_fee,
 	                                bool broadcast)
@@ -3594,18 +3586,11 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 	   load_contract();
 
 	   account_object contract_obj = this->get_account(contract);
-	   account_object owner_obj = this->get_account(contract_obj.reg_info.registrar);
 	   
 	   optional<account_uid_type> new_owner_account_id;
-	   if(new_owner.valid() && (*new_owner).length() > 0) {
-		   account_object new_owner_obj = this->get_account(*new_owner);
-		   new_owner_account_id = new_owner_obj.uid;
-	   }
 
 	   contract_update_operation op;
-	   op.owner = owner_obj.uid;
 	   op.contract_id = contract_obj.uid;
-	   op.new_owner = new_owner_account_id;
 	   op.code = bytes(wasm.begin(), wasm.end());
 	   op.abi = abi_def_data.as<abi_def>(GRAPHENE_MAX_NESTED_OBJECTS);
 
@@ -3618,7 +3603,7 @@ get_table_rows_result get_table_rows_ex(string contract, string table, const get
 	   tx.validate();
 
 	   return sign_transaction(tx, broadcast);
-	} FC_CAPTURE_AND_RETHROW( (contract)(new_owner)(contract_dir)(csaf_fee)(broadcast)) }
+	} FC_CAPTURE_AND_RETHROW( (contract)(contract_dir)(csaf_fee)(broadcast)) }
 
 	signed_transaction call_contract(string account,
 	                                string contract,
@@ -5460,8 +5445,7 @@ signed_transaction wallet_api::account_update_auth(string       account,
 	return my->account_update_auth(account,owner,active,secondary,memo_key,csaf_fee,broadcast);
 }
 
-signed_transaction wallet_api::deploy_contract(string name,
-                                                  string account,
+signed_transaction wallet_api::deploy_contract(
                                                   uint64_t contract_id,
                                                   string vm_type,
                                                   string vm_version,
@@ -5469,16 +5453,15 @@ signed_transaction wallet_api::deploy_contract(string name,
                                                   bool csaf_fee,
                                                   bool broadcast)
     {
-        return my->deploy_contract(name, account,contract_id,vm_type, vm_version, contract_dir, csaf_fee, broadcast);
+        return my->deploy_contract(contract_id,vm_type, vm_version, contract_dir, csaf_fee, broadcast);
     }
     
     signed_transaction wallet_api::update_contract(string contract,
-                                                  optional<string> new_owner,
                                                   string contract_dir,
                                                   bool csaf_fee,
                                                   bool broadcast)
     {
-        return my->update_contract(contract, new_owner, contract_dir, csaf_fee, broadcast);
+        return my->update_contract(contract, contract_dir, csaf_fee, broadcast);
     }
 
     signed_transaction wallet_api::call_contract(string account,

@@ -419,12 +419,11 @@ struct get_impacted_account_uid_visitor
    }
    
    void operator() (const contract_deploy_operation& op) {
-       _impacted.insert(op.owner);
 	   _impacted.insert(op.contract_id);
    }
    
    void operator() (const contract_update_operation& op) {
-       _impacted.insert(op.owner);
+       _impacted.insert(op.contract_id);
    }
 
    void operator() (const contract_call_operation& op) {

@@ -33,9 +33,7 @@ struct contract_deploy_operation : public base_operation {
     };
 
     fee_type                        fee;
-	string 							name;
     account_uid_type                contract_id;
-    account_uid_type                owner;
     fc::string                      vm_type;
     fc::string                      vm_version;
     bytes                           code;
@@ -44,16 +42,13 @@ struct contract_deploy_operation : public base_operation {
 
     account_uid_type fee_payer_uid() const
     {
-        return owner;
+        return contract_id;
     }
 
     void validate() const
     {
         validate_op_fee( fee, "contract_deploy" );
-		validate_account_name(name,"new ");		
-		validate_account_uid(contract_id,"new ");
-		validate_account_uid(owner,"owner ");
-		FC_ASSERT(contract_id > 99999999,"The uid must > 99999999");
+		validate_account_uid(contract_id,"contract_id ");
         FC_ASSERT(code.size() > 0, "contract code cannot be empty");
 		FC_ASSERT(abi.actions.size() > 0, "contract has no actions");
     }
@@ -78,8 +73,6 @@ struct contract_update_operation : public base_operation {
     };
 
     fee_type                        fee;
-    account_uid_type                owner;
-    optional<account_uid_type>      new_owner;
     account_uid_type                contract_id;
     bytes                           code;
     abi_def                         abi;
@@ -87,7 +80,7 @@ struct contract_update_operation : public base_operation {
 
     account_uid_type fee_payer_uid() const
     {
-        return owner;
+        return contract_id;
     }
 
     void validate() const
@@ -95,10 +88,7 @@ struct contract_update_operation : public base_operation {
         validate_op_fee( fee, "contract_update" );
         FC_ASSERT(code.size() > 0, "contract code cannot be empty");
 		FC_ASSERT(abi.actions.size() > 0, "contract has no actions");
-		if(new_owner.valid()) 
-		{
-    		validate_account_uid(*new_owner,"new owner ");
-    	}
+		
 
 		validate_account_uid(contract_id,"contract_id ");
     }
@@ -183,9 +173,7 @@ struct inter_contract_call_operation : public base_operation {
 FC_REFLECT(graphene::chain::contract_deploy_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(price_per_kbyte)(extensions) )
 FC_REFLECT(graphene::chain::contract_deploy_operation,
             (fee)
-            (name)
             (contract_id)
-            (owner)
             (vm_type)
             (vm_version)
             (code)
@@ -195,8 +183,6 @@ FC_REFLECT(graphene::chain::contract_deploy_operation,
 FC_REFLECT(graphene::chain::contract_update_operation::fee_parameters_type, (fee)(min_real_fee)(min_rf_percent)(price_per_kbyte)(extensions) )
 FC_REFLECT(graphene::chain::contract_update_operation,
             (fee)
-            (owner)
-            (new_owner)
             (contract_id)
             (code)
             (abi)

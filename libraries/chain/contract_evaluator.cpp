@@ -41,40 +41,23 @@ void_result contract_deploy_evaluator::do_evaluate(const contract_deploy_operati
 
 	FC_ASSERT(d.head_block_time()>=HARDFORK_2_0_TIME,"contract is not enabled before HARDFORK_2_0_TIME");
 
-	auto& acnt_indx = d.get_index_type<account_index>();
-	{
-	  auto current_account_itr = acnt_indx.indices().get<by_uid>().find(op.contract_id );
-	  FC_ASSERT( current_account_itr == acnt_indx.indices().get<by_uid>().end(), "account uid already exists." );
-	}
-	{
-	  auto current_account_itr = acnt_indx.indices().get<by_name>().find( op.name );
-	  FC_ASSERT( current_account_itr == acnt_indx.indices().get<by_name>().end(), "account name already exists." );
-	}
+    contract_obj = &(d.get_account_by_uid(op.contract_id));
+    FC_ASSERT(contract_obj->code.size() == 0, "account: ${a} already deployed contract", ("a", op.contract_id));
 
 	wasm_interface::validate(op.code);
 
     return void_result();
 } FC_CAPTURE_AND_RETHROW((op)) }
 
-object_id_type contract_deploy_evaluator::do_apply(const contract_deploy_operation &op)
+void_result contract_deploy_evaluator::do_apply(const contract_deploy_operation &op)
 { try {
-    const auto &new_acnt_object = db().create<account_object>([&](account_object &obj) {
-            obj.reg_info.registrar = op.owner;
-            obj.uid                  = op.contract_id;
+    db().modify(*contract_obj, [&](account_object &obj) {
+        obj.code = op.code;
+        obj.code_version = fc::sha256::hash(op.code);
+        obj.abi = op.abi;
+    });
 
-            obj.name = op.name;
-			obj.create_time          = db().head_block_time();
-         	obj.last_update_time     = db().head_block_time();
-		 
-            obj.vm_type = op.vm_type;
-            obj.vm_version = op.vm_version;
-            obj.code = op.code;
-            obj.code_version = fc::sha256::hash(op.code);
-            obj.abi = op.abi;
-            obj.statistics = db().create<_account_statistics_object>([&](_account_statistics_object& s){s.owner = obj.uid;}).id;
-            });
-
-    return new_acnt_object.id;
+    return void_result();
 } FC_CAPTURE_AND_RETHROW((op)) }
 
 void_result contract_update_evaluator::do_evaluate(const contract_update_operation &op)
@@ -82,17 +65,13 @@ void_result contract_update_evaluator::do_evaluate(const contract_update_operati
     database &d = db();
 
     const account_object& contract_obj = d.get_account_by_uid(op.contract_id);
-    FC_ASSERT(op.owner == contract_obj.reg_info.registrar, "only owner can update contract, current owner: ${o}", ("o", contract_obj.reg_info.registrar));
-    FC_ASSERT(contract_obj.code.size() > 0, "can not update a normal account: ${a}", ("a", op.contract_id));
+    FC_ASSERT(contract_obj.code.size() > 0, "can not update a contract not deployed: ${a}", ("a", op.contract_id));
 
     code_hash = fc::sha256::hash(op.code);
     FC_ASSERT(code_hash != contract_obj.code_version, "code not updated");
 
 	wasm_interface::validate(op.code);
 
-    if(op.new_owner.valid()) {
-    	FC_ASSERT(d.find_account_by_uid(*op.new_owner), "new owner not exist");
-    }
 
     return void_result();
 } FC_CAPTURE_AND_RETHROW((op)) }
@@ -102,9 +81,6 @@ void_result contract_update_evaluator::do_apply(const contract_update_operation 
     database &d = db();
     const account_object& contract_obj = d.get_account_by_uid(op.contract_id);
     db().modify(contract_obj, [&](account_object &obj) {
-		 if(op.new_owner.valid()) {
-            obj.reg_info.registrar = *op.new_owner;
-        }
         obj.code = op.code;
         obj.code_version = code_hash;
         obj.abi = op.abi;

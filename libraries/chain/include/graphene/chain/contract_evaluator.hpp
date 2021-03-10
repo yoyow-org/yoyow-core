@@ -29,7 +29,10 @@ class contract_deploy_evaluator : public evaluator<contract_deploy_evaluator>
     typedef contract_deploy_operation operation_type;
 
     void_result do_evaluate(const contract_deploy_operation &op);
-    object_id_type do_apply(const contract_deploy_operation &op);
+    void_result do_apply(const contract_deploy_operation &op);
+
+    
+    const account_object* contract_obj = nullptr;
 };
 
 class contract_update_evaluator : public evaluator<contract_update_evaluator>

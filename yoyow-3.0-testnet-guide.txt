@@ -1,0 +1,128 @@
+编译源码的操作系统强烈建议使用 ubuntu 16.04 LTS 64bit
+
+安装依赖
+sudo apt-get install autoconf cmake make automake libtool git libssl-dev g++ libcurl4-openssl-dev
+
+如果已经安装boost 1.58.0 libboost-all-dev,请通过以下命令先卸载：
+sudo apt-get autoremove libboost1.58-dev
+
+编译安装以下依赖
+CMake 3.11:
+cd /tmp && wget https://cmake.org/files/v3.11/cmake-3.11.0-Linux-x86_64.sh
+mkdir -p /opt/cmake && chmod +x /tmp/cmake-3.11.0-Linux-x86_64.sh
+bash /tmp/cmake-3.11.0-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
+ln -sfT /opt/cmake/bin/cmake /usr/local/bin/cmake
+
+Boost 1.67.0:
+wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz -O  boost_1_67_0.tar.gz
+tar -zxvf boost_1_67_0.tar.gz && cd boost_1_67_0 && chmod +x bootstrap.sh
+./bootstrap.sh --prefix=/usr
+./b2 --buildtype=complete install
+
+LLVM:
+mkdir  ~/wasm-compiler && cd ~/wasm-compiler
+git clone --depth 1 --single-branch --branch release_40 https://github.com/llvm-mirror/llvm.git
+cd llvm/tools
+git clone --depth 1 --single-branch --branch release_40 https://github.com/llvm-mirror/clang.git
+cd .. && mkdir -p build && cd build
+cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=~/opt/wasm -DLLVM_TARGETS_TO_BUILD= -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=WebAssembly -DCMAKE_BUILD_TYPE=Release ..
+make -j4 install
+
+
+clone yoyow源码
+git clone https://github.com/yoyow-org/yoyow-core-dev  yoyow-core
+cd yoyow-core
+
+切换到对应分支(此处是yy-testnet-3.0)
+git checkout yy-testnet-3.0
+
+获取最新submodule(含wasm相关库)
+git submodule update --init --recursive
+
+将yoyow-core目录下的genesis-testnet3.0.json修改为genesis.json
+
+创建并进入build目录
+mkdir build
+cd build
+
+运行cmake：
+cmake -DCMAKE_BUILD_TYPE=Release ..
+
+编译yoyow整个项目并安装合约编译的环境:
+make -j4 install
+
+编译后运行节点程序:
+使用附件中的测试的config.ini进行出块(使用创世出块人出块)
+./yoyow_node --rpc-endpoint=0.0.0.0:9090 
+
+命令行钱包连接节点
+./yoyow_client -s ws://127.0.0.1:9090
+
+
+进行set_password / unlock 之后，在钱包中导入所有创世账号的测试私钥：
+import_key  23080  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  25638  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  25997  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  26264  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  26460  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  26861  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  27027  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  27291  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  27447  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  27662  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  27944  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  28182  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  28465  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+import_key  25638  5JgjRxJXBcmmgrd6EVpvqLjCBayG2mCtsi98ZhPJFUkt3jBSxN9
+
+给各个创世账号转账一些YOYO便于测试
+transfer 25638  23080  1000000 YOYO "" false true
+transfer 25638  25638  1000000 YOYO "" false true
+transfer 25638  25997  1000000 YOYO "" false true
+transfer 25638  26264  1000000 YOYO "" false true
+transfer 25638  26460  1000000 YOYO "" false true
+transfer 25638  26861  1000000 YOYO "" false true
+transfer 25638  27027  1000000 YOYO "" false true
+transfer 25638  27291  1000000 YOYO "" false true
+transfer 25638  27447  1000000 YOYO "" false true
+transfer 25638  27662  1000000 YOYO "" false true
+transfer 25638  27944  1000000 YOYO "" false true
+transfer 25638  28182  1000000 YOYO "" false true
+transfer 25638  28465  1000000 YOYO "" false true
+
+创建管理RAM手续费的系统账号(用户名为ramaccount的账号在发布前请提前注册好 --- 正式发布时名字可以改成其他的名字，或者使用uid也可以)
+register_account ramaccount  YYW72FYQuBtNteXmhBUtdwQ896xUcCoY6jjBp9ZjKL7bTGU1jFmyU  YYW72FYQuBtNteXmhBUtdwQ896xUcCoY6jjBp9ZjKL7bTGU1jFmyU    25638  25638 10 1234568 false true
+
+
+到yoyow-core\contracts\examples代码目录之下编译两个测试合约:
+gxx -g transfer.abi transfer.cpp
+gxx -o transfer.wast transfer.cpp
+
+编译V2版本合约(用于测试更新合约)
+gxx -g transferV2.abi transferV2.cpp
+gxx -o transferV2.wast transferV2.cpp
+V2的更新部分：对于transfer添加了授权验证,需要相应的授权才可转账
+
+布置合约
+先将 transfer.abi 和 transfer.wasm 两个文件拷贝至yoyow_client目录下的transfer子目录下
+deploy_contract 28182  0 0 ./transfer false true
+
+调用合约
+call_contract  28182  28182  null add  "{\"uid\":\"28182\",\"amount\":\"500000\"}" false true
+call_contract  28465  28182  null transfer  "{\"from\":\"28182\",\"to\":\"27662\",\"amount\":\"5000\"}" false true
+
+更新合约
+先将 transferV2.abi 和 transferV2.wasm 两个文件拷贝至 transferV2 目录下
+update_contract  28182  ./transferV2 false true
+
+更新后调用合约(执行失败)
+call_contract  28465  28182  null transfer  "{\"from\":\"28182\",\"to\":\"27662\",\"amount\":\"5000\"}" false true
+
+更新后调用合约(执行成功)
+call_contract  28182  28182  null transfer  "{\"from\":\"28182\",\"to\":\"27662\",\"amount\":\"5000\"}" false true
+
+
+查询合约中的表数据（3种方法均可，get_table_rows_ex可用于查询多索引,第3种功能最全可查询多scope索引）
+get_table_rows  init10  offer 0 1000000000
+get_table_rows_ex  init10  offer {}
+get_table_objects 28182 28182 false offer 0 1000000000 3

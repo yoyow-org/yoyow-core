@@ -1924,7 +1924,6 @@ class wallet_api
 	   /** Deploy contract
        *
        * deploy contract
-       * @param name name
        * @param account this account use to deploy contract
        * @param vm_type vm_type
        * @param vm_version vm_version
@@ -1933,8 +1932,7 @@ class wallet_api
        * @param broadcast broadcast
        * @returns signed_transaction
        */
-      signed_transaction deploy_contract(string name,
-                                         string account,
+      signed_transaction deploy_contract(
                                          uint64_t contract_id,
                                          string vm_type,
                                          string vm_version,
@@ -1974,7 +1972,6 @@ class wallet_api
      * @returns signed_transaction
      */
     signed_transaction update_contract(string contract,
-                                     optional<string> new_owner,
                                      string contract_dir,
                                      bool csaf_fee =  true,
                                      bool broadcast = false);
