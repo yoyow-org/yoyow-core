@@ -1354,6 +1354,7 @@ uint64_t get_table_index_name(name tablename, const std::string &index_position,
 fc::variants get_table_objects(bool &more, const database &db, const account_object &account_obj,uint64_t scope,uint64_t table, uint64_t lower_id, uint64_t uppper_id, uint64_t limit)
 { try {
     fc::variants result;
+    FC_ASSERT(lower_id < uppper_id, "lower_bound must < upper_bound");
 
     abi_serializer abis(account_obj.abi, fc::milliseconds(10000));
 
