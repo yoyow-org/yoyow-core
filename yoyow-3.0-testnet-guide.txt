@@ -2,11 +2,18 @@
 
 安装依赖
 sudo apt-get install autoconf cmake make automake libtool git libssl-dev g++ libcurl4-openssl-dev
+sudo apt-get install wget python-dev libbz2-dev libdb++-dev libdb-dev openssl libreadline-dev ntp doxygen libc++-dev build-essential 
 
 如果已经安装boost 1.58.0 libboost-all-dev,请通过以下命令先卸载：
 sudo apt-get autoremove libboost1.58-dev
 
 编译安装以下依赖
+clang 4.0
+sudo apt-get install software-properties-common
+sudo apt-add-repository "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main"
+sudo apt-get update
+sudo apt-get install clang-4.0 lldb-4.0 libclang-4.0-dev
+
 CMake 3.11:
 cd /tmp && wget https://cmake.org/files/v3.11/cmake-3.11.0-Linux-x86_64.sh
 mkdir -p /opt/cmake && chmod +x /tmp/cmake-3.11.0-Linux-x86_64.sh
