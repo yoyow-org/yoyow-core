@@ -153,10 +153,19 @@ namespace graphene { namespace chain {
 		
       extension_parameter_type extension_parameters;
 
-      /** defined in fee_schedule.cpp */
       void validate()const;
 
+      chain_parameters();
+      chain_parameters(const chain_parameters& other);
+      chain_parameters(chain_parameters&& other);
+      chain_parameters& operator=(const chain_parameters& other);
+      chain_parameters& operator=(chain_parameters&& other);
+
       extension_parameter_type get_extension_params()const { return extension_parameters; }
+
+
+      private:
+      static void safe_copy(chain_parameters& to, const chain_parameters& from);
    };
 
 } }  // graphene::chain

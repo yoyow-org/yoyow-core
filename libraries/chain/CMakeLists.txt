@@ -53,6 +53,7 @@ add_library( graphene_chain
              protocol/operations.cpp
              protocol/transaction.cpp
              protocol/block.cpp
+             protocol/chain_parameters.cpp
              protocol/fee_schedule.cpp
              protocol/advertising.cpp
              protocol/custom_vote.cpp
