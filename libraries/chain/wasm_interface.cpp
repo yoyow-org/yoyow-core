@@ -1541,7 +1541,7 @@ class asset_api : public context_aware_api
     {
         FC_ASSERT(from == context.receiver, "can only withdraw from contract ${c}", ("c", context.receiver));
         FC_ASSERT(from != to, "cannot transfer to self");
-        FC_ASSERT(amount > 0, "withdraw  amount ${a} must >= 0", ("a", amount));
+        FC_ASSERT(amount > 0, "withdraw  amount ${a} must > 0", ("a", amount));
         FC_ASSERT(from >= 0, "account id ${a} from must  >= 0", ("a", from));
         FC_ASSERT(to >= 0, "account id ${a} to must >= 0", ("a", to));
         FC_ASSERT(asset_id >= 0, "asset id ${a} must >= 0", ("a", asset_id));
