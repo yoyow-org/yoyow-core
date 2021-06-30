@@ -164,7 +164,7 @@ contract_receipt contract_call_evaluator::do_apply(const contract_call_operation
 
 	fee_param = get_contract_call_fee_parameter(d);
 	uint32_t cpu_time_us = _billed_cpu_time_us > 0? _billed_cpu_time_us : trx_context.get_cpu_usage();
-	if(cpu_time_us < 1000)
+	if(cpu_time_us > 1000)
 	{
 		auto cpu_fee = uint64_t(cpu_time_us + 999) / 1000 * fee_param.price_per_ms_cpu;
 		d.adjust_balance(op.account, - asset(cpu_fee,GRAPHENE_CORE_ASSET_AID));

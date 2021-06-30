@@ -105,9 +105,9 @@ struct contract_update_operation : public base_operation {
 
 struct contract_call_operation : public base_operation {
     struct fee_parameters_type {
-        uint64_t fee =  GRAPHENE_BLOCKCHAIN_PRECISION / 10;
-        uint64_t price_per_kbyte_ram =  GRAPHENE_BLOCKCHAIN_PRECISION / 2; //fee of ram should pay from balance directly. not include in fee_type fee
-        uint64_t price_per_ms_cpu = GRAPHENE_BLOCKCHAIN_PRECISION;
+        uint64_t fee =  GRAPHENE_BLOCKCHAIN_PRECISION/2;
+        uint64_t price_per_kbyte_ram =  GRAPHENE_BLOCKCHAIN_PRECISION * 10; //fee of ram should pay from balance directly. not include in fee_type fee
+        uint64_t price_per_ms_cpu = GRAPHENE_BLOCKCHAIN_PRECISION*5;
 		uint64_t min_real_fee     = 0;
 		uint16_t min_rf_percent   = 0;
 		extensions_type   extensions;		

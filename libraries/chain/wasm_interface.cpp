@@ -1541,10 +1541,10 @@ class asset_api : public context_aware_api
     {
         FC_ASSERT(from == context.receiver, "can only withdraw from contract ${c}", ("c", context.receiver));
         FC_ASSERT(from != to, "cannot transfer to self");
-        FC_ASSERT(amount > 0, "withdraw  amount ${a} must > 0", ("a", amount));
-        FC_ASSERT(from >= 0, "account id ${a} from must  > 0", ("a", from));
-        FC_ASSERT(to >= 0, "account id ${a} to must > 0", ("a", to));
-        FC_ASSERT(asset_id >= 0, "asset id ${a} must > 0", ("a", asset_id));
+        FC_ASSERT(amount > 0, "withdraw  amount ${a} must >= 0", ("a", amount));
+        FC_ASSERT(from >= 0, "account id ${a} from must  >= 0", ("a", from));
+        FC_ASSERT(to >= 0, "account id ${a} to must >= 0", ("a", to));
+        FC_ASSERT(asset_id >= 0, "asset id ${a} must >= 0", ("a", asset_id));
 
         auto &d = context.db();
         asset a{amount, asset_aid_type(asset_id & GRAPHENE_DB_MAX_INSTANCE_ID)};
@@ -1569,10 +1569,10 @@ class asset_api : public context_aware_api
         auto &d = context.db();
 
         FC_ASSERT(from == context.receiver, "can only transfer from contract ${c}", ("c", context.receiver));
-        FC_ASSERT(from >= 0, "account id ${a} from must  > 0", ("a", from));
-        FC_ASSERT(to >= 0, "account id ${a} to must > 0", ("a", to));
+        FC_ASSERT(from >= 0, "account id ${a} from must  >= 0", ("a", from));
+        FC_ASSERT(to >= 0, "account id ${a} to must >= 0", ("a", to));
 		FC_ASSERT(from != to, "cannot transfer to self");
-        FC_ASSERT(asset_id >= 0, "asset id ${a} must > 0", ("a", asset_id));
+        FC_ASSERT(asset_id >= 0, "asset id ${a} must >= 0", ("a", asset_id));
 
         asset a{amount, asset_aid_type(asset_id & GRAPHENE_DB_MAX_INSTANCE_ID)};
         account_uid_type from_account = account_uid_type(from & GRAPHENE_DB_MAX_INSTANCE_ID);
