@@ -39,7 +39,7 @@ void_result contract_deploy_evaluator::do_evaluate(const contract_deploy_operati
 { try {
     database &d = db();
 
-	FC_ASSERT(d.head_block_time()>=HARDFORK_2_0_TIME,"contract is not enabled before HARDFORK_2_0_TIME");
+	FC_ASSERT(d.head_block_time()>=HARDFORK_3_0_TIME,"contract is not enabled before HARDFORK_3_0_TIME");
 
     contract_obj = &(d.get_account_by_uid(op.contract_id));
     FC_ASSERT(contract_obj->code.size() == 0, "account: ${a} already deployed contract", ("a", op.contract_id));

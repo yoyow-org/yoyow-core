@@ -1,0 +1,5 @@
+// add contract support
+#ifndef HARDFORK_3_0_TIME
+#define HARDFORK_3_0_TIME (fc::time_point_sec( 1631671200 ))  //2021-09-15T02:00:00 UTC
+#endif
+

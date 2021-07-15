@@ -1,5 +1,0 @@
-// add contract support
-#ifndef HARDFORK_2_0_TIME
-#define HARDFORK_2_0_TIME (fc::time_point_sec( 1288204800 )) 
-#endif
-
