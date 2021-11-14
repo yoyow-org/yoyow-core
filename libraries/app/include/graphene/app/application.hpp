@@ -56,31 +56,38 @@ namespace graphene { namespace app {
          application();
          ~application();
 
-         void set_program_options( boost::program_options::options_description& command_line_options,
-                                   boost::program_options::options_description& configuration_file_options )const;
-         void initialize(const fc::path& data_dir, const boost::program_options::variables_map&options);
-         void initialize_plugins( const boost::program_options::variables_map& options );
+         void set_program_options(boost::program_options::options_description& command_line_options,
+                                  boost::program_options::options_description& configuration_file_options)const;
+         void initialize(const fc::path& data_dir,
+                         std::shared_ptr<boost::program_options::variables_map> options) const;
          void startup();
-         void shutdown();
-         void startup_plugins();
-         void shutdown_plugins();
-
-         const application_options& get_options();
 
          template<typename PluginType>
-         std::shared_ptr<PluginType> register_plugin()
-         {
+         std::shared_ptr<PluginType> register_plugin(bool auto_load = false) {
             auto plug = std::make_shared<PluginType>();
             plug->plugin_set_app(this);
 
-            boost::program_options::options_description plugin_cli_options("Options for plugin " + plug->plugin_name()), plugin_cfg_options;
+            string cli_plugin_desc = plug->plugin_name() + " plugin. " + "\nOptions";
+            boost::program_options::options_description plugin_cli_options( cli_plugin_desc );
+            boost::program_options::options_description plugin_cfg_options;
             plug->plugin_set_program_options(plugin_cli_options, plugin_cfg_options);
+
             if( !plugin_cli_options.options().empty() )
                _cli_options.add(plugin_cli_options);
+
             if( !plugin_cfg_options.options().empty() )
+            {
+               std::string header_name = "plugin-cfg-header-" + plug->plugin_name();
+               std::string header_desc = plug->plugin_name() + " plugin options";
+               _cfg_options.add_options()(header_name.c_str(), header_desc.c_str());
                _cfg_options.add(plugin_cfg_options);
+            }
 
             add_available_plugin( plug );
+
+            if (auto_load)
+                enable_plugin(plug->plugin_name());
+
             return plug;
          }
          std::shared_ptr<abstract_plugin> get_plugin( const string& name )const;
@@ -90,13 +97,13 @@ namespace graphene { namespace app {
          {
             std::shared_ptr<abstract_plugin> abs_plugin = get_plugin( name );
             std::shared_ptr<PluginType> result = std::dynamic_pointer_cast<PluginType>( abs_plugin );
-            FC_ASSERT( result != std::shared_ptr<PluginType>() );
+            FC_ASSERT( result != std::shared_ptr<PluginType>(), "Unable to load plugin '${p}'", ("p",name) );
             return result;
          }
 
          net::node_ptr                    p2p_node();
          std::shared_ptr<chain::database> chain_database()const;
-
+         void set_api_limit();
          void set_block_production(bool producing_blocks);
          fc::optional< api_access_info > get_api_access_info( const string& username )const;
          void set_api_access_info(const string& username, api_access_info&& permissions);
@@ -105,9 +112,18 @@ namespace graphene { namespace app {
          /// Emitted when syncing finishes (is_finished_syncing will return true)
          boost::signals2::signal<void()> syncing_finished;
 
-      private:
-         void enable_plugin( const string& name );
-         void add_available_plugin( std::shared_ptr<abstract_plugin> p );
+         const application_options& get_options();
+
+         void enable_plugin( const string& name ) const;
+
+         bool is_plugin_enabled(const string& name) const;
+
+         std::shared_ptr<fc::thread> elasticsearch_thread;
+
+   private:
+         /// Add an available plugin
+         void add_available_plugin( std::shared_ptr<abstract_plugin> p ) const;
+
          std::shared_ptr<detail::application_impl> my;
 
          boost::program_options::options_description _cli_options;

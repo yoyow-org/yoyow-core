@@ -131,6 +131,9 @@ struct genesis_state_type {
     * This is the SHA256 serialization of the genesis_state.
     */
    chain_id_type compute_chain_id() const;
+
+   /// Method to override initial witness signing keys for debug
+   void override_witness_signing_keys( const std::string& new_key );
 };
 
 } } // namespace graphene::chain

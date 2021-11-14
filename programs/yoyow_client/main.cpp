@@ -91,7 +91,7 @@ int main( int argc, char** argv )
 
       bpo::store( bpo::parse_command_line(argc, argv, opts), options );
 
-      if( options.count("help") )
+      if( options.count("help") > 0 )
       {
          std::cout << opts << "\n";
          return 0;
@@ -163,7 +163,7 @@ int main( int argc, char** argv )
       }
       else
       {
-         if( options.count("chain-id") )
+         if( options.count("chain-id") > 0 )
          {
             wdata.chain_id = chain_id_type(options.at("chain-id").as<std::string>());
             std::cout << "Starting a new wallet with chain ID " << wdata.chain_id.str() << " (from CLI)\n";
@@ -176,17 +176,17 @@ int main( int argc, char** argv )
       }
 
       // but allow CLI to override
-      if( options.count("server-rpc-endpoint") )
+      if( options.count("server-rpc-endpoint") > 0 )
          wdata.ws_server = options.at("server-rpc-endpoint").as<std::string>();
-      if( options.count("server-rpc-user") )
+      if( options.count("server-rpc-user") > 0 )
          wdata.ws_user = options.at("server-rpc-user").as<std::string>();
-      if( options.count("server-rpc-password") )
+      if( options.count("server-rpc-password") > 0 )
          wdata.ws_password = options.at("server-rpc-password").as<std::string>();
 
       fc::http::websocket_client client;
       idump((wdata.ws_server));
       auto con  = client.connect( wdata.ws_server );
-      auto apic = std::make_shared<fc::rpc::websocket_api_connection>(con, GRAPHENE_MAX_NESTED_OBJECTS );
+      auto apic = std::make_shared<fc::rpc::websocket_api_connection>(con, GRAPHENE_MAX_NESTED_OBJECTS);
 
       auto remote_api = apic->get_remote_api< login_api >(1);
       edump((wdata.ws_user)(wdata.ws_password) );
@@ -199,9 +199,9 @@ int main( int argc, char** argv )
       fc::api<wallet_api> wapi(wapiptr);
 
       std::shared_ptr<fc::http::websocket_server> _websocket_server;
-      if( options.count("rpc-endpoint") )
+      if( options.count("rpc-endpoint") > 0 )
       {
-         _websocket_server = std::make_shared<fc::http::websocket_server>();
+         _websocket_server = std::make_shared<fc::http::websocket_server>("");
          _websocket_server->on_connection([&wapi]( const fc::http::websocket_connection_ptr& c ){
             auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c, GRAPHENE_MAX_NESTED_OBJECTS);
             wsc->register_api(wapi);
@@ -213,13 +213,13 @@ int main( int argc, char** argv )
       }
 
       string cert_pem = "server.pem";
-      if( options.count( "rpc-tls-certificate" ) )
+      if( options.count( "rpc-tls-certificate" ) > 0 )
          cert_pem = options.at("rpc-tls-certificate").as<string>();
 
       std::shared_ptr<fc::http::websocket_tls_server> _websocket_tls_server;
-      if( options.count("rpc-tls-endpoint") )
+      if( options.count("rpc-tls-endpoint") > 0 )
       {
-         _websocket_tls_server = std::make_shared<fc::http::websocket_tls_server>(cert_pem);
+         _websocket_tls_server = std::make_shared<fc::http::websocket_tls_server>(cert_pem, "", "");
          _websocket_tls_server->on_connection([&wapi]( const fc::http::websocket_connection_ptr& c ){
             auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c, GRAPHENE_MAX_NESTED_OBJECTS);
             wsc->register_api(wapi);
@@ -232,9 +232,9 @@ int main( int argc, char** argv )
       }
 
       std::shared_ptr<fc::http::websocket_server> _http_ws_server;
-      if( options.count("rpc-http-endpoint" ) )
+      if( options.count("rpc-http-endpoint" ) > 0 )
       {
-         _http_ws_server = std::make_shared<fc::http::websocket_server>();
+         _http_ws_server = std::make_shared<fc::http::websocket_server>("");
          ilog( "Listening for incoming HTTP and WS RPC requests on ${p}",
                ("p", options.at("rpc-http-endpoint").as<string>()) );
          _http_ws_server->on_connection([&wapi]( const fc::http::websocket_connection_ptr& c ){
@@ -246,7 +246,7 @@ int main( int argc, char** argv )
          _http_ws_server->start_accept();
       }
 
-      if( !options.count( "daemon" ) )
+      if( options.count( "daemon" ) == 0 )
       {
          auto wallet_cli = std::make_shared<fc::rpc::cli>( GRAPHENE_MAX_NESTED_OBJECTS );
          
@@ -338,7 +338,7 @@ int main( int argc, char** argv )
    }
    catch ( const fc::exception& e )
    {
-      std::cout << e.to_detail_string() << "\n";
+      std::cerr << e.to_detail_string() << "\n";
       return -1;
    }
    return 0;

@@ -22,11 +22,15 @@
  * THE SOFTWARE.
  */
 #pragma once
+#include <boost/endian/buffers.hpp>
+
+#include <graphene/chain/protocol/types.hpp>
+
 #include <fc/io/varint.hpp>
 #include <fc/network/ip.hpp>
-#include <fc/io/raw.hpp>
+#include <fc/io/raw_fwd.hpp>
 #include <fc/crypto/ripemd160.hpp>
-#include <fc/reflect/variant.hpp>
+#include <fc/reflect/typename.hpp>
 
 namespace graphene { namespace net {
 
@@ -38,11 +42,16 @@ namespace graphene { namespace net {
    */
   struct message_header
   {
-     uint32_t  size;   // number of bytes in message, capped at MAX_MESSAGE_SIZE
-     uint32_t  msg_type;  // every channel gets a 16 bit message type specifier
+     boost::endian::little_uint32_buf_t size;   // number of bytes in message, capped at MAX_MESSAGE_SIZE
+     boost::endian::little_uint32_buf_t msg_type;  // every channel gets a 16 bit message type specifier
+     message_header()
+     {
+        size = 0;
+        msg_type = 0;
+     }
   };
 
-  typedef fc::uint160_t message_hash_type;
+  using message_hash_type = fc::ripemd160;
 
   /**
    *  Abstracts the process of packing/unpacking a message for a 
@@ -71,7 +80,7 @@ namespace graphene { namespace net {
         size     = (uint32_t)data.size();
      }
 
-     fc::uint160_t id()const
+     message_hash_type id()const
      {
         return fc::ripemd160::hash( data.data(), (uint32_t)data.size() );
      }
@@ -84,7 +93,7 @@ namespace graphene { namespace net {
      T as()const 
      {
          try {
-          FC_ASSERT( msg_type == T::type );
+          FC_ASSERT( msg_type.value() == T::type );
           T tmp;
           if( data.size() )
           {
@@ -102,13 +111,10 @@ namespace graphene { namespace net {
               "error unpacking network message as a '${type}'  ${x} !=? ${msg_type}", 
               ("type", fc::get_typename<T>::name() )
               ("x", T::type)
-              ("msg_type", msg_type)
+              ("msg_type", msg_type.value())
               );
      }
   };
-
-
-
 
 } } // graphene::net
 
