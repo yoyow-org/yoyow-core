@@ -192,7 +192,7 @@ int main(int argc, char** argv) {
       }, SIGQUIT );
 #endif
 
-      ilog("Started BitShares node on a chain with ${h} blocks.", ("h", node->chain_database()->head_block_num()));
+      ilog("Started YOYOW node on a chain with ${h} blocks.", ("h", node->chain_database()->head_block_num()));
       ilog("Chain ID is ${id}", ("id", node->chain_database()->get_chain_id()) );
 
       auto caught_signal = exit_promise->wait();
